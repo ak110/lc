@@ -11,12 +11,12 @@ public class UpdateConfig {
     /// <summary>
     /// GitHubリポジトリのオーナー
     /// </summary>
-    public string Owner { get; set; } = "";
+    public string Owner { get; set; } = "ak110";
 
     /// <summary>
     /// GitHubリポジトリ名
     /// </summary>
-    public string Repository { get; set; } = "";
+    public string Repository { get; set; } = "lc";
 
     /// <summary>
     /// 更新チェック間隔（日数）。0で無効
