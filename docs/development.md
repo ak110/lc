@@ -21,21 +21,21 @@
 
 ## セットアップ
 
-```bash
-# Node.js依存のインストール（ドキュメントlint用）
+```cmd
+rem Node.js依存のインストール（ドキュメントlint用）
 pnpm install
 
-# ビルド確認
+rem ビルド確認
 dotnet build Launcher.sln
 ```
 
 ## ビルド
 
-```bash
-# ソリューション全体をビルド
+```cmd
+rem ソリューション全体をビルド
 dotnet build Launcher.sln
 
-# Releaseビルド
+rem Releaseビルド
 dotnet build Launcher.sln -c Release
 ```
 
@@ -43,7 +43,7 @@ VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスクを実行する
 
 ## テスト
 
-```bash
+```cmd
 dotnet test Launcher.sln
 ```
 
@@ -54,20 +54,20 @@ dotnet test Launcher.sln
 
 ## 実行
 
-```bash
+```cmd
 dotnet run --project src/Launcher/Launcher.csproj
 ```
 
 ## Lint
 
-```bash
-# C#フォーマットチェック
+```cmd
+rem C#フォーマットチェック
 dotnet format Launcher.sln --verify-no-changes
 
-# ドキュメントlint
+rem ドキュメントlint
 pnpm run lint
 
-# 全自動修正
+rem 全自動修正
 dotnet format Launcher.sln
 pnpm run lint:fix
 ```
@@ -78,14 +78,14 @@ GitHub Actionsの`Release`ワークフローを手動実行してリリースす
 
 ### GitHub CLIから実行
 
-```bash
-# 1. リリース実行（いずれか1つ）
+```cmd
+rem 1. リリース実行（いずれか1つ）
 gh workflow run release.yml --field "bump=バグフィックス"
 gh workflow run release.yml --field "bump=マイナーバージョンアップ"
 gh workflow run release.yml --field "bump=メジャーバージョンアップ"
 
-# 2. ワークフロー完了を待ち、バージョンバンプコミットを取り込む
-gh run list --workflow=release.yml -L1 --json databaseId -q ".[0].databaseId" | xargs -I{} sh -c 'gh run watch {} && git pull'
+rem 2. ワークフロー完了を待ち、バージョンバンプコミットを取り込む
+for /f "usebackq" %i in (`gh run list --workflow=release.yml -L1 --json databaseId -q ".[0].databaseId"`) do gh run watch %i && git pull
 ```
 
 <!-- textlint-disable -->
