@@ -1,4 +1,3 @@
-#nullable disable
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
@@ -138,14 +137,14 @@ public static class Hook
     /// <summary>
     /// KeyHookなイベント
     /// </summary>
-    public static event EventHandler<KeyHookEventArgs> KeyHook;
+    public static event EventHandler<KeyHookEventArgs>? KeyHook;
     /// <summary>
     /// MouseHookなイベント
     /// </summary>
-    public static event EventHandler<MouseHookEventArgs> MouseHook;
+    public static event EventHandler<MouseHookEventArgs>? MouseHook;
 
-    static LowLevelKeyboardProc keyProc; // GC対策に持っておく必要がある
-    static LowLevelMouseProc mouseProc; // GC対策に持っておく必要がある
+    static LowLevelKeyboardProc? keyProc; // GC対策に持っておく必要がある
+    static LowLevelMouseProc? mouseProc; // GC対策に持っておく必要がある
     static IntPtr keyHook = IntPtr.Zero;
     static IntPtr mouseHook = IntPtr.Zero;
 
@@ -156,7 +155,7 @@ public static class Hook
         {
             try
             {
-                EventHandler<KeyHookEventArgs> KeyHook = Hook.KeyHook;
+                EventHandler<KeyHookEventArgs>? KeyHook = Hook.KeyHook;
                 KeyHookEventArgs e = new KeyHookEventArgs(nCode, wParam, lParam);
                 if (KeyHook != null)
                 {
@@ -178,7 +177,9 @@ public static class Hook
         {
             throw new Win32Exception();
         }
-        AppDomain.CurrentDomain.DomainUnload += new EventHandler(CurrentDomain_DomainUnload);
+        // 多重登録を防ぐため一度解除してから再登録
+        AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
+        AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
     }
 
     public static void SetMouseHook()
@@ -188,7 +189,7 @@ public static class Hook
         {
             try
             {
-                EventHandler<MouseHookEventArgs> MouseHook = Hook.MouseHook;
+                EventHandler<MouseHookEventArgs>? MouseHook = Hook.MouseHook;
                 MouseHookEventArgs e = new MouseHookEventArgs(nCode, wParam, lParam);
                 if (MouseHook != null)
                 {
@@ -210,10 +211,12 @@ public static class Hook
         {
             throw new Win32Exception();
         }
-        AppDomain.CurrentDomain.DomainUnload += new EventHandler(CurrentDomain_DomainUnload);
+        // 多重登録を防ぐため一度解除してから再登録
+        AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
+        AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
     }
 
-    static void CurrentDomain_DomainUnload(object sender, EventArgs e)
+    static void CurrentDomain_DomainUnload(object? sender, EventArgs e)
     {
         try { UnsetKeyHook(); } catch (Win32Exception ex) { System.Diagnostics.Debug.Fail(ex.ToString()); }
         try { UnsetMouseHook(); } catch (Win32Exception ex) { System.Diagnostics.Debug.Fail(ex.ToString()); }
@@ -227,6 +230,8 @@ public static class Hook
             {
                 throw new Win32Exception();
             }
+            keyHook = IntPtr.Zero;
+            keyProc = null;
         }
     }
 
@@ -238,6 +243,8 @@ public static class Hook
             {
                 throw new Win32Exception();
             }
+            mouseHook = IntPtr.Zero;
+            mouseProc = null;
         }
     }
 
@@ -247,7 +254,7 @@ public static class Hook
     delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam);
 
     [DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
-    static extern IntPtr GetModuleHandle(string lpModuleName);
+    static extern IntPtr GetModuleHandle(string? lpModuleName);
     [DllImport("user32", CharSet = CharSet.Auto, SetLastError = true)]
     static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, IntPtr hMod, int dwThreadId);
     [DllImport("user32", CharSet = CharSet.Auto, SetLastError = true)]

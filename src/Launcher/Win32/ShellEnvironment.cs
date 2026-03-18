@@ -1,4 +1,3 @@
-#nullable disable
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -26,9 +25,8 @@ public static class ShellEnvironment
     /// </summary>
     public static string GetFolderPath(SpecialFolder folder)
     {
-        IMalloc malloc = null;
-        int hr = SHGetMalloc(out malloc);
-        if (hr != 0) throw new IOException("特殊フォルダパスの取得に失敗");
+        int hr = SHGetMalloc(out IMalloc? malloc);
+        if (hr != 0 || malloc == null) throw new IOException("特殊フォルダパスの取得に失敗");
 
         IntPtr idl = IntPtr.Zero;
         switch (folder)
@@ -70,7 +68,7 @@ public static class ShellEnvironment
     }
 
     [DllImport("shell32.dll")]
-    static extern int SHGetMalloc(out IMalloc ppMalloc);
+    static extern int SHGetMalloc(out IMalloc? ppMalloc);
 
     [DllImport("shell32.dll")]
     static extern int SHGetSpecialFolderLocation(IntPtr hwndOwner, int nFolder, out IntPtr ppidl);

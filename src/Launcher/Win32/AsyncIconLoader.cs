@@ -1,4 +1,3 @@
-#nullable disable
 using System.Collections.Concurrent;
 using System.IO;
 using Launcher.Infrastructure;
@@ -11,13 +10,13 @@ namespace Launcher.Win32;
 /// </summary>
 public class IconLoadedEventArgs : EventArgs
 {
-    public readonly System.Drawing.Icon Icon;
+    public readonly System.Drawing.Icon? Icon;
     public string FileName;
     public bool Small;
-    public readonly object Arg;
+    public readonly object? Arg;
     /// <summary>リクエスト時の世代番号</summary>
     public readonly int Generation;
-    public IconLoadedEventArgs(System.Drawing.Icon icon, string fileName, bool small, object arg, int generation)
+    public IconLoadedEventArgs(System.Drawing.Icon? icon, string fileName, bool small, object? arg, int generation)
     {
         Icon = icon;
         FileName = fileName;
@@ -49,9 +48,9 @@ public sealed class AsyncIconLoader : IDisposable
     {
         public string FileName;
         public bool Small;
-        public object Arg;
+        public object? Arg;
         public int Generation;
-        public Request(string fileName, bool small, object arg, int generation)
+        public Request(string fileName, bool small, object? arg, int generation)
         {
             FileName = fileName;
             Small = small;
@@ -78,7 +77,7 @@ public sealed class AsyncIconLoader : IDisposable
     /// <summary>
     /// アイコン読み込んだぞイベント
     /// </summary>
-    public event EventHandler<IconLoadedEventArgs> IconLoaded;
+    public event EventHandler<IconLoadedEventArgs>? IconLoaded;
 
     /// <summary>
     /// キューをクリアし、世代をインクリメントする。
@@ -95,7 +94,7 @@ public sealed class AsyncIconLoader : IDisposable
     /// アイコン読み込みリクエストをキューに追加する。
     /// 必要に応じてワーカースレッドを新規起動する（最大ProcessorCount本）。
     /// </summary>
-    public void Load(string fileName, bool small, object arg)
+    public void Load(string fileName, bool small, object? arg)
     {
         if (disposed) return;
 
@@ -161,9 +160,9 @@ public sealed class AsyncIconLoader : IDisposable
         catch (ObjectDisposedException) { }
     }
 
-    private void CallEvent(Request r, System.Drawing.Icon icon)
+    private void CallEvent(Request r, System.Drawing.Icon? icon)
     {
-        EventHandler<IconLoadedEventArgs> handler = IconLoaded;
+        EventHandler<IconLoadedEventArgs>? handler = IconLoaded;
         handler?.Invoke(this, new IconLoadedEventArgs(
             icon, r.FileName, r.Small, r.Arg, r.Generation));
     }

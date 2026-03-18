@@ -1,4 +1,3 @@
-#nullable disable
 using System.Text;
 using Launcher.Infrastructure;
 using SystemKeys = System.Windows.Forms.Keys;
@@ -159,7 +158,7 @@ public static class KeyTable
             (int)Keys.KeyCount : (int)Keys.LClick];
         for (int i = 0; i < result.Length; i++)
         {
-            result[i] = GetKeyName((Keys)i);
+            result[i] = GetKeyName((Keys)i)!;
         }
         return result;
     }
@@ -167,10 +166,9 @@ public static class KeyTable
     /// <summary>
     /// Keysからキーの名前を取得
     /// </summary>
-    public static string GetKeyName(Keys key)
+    public static string? GetKeyName(Keys key)
     {
-        string name;
-        if (keysToKeyName.TryGetValue(key, out name))
+        if (keysToKeyName.TryGetValue(key, out string? name))
         {
             return name;
         }

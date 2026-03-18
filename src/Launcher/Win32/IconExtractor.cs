@@ -1,4 +1,3 @@
-#nullable disable
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -48,9 +47,9 @@ public static class IconExtractor
         public IntPtr iIcon;
         public int dwAttributes;
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        public string szDisplayName;
+        public string? szDisplayName;
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
-        public string szTypeName;
+        public string? szTypeName;
     };
 
     const int SHGFI_ICON = 0x000000100;             // get icon
