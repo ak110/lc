@@ -68,7 +68,7 @@ jobs:
       - name: Create ZIP
         shell: pwsh
         run: |
-          $zipName = "らんちゃ-v${{ steps.version.outputs.version }}.zip"
+          $zipName = "lc-v${{ steps.version.outputs.version }}.zip"
           Compress-Archive -Path publish/* -DestinationPath $zipName
 
       - name: Commit and tag
@@ -84,4 +84,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v${{ steps.version.outputs.version }}" "らんちゃ-v${{ steps.version.outputs.version }}.zip" --title "v${{ steps.version.outputs.version }}" --generate-notes
+          gh release create "v${{ steps.version.outputs.version }}" "lc-v${{ steps.version.outputs.version }}.zip" --title "v${{ steps.version.outputs.version }}" --generate-notes
