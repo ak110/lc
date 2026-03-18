@@ -1,0 +1,10 @@
+{
+  "dotnet.preferCSharpExtension": true,
+  "files.encoding": "utf8",
+  "[csharp]": {
+    "editor.formatOnSave": true
+  },
+  "files.associations": {
+    "*.resx": "xml"
+  }
+}

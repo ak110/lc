@@ -1,0 +1,114 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Linq;
+
+namespace らんちゃ {
+	[System.Diagnostics.DebuggerDisplay("Count = {Count}")]
+	public class CommandList : Toolkit.Serializable, ICloneable {
+		public List<Command> Commands = new List<Command>();
+
+		/// <summary>
+		/// 要素数
+		/// </summary>
+		public int Count {
+			get { return Commands.Count; }
+		}
+
+		/// <summary>
+		/// 複製の作成
+		/// </summary>
+		public CommandList Clone() {
+			CommandList copy = (CommandList)MemberwiseClone();
+			copy.Commands = Toolkit.Utility.Clone(Commands);
+			return copy;
+		}
+
+		#region ICloneable メンバ
+
+		object ICloneable.Clone() {
+			return Clone();
+		}
+
+		#endregion
+
+		#region Serialize/Deserialize
+
+		/// <summary>
+		/// 書き込み
+		/// </summary>
+		public new void Serialize(string ext) {
+			Commands.Sort();
+            base.Serialize(ext);
+		}
+
+		/// <summary>
+		/// 読み込み
+		/// </summary>
+		public static CommandList Deserialize(string ext) {
+			try {
+				return Deserialize<CommandList>(ext);
+			} catch {
+				string name = DefaultBaseName + ext;
+				if (System.IO.File.Exists(name)) {
+					Toolkit.LegacyConfigReader reader = new Toolkit.LegacyConfigReader(name);
+					try {
+						return CommandList.LoadFrom(reader);
+					} catch {
+					}
+				}
+				return new CommandList();
+			}
+		}
+
+		#endregion
+
+		/// <summary>
+		/// 後方互換性のための処理
+		/// </summary>
+		public static CommandList LoadFrom(Toolkit.LegacyConfigReader reader) {
+			CommandList list = new CommandList();
+			int n;
+			if (reader.ContainsKey("_") &&
+				int.TryParse(reader.Indirect("_"), out n)) {
+				for (int i = 0; i < n; i++) {
+					string key = i.ToString("d3");
+					Command cmd = Command.LoadFrom(null,
+						reader.EscapedString(key));
+					list.Commands.Add(cmd);
+				}
+			} else {
+				foreach (string key in reader.Keys) {
+					Command cmd = Command.LoadFrom(key,
+						reader.EscapedString(key));
+					list.Commands.Add(cmd);
+				}
+			}
+			list.Commands.Sort();
+			return list;
+		}
+
+		/// <summary>
+		/// 該当しそうなコマンドをリストアップして返す。
+		/// </summary>
+		/// <param name="line">コマンドライン</param>
+		public IEnumerable<Command> FindMatch(string input, Config config) {
+			if (string.IsNullOrEmpty(input)) {
+				return new List<Command>(Commands);
+			}
+			return Commands
+				.Select(x => new{ Command = x, Score = x.GetMatchScore(input, config) })
+				.Where(x => 0 < x.Score)
+				.OrderByDescending(x => x.Score)
+				.Select(x => x.Command);
+		}
+
+		/// <summary>
+		/// 追加
+		/// </summary>
+		public void Add(Command command) {
+			Commands.Add(command);
+			Commands.Sort();
+		}
+	}
+}

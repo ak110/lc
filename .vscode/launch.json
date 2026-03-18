@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Launch",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/らんちゃ/bin/Debug/net8.0-windows/らんちゃ.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/らんちゃ",
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    }
+  ]
+}
