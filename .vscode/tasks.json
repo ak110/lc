@@ -35,41 +35,28 @@
       "label": "clean",
       "command": "dotnet",
       "type": "process",
-      "args": [
-        "clean",
-        "${workspaceFolder}/Launcher.sln"
-      ],
+      "args": ["clean", "${workspaceFolder}/Launcher.sln"],
       "problemMatcher": "$msCompile"
     },
     {
       "label": "rebuild",
       "command": "dotnet",
       "type": "process",
-      "args": [
-        "build",
-        "${workspaceFolder}/Launcher.sln",
-        "--no-incremental"
-      ],
+      "args": ["build", "${workspaceFolder}/Launcher.sln", "--no-incremental"],
       "problemMatcher": "$msCompile"
     },
     {
       "label": "test",
       "command": "dotnet",
       "type": "process",
-      "args": [
-        "test",
-        "${workspaceFolder}/Launcher.sln"
-      ],
+      "args": ["test", "${workspaceFolder}/Launcher.sln"],
       "problemMatcher": "$msCompile"
     },
     {
       "label": "format",
       "command": "dotnet",
       "type": "process",
-      "args": [
-        "format",
-        "${workspaceFolder}/Launcher.sln"
-      ],
+      "args": ["format", "${workspaceFolder}/Launcher.sln"],
       "problemMatcher": "$msCompile"
     }
   ]
