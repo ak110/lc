@@ -10,7 +10,6 @@ public class UpdateForm : Form
 {
     private Label labelMessage;
     private Button buttonUpdate;
-    private Button buttonSkip;
     private Button buttonLater;
 
     private readonly GitHubRelease _release;
@@ -61,14 +60,6 @@ public class UpdateForm : Form
             DialogResult = DialogResult.OK,
         };
 
-        buttonSkip = new Button
-        {
-            Text = "スキップ",
-            Location = new System.Drawing.Point(180, 120),
-            Size = new System.Drawing.Size(80, 30),
-            DialogResult = DialogResult.Ignore,
-        };
-
         buttonLater = new Button
         {
             Text = "後で",
@@ -77,7 +68,7 @@ public class UpdateForm : Form
             DialogResult = DialogResult.Cancel,
         };
 
-        Controls.AddRange(new Control[] { labelMessage, buttonUpdate, buttonSkip, buttonLater });
+        Controls.AddRange(new Control[] { labelMessage, buttonUpdate, buttonLater });
         AcceptButton = buttonUpdate;
         CancelButton = buttonLater;
     }

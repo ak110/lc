@@ -56,18 +56,9 @@ public partial class DummyForm : Form
         {
             mainForm.Show(this);
         }
-        if (config.ButtonLauncherActivation != Core.ButtonLauncherActivation.Disabled)
-        {
-            buttonLauncherForm = new ButtonLauncherForm(this);
-        }
-
         ApplyConfig();
 
-        // 起動時の更新チェック
-        if (new GitHubUpdateClient(config.UpdateConfig).ShouldCheck(data.UpdateRecord))
-        {
-            CheckForUpdateAsync();
-        }
+        // 起動時の自動更新チェックは無効化（手動で実行する）
     }
 
     /// <summary>
@@ -229,7 +220,12 @@ public partial class DummyForm : Form
 
     private void 実行ファイルのあるフォルダを開くMToolStripMenuItem_Click(object sender, EventArgs e)
     {
-        System.Diagnostics.Process.Start(System.IO.Path.GetDirectoryName(Application.ExecutablePath));
+        var psi = new ProcessStartInfo
+        {
+            FileName = System.IO.Path.GetDirectoryName(Application.ExecutablePath),
+            UseShellExecute = true,
+        };
+        Process.Start(psi);
     }
 
     private async void ネットワーク更新NToolStripMenuItem_Click(object sender, EventArgs e)
@@ -260,41 +256,7 @@ public partial class DummyForm : Form
     }
 
     /// <summary>
-    /// 起動時の更新チェック（バックグラウンドで実行）
-    /// </summary>
-    private async void CheckForUpdateAsync()
-    {
-        var client = new GitHubUpdateClient(config.UpdateConfig);
-        try
-        {
-            var release = await client.GetLatestReleaseAsync();
-            if (release == null) return;
-
-            data.UpdateRecord.LastChecked = DateTime.Now;
-
-            if (GitHubUpdateClient.IsUpdateAvailable(release, data.UpdateRecord))
-            {
-                data.UpdateRecord.LastKnownVersion = release.TagName;
-                data.Serialize();
-                // UIスレッドに戻してダイアログ表示
-                BeginInvoke(async () =>
-                {
-                    await ShowUpdateFormAsync(release);
-                });
-            }
-            else
-            {
-                data.Serialize();
-            }
-        }
-        catch
-        {
-            // 起動時の自動チェック失敗は無視
-        }
-    }
-
-    /// <summary>
-    /// UpdateFormを表示し、更新実行またはスキップを処理する
+    /// UpdateFormを表示し、更新実行を処理する
     /// </summary>
     private async Task ShowUpdateFormAsync(GitHubRelease release)
     {
@@ -303,7 +265,6 @@ public partial class DummyForm : Form
             var result = form.ShowDialog(this);
             if (result == DialogResult.OK)
             {
-                // 更新実行
                 try
                 {
                     await form.PerformUpdateAsync();
@@ -314,12 +275,6 @@ public partial class DummyForm : Form
                     MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-            }
-            else if (result == DialogResult.Ignore)
-            {
-                // スキップ
-                data.UpdateRecord.SkippedVersion = release.TagName;
-                data.Serialize();
             }
         }
     }
@@ -359,6 +314,19 @@ public partial class DummyForm : Form
         var hk = KeyTable.GetKeyWithModifiers(config.HotKey);
         hotkeyVK = KeyTable.KeysToVKey(hk.First);
         modifiers = hk.Second;
+
+        // ボタンランチャーの生成・破棄
+        bool enabled = config.ButtonLauncherActivation != Core.ButtonLauncherActivation.Disabled;
+        if (enabled && buttonLauncherForm == null)
+        {
+            buttonLauncherForm = new ButtonLauncherForm(this);
+        }
+        else if (!enabled && buttonLauncherForm != null)
+        {
+            buttonLauncherForm.Close();
+            buttonLauncherForm.Dispose();
+            buttonLauncherForm = null;
+        }
     }
 
     void Hook_KeyHook(object sender, KeyHookEventArgs e)
