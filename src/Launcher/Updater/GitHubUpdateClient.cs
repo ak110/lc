@@ -7,8 +7,10 @@ namespace Launcher.Updater;
 /// <summary>
 /// GitHub Releases APIを使った更新チェッククライアント
 /// </summary>
-public class GitHubUpdateClient
+public static class GitHubUpdateClient
 {
+    private const string ApiUrl = "https://api.github.com/repos/ak110/lc/releases/latest";
+
     private static readonly HttpClient _httpClient = new()
     {
         DefaultRequestHeaders = {
@@ -17,36 +19,16 @@ public class GitHubUpdateClient
         },
     };
 
-    private readonly UpdateConfig _config;
-
-    public GitHubUpdateClient(UpdateConfig config)
-    {
-        _config = config;
-    }
-
     /// <summary>
     /// 最新リリース情報を取得
     /// </summary>
-    public async Task<GitHubRelease> GetLatestReleaseAsync()
+    public static async Task<GitHubRelease> GetLatestReleaseAsync()
     {
-        if (!_config.IsEnabled) return null;
-
-        string url = $"https://api.github.com/repos/{_config.Owner}/{_config.Repository}/releases/latest";
-        var response = await _httpClient.GetAsync(url);
+        var response = await _httpClient.GetAsync(ApiUrl);
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<GitHubRelease>(json);
-    }
-
-    /// <summary>
-    /// 更新チェックが必要か判定
-    /// </summary>
-    public bool ShouldCheck(UpdateRecord record)
-    {
-        if (!_config.IsEnabled) return false;
-        if (_config.CheckIntervalDays <= 0) return false;
-        return (DateTime.Now - record.LastChecked).TotalDays >= _config.CheckIntervalDays;
     }
 
     /// <summary>

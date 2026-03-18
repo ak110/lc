@@ -46,11 +46,13 @@ public partial class MainForm : Form
     /// </summary>
     public void PreInitialize()
     {
-        // ハンドル作成（アイコン非同期読み込みのBeginInvokeに必要）
+        // ハンドル作成（アイコン非同期読み込みのInvokeに必要）
         _ = Handle;
         // リストビューの構築とアイコン読み込みを事前実行
         textBox1_TextChanged(this, null);
         ApplyConfig();
+        // 初回表示時にtextBox1へフォーカスを設定（Alt+Spaceでシステムメニューが出る問題の対策）
+        ActiveControl = textBox1;
         initialized = true;
     }
 
@@ -527,7 +529,8 @@ public partial class MainForm : Form
     /// </summary>
     void iconLoader_IconLoaded(object sender, IconLoadedEventArgs e)
     {
-        if (!Created || IsDisposed) return;
+        // Invoke()にはハンドルが必要（CreatedはShow()まで立たないのでIsHandleCreatedで判定）
+        if (!IsHandleCreated || IsDisposed) return;
         try
         {
             Command command = (Command)e.Arg;

@@ -249,11 +249,15 @@ public partial class DummyForm : Form
 
     private async void ネットワーク更新NToolStripMenuItem_Click(object sender, EventArgs e)
     {
-        var client = new GitHubUpdateClient(config.UpdateConfig);
         try
         {
-            var release = await client.GetLatestReleaseAsync();
-            if (release == null) return;
+            var release = await GitHubUpdateClient.GetLatestReleaseAsync();
+            if (release == null)
+            {
+                MessageBox.Show("リリース情報を取得できませんでした。", AppVersion.Title,
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
             data.UpdateRecord.LastChecked = DateTime.Now;
 
@@ -266,11 +270,14 @@ public partial class DummyForm : Form
             else
             {
                 data.Serialize();
+                MessageBox.Show("現在のバージョンは最新です。", AppVersion.Title,
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"更新チェック失敗: {ex.Message}");
+            MessageBox.Show($"更新チェックに失敗しました。\n{ex.Message}", AppVersion.Title,
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 

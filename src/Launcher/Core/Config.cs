@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 using Launcher.Infrastructure;
-using Launcher.Updater;
 
 namespace Launcher.Core;
 
@@ -62,7 +61,6 @@ public class Config : ConfigStore, ICloneable
         }
     }
 
-    public UpdateConfig UpdateConfig { get; set; } = new UpdateConfig();
 
     /// <summary>
     /// 複製の作成
