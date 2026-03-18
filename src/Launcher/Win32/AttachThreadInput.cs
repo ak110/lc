@@ -6,7 +6,7 @@ namespace Launcher.Win32;
 /// <summary>
 /// WinAPI AttachThreadInput()のラッパー
 /// </summary>
-public class AttachThreadInput : IDisposable
+public sealed class AttachThreadInput : IDisposable
 {
     /// <summary>
     /// スレッドID

@@ -14,11 +14,11 @@ public partial class DummyForm : Form
     Config config = new Config();
     Data data = new Data();
 
-    Keys hotkeyVK = 0;
+    Keys hotkeyVK;
     KeyTable.Modifiers modifiers;
 
-    MainForm mainForm = null;
-    ButtonLauncherForm buttonLauncherForm = null;
+    MainForm mainForm;
+    ButtonLauncherForm buttonLauncherForm;
     bool lbuttonDown;
     bool rbuttonDown;
     // トリガーボタンのUPイベント抑制用フラグ

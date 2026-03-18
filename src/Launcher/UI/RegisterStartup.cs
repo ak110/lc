@@ -13,8 +13,8 @@ namespace Launcher.UI;
 [DefaultProperty("BaseName")]
 public partial class RegisterStartup : UserControl
 {
-    string baseName = null;
-    string sendToName = null;
+    string baseName;
+    string sendToName;
 
     public RegisterStartup()
     {

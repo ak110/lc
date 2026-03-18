@@ -32,8 +32,8 @@ public class IconLoadedEventArgs : EventArgs
 public class AsyncIconLoader
 {
     object lockObject = new object();
-    volatile bool valid = false;
-    int generation = 0;
+    volatile bool valid;
+    int generation;
     List<Thread> threads = new List<Thread>();
     Queue<Request> queue = new Queue<Request>();
     ThreadPriority threadPriority = ThreadPriority.Normal;

@@ -11,3 +11,68 @@ insert_final_newline = true
 [*.cs]
 dotnet_sort_system_directives_first = true
 csharp_style_namespace_declarations = file_scoped:warning
+
+# === 有効化する重要なルール ===
+
+# Dispose関連（リソースリーク防止）
+dotnet_diagnostic.CA1816.severity = warning
+dotnet_diagnostic.CA2000.severity = warning
+
+# IDisposable実装パターン
+dotnet_diagnostic.CA1063.severity = warning
+
+# スレッド安全性
+dotnet_diagnostic.CA2100.severity = warning
+
+# 明示的なデフォルト値初期化の除去
+dotnet_diagnostic.CA1805.severity = warning
+
+# sealed推奨（内部クラスのパフォーマンス）
+dotnet_diagnostic.CA1852.severity = warning
+
+# string.Equalsの使用
+dotnet_diagnostic.CA2251.severity = warning
+
+# 汎用例外キャッチ（段階的改善のためsuggestion）
+dotnet_diagnostic.CA1031.severity = suggestion
+
+# === 段階的に対応するため一時的に抑制するルール ===
+
+# 命名規則（WinFormsデザイナー生成コードが大量にヒット）
+dotnet_diagnostic.CA1707.severity = suggestion
+dotnet_diagnostic.CA1725.severity = none
+dotnet_diagnostic.CA1715.severity = none
+dotnet_diagnostic.CA1720.severity = none
+dotnet_diagnostic.CA1711.severity = none
+
+# カルチャ指定（デスクトップアプリで内部的な文字列操作のため低リスク）
+dotnet_diagnostic.CA1305.severity = suggestion
+dotnet_diagnostic.CA1304.severity = suggestion
+dotnet_diagnostic.CA1311.severity = suggestion
+dotnet_diagnostic.CA1310.severity = suggestion
+dotnet_diagnostic.CA1309.severity = suggestion
+
+# ConfigureAwait（WinFormsではSynchronizationContextが必要）
+dotnet_diagnostic.CA2007.severity = none
+
+# 公開インスタンスフィールド（段階的にプロパティ化）
+dotnet_diagnostic.CA1051.severity = suggestion
+
+# XmlSerializerセキュリティ（デスクトップアプリが自身の設定ファイルを読む用途）
+dotnet_diagnostic.CA5369.severity = none
+
+# 暗号アルゴリズム（用途を確認してから対応）
+dotnet_diagnostic.CA5351.severity = suggestion
+dotnet_diagnostic.CA5350.severity = suggestion
+
+# 予約済み例外型（COM相互運用コード）
+dotnet_diagnostic.CA2201.severity = suggestion
+
+# StringBuilder P/Invoke（低優先度）
+dotnet_diagnostic.CA1838.severity = none
+
+# IComparable実装（CommandクラスでのEquals/演算子オーバーロード）
+dotnet_diagnostic.CA1036.severity = suggestion
+
+# コレクションのジェネリックインターフェース実装
+dotnet_diagnostic.CA1010.severity = none

@@ -9,8 +9,8 @@ namespace Launcher.Infrastructure;
 /// </summary>
 public static class AppBase
 {
-    static bool started = false;
-    static bool restart = false;
+    static bool started;
+    static bool restart;
 
     /// <summary>
     /// Program.Main()の開始時に呼ぶ処理。
@@ -51,7 +51,7 @@ public static class AppBase
     /// <summary>
     /// Initialize(), OnExit()を呼ぶクラス。
     /// </summary>
-    public class Initializer : IDisposable
+    public sealed class Initializer : IDisposable
     {
         /// <summary>
         /// 初期化

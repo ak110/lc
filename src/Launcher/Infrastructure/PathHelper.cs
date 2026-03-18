@@ -90,8 +90,8 @@ public static class PathHelper
     /// </summary>
     public static bool EqualsPath(string path1, string path2)
     {
-        return string.Compare(
-            PathNormalize(path1), PathNormalize(path2), true) == 0;
+        return string.Equals(
+            PathNormalize(path1), PathNormalize(path2), StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

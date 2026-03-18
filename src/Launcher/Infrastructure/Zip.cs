@@ -8,7 +8,7 @@ namespace Launcher.Infrastructure;
 /// <summary>
 /// ZIPファイルの読み込み
 /// </summary>
-public class ZipReader : IDisposable
+public sealed class ZipReader : IDisposable
 {
     readonly Stream stream;
     readonly bool leaveOpen;
@@ -236,7 +236,7 @@ public class ZipReader : IDisposable
 
 #region ZipReader実装用クラス
 
-class StreamRandAccessor
+sealed class StreamRandAccessor
 {
     readonly Stream _stream;
     readonly byte[] _buffer = new byte[256]; // 読み込みバッファ

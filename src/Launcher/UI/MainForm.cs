@@ -12,7 +12,7 @@ public partial class MainForm : Form
     int state; // 0:空っぽ  1:該当コマンド無し  2:部分一致のみ有り  3:前方一致有り
     int lastFocus;   // エディットボックスにフォーカスがあった場合0, リストな場合1
 
-    bool recurseGuard = false; //再帰防止
+    bool recurseGuard; //再帰防止
 
     // ボタン型ランチャーのアイコン読み込みを優先するため低優先度で動作
     AsyncIconLoader iconLoader =
@@ -56,7 +56,7 @@ public partial class MainForm : Form
         initialized = true;
     }
 
-    private bool initialized = false;
+    private bool initialized;
 
     private void MainForm_Load(object sender, EventArgs e)
     {
@@ -768,7 +768,7 @@ public partial class MainForm : Form
         cmd.OpenDirectory(ownerForm.Config);
     }
 
-    class ExecuteParams
+    sealed class ExecuteParams
     {
         public Command Command;
         public string Input;

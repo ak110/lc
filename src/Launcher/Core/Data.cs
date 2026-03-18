@@ -6,7 +6,7 @@ namespace Launcher.Core;
 
 public class Data : ConfigStore
 {
-    public long WindowHandle { get; set; } = 0;
+    public long WindowHandle { get; set; }
 
     public UpdateRecord UpdateRecord { get; set; } = new UpdateRecord();
 

@@ -16,9 +16,9 @@ namespace Launcher.Infrastructure;
 ///		メインの処理を記述
 /// }
 /// </example>
-public class SingleInstance : IDisposable
+public sealed class SingleInstance : IDisposable
 {
-    Mutex mutex = null;
+    Mutex mutex;
     bool firstRun;
 
     /// <summary>
@@ -118,8 +118,8 @@ public class SingleInstance : IDisposable
                 continue;
             }
             // ファイル名違うなら無視
-            if (String.Compare(p.MainModule.FileName,
-                current.MainModule.FileName, true) != 0)
+            if (!string.Equals(p.MainModule.FileName,
+                current.MainModule.FileName, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }

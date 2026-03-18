@@ -21,8 +21,10 @@ public class LegacyConfigReader
     /// <summary>
     /// streamから読み込む
     /// </summary>
+#pragma warning disable CA2000 // StreamReaderの所有権はthis()に移譲される
     public LegacyConfigReader(Stream stream, bool toBeClose)
         : this(new StreamReader(stream, Encoding.Default), true)
+#pragma warning restore CA2000
     {
         if (toBeClose) stream.Dispose();
     }

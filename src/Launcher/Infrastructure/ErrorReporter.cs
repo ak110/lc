@@ -17,10 +17,10 @@ public class ErrorReporter
     /// </summary>
     public static ErrorReporter Instance => instance;
 
-    Control owner = null;
+    Control owner;
 
     object lockObject = new object();
-    bool localLock = false;
+    bool localLock;
 
     private ErrorReporter()
     {

@@ -18,10 +18,10 @@ public class FileChangedOnCopyException : IOException
 /// <summary>
 /// BackupReadとかのらっぱー。
 /// </summary>
-public class BackupFile : IDisposable
+public sealed class BackupFile : IDisposable
 {
-    SafeFileHandle handle = null;
-    bool processSecurity = false;
+    SafeFileHandle handle;
+    bool processSecurity;
 
     /// <summary>
     /// ファイルを開く

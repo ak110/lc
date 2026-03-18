@@ -12,7 +12,7 @@ namespace Launcher.UI;
 public partial class RadioButtonList : UserControl
 {
     object lockObject = new object();
-    int selectedIndex = 0;
+    int selectedIndex;
     List<RadioButton> items = new List<RadioButton>();
 
     public RadioButtonList()
@@ -259,7 +259,9 @@ public partial class RadioButtonList : UserControl
         {
             lock (owner.lockObject)
             {
+#pragma warning disable CA2000 // Controls コレクションがRadioButtonのライフサイクルを管理
                 owner.items.Insert(index, CreateRadioButton(item));
+#pragma warning restore CA2000
                 owner.UpdateLayout();
             }
         }

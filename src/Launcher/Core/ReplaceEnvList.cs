@@ -6,7 +6,7 @@ namespace Launcher.Core;
 /// <summary>
 /// 環境変数の置換処理。
 /// </summary>
-class ReplaceEnvList
+sealed class ReplaceEnvList
 {
     List<KeyValuePair<string, string>> vars
         = new List<KeyValuePair<string, string>>();

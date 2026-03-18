@@ -37,7 +37,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// <summary>
     /// 管理者権限で実行
     /// </summary>
-    public bool RunAsAdmin { get; set; } = false;
+    public bool RunAsAdmin { get; set; }
 
     /// <summary>
     /// アイコンのインデックス
@@ -327,7 +327,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     {
         file = PathHelper.PathNormalize(file);
         Command command = new Command();
-        if (string.Compare(Path.GetExtension(file), ".lnk", true) == 0)
+        if (string.Equals(Path.GetExtension(file), ".lnk", StringComparison.OrdinalIgnoreCase))
         {
             // lnk
             try

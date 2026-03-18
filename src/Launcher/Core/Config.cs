@@ -10,12 +10,12 @@ namespace Launcher.Core;
 
 public class Config : ConfigStore, ICloneable
 {
-    public bool Debug { get; set; } = false;
+    public bool Debug { get; set; }
 
     public TrayIconAction IconDoubleClick { get; set; } = TrayIconAction.ShowHide;
     public ItemAction ItemDoubleClick { get; set; } = ItemAction.Execute;
     public int ProcessPriority { get; set; } = 3;
-    public bool HideFirst { get; set; } = false;
+    public bool HideFirst { get; set; }
 
     public string HotKey { get; set; } = "Win+Space";
 
@@ -30,10 +30,10 @@ public class Config : ConfigStore, ICloneable
     public List<string> ReplaceEnv { get; set; } = new List<string>();
 
     public CloseButtonBehavior CloseButton { get; set; } = CloseButtonBehavior.Hide;
-    public bool WindowNoResize { get; set; } = false;
-    public bool WindowTopMost { get; set; } = false;
+    public bool WindowNoResize { get; set; }
+    public bool WindowTopMost { get; set; }
     public bool WindowHideNoActive { get; set; } = true;
-    public bool HideOnRun { get; set; } = false;
+    public bool HideOnRun { get; set; }
     public bool CommandIgnoreCase { get; set; } = true;
 
     public Point WindowPos { get; set; } = new Point(200, 125);

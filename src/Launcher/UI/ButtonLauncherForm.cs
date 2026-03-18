@@ -104,7 +104,9 @@ public partial class ButtonLauncherForm : Form
 
         foreach (var tab in Data.Tabs)
         {
+#pragma warning disable CA2000 // TabControlがTabPageのライフサイクルを管理
             var tabPage = new TabPage(tab.Name) { Tag = tab };
+#pragma warning restore CA2000
             BuildGrid(tabPage, tab);
             tabControl1.TabPages.Add(tabPage);
         }
@@ -200,7 +202,9 @@ public partial class ButtonLauncherForm : Form
     /// <summary>
     /// ボタン位置情報
     /// </summary>
+#pragma warning disable CA1852 // recordは暗黙的にsealed
     private record ButtonPosition(int Row, int Col);
+#pragma warning restore CA1852
 
     #endregion
 
@@ -633,7 +637,7 @@ public partial class ButtonLauncherForm : Form
     {
         if (e.Button != MouseButtons.Right) return;
 
-        var menu = new ContextMenuStrip();
+        using var menu = new ContextMenuStrip();
         menu.Items.Add("タブを追加(&A)", null, (s, ev) => AddTab());
         menu.Items.Add("タブ名を変更(&R)", null, (s, ev) => RenameTab());
         menu.Items.Add("デフォルトタブに設定(&D)", null, (s, ev) => SetDefaultTab());
@@ -824,7 +828,7 @@ public partial class ButtonLauncherForm : Form
 /// <summary>
 /// コマンド選択ダイアログ
 /// </summary>
-internal class CommandSelectDialog : Form
+internal sealed class CommandSelectDialog : Form
 {
     readonly ListView listView;
     public Command SelectedCommand { get; private set; }

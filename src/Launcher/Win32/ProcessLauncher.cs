@@ -15,12 +15,12 @@ public enum ShellProcessWindowStyle
 
 public class ShellProcessStartInfo
 {
-    public string Arguments = null;
-    public string FileName = null;
-    public string Verb = null;
-    public string WorkingDirectory = null;
+    public string Arguments;
+    public string FileName;
+    public string Verb;
+    public string WorkingDirectory;
     public ShellProcessWindowStyle WindowStyle = ShellProcessWindowStyle.Normal;
-    public bool CreateNoWindow = false;
+    public bool CreateNoWindow;
     public bool ErrorDialog = true;
     public IntPtr ErrorDialogParentHandle = IntPtr.Zero;
 

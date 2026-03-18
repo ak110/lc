@@ -12,10 +12,10 @@ namespace Launcher.Core;
 public class ButtonLauncherData : ConfigStore
 {
     public List<ButtonTab> Tabs { get; set; } = new List<ButtonTab>();
-    public int DefaultTabIndex { get; set; } = 0;
+    public int DefaultTabIndex { get; set; }
     public int Columns { get; set; } = 7;
     public int Rows { get; set; } = 7;
-    public bool IsLocked { get; set; } = false;
+    public bool IsLocked { get; set; }
     public Point WindowPos { get; set; } = Point.Empty;
     public Size WindowSize { get; set; } = Size.Empty;
 

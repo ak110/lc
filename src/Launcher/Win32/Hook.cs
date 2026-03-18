@@ -9,7 +9,7 @@ public class KeyHookEventArgs : EventArgs
     int nCode;
     IntPtr wParam;
     Hook.KBDLLHOOKSTRUCT s;
-    bool handled = false;
+    bool handled;
     public KeyHookEventArgs(int nCode, IntPtr wParam, Hook.KBDLLHOOKSTRUCT s)
     {
         this.nCode = nCode;
@@ -40,7 +40,7 @@ public class MouseHookEventArgs : EventArgs
     int nCode;
     IntPtr wParam;
     Hook.MSLLHOOKSTRUCT s;
-    bool handled = false;
+    bool handled;
     public MouseHookEventArgs(int nCode, IntPtr wParam, Hook.MSLLHOOKSTRUCT s)
     {
         this.nCode = nCode;
