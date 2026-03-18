@@ -36,6 +36,7 @@ public class AsyncIconLoader
     int generation = 0;
     List<Thread> threads = new List<Thread>();
     Queue<Request> queue = new Queue<Request>();
+    ThreadPriority threadPriority = ThreadPriority.Normal;
     struct Request
     {
         public string FileName;
@@ -60,6 +61,15 @@ public class AsyncIconLoader
     }
 
     /// <summary>
+    /// ワーカースレッドの優先度。Load()で新規スレッド生成時に適用される。
+    /// </summary>
+    public ThreadPriority ThreadPriority
+    {
+        get { lock (lockObject) { return threadPriority; } }
+        set { lock (lockObject) { threadPriority = value; } }
+    }
+
+    /// <summary>
     /// アイコン読み込んだぞイベント
     /// </summary>
     public event EventHandler<IconLoadedEventArgs> IconLoaded;
@@ -75,6 +85,8 @@ public class AsyncIconLoader
             generation++;
             valid = false;
             queue.Clear();
+            // 終了済みスレッドがカウントに残ると次のLoad()で新スレッドが起動しないためクリア
+            threads.Clear();
             Monitor.PulseAll(lockObject);
         }
     }
@@ -92,6 +104,7 @@ public class AsyncIconLoader
                 var thread = new Thread(new ThreadStart(OnThread));
                 thread.SetApartmentState(ApartmentState.STA);
                 thread.IsBackground = true;
+                thread.Priority = threadPriority;
                 thread.Start();
                 threads.Add(thread);
             }

@@ -64,6 +64,7 @@ public partial class CommandManagementForm : Form
     private void IconLoader_IconLoaded(object sender, IconLoadedEventArgs e)
     {
         if (e.Generation != iconLoader.Generation) return;
+        if (!IsHandleCreated) return;
 
         BeginInvoke(() =>
         {
