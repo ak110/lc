@@ -31,14 +31,35 @@ public partial class MainForm : Form
 
         iconLoader.IconLoaded += new EventHandler<IconLoadedEventArgs>(iconLoader_IconLoaded);
 
+        // ListViewのちらつき・初回表示の遅延を軽減
+        listView1.GetType().GetProperty("DoubleBuffered",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?.SetValue(listView1, true);
+
         // ウィンドウスタイルとか
         Location = ownerForm.Config.WindowPos;
         Size = ownerForm.Config.WindowSize;
     }
 
+    /// <summary>
+    /// リストビューとアイコンの事前初期化（初回Show前に呼ぶ）
+    /// </summary>
+    public void PreInitialize()
+    {
+        // ハンドル作成（アイコン非同期読み込みのBeginInvokeに必要）
+        _ = Handle;
+        // リストビューの構築とアイコン読み込みを事前実行
+        textBox1_TextChanged(this, null);
+        ApplyConfig();
+        initialized = true;
+    }
+
+    private bool initialized = false;
+
     private void MainForm_Load(object sender, EventArgs e)
     {
-        // 最初だけ手動で色々呼んでおく
+        if (initialized) return;
+        // PreInitialize未実行時のフォールバック
         textBox1_TextChanged(this, null);
         ApplyConfig();
     }
@@ -586,8 +607,10 @@ public partial class MainForm : Form
             state = 1; // state:該当コマンド無し
         }
 
-        // コマンドをリストビューへ
+        // コマンドをリストビューへ（AddRangeでまとめて追加して描画コストを削減）
         listView1.Items.Clear();
+        var items = new ListViewItem[commands.Count()];
+        int idx = 0;
         foreach (var command in commands)
         {
             ListViewItem item = new ListViewItem(command.Name);
@@ -597,8 +620,9 @@ public partial class MainForm : Form
                 item.ImageIndex = command.IconIndex;
             }
             item.Tag = command;
-            listView1.Items.Add(item);
+            items[idx++] = item;
         }
+        listView1.Items.AddRange(items);
 
         UpdateButtonText();
     }

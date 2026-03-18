@@ -12,6 +12,7 @@ public partial class ButtonLauncherForm : Form
     readonly DummyForm owner;
     readonly AsyncIconLoader iconLoader = new AsyncIconLoader();
     readonly ContextMenuStrip buttonContextMenu;
+    readonly ContextMenuStrip mainMenu;
 
     // ボタンサイズ
     const int ButtonWidth = 64;
@@ -25,10 +26,11 @@ public partial class ButtonLauncherForm : Form
 
     ButtonLauncherData Data => owner.ButtonLauncherData;
 
-    public ButtonLauncherForm(DummyForm owner)
+    public ButtonLauncherForm(DummyForm owner, ContextMenuStrip mainMenu)
     {
         InitializeComponent();
         this.owner = owner;
+        this.mainMenu = mainMenu;
 
         Text = Infrastructure.AppVersion.Title;
 
@@ -41,6 +43,10 @@ public partial class ButtonLauncherForm : Form
         buttonContextMenu.Items.Add("コマンドから割り当て(&A)", null, ButtonMenu_AssignFromCommand);
         buttonContextMenu.Items.Add(new ToolStripSeparator());
         buttonContextMenu.Items.Add("削除(&D)", null, ButtonMenu_Delete);
+        buttonContextMenu.Opening += ButtonContextMenu_Opening;
+
+        // 余白右クリック時にメインメニューを表示
+        tabControl1.ContextMenuStrip = mainMenu;
 
         // タブ右クリックメニュー
         tabControl1.MouseClick += TabControl1_MouseClick;
@@ -59,9 +65,25 @@ public partial class ButtonLauncherForm : Form
         // タブを構築
         BuildTabs();
 
-        // 初期状態は非表示
-        Show(owner);
-        Hide();
+        // オーナー設定（Show→Hideだと一瞬表示されるのでプロパティで設定）
+        Owner = owner;
+        // アイコン非同期読み込みのBeginInvokeに必要なハンドルを事前作成
+        _ = Handle;
+
+        // 閉じるボタンを無効化
+        FormsHelper.DisableCloseButton(this);
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        // オーナー(DummyForm)からの閉じる操作以外は非表示にするだけ
+        if (e.CloseReason != CloseReason.FormOwnerClosing)
+        {
+            e.Cancel = true;
+            Hide();
+            return;
+        }
+        base.OnFormClosing(e);
     }
 
     #region タブ・グリッド構築
@@ -72,6 +94,7 @@ public partial class ButtonLauncherForm : Form
     private void BuildTabs()
     {
         tabControl1.TabPages.Clear();
+        iconLoader.Clear();
 
         // タブがなければデフォルト1つ作る
         if (Data.Tabs.Count == 0)
@@ -99,7 +122,7 @@ public partial class ButtonLauncherForm : Form
     private void BuildGrid(TabPage tabPage, ButtonTab tabData)
     {
         tabPage.Controls.Clear();
-        iconLoader.Clear();
+        tabPage.ContextMenuStrip = mainMenu;
 
         var panel = new TableLayoutPanel
         {
@@ -148,6 +171,7 @@ public partial class ButtonLauncherForm : Form
             TextAlign = ContentAlignment.BottomCenter,
             ImageAlign = ContentAlignment.TopCenter,
             AllowDrop = true,
+            ContextMenuStrip = buttonContextMenu,
             Tag = new ButtonPosition(row, col),
         };
         btn.FlatAppearance.BorderSize = 0;
@@ -341,25 +365,33 @@ public partial class ButtonLauncherForm : Form
 
     private Button contextMenuTarget;
 
+    /// <summary>
+    /// ボタン右クリックメニューのOpening時にメニュー項目の有効/無効を設定
+    /// </summary>
+    private void ButtonContextMenu_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+        var menu = (ContextMenuStrip)sender;
+        contextMenuTarget = menu.SourceControl as Button;
+        if (contextMenuTarget == null)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        var pos = (ButtonPosition)contextMenuTarget.Tag;
+        var tabData = GetCurrentTabData();
+        var entry = tabData?.GetButton(pos.Row, pos.Col);
+
+        bool hasCommand = entry != null && !entry.IsEmpty;
+        buttonContextMenu.Items[0].Enabled = hasCommand; // 実行
+        buttonContextMenu.Items[1].Enabled = true; // 編集（未割当でも可）
+        buttonContextMenu.Items[2].Enabled = hasCommand; // フォルダを開く
+        buttonContextMenu.Items[6].Enabled = hasCommand; // 削除
+    }
+
     private void GridButton_MouseDown(object sender, MouseEventArgs e)
     {
-        if (e.Button == MouseButtons.Right)
-        {
-            contextMenuTarget = (Button)sender;
-            var pos = (ButtonPosition)contextMenuTarget.Tag;
-            var tabData = GetCurrentTabData();
-            var entry = tabData?.GetButton(pos.Row, pos.Col);
-
-            // メニュー項目の有効/無効
-            bool hasCommand = entry != null && !entry.IsEmpty;
-            buttonContextMenu.Items[0].Enabled = hasCommand; // 実行
-            buttonContextMenu.Items[1].Enabled = true; // 編集（未割当でも可）
-            buttonContextMenu.Items[2].Enabled = hasCommand; // フォルダを開く
-            buttonContextMenu.Items[6].Enabled = hasCommand; // 削除
-
-            buttonContextMenu.Show(contextMenuTarget, e.Location);
-        }
-        else if (e.Button == MouseButtons.Left && Data.IsLocked)
+        if (e.Button == MouseButtons.Left && Data.IsLocked)
         {
             // ロック時のD&D開始準備（実際のDoDragDropはMouseMoveで閾値超過時に呼ぶ）
             var btn = (Button)sender;
@@ -726,6 +758,7 @@ public partial class ButtonLauncherForm : Form
     private void RebuildTab(TabPage tabPage)
     {
         if (tabPage == null) return;
+        iconLoader.Clear();
         var tabData = (ButtonTab)tabPage.Tag;
         BuildGrid(tabPage, tabData);
     }

@@ -57,6 +57,7 @@ public partial class DummyForm : Form
         data.Serialize();
 
         mainForm = new MainForm(this, contextMenuStrip1);
+        mainForm.PreInitialize();
         if (!config.HideFirst)
         {
             mainForm.Show(this);
@@ -337,7 +338,7 @@ public partial class DummyForm : Form
         bool enabled = config.ButtonLauncherActivation != Core.ButtonLauncherActivation.Disabled;
         if (enabled && buttonLauncherForm == null)
         {
-            buttonLauncherForm = new ButtonLauncherForm(this);
+            buttonLauncherForm = new ButtonLauncherForm(this, contextMenuStrip1);
         }
         else if (!enabled && buttonLauncherForm != null)
         {
