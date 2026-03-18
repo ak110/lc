@@ -13,3 +13,7 @@ TestResults/
 _ReSharper*/
 packages/
 *.nupkg
+
+# Node.js
+node_modules/
+pnpm-debug.log*

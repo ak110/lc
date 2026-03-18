@@ -1,0 +1,14 @@
+{
+  "config": {
+    // line-length: 日本語は文字幅が広いため緩和
+    "MD013": false,
+    // no-duplicate-heading: セクション内での重複は許容
+    "MD024": {
+      "siblings_only": true
+    },
+    // no-trailing-punctuation: 日本語の句読点を許容
+    "MD026": {
+      "punctuation": ".,;:!"
+    }
+  }
+}

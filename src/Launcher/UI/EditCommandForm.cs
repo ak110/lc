@@ -1,0 +1,42 @@
+#nullable disable
+using Launcher.Core;
+
+namespace Launcher.UI {
+	public partial class EditCommandForm : Form {
+		Command v;
+
+#if CLONE
+		public Command Value {
+			get { return v; }
+		}
+#endif
+
+		public EditCommandForm(Command vv) {
+			InitializeComponent();
+
+#if CLONE
+			v = vv.Clone();
+#else
+			v = vv;
+#endif
+
+			textBox1.Text = v.Name;
+			textBox2.Text = v.FileName;
+			textBox3.Text = v.Param;
+			textBox4.Text = v.WorkDir;
+			new Radios(groupBox1, 6).Value = v.Show;
+			new Radios(groupBox2, 6).Value = v.Priority;
+			checkBox1.Checked = v.RunAsAdmin;
+		}
+
+		private void buttonOk_Click(object sender, EventArgs e) {
+			v.Name = textBox1.Text;
+			v.FileName = textBox2.Text;
+			v.Param = textBox3.Text;
+			v.WorkDir = textBox4.Text;
+			v.Show = new Radios(groupBox1, 6).Value;
+			v.Priority = new Radios(groupBox2, 6).Value;
+			v.RunAsAdmin = checkBox1.Checked;
+		}
+	}
+}

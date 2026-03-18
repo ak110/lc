@@ -6,9 +6,9 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/らんちゃ/bin/Debug/net8.0-windows/らんちゃ.dll",
+      "program": "${workspaceFolder}/src/Launcher/bin/Debug/net8.0-windows/らんちゃ.dll",
       "args": [],
-      "cwd": "${workspaceFolder}/らんちゃ",
+      "cwd": "${workspaceFolder}/src/Launcher",
       "stopAtEntry": false,
       "console": "internalConsole"
     }

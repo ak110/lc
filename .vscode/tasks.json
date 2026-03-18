@@ -7,7 +7,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/らんちゃ.sln",
+        "${workspaceFolder}/Launcher.sln",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary;ForceNoAlign"
       ],
@@ -23,7 +23,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/らんちゃ.sln",
+        "${workspaceFolder}/Launcher.sln",
         "-c",
         "Release",
         "/property:GenerateFullPaths=true",
@@ -37,7 +37,7 @@
       "type": "process",
       "args": [
         "clean",
-        "${workspaceFolder}/らんちゃ.sln"
+        "${workspaceFolder}/Launcher.sln"
       ],
       "problemMatcher": "$msCompile"
     },
@@ -47,8 +47,28 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/らんちゃ.sln",
+        "${workspaceFolder}/Launcher.sln",
         "--no-incremental"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "test",
+        "${workspaceFolder}/Launcher.sln"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "format",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "format",
+        "${workspaceFolder}/Launcher.sln"
       ],
       "problemMatcher": "$msCompile"
     }

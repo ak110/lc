@@ -1,0 +1,30 @@
+[tools]
+dotnet = "8"
+node = "22"
+
+[tasks.build]
+run = "dotnet build Launcher.sln"
+
+[tasks.test]
+run = "dotnet test Launcher.sln"
+
+[tasks.lint]
+depends = ["lint:cs", "lint:docs"]
+
+[tasks."lint:cs"]
+run = "dotnet format Launcher.sln --verify-no-changes"
+
+[tasks."lint:docs"]
+run = "pnpm run lint"
+
+[tasks.format]
+depends = ["format:cs", "format:docs"]
+
+[tasks."format:cs"]
+run = "dotnet format Launcher.sln"
+
+[tasks."format:docs"]
+run = "pnpm run lint:fix"
+
+[tasks.clean]
+run = "dotnet clean Launcher.sln"
