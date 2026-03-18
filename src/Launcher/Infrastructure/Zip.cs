@@ -199,7 +199,7 @@ public class ZipReader : IDisposable
         using (Stream s = Open(e))
         {
             byte[] data = new byte[e.Size];
-            s.Read(data, 0, data.Length);
+            s.ReadExactly(data, 0, data.Length);
             return data;
         }
     }

@@ -15,9 +15,9 @@ public static class Hash
     }
     public static string MD5(byte[] data)
     {
-        return BitConverter.ToString(
+        return Convert.ToHexString(
             System.Security.Cryptography.MD5.HashData(data)
-            ).Replace("-", "").ToLower();
+            ).ToLower();
     }
 
     public static string SHA1(string data)
@@ -26,9 +26,9 @@ public static class Hash
     }
     public static string SHA1(byte[] data)
     {
-        return BitConverter.ToString(
+        return Convert.ToHexString(
             System.Security.Cryptography.SHA1.HashData(data)
-            ).Replace("-", "").ToLower();
+            ).ToLower();
     }
 
     public static string HMACMD5(string pass, string challenge)
@@ -39,8 +39,8 @@ public static class Hash
     }
     public static string HMACMD5(byte[] pass, byte[] challenge)
     {
-        return BitConverter.ToString(
+        return Convert.ToHexString(
             System.Security.Cryptography.HMACMD5.HashData(pass, challenge)
-            ).Replace("-", "").ToLower();
+            ).ToLower();
     }
 }

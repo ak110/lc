@@ -68,7 +68,7 @@ public class ProcessLauncher
     private static IntPtr InnerStart(ShellProcessStartInfo info)
     {
         SHELLEXECUTEINFO shinfo = new SHELLEXECUTEINFO();
-        shinfo.cbSize = Marshal.SizeOf(typeof(SHELLEXECUTEINFO));
+        shinfo.cbSize = Marshal.SizeOf<SHELLEXECUTEINFO>();
         shinfo.fMask = SEE_MASK_NOCLOSEPROCESS;
         if (info.CreateNoWindow)
         {
