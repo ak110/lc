@@ -7,7 +7,8 @@ namespace Launcher.Updater;
 /// GitHub Releases連携の更新設定
 /// </summary>
 [Serializable]
-public class UpdateConfig {
+public class UpdateConfig
+{
     /// <summary>
     /// GitHubリポジトリのオーナー
     /// </summary>

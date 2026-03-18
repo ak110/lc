@@ -6,7 +6,8 @@ namespace Launcher.Updater;
 /// 更新チェックの記録
 /// </summary>
 [Serializable]
-public class UpdateRecord {
+public class UpdateRecord
+{
     /// <summary>
     /// 最後にチェックした日時
     /// </summary>

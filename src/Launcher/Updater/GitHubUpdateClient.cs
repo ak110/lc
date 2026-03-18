@@ -7,8 +7,10 @@ namespace Launcher.Updater;
 /// <summary>
 /// GitHub Releases APIを使った更新チェッククライアント
 /// </summary>
-public class GitHubUpdateClient {
-    private static readonly HttpClient _httpClient = new() {
+public class GitHubUpdateClient
+{
+    private static readonly HttpClient _httpClient = new()
+    {
         DefaultRequestHeaders = {
             { "User-Agent", "Launcher-UpdateClient" },
             { "Accept", "application/vnd.github.v3+json" },
@@ -17,14 +19,16 @@ public class GitHubUpdateClient {
 
     private readonly UpdateConfig _config;
 
-    public GitHubUpdateClient(UpdateConfig config) {
+    public GitHubUpdateClient(UpdateConfig config)
+    {
         _config = config;
     }
 
     /// <summary>
     /// 最新リリース情報を取得
     /// </summary>
-    public async Task<GitHubRelease> GetLatestReleaseAsync() {
+    public async Task<GitHubRelease> GetLatestReleaseAsync()
+    {
         if (!_config.IsEnabled) return null;
 
         string url = $"https://api.github.com/repos/{_config.Owner}/{_config.Repository}/releases/latest";
@@ -38,7 +42,8 @@ public class GitHubUpdateClient {
     /// <summary>
     /// 更新チェックが必要か判定
     /// </summary>
-    public bool ShouldCheck(UpdateRecord record) {
+    public bool ShouldCheck(UpdateRecord record)
+    {
         if (!_config.IsEnabled) return false;
         if (_config.CheckIntervalDays <= 0) return false;
         return (DateTime.Now - record.LastChecked).TotalDays >= _config.CheckIntervalDays;
@@ -47,7 +52,8 @@ public class GitHubUpdateClient {
     /// <summary>
     /// 更新が利用可能か判定
     /// </summary>
-    public bool IsUpdateAvailable(GitHubRelease release, UpdateRecord record) {
+    public bool IsUpdateAvailable(GitHubRelease release, UpdateRecord record)
+    {
         if (release == null) return false;
         string currentVersion = GetCurrentVersion();
         if (string.IsNullOrEmpty(currentVersion)) return false;
@@ -61,9 +67,12 @@ public class GitHubUpdateClient {
     /// <summary>
     /// ブラウザでリリースページを開く
     /// </summary>
-    public static void OpenReleasePage(GitHubRelease release) {
-        if (!string.IsNullOrEmpty(release?.HtmlUrl)) {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
+    public static void OpenReleasePage(GitHubRelease release)
+    {
+        if (!string.IsNullOrEmpty(release?.HtmlUrl))
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
                 FileName = release.HtmlUrl,
                 UseShellExecute = true,
             });
@@ -73,11 +82,13 @@ public class GitHubUpdateClient {
     /// <summary>
     /// 現在のバージョン (AssemblyInformationalVersion or AssemblyVersion)
     /// </summary>
-    private static string GetCurrentVersion() {
+    private static string GetCurrentVersion()
+    {
         var assembly = System.Reflection.Assembly.GetEntryAssembly();
         if (assembly == null) return null;
         var infoVersion = assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false);
-        if (infoVersion.Length > 0) {
+        if (infoVersion.Length > 0)
+        {
             return ((System.Reflection.AssemblyInformationalVersionAttribute)infoVersion[0]).InformationalVersion;
         }
         return assembly.GetName().Version?.ToString();

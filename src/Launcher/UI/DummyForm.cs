@@ -9,7 +9,8 @@ using Process = System.Diagnostics.Process;
 
 namespace Launcher.UI;
 
-public partial class DummyForm : Form {
+public partial class DummyForm : Form
+{
     Config config = new Config();
     Data data = new Data();
 
@@ -20,14 +21,16 @@ public partial class DummyForm : Form {
     TreeLauncherForm treeLauncherForm = null;
     bool lbuttonDown;
 
-    public Config Config {
+    public Config Config
+    {
         get { return config; }
     }
 
     public CommandList CommandList { get; private set; }
     public CommandList TreeCommandList { get; private set; }
 
-    public DummyForm() {
+    public DummyForm()
+    {
         InitializeComponent();
         Visible = false;
 
@@ -50,24 +53,34 @@ public partial class DummyForm : Form {
         data.Serialize();
 
         mainForm = new MainForm(this, contextMenuStrip1);
-        if (!config.HideFirst) {
+        if (!config.HideFirst)
+        {
             mainForm.Show(this);
         }
-        if (config.UseTreeLauncher) {
+        if (config.UseTreeLauncher)
+        {
             treeLauncherForm = new TreeLauncherForm(this);
         }
 
         ApplyConfig();
+
+        // 起動時の更新チェック
+        if (new GitHubUpdateClient(config.UpdateConfig).ShouldCheck(data.UpdateRecord))
+        {
+            CheckForUpdateAsync();
+        }
     }
 
     /// <summary>
     /// 非アクティブに表示
     /// </summary>
-    protected override bool ShowWithoutActivation {
+    protected override bool ShowWithoutActivation
+    {
         get { return true; }
     }
 
-    private void DummyForm_Load(object sender, EventArgs e) {
+    private void DummyForm_Load(object sender, EventArgs e)
+    {
         Visible = false;
 
         // KeyHookとか。
@@ -77,11 +90,13 @@ public partial class DummyForm : Form {
         Hook.SetMouseHook();
     }
 
-    private void DummyForm_Shown(object sender, EventArgs e) {
+    private void DummyForm_Shown(object sender, EventArgs e)
+    {
         Visible = false;
     }
 
-    private void DummyForm_FormClosing(object sender, FormClosingEventArgs e) {
+    private void DummyForm_FormClosing(object sender, FormClosingEventArgs e)
+    {
         notifyIcon1.Dispose();
 
         data.WindowHandle = 0;
@@ -91,14 +106,22 @@ public partial class DummyForm : Form {
     /// <summary>
     /// WndProc。
     /// </summary>
-    protected override void WndProc(ref Message m) {
-        if (m.Msg == Program.WM_APPMSG) {
-            if (m.WParam == Program.WM_APPMSG_WPARAM) {
-                if (m.LParam == Program.WM_APPMSG_SHOWHIDE) {
+    protected override void WndProc(ref Message m)
+    {
+        if (m.Msg == Program.WM_APPMSG)
+        {
+            if (m.WParam == Program.WM_APPMSG_WPARAM)
+            {
+                if (m.LParam == Program.WM_APPMSG_SHOWHIDE)
+                {
                     ShowHide();
-                } else if (m.LParam == Program.WM_APPMSG_RELOAD) {
+                }
+                else if (m.LParam == Program.WM_APPMSG_RELOAD)
+                {
                     Reload();
-                } else if (m.LParam == Program.WM_APPMSG_RESTART) {
+                }
+                else if (m.LParam == Program.WM_APPMSG_RESTART)
+                {
                     Restart();
                 }
             }
@@ -109,13 +132,19 @@ public partial class DummyForm : Form {
     /// <summary>
     /// メインウィンドウを表示したり隠したり
     /// </summary>
-    public void ShowHide() {
-        if (mainForm.IsDisposed) {
+    public void ShowHide()
+    {
+        if (mainForm.IsDisposed)
+        {
             mainForm = new MainForm(this, contextMenuStrip1);
             mainForm.Show(this);
-        } else if (!mainForm.Visible) {
+        }
+        else if (!mainForm.Visible)
+        {
             mainForm.ShowWindow();
-        } else {
+        }
+        else
+        {
             mainForm.HideWindow();
         }
     }
@@ -123,10 +152,12 @@ public partial class DummyForm : Form {
     /// <summary>
     /// らんちゃ.cmd.cfgのリロード
     /// </summary>
-    public void Reload() {
+    public void Reload()
+    {
         CommandList = CommandList.Deserialize(".cmd.cfg");
         TreeCommandList = CommandList.Deserialize(".treecmd.cfg");
-        if (!mainForm.IsDisposed) {
+        if (!mainForm.IsDisposed)
+        {
             mainForm.ApplyConfig();
         }
     }
@@ -136,87 +167,168 @@ public partial class DummyForm : Form {
     /// <summary>
     /// アイコンがダブルクリックされた
     /// </summary>
-    private void notifyIcon1_DoubleClick(object sender, EventArgs e) {
-        switch (config.IconDoubleClick) {
+    private void notifyIcon1_DoubleClick(object sender, EventArgs e)
+    {
+        switch (config.IconDoubleClick)
+        {
             case TrayIconAction.ShowHide: ShowHide(); break;
             case TrayIconAction.ShowConfig: 設定CToolStripMenuItem_Click(this, null); break;
             default: break;
         }
     }
 
-    private void 設定CToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void 設定CToolStripMenuItem_Click(object sender, EventArgs e)
+    {
         ShowConfigDialog();
     }
 
     /// <summary>
     /// コンフィグダイアログ。
     /// </summary>
-    public void ShowConfigDialog() {
-        using (ConfigForm form = new ConfigForm(config)) {
+    public void ShowConfigDialog()
+    {
+        using (ConfigForm form = new ConfigForm(config))
+        {
             Form owner = !mainForm.IsDisposed && mainForm.Visible ? (Form)mainForm : (Form)this;
-            if (form.ShowDialog(owner) == DialogResult.OK) {
+            if (form.ShowDialog(owner) == DialogResult.OK)
+            {
                 config = form.Config;
                 config.Serialize();
 
                 ApplyConfig();
-                if (!mainForm.IsDisposed) {
+                if (!mainForm.IsDisposed)
+                {
                     mainForm.ApplyConfig();
                 }
             }
         }
     }
 
-    private void メインウィンドウを表示非表示VToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void メインウィンドウを表示非表示VToolStripMenuItem_Click(object sender, EventArgs e)
+    {
         ShowHide();
     }
 
-    private void 実行ファイルのあるフォルダを開くMToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void 実行ファイルのあるフォルダを開くMToolStripMenuItem_Click(object sender, EventArgs e)
+    {
         System.Diagnostics.Process.Start(System.IO.Path.GetDirectoryName(Application.ExecutablePath));
     }
 
-    private async void ネットワーク更新NToolStripMenuItem_Click(object sender, EventArgs e) {
+    private async void ネットワーク更新NToolStripMenuItem_Click(object sender, EventArgs e)
+    {
         var client = new GitHubUpdateClient(config.UpdateConfig);
-        try {
+        try
+        {
             var release = await client.GetLatestReleaseAsync();
             if (release == null) return;
 
             data.UpdateRecord.LastChecked = DateTime.Now;
 
-            if (client.IsUpdateAvailable(release, data.UpdateRecord)) {
+            if (client.IsUpdateAvailable(release, data.UpdateRecord))
+            {
                 data.UpdateRecord.LastKnownVersion = release.TagName;
-                using (var form = new UpdateForm(release)) {
-                    var result = form.ShowDialog(this);
-                    if (result == DialogResult.Ignore) {
-                        // スキップ
-                        data.UpdateRecord.SkippedVersion = release.TagName;
-                    }
-                }
+                data.Serialize();
+                await ShowUpdateFormAsync(release);
             }
-
-            data.Serialize();
-        } catch (Exception ex) {
+            else
+            {
+                data.Serialize();
+            }
+        }
+        catch (Exception ex)
+        {
             Debug.WriteLine($"更新チェック失敗: {ex.Message}");
         }
     }
 
-    private void 再起動RToolStripMenuItem_Click(object sender, EventArgs e) {
+    /// <summary>
+    /// 起動時の更新チェック（バックグラウンドで実行）
+    /// </summary>
+    private async void CheckForUpdateAsync()
+    {
+        var client = new GitHubUpdateClient(config.UpdateConfig);
+        try
+        {
+            var release = await client.GetLatestReleaseAsync();
+            if (release == null) return;
+
+            data.UpdateRecord.LastChecked = DateTime.Now;
+
+            if (client.IsUpdateAvailable(release, data.UpdateRecord))
+            {
+                data.UpdateRecord.LastKnownVersion = release.TagName;
+                data.Serialize();
+                // UIスレッドに戻してダイアログ表示
+                BeginInvoke(async () =>
+                {
+                    await ShowUpdateFormAsync(release);
+                });
+            }
+            else
+            {
+                data.Serialize();
+            }
+        }
+        catch
+        {
+            // 起動時の自動チェック失敗は無視
+        }
+    }
+
+    /// <summary>
+    /// UpdateFormを表示し、更新実行またはスキップを処理する
+    /// </summary>
+    private async Task ShowUpdateFormAsync(GitHubRelease release)
+    {
+        using (var form = new UpdateForm(release))
+        {
+            var result = form.ShowDialog(this);
+            if (result == DialogResult.OK)
+            {
+                // 更新実行
+                try
+                {
+                    await form.PerformUpdateAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"更新失敗: {ex.Message}");
+                    MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else if (result == DialogResult.Ignore)
+            {
+                // スキップ
+                data.UpdateRecord.SkippedVersion = release.TagName;
+                data.Serialize();
+            }
+        }
+    }
+
+    private void 再起動RToolStripMenuItem_Click(object sender, EventArgs e)
+    {
         Restart();
     }
 
-    private void 終了XToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void 終了XToolStripMenuItem_Click(object sender, EventArgs e)
+    {
         Close();
     }
 
     #endregion
 
-    private void Restart() {
+    private void Restart()
+    {
         AppBase.SetRestart();
         Close();
     }
 
-    private void ApplyConfig() {
+    private void ApplyConfig()
+    {
         // プロセス優先度
-        switch (config.ProcessPriority) {
+        switch (config.ProcessPriority)
+        {
             case 0: Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime; break;
             case 1: Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High; break;
             case 2: Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.AboveNormal; break;
@@ -231,13 +343,17 @@ public partial class DummyForm : Form {
         modifiers = hk.Second;
     }
 
-    void Hook_KeyHook(object sender, KeyHookEventArgs e) {
-        if (e.HookCode == Hook.HC_ACTION) {
+    void Hook_KeyHook(object sender, KeyHookEventArgs e)
+    {
+        if (e.HookCode == Hook.HC_ACTION)
+        {
             bool todo = (e.WParam == Hook.WM_KEYDOWN ||
                           e.WParam == Hook.WM_SYSKEYDOWN);
-            if (todo) {
+            if (todo)
+            {
                 if (e.HookStruct.vkCode == (int)hotkeyVK &&
-                    KeyTable.GetModifiers() == modifiers) {
+                    KeyTable.GetModifiers() == modifiers)
+                {
                     WindowHelper window = new WindowHelper(Handle);
                     window.SendMessage(WM.WM_APP,
                         Program.WM_APPMSG_WPARAM,
@@ -248,15 +364,24 @@ public partial class DummyForm : Form {
         }
     }
 
-    void Hook_MouseHook(object sender, MouseHookEventArgs e) {
-        if (config.UseTreeLauncher) {
-            if (e.HookCode == Hook.HC_ACTION) {
-                if (e.WParam == Hook.WM_LBUTTONDOWN) {
+    void Hook_MouseHook(object sender, MouseHookEventArgs e)
+    {
+        if (config.UseTreeLauncher)
+        {
+            if (e.HookCode == Hook.HC_ACTION)
+            {
+                if (e.WParam == Hook.WM_LBUTTONDOWN)
+                {
                     lbuttonDown = true;
-                } else if (e.WParam == Hook.WM_LBUTTONUP) {
+                }
+                else if (e.WParam == Hook.WM_LBUTTONUP)
+                {
                     lbuttonDown = false;
-                } else if (e.WParam == Hook.WM_RBUTTONDOWN) {
-                    if (lbuttonDown) {
+                }
+                else if (e.WParam == Hook.WM_RBUTTONDOWN)
+                {
+                    if (lbuttonDown)
+                    {
                         treeLauncherForm.ShowLauncher();
                         e.Handled = true;
                     }
