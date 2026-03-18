@@ -166,8 +166,9 @@ public static class Hook
                     (IntPtr)1 :
                     CallNextHookEx(keyHook, nCode, wParam, ref lParam);
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"キーボードフックで例外: {ex}");
                 return CallNextHookEx(keyHook, nCode, wParam, ref lParam);
             }
         });
@@ -197,8 +198,9 @@ public static class Hook
                     (IntPtr)1 :
                     CallNextHookEx(mouseHook, nCode, wParam, ref lParam);
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"マウスフックで例外: {ex}");
                 return CallNextHookEx(mouseHook, nCode, wParam, ref lParam);
             }
         });

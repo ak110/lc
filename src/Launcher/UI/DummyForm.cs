@@ -21,6 +21,11 @@ public partial class DummyForm : Form
     ButtonLauncherForm buttonLauncherForm = null;
     bool lbuttonDown;
     bool rbuttonDown;
+    // トリガーボタンのUPイベント抑制用フラグ
+    bool suppressNextLButtonUp;
+    bool suppressNextRButtonUp;
+    // ホットキーのKEYUPイベント抑制用
+    int suppressKeyUpVK;
 
     public Config Config
     {
@@ -102,17 +107,30 @@ public partial class DummyForm : Form
         {
             if (m.WParam == Program.WM_APPMSG_WPARAM)
             {
-                if (m.LParam == Program.WM_APPMSG_SHOWHIDE)
+                try
                 {
-                    ShowHide();
+                    if (m.LParam == Program.WM_APPMSG_SHOWHIDE)
+                    {
+                        ShowHide();
+                    }
+                    else if (m.LParam == Program.WM_APPMSG_RELOAD)
+                    {
+                        Reload();
+                    }
+                    else if (m.LParam == Program.WM_APPMSG_RESTART)
+                    {
+                        Restart();
+                    }
+                    else if (m.LParam == Program.WM_APPMSG_SHOWBUTTONLAUNCHER)
+                    {
+                        buttonLauncherForm?.ShowLauncher();
+                    }
                 }
-                else if (m.LParam == Program.WM_APPMSG_RELOAD)
+                catch (Exception ex)
                 {
-                    Reload();
-                }
-                else if (m.LParam == Program.WM_APPMSG_RESTART)
-                {
-                    Restart();
+                    Debug.WriteLine($"WndProc WM_APPMSG処理で例外: {ex}");
+                    MessageBox.Show($"メッセージ処理中にエラーが発生しました:\n{ex.Message}\n\n{ex.StackTrace}",
+                        "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -331,57 +349,103 @@ public partial class DummyForm : Form
 
     void Hook_KeyHook(object sender, KeyHookEventArgs e)
     {
-        if (e.HookCode == Hook.HC_ACTION)
+        try
         {
-            bool todo = (e.WParam == Hook.WM_KEYDOWN ||
-                          e.WParam == Hook.WM_SYSKEYDOWN);
-            if (todo)
+            if (e.HookCode == Hook.HC_ACTION)
             {
-                if (e.HookStruct.vkCode == (int)hotkeyVK &&
-                    KeyTable.GetModifiers() == modifiers)
+                if (e.WParam == Hook.WM_KEYDOWN || e.WParam == Hook.WM_SYSKEYDOWN)
                 {
-                    WindowHelper window = new WindowHelper(Handle);
-                    window.SendMessage(WM.WM_APP,
-                        Program.WM_APPMSG_WPARAM,
-                        Program.WM_APPMSG_SHOWHIDE);
-                    e.Handled = true;
+                    if (e.HookStruct.vkCode == (int)hotkeyVK &&
+                        KeyTable.GetModifiers() == modifiers)
+                    {
+                        WindowHelper window = new WindowHelper(Handle);
+                        window.SendMessage(WM.WM_APP,
+                            Program.WM_APPMSG_WPARAM,
+                            Program.WM_APPMSG_SHOWHIDE);
+                        e.Handled = true;
+                        // 対応するKEYUPを1回だけ抑制
+                        suppressKeyUpVK = e.HookStruct.vkCode;
+                    }
+                }
+                else if (e.WParam == Hook.WM_KEYUP || e.WParam == Hook.WM_SYSKEYUP)
+                {
+                    if (suppressKeyUpVK != 0 && e.HookStruct.vkCode == suppressKeyUpVK)
+                    {
+                        suppressKeyUpVK = 0;
+                        e.Handled = true;
+                    }
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Hook_KeyHookで例外: {ex}");
+            // フックコールバック内ではMessageBoxを直接表示するとフックがタイムアウトするため、
+            // BeginInvokeで非同期表示
+            BeginInvoke(() => MessageBox.Show(
+                $"キーボードフック処理中にエラーが発生しました:\n{ex.Message}\n\n{ex.StackTrace}",
+                "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error));
         }
     }
 
     void Hook_MouseHook(object sender, MouseHookEventArgs e)
     {
-        if (config.ButtonLauncherActivation == Core.ButtonLauncherActivation.Disabled) return;
-        if (e.HookCode != Hook.HC_ACTION) return;
+        try
+        {
+            if (config.ButtonLauncherActivation == Core.ButtonLauncherActivation.Disabled) return;
+            if (e.HookCode != Hook.HC_ACTION) return;
 
-        if (e.WParam == Hook.WM_LBUTTONDOWN)
-        {
-            lbuttonDown = true;
-            // 右→左: 右ボタン押下中に左クリック
-            if (config.ButtonLauncherActivation == Core.ButtonLauncherActivation.RightThenLeft && rbuttonDown)
+            if (e.WParam == Hook.WM_LBUTTONDOWN)
             {
-                buttonLauncherForm.ShowLauncher();
-                e.Handled = true;
+                lbuttonDown = true;
+                // 右→左: 右ボタン押下中に左クリック
+                if (config.ButtonLauncherActivation == Core.ButtonLauncherActivation.RightThenLeft && rbuttonDown)
+                {
+                    // フック内から直接ShowLauncher()を呼ぶとSetForegroundWindowが拒否されるため、
+                    // PostMessageで間接的に呼び出す
+                    new WindowHelper(Handle).PostMessage(
+                        Program.WM_APPMSG, Program.WM_APPMSG_WPARAM, Program.WM_APPMSG_SHOWBUTTONLAUNCHER);
+                    e.Handled = true;
+                    suppressNextLButtonUp = true;
+                }
+            }
+            else if (e.WParam == Hook.WM_LBUTTONUP)
+            {
+                lbuttonDown = false;
+                if (suppressNextLButtonUp)
+                {
+                    suppressNextLButtonUp = false;
+                    e.Handled = true;
+                }
+            }
+            else if (e.WParam == Hook.WM_RBUTTONDOWN)
+            {
+                rbuttonDown = true;
+                // 左→右: 左ボタン押下中に右クリック
+                if (config.ButtonLauncherActivation == Core.ButtonLauncherActivation.LeftThenRight && lbuttonDown)
+                {
+                    new WindowHelper(Handle).PostMessage(
+                        Program.WM_APPMSG, Program.WM_APPMSG_WPARAM, Program.WM_APPMSG_SHOWBUTTONLAUNCHER);
+                    e.Handled = true;
+                    suppressNextRButtonUp = true;
+                }
+            }
+            else if (e.WParam == Hook.WM_RBUTTONUP)
+            {
+                rbuttonDown = false;
+                if (suppressNextRButtonUp)
+                {
+                    suppressNextRButtonUp = false;
+                    e.Handled = true;
+                }
             }
         }
-        else if (e.WParam == Hook.WM_LBUTTONUP)
+        catch (Exception ex)
         {
-            lbuttonDown = false;
-        }
-        else if (e.WParam == Hook.WM_RBUTTONDOWN)
-        {
-            rbuttonDown = true;
-            // 左→右: 左ボタン押下中に右クリック
-            if (config.ButtonLauncherActivation == Core.ButtonLauncherActivation.LeftThenRight && lbuttonDown)
-            {
-                buttonLauncherForm.ShowLauncher();
-                e.Handled = true;
-            }
-        }
-        else if (e.WParam == Hook.WM_RBUTTONUP)
-        {
-            rbuttonDown = false;
+            Debug.WriteLine($"Hook_MouseHookで例外: {ex}");
+            BeginInvoke(() => MessageBox.Show(
+                $"マウスフック処理中にエラーが発生しました:\n{ex.Message}\n\n{ex.StackTrace}",
+                "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error));
         }
     }
 }

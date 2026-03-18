@@ -14,6 +14,7 @@ static class Program
     public static readonly IntPtr WM_APPMSG_SHOWHIDE = (IntPtr)0x14d94a96;
     public static readonly IntPtr WM_APPMSG_RELOAD = (IntPtr)0x338ca4c1;
     public static readonly IntPtr WM_APPMSG_RESTART = (IntPtr)0x6b60850f;
+    public static readonly IntPtr WM_APPMSG_SHOWBUTTONLAUNCHER = (IntPtr)0x2a3f7c01;
 
     /// <summary>
     /// 更新後に残った.oldファイルを削除する
@@ -40,6 +41,17 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
+        // 未処理例外のキャッチ（UIスレッド以外で発生した例外用）
+        AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+        {
+            var ex = e.ExceptionObject as Exception;
+            var message = ex != null
+                ? $"未処理の例外が発生しました:\n{ex.Message}\n\n{ex.StackTrace}"
+                : $"未処理の例外が発生しました:\n{e.ExceptionObject}";
+            System.Diagnostics.Debug.WriteLine(message);
+            MessageBox.Show(message, "致命的なエラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        };
+
         // 更新後の.oldファイルをクリーンアップ
         CleanupOldFiles();
 

@@ -20,6 +20,8 @@ public partial class ButtonLauncherForm : Form
     // D&D用
     Button dragSource;
     ButtonEntry dragEntry;
+    ButtonTab dragSourceTab;
+    Point dragStartPoint;
 
     ButtonLauncherData Data => owner.ButtonLauncherData;
 
@@ -42,6 +44,11 @@ public partial class ButtonLauncherForm : Form
 
         // タブ右クリックメニュー
         tabControl1.MouseClick += TabControl1_MouseClick;
+
+        // タブ間D&D対応
+        tabControl1.AllowDrop = true;
+        tabControl1.DragOver += TabControl1_DragOver;
+        tabControl1.DragDrop += TabControl1_DragDrop;
 
         iconLoader.IconLoaded += IconLoader_IconLoaded;
 
@@ -158,6 +165,8 @@ public partial class ButtonLauncherForm : Form
 
         btn.Click += GridButton_Click;
         btn.MouseDown += GridButton_MouseDown;
+        btn.MouseMove += GridButton_MouseMove;
+        btn.MouseUp += GridButton_MouseUp;
         btn.DragEnter += GridButton_DragEnter;
         btn.DragDrop += GridButton_DragDrop;
 
@@ -178,41 +187,60 @@ public partial class ButtonLauncherForm : Form
     /// </summary>
     public void ShowLauncher()
     {
-        // ウィンドウサイズの復元
-        if (Data.WindowSize != Size.Empty)
+        try
         {
-            ClientSize = Data.WindowSize;
-        }
-
-        // マウスカーソル中心に配置
-        var cursor = Cursor.Position;
-        int x = cursor.X - Width / 2;
-        int y = cursor.Y - Height / 2;
-
-        // 画面端クランプ
-        foreach (var screen in Screen.AllScreens)
-        {
-            if (screen.WorkingArea.Contains(cursor))
+            // ウィンドウサイズの復元
+            if (Data.WindowSize != Size.Empty)
             {
-                var area = screen.WorkingArea;
-                x = Math.Max(area.Left, Math.Min(x, area.Right - Width));
-                y = Math.Max(area.Top, Math.Min(y, area.Bottom - Height));
-                break;
+                ClientSize = Data.WindowSize;
             }
+
+            // マウスカーソル中心に配置
+            var cursor = Cursor.Position;
+            int x = cursor.X - Width / 2;
+            int y = cursor.Y - Height / 2;
+
+            // 画面端クランプ
+            foreach (var screen in Screen.AllScreens)
+            {
+                if (screen.WorkingArea.Contains(cursor))
+                {
+                    var area = screen.WorkingArea;
+                    x = Math.Max(area.Left, Math.Min(x, area.Right - Width));
+                    y = Math.Max(area.Top, Math.Min(y, area.Bottom - Height));
+                    break;
+                }
+            }
+
+            Location = new Point(x, y);
+
+            // デフォルトタブに切り替え
+            if (Data.DefaultTabIndex >= 0 && Data.DefaultTabIndex < tabControl1.TabPages.Count)
+            {
+                tabControl1.SelectedIndex = Data.DefaultTabIndex;
+            }
+
+            // Hide→Show→ActivateForceの順で確実にアクティブ化
+            Hide();
+            Show();
+            FormsHelper.ActivateForce(this);
         }
-
-        Location = new Point(x, y);
-
-        // デフォルトタブに切り替え
-        if (Data.DefaultTabIndex >= 0 && Data.DefaultTabIndex < tabControl1.TabPages.Count)
+        catch (Exception ex)
         {
-            tabControl1.SelectedIndex = Data.DefaultTabIndex;
+            System.Diagnostics.Debug.WriteLine($"ShowLauncher失敗: {ex}");
+            MessageBox.Show($"ボタンランチャーの表示に失敗しました:\n{ex.Message}", "エラー",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
 
-        Hide();
-        Show();
-        Activate();
-        BringToFront();
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == Keys.Escape)
+        {
+            Hide();
+            return true;
+        }
+        return base.ProcessCmdKey(ref msg, keyData);
     }
 
     protected override void OnDeactivate(EventArgs e)
@@ -325,7 +353,7 @@ public partial class ButtonLauncherForm : Form
             // メニュー項目の有効/無効
             bool hasCommand = entry != null && !entry.IsEmpty;
             buttonContextMenu.Items[0].Enabled = hasCommand; // 実行
-            buttonContextMenu.Items[1].Enabled = hasCommand; // 編集
+            buttonContextMenu.Items[1].Enabled = true; // 編集（未割当でも可）
             buttonContextMenu.Items[2].Enabled = hasCommand; // フォルダを開く
             buttonContextMenu.Items[6].Enabled = hasCommand; // 削除
 
@@ -333,7 +361,7 @@ public partial class ButtonLauncherForm : Form
         }
         else if (e.Button == MouseButtons.Left && Data.IsLocked)
         {
-            // ロック時のD&D開始準備
+            // ロック時のD&D開始準備（実際のDoDragDropはMouseMoveで閾値超過時に呼ぶ）
             var btn = (Button)sender;
             var pos = (ButtonPosition)btn.Tag;
             var tabData = GetCurrentTabData();
@@ -342,6 +370,8 @@ public partial class ButtonLauncherForm : Form
             {
                 dragSource = btn;
                 dragEntry = entry;
+                dragSourceTab = tabData;
+                dragStartPoint = e.Location;
             }
         }
     }
@@ -357,14 +387,29 @@ public partial class ButtonLauncherForm : Form
         if (contextMenuTarget == null) return;
         var pos = (ButtonPosition)contextMenuTarget.Tag;
         var tabData = GetCurrentTabData();
-        var entry = tabData?.GetButton(pos.Row, pos.Col);
-        if (entry == null || entry.IsEmpty) return;
+        if (tabData == null) return;
+
+        var entry = tabData.GetButton(pos.Row, pos.Col);
+        bool isNew = entry == null || entry.IsEmpty;
+
+        if (isNew)
+        {
+            // 未割当ボタン: 新規エントリを作成して編集
+            entry = new ButtonEntry { Row = pos.Row, Col = pos.Col };
+        }
 
         using (var form = new EditCommandForm(entry))
         {
             if (form.ShowDialog(this) == DialogResult.OK)
             {
-                // EditCommandFormが直接entryを更新する
+                if (isNew)
+                {
+                    // 新規: FileNameが設定されていれば保存
+                    if (!entry.IsEmpty)
+                    {
+                        tabData.SetButton(pos.Row, pos.Col, entry);
+                    }
+                }
                 contextMenuTarget.Text = entry.Name ?? "";
                 iconLoader.Load(entry.FileName, false, contextMenuTarget);
                 SaveData();
@@ -421,13 +466,43 @@ public partial class ButtonLauncherForm : Form
 
     #region ファイルD&D / ボタンD&D
 
+    private void GridButton_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (dragSource == null || dragEntry == null) return;
+        if (e.Button != MouseButtons.Left) return;
+
+        // ドラッグ閾値を超えたらDoDragDropを開始
+        var dragSize = SystemInformation.DragSize;
+        if (Math.Abs(e.X - dragStartPoint.X) > dragSize.Width / 2 ||
+            Math.Abs(e.Y - dragStartPoint.Y) > dragSize.Height / 2)
+        {
+            var btn = (Button)sender;
+            btn.DoDragDrop(dragEntry, DragDropEffects.Move);
+            // DoDragDropはブロッキング。戻り後にフィールドをクリア
+            dragSource = null;
+            dragEntry = null;
+            dragSourceTab = null;
+        }
+    }
+
+    private void GridButton_MouseUp(object sender, MouseEventArgs e)
+    {
+        // ドラッグ閾値未到達でリリースした場合のクリア（通常クリック動作を壊さない）
+        if (e.Button == MouseButtons.Left)
+        {
+            dragSource = null;
+            dragEntry = null;
+            dragSourceTab = null;
+        }
+    }
+
     private void GridButton_DragEnter(object sender, DragEventArgs e)
     {
         if (e.Data.GetDataPresent(DataFormats.FileDrop))
         {
             e.Effect = DragDropEffects.Link;
         }
-        else if (e.Data.GetDataPresent(typeof(ButtonEntry)))
+        else if (dragSource != null)
         {
             e.Effect = DragDropEffects.Move;
         }
@@ -441,8 +516,8 @@ public partial class ButtonLauncherForm : Form
     {
         var btn = (Button)sender;
         var pos = (ButtonPosition)btn.Tag;
-        var tabData = GetCurrentTabData();
-        if (tabData == null) return;
+        var destTabData = GetCurrentTabData();
+        if (destTabData == null) return;
 
         if (e.Data.GetDataPresent(DataFormats.FileDrop))
         {
@@ -452,23 +527,23 @@ public partial class ButtonLauncherForm : Form
             {
                 var cmd = Command.FromFile(files[0]);
                 var entry = ButtonEntry.FromCommand(cmd, pos.Row, pos.Col);
-                tabData.SetButton(pos.Row, pos.Col, entry);
+                destTabData.SetButton(pos.Row, pos.Col, entry);
                 btn.Text = entry.Name ?? "";
                 iconLoader.Load(entry.FileName, false, btn);
                 SaveData();
             }
         }
-        else if (dragSource != null && dragEntry != null)
+        else if (dragSource != null && dragEntry != null && dragSourceTab != null)
         {
-            // ボタン間D&D
+            // ボタン間D&D（クロスタブ対応）
             var srcPos = (ButtonPosition)dragSource.Tag;
-            var srcTabData = GetCurrentTabData();
+            var srcTabData = dragSourceTab;
 
             // 移動先の既存エントリ
-            var destEntry = tabData.GetButton(pos.Row, pos.Col);
+            var destEntry = destTabData.GetButton(pos.Row, pos.Col);
 
             // スワップ
-            tabData.SetButton(pos.Row, pos.Col, ButtonEntry.FromCommand(dragEntry, pos.Row, pos.Col));
+            destTabData.SetButton(pos.Row, pos.Col, ButtonEntry.FromCommand(dragEntry, pos.Row, pos.Col));
             if (destEntry != null && !destEntry.IsEmpty)
             {
                 srcTabData.SetButton(srcPos.Row, srcPos.Col, ButtonEntry.FromCommand(destEntry, srcPos.Row, srcPos.Col));
@@ -478,12 +553,44 @@ public partial class ButtonLauncherForm : Form
                 srcTabData.SetButton(srcPos.Row, srcPos.Col, null);
             }
 
+            // ソースとデスティネーションが異なるタブの場合は両方再構築
+            if (srcTabData != destTabData)
+            {
+                RebuildTab(FindTabPage(srcTabData));
+            }
             RebuildCurrentTab();
             SaveData();
-
-            dragSource = null;
-            dragEntry = null;
         }
+    }
+
+    /// <summary>
+    /// タブヘッダー上でのドラッグオーバー: マウス位置のタブに切り替え
+    /// </summary>
+    private void TabControl1_DragOver(object sender, DragEventArgs e)
+    {
+        if (dragSource == null) { e.Effect = DragDropEffects.None; return; }
+
+        var pt = tabControl1.PointToClient(new Point(e.X, e.Y));
+        for (int i = 0; i < tabControl1.TabCount; i++)
+        {
+            if (tabControl1.GetTabRect(i).Contains(pt))
+            {
+                if (tabControl1.SelectedIndex != i)
+                {
+                    tabControl1.SelectedIndex = i;
+                }
+                break;
+            }
+        }
+        e.Effect = DragDropEffects.Move;
+    }
+
+    /// <summary>
+    /// タブヘッダー上にドロップされた場合のフォールバック
+    /// </summary>
+    private void TabControl1_DragDrop(object sender, DragEventArgs e)
+    {
+        // タブヘッダー上にドロップされた場合は何もしない（ボタン上へのドロップで処理される）
     }
 
     #endregion
@@ -585,6 +692,7 @@ public partial class ButtonLauncherForm : Form
     private void IconLoader_IconLoaded(object sender, IconLoadedEventArgs e)
     {
         if (e.Generation != iconLoader.Generation) return;
+        if (!IsHandleCreated) return;
 
         BeginInvoke(() =>
         {
@@ -609,10 +717,29 @@ public partial class ButtonLauncherForm : Form
 
     private void RebuildCurrentTab()
     {
-        var tabPage = tabControl1.SelectedTab;
+        RebuildTab(tabControl1.SelectedTab);
+    }
+
+    /// <summary>
+    /// 指定タブページのグリッドを再構築
+    /// </summary>
+    private void RebuildTab(TabPage tabPage)
+    {
         if (tabPage == null) return;
         var tabData = (ButtonTab)tabPage.Tag;
         BuildGrid(tabPage, tabData);
+    }
+
+    /// <summary>
+    /// ButtonTabに対応するTabPageを検索
+    /// </summary>
+    private TabPage FindTabPage(ButtonTab tabData)
+    {
+        foreach (TabPage page in tabControl1.TabPages)
+        {
+            if (page.Tag == tabData) return page;
+        }
+        return null;
     }
 
     private void SaveData()
@@ -677,6 +804,7 @@ internal class CommandSelectDialog : Form
         StartPosition = FormStartPosition.CenterParent;
         MaximizeBox = false;
         MinimizeBox = false;
+        TopMost = true;
 
         listView = new ListView
         {
