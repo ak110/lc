@@ -93,6 +93,10 @@ public partial class DummyForm : Form
 
     private void DummyForm_FormClosing(object sender, FormClosingEventArgs e)
     {
+        // フック解除（イベントハンドラリーク防止）
+        Hook.KeyHook -= Hook_KeyHook;
+        Hook.MouseHook -= Hook_MouseHook;
+
         notifyIcon1.Dispose();
 
         data.WindowHandle = 0;

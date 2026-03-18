@@ -7,9 +7,18 @@ namespace Launcher.UI;
 
 public partial class MainForm : Form
 {
+    /// <summary>入力欄とコマンドリストの状態</summary>
+    enum InputState
+    {
+        Empty,        // 入力欄が空
+        NoMatch,      // 該当コマンド無し
+        PartialMatch, // 部分一致のみ有り
+        PrefixMatch,  // 前方一致有り
+    }
+
     DummyForm ownerForm;
 
-    int state; // 0:空っぽ  1:該当コマンド無し  2:部分一致のみ有り  3:前方一致有り
+    InputState state;
     int lastFocus;   // エディットボックスにフォーカスがあった場合0, リストな場合1
 
     bool recurseGuard; //再帰防止
@@ -82,7 +91,8 @@ public partial class MainForm : Form
             }
         }
 
-        iconLoader.Clear();
+        iconLoader.IconLoaded -= iconLoader_IconLoaded;
+        iconLoader.Dispose();
     }
 
     /// <summary>
@@ -585,7 +595,7 @@ public partial class MainForm : Form
             // 該当するコマンドが1個以上あった
             if (string.IsNullOrEmpty(input))
             {
-                state = 0; // state:入力空
+                state = InputState.Empty;
             }
             else if (input.Length <= firstCommand.Name.Length &&
                 string.Compare(input, 0, firstCommand.Name, 0,
@@ -597,17 +607,17 @@ public partial class MainForm : Form
                     textBox1.Text = string.Concat(input, firstCommand.Name.AsSpan(input.Length));
                     textBox1.Select(input.Length, textBox1.Text.Length - input.Length);
                 }
-                state = 3; // state:前方一致アリ
+                state = InputState.PrefixMatch;
             }
             else
             {
-                state = 2; // state:部分一致のみ？
+                state = InputState.PartialMatch;
             }
         }
         else
         {
             // 該当するコマンドが1個も無い
-            state = 1; // state:該当コマンド無し
+            state = InputState.NoMatch;
         }
 
         // コマンドをリストビューへ（AddRangeでまとめて追加して描画コストを削減）
@@ -635,16 +645,14 @@ public partial class MainForm : Form
     /// </summary>
     private void UpdateButtonText()
     {
-        int s = state;
-        if (lastFocus == 1)
-        {
-            s = -1;
-        }
+        // リストビューにフォーカスがある場合はコマンド有無に関わらず実行系ボタン表示
+        InputState? effectiveState = lastFocus == 1 ? null : state;
+
         // OKボタン
-        switch (s)
+        switch (effectiveState)
         {
-            case 0: button1.Text = "設定"; break;
-            case 1: button1.Text = "追加"; break;
+            case InputState.Empty: button1.Text = "設定"; break;
+            case InputState.NoMatch: button1.Text = "追加"; break;
             default:
                 switch (ModifierKeys)
                 {
@@ -655,12 +663,12 @@ public partial class MainForm : Form
                 break;
         }
         // キャンセルボタン
-        if (state == 0)
-        { // テキストが空
+        if (state == InputState.Empty)
+        {
             button2.Text = "隠す";
         }
         else
-        { // それ以外
+        {
             button2.Text = "消す";
         }
     }
@@ -687,14 +695,14 @@ public partial class MainForm : Form
                 command = (Command)listView1.SelectedItems[0].Tag;
             }
         }
-        if (state == 0 && lastFocus == 0)
+        if (state == InputState.Empty && lastFocus == 0)
         {
             // 設定ダイアログ
             ownerForm.ShowConfigDialog();
         }
         else if (command == null)
         {
-            System.Diagnostics.Debug.Assert(state == 1);
+            System.Diagnostics.Debug.Assert(state == InputState.NoMatch);
             // 追加
             command = new Command();
             command.Name = GetInputText();
@@ -850,7 +858,7 @@ public partial class MainForm : Form
     /// </summary>
     private void button2_Click(object sender, EventArgs e)
     {
-        if (state == 0)
+        if (state == InputState.Empty)
         {
             HideWindow();
         }

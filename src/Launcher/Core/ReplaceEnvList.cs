@@ -8,6 +8,8 @@ namespace Launcher.Core;
 /// </summary>
 sealed class ReplaceEnvList
 {
+    // 置換時のスレッドセーフ用ロック（commandオブジェクト自体をロックしない）
+    readonly object lockObj = new object();
     List<KeyValuePair<string, string>> vars
         = new List<KeyValuePair<string, string>>();
 
@@ -59,7 +61,7 @@ sealed class ReplaceEnvList
             string rep = InnerReplace(old);
             if (!string.IsNullOrEmpty(rep))
             {
-                lock (command)
+                lock (lockObj)
                 {
                     if (command.FileName == old)
                         command.FileName = rep;
@@ -72,7 +74,7 @@ sealed class ReplaceEnvList
             string rep = InnerReplace(old);
             if (!string.IsNullOrEmpty(rep))
             {
-                lock (command)
+                lock (lockObj)
                 {
                     if (command.WorkDir == old)
                         command.WorkDir = rep;
