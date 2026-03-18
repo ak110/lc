@@ -29,16 +29,19 @@ public class IconLoadedEventArgs : EventArgs
 
 /// <summary>
 /// アイコン非同期読み込み。
-/// BlockingCollection + STAワーカースレッドで構成。
+/// BlockingCollection + 複数STAワーカースレッドで構成。
 /// Shell APIのSTA制約のためTask.Run(ThreadPool/MTA)は使用不可。
+///
+/// ワーカースレッドはLoad()初回〜N回目で必要に応じて起動され、
+/// Disposeまで長寿命で生存する。Clear()はキュードレイン+世代インクリメントのみで
+/// スレッドの停止・再作成は行わない。
 /// </summary>
 public sealed class AsyncIconLoader : IDisposable
 {
-    readonly object lockObject = new object();
-    int generation;
-    int activeWorkerCount;
-    BlockingCollection<Request> queue = new BlockingCollection<Request>();
-    CancellationTokenSource cts = new CancellationTokenSource();
+    readonly BlockingCollection<Request> queue = new BlockingCollection<Request>();
+    readonly CancellationTokenSource cts = new CancellationTokenSource();
+    volatile int generation;
+    int workerCount;
     ThreadPriority threadPriority = ThreadPriority.Normal;
     bool disposed;
 
@@ -60,18 +63,16 @@ public sealed class AsyncIconLoader : IDisposable
     /// <summary>
     /// 現在の世代番号。UIスレッドから参照して古い結果を破棄するために使用。
     /// </summary>
-    public int Generation
-    {
-        get { lock (lockObject) { return generation; } }
-    }
+    public int Generation => generation;
 
     /// <summary>
     /// ワーカースレッドの優先度。Load()で新規スレッド生成時に適用される。
+    /// 既に起動済みのスレッドには影響しない。
     /// </summary>
     public ThreadPriority ThreadPriority
     {
-        get { lock (lockObject) { return threadPriority; } }
-        set { lock (lockObject) { threadPriority = value; } }
+        get => threadPriority;
+        set => threadPriority = value;
     }
 
     /// <summary>
@@ -80,92 +81,74 @@ public sealed class AsyncIconLoader : IDisposable
     public event EventHandler<IconLoadedEventArgs> IconLoaded;
 
     /// <summary>
-    /// キューをクリアし、全ワーカーを停止する。
-    /// 世代をインクリメントし、古いリクエストの結果はUIスレッドで破棄される。
+    /// キューをクリアし、世代をインクリメントする。
+    /// ワーカースレッドは停止せず、古いリクエストの結果は世代チェックで破棄される。
     /// </summary>
     public void Clear()
     {
-        lock (lockObject)
-        {
-            generation++;
-
-            // 既存のワーカーを停止
-            cts.Cancel();
-            cts.Dispose();
-            queue.Dispose();
-
-            // 新しいキューとトークンを作成
-            cts = new CancellationTokenSource();
-            queue = new BlockingCollection<Request>();
-            activeWorkerCount = 0;
-        }
+        Interlocked.Increment(ref generation);
+        // キューを空にして古いリクエストの処理をスキップ
+        while (queue.TryTake(out _)) { }
     }
 
     /// <summary>
     /// アイコン読み込みリクエストをキューに追加する。
-    /// 必要に応じてワーカースレッドを新規起動する。
+    /// 必要に応じてワーカースレッドを新規起動する（最大ProcessorCount本）。
     /// </summary>
     public void Load(string fileName, bool small, object arg)
     {
-        lock (lockObject)
-        {
-            if (disposed) return;
+        if (disposed) return;
 
-            // ワーカー数がプロセッサ数未満なら新規スレッド起動
-            if (activeWorkerCount < Environment.ProcessorCount)
+        queue.Add(new Request(fileName, small, arg, generation));
+
+        // ワーカー数がプロセッサ数未満なら新規スレッド起動
+        if (workerCount < Environment.ProcessorCount)
+        {
+            // lock内で再チェックして重複起動を防止
+            lock (queue)
             {
-                activeWorkerCount++;
-                var currentCts = cts;
-                var currentQueue = queue;
-                var thread = new Thread(() => OnThread(currentQueue, currentCts.Token));
-                thread.SetApartmentState(ApartmentState.STA); // Shell API (SHGetFileInfo) にはSTAが必須
-                thread.IsBackground = true;
-                thread.Priority = threadPriority;
-                thread.Start();
+                if (workerCount < Environment.ProcessorCount && !disposed)
+                {
+                    workerCount++;
+                    var token = cts.Token;
+                    var thread = new Thread(() => OnThread(token));
+                    thread.SetApartmentState(ApartmentState.STA); // Shell API (SHGetFileInfo) にはSTAが必須
+                    thread.IsBackground = true;
+                    thread.Priority = threadPriority;
+                    thread.Start();
+                }
             }
-            queue.Add(new Request(fileName, small, arg, generation));
         }
     }
 
     /// <summary>
     /// STAワーカースレッドのメインループ。
-    /// BlockingCollection.Take()で同期的にブロック待機する。
-    /// （STAスレッド内でasync/awaitを使うとThreadPoolに継続が流れSTA制約を破る危険がある）
+    /// GetConsumingEnumerable()でDispose/キャンセルまでブロック待機する。
     /// </summary>
-    void OnThread(BlockingCollection<Request> workerQueue, CancellationToken token)
+    void OnThread(CancellationToken token)
     {
         try
         {
-            while (!token.IsCancellationRequested)
+            foreach (var r in queue.GetConsumingEnumerable(token))
             {
-                Request r;
-                try
-                {
-                    r = workerQueue.Take(token);
-                }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
-                catch (ObjectDisposedException)
-                {
-                    return;
-                }
-
                 // 世代が古ければスキップ
                 if (r.Generation != generation) continue;
 
-                // アイコン読み込み
                 try
                 {
-                    using (var icon = IconExtractor.ExtractAssociatedIcon(
-                         PathHelper.PathNormalize(r.FileName), r.Small))
-                    {
-                        // 世代が変わっていたらスキップ
-                        if (r.Generation != generation) continue;
+                    var icon = IconExtractor.ExtractAssociatedIcon(
+                        PathHelper.PathNormalize(r.FileName), r.Small);
 
-                        CallEvent(r, icon);
+                    // アイコン抽出中にClear()された場合はスキップ
+                    if (r.Generation != generation)
+                    {
+                        icon.Dispose();
+                        continue;
                     }
+
+                    // iconの所有権はイベントハンドラに移譲（BeginInvokeで非同期処理されるため
+                    // ワーカースレッドでDisposeしてはならない）
+                    CallEvent(r, icon);
                 }
                 catch (FileLoadException e)
                 {
@@ -174,11 +157,8 @@ public sealed class AsyncIconLoader : IDisposable
                 }
             }
         }
-        finally
-        {
-            // スレッド終了時にカウントをデクリメント
-            Interlocked.Decrement(ref activeWorkerCount);
-        }
+        catch (OperationCanceledException) { }
+        catch (ObjectDisposedException) { }
     }
 
     private void CallEvent(Request r, System.Drawing.Icon icon)
@@ -190,13 +170,11 @@ public sealed class AsyncIconLoader : IDisposable
 
     public void Dispose()
     {
-        lock (lockObject)
-        {
-            if (disposed) return;
-            disposed = true;
-            cts.Cancel();
-            cts.Dispose();
-            queue.Dispose();
-        }
+        if (disposed) return;
+        disposed = true;
+        queue.CompleteAdding();
+        cts.Cancel();
+        cts.Dispose();
+        queue.Dispose();
     }
 }

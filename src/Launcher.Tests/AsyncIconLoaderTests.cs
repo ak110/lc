@@ -101,4 +101,34 @@ public class AsyncIconLoaderTests
             e.Generation.Should().Be(gen);
         }
     }
+
+    [Fact]
+    public void Clear後の古い世代のリクエストは新しい世代と一致しない()
+    {
+        using var loader = new AsyncIconLoader();
+
+        int gen0 = loader.Generation;
+        loader.Load("dummy.exe", true, "arg1");
+        loader.Clear();
+        int gen1 = loader.Generation;
+
+        // Clear後は世代が変わっているため、古いリクエストの世代と一致しない
+        gen0.Should().NotBe(gen1);
+    }
+
+    [Fact]
+    public void 大量のLoadとClearを繰り返しても例外が発生しない()
+    {
+        using var loader = new AsyncIconLoader();
+
+        for (int i = 0; i < 100; i++)
+        {
+            loader.Load($"dummy{i}.exe", true, $"arg{i}");
+        }
+        loader.Clear();
+        for (int i = 0; i < 100; i++)
+        {
+            loader.Load($"dummy{i}.exe", false, $"arg{i}");
+        }
+    }
 }

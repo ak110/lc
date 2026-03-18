@@ -540,7 +540,11 @@ public partial class MainForm : Form
     void iconLoader_IconLoaded(object sender, IconLoadedEventArgs e)
     {
         // Invoke()にはハンドルが必要（CreatedはShow()まで立たないのでIsHandleCreatedで判定）
-        if (!IsHandleCreated || IsDisposed) return;
+        if (!IsHandleCreated || IsDisposed)
+        {
+            e.Icon?.Dispose();
+            return;
+        }
         try
         {
             Command command = (Command)e.Arg;
@@ -571,10 +575,15 @@ public partial class MainForm : Form
                 {
                     System.Diagnostics.Debug.WriteLine(ex.ToString());
                 }
+                finally
+                {
+                    e.Icon?.Dispose();
+                }
             }));
         }
         catch (Exception ex)
         {
+            e.Icon?.Dispose();
             System.Diagnostics.Debug.WriteLine(ex.ToString());
         }
     }

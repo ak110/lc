@@ -727,18 +727,33 @@ public partial class ButtonLauncherForm : Form
 
     private void IconLoader_IconLoaded(object sender, IconLoadedEventArgs e)
     {
-        if (e.Generation != iconLoader.Generation) return;
-        if (!IsHandleCreated) return;
+        if (e.Generation != iconLoader.Generation)
+        {
+            e.Icon?.Dispose();
+            return;
+        }
+        if (!IsHandleCreated)
+        {
+            e.Icon?.Dispose();
+            return;
+        }
 
         BeginInvoke(() =>
         {
-            if (IsDisposed) return;
-            if (e.Icon == null) return;
+            try
+            {
+                if (IsDisposed) return;
+                if (e.Icon == null) return;
 
-            var btn = e.Arg as Button;
-            if (btn == null || btn.IsDisposed) return;
+                var btn = e.Arg as Button;
+                if (btn == null || btn.IsDisposed) return;
 
-            btn.Image = e.Icon.ToBitmap();
+                btn.Image = e.Icon.ToBitmap();
+            }
+            finally
+            {
+                e.Icon?.Dispose();
+            }
         });
     }
 

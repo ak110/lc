@@ -27,7 +27,17 @@ public static class IconExtractor
         {
             throw new FileLoadException(path + " のアイコンの取得に失敗しました");
         }
-        return System.Drawing.Icon.FromHandle(shinfo.hIcon);
+        // Icon.FromHandle()はハンドルを所有しないため、Clone()で独立コピーを作成し
+        // 元のハンドルはDestroyIcon()で明示的に解放する
+        try
+        {
+            using var tempIcon = System.Drawing.Icon.FromHandle(shinfo.hIcon);
+            return (System.Drawing.Icon)tempIcon.Clone();
+        }
+        finally
+        {
+            DestroyIcon(shinfo.hIcon);
+        }
     }
 
     #region SHGetFileInfo()関係
