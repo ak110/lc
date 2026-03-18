@@ -3,7 +3,8 @@ using Launcher.Core;
 
 namespace Launcher.UI;
 
-public partial class EditCommandForm : Form {
+public partial class EditCommandForm : Form
+{
     Command v;
 
 #if CLONE
@@ -12,7 +13,8 @@ public partial class EditCommandForm : Form {
     }
 #endif
 
-    public EditCommandForm(Command vv) {
+    public EditCommandForm(Command vv)
+    {
         InitializeComponent();
 
 #if CLONE
@@ -30,7 +32,8 @@ public partial class EditCommandForm : Form {
         checkBox1.Checked = v.RunAsAdmin;
     }
 
-    private void buttonOk_Click(object sender, EventArgs e) {
+    private void buttonOk_Click(object sender, EventArgs e)
+    {
         v.Name = textBox1.Text;
         v.FileName = textBox2.Text;
         v.Param = textBox3.Text;

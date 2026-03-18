@@ -4,52 +4,64 @@ using System.Runtime.InteropServices;
 
 namespace Launcher.Win32;
 
-public class KeyHookEventArgs : EventArgs {
+public class KeyHookEventArgs : EventArgs
+{
     int nCode;
     IntPtr wParam;
     Hook.KBDLLHOOKSTRUCT s;
     bool handled = false;
-    public KeyHookEventArgs(int nCode, IntPtr wParam, Hook.KBDLLHOOKSTRUCT s) {
+    public KeyHookEventArgs(int nCode, IntPtr wParam, Hook.KBDLLHOOKSTRUCT s)
+    {
         this.nCode = nCode;
         this.wParam = wParam;
         this.s = s;
     }
-    public int HookCode {
+    public int HookCode
+    {
         get { return nCode; }
     }
-    public IntPtr WParam {
+    public IntPtr WParam
+    {
         get { return wParam; }
     }
-    public bool Handled {
+    public bool Handled
+    {
         get { return handled; }
         set { handled = value; }
     }
-    public Hook.KBDLLHOOKSTRUCT HookStruct {
+    public Hook.KBDLLHOOKSTRUCT HookStruct
+    {
         get { return s; }
     }
 }
 
-public class MouseHookEventArgs : EventArgs {
+public class MouseHookEventArgs : EventArgs
+{
     int nCode;
     IntPtr wParam;
     Hook.MSLLHOOKSTRUCT s;
     bool handled = false;
-    public MouseHookEventArgs(int nCode, IntPtr wParam, Hook.MSLLHOOKSTRUCT s) {
+    public MouseHookEventArgs(int nCode, IntPtr wParam, Hook.MSLLHOOKSTRUCT s)
+    {
         this.nCode = nCode;
         this.wParam = wParam;
         this.s = s;
     }
-    public int HookCode {
+    public int HookCode
+    {
         get { return nCode; }
     }
-    public IntPtr WParam {
+    public IntPtr WParam
+    {
         get { return wParam; }
     }
-    public bool Handled {
+    public bool Handled
+    {
         get { return handled; }
         set { handled = value; }
     }
-    public Hook.MSLLHOOKSTRUCT HookStruct {
+    public Hook.MSLLHOOKSTRUCT HookStruct
+    {
         get { return s; }
     }
 }
@@ -57,7 +69,8 @@ public class MouseHookEventArgs : EventArgs {
 /// <summary>
 /// マウスフック・キーボードフック。
 /// </summary>
-public static class Hook {
+public static class Hook
+{
     public const int HC_ACTION = 0;
     public const int HC_GETNEXT = 1;
     public const int HC_SKIP = 2;
@@ -96,13 +109,15 @@ public static class Hook {
     public static readonly IntPtr WM_UNICHAR = new IntPtr(0x0109);
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct POINT {
+    public struct POINT
+    {
         public int x;
         public int y;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct KBDLLHOOKSTRUCT {
+    public struct KBDLLHOOKSTRUCT
+    {
         public int vkCode;
         public int scanCode;
         public int flags;
@@ -111,7 +126,8 @@ public static class Hook {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct MSLLHOOKSTRUCT {
+    public struct MSLLHOOKSTRUCT
+    {
         public POINT pt;
         public int mouseData;
         public int flags;
@@ -133,70 +149,91 @@ public static class Hook {
     static IntPtr keyHook = IntPtr.Zero;
     static IntPtr mouseHook = IntPtr.Zero;
 
-    public static void SetKeyHook() {
+    public static void SetKeyHook()
+    {
         UnsetKeyHook();
-        keyProc = new LowLevelKeyboardProc(delegate(int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam) {
-            try {
+        keyProc = new LowLevelKeyboardProc(delegate (int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam)
+        {
+            try
+            {
                 EventHandler<KeyHookEventArgs> KeyHook = Hook.KeyHook;
                 KeyHookEventArgs e = new KeyHookEventArgs(nCode, wParam, lParam);
-                if (KeyHook != null) {
+                if (KeyHook != null)
+                {
                     KeyHook(null, e);
                 }
                 return e.Handled ?
                     (IntPtr)1 :
                     CallNextHookEx(keyHook, nCode, wParam, ref lParam);
-            } catch {
+            }
+            catch
+            {
                 return CallNextHookEx(keyHook, nCode, wParam, ref lParam);
             }
         });
         IntPtr hModule = GetModuleHandle(null);
         keyHook = SetWindowsHookEx(WH_KEYBOARD_LL, keyProc, hModule, 0);
-        if (keyHook == IntPtr.Zero) {
+        if (keyHook == IntPtr.Zero)
+        {
             throw new Win32Exception();
         }
         AppDomain.CurrentDomain.DomainUnload += new EventHandler(CurrentDomain_DomainUnload);
     }
 
-    public static void SetMouseHook() {
+    public static void SetMouseHook()
+    {
         UnsetMouseHook();
-        mouseProc = new LowLevelMouseProc(delegate(int nCode, IntPtr wParam, ref MSLLHOOKSTRUCT lParam) {
-            try {
+        mouseProc = new LowLevelMouseProc(delegate (int nCode, IntPtr wParam, ref MSLLHOOKSTRUCT lParam)
+        {
+            try
+            {
                 EventHandler<MouseHookEventArgs> MouseHook = Hook.MouseHook;
                 MouseHookEventArgs e = new MouseHookEventArgs(nCode, wParam, lParam);
-                if (MouseHook != null) {
+                if (MouseHook != null)
+                {
                     MouseHook(null, e);
                 }
                 return e.Handled ?
                     (IntPtr)1 :
                     CallNextHookEx(mouseHook, nCode, wParam, ref lParam);
-            } catch {
+            }
+            catch
+            {
                 return CallNextHookEx(mouseHook, nCode, wParam, ref lParam);
             }
         });
         IntPtr hModule = GetModuleHandle(null);
         mouseHook = SetWindowsHookEx(WH_MOUSE_LL, mouseProc, hModule, 0);
-        if (mouseHook == IntPtr.Zero) {
+        if (mouseHook == IntPtr.Zero)
+        {
             throw new Win32Exception();
         }
         AppDomain.CurrentDomain.DomainUnload += new EventHandler(CurrentDomain_DomainUnload);
     }
 
-    static void CurrentDomain_DomainUnload(object sender, EventArgs e) {
+    static void CurrentDomain_DomainUnload(object sender, EventArgs e)
+    {
         try { UnsetKeyHook(); } catch (Win32Exception ex) { System.Diagnostics.Debug.Fail(ex.ToString()); }
         try { UnsetMouseHook(); } catch (Win32Exception ex) { System.Diagnostics.Debug.Fail(ex.ToString()); }
     }
 
-    public static void UnsetKeyHook() {
-        if (keyHook != IntPtr.Zero) {
-            if (!UnhookWindowsHookEx(keyHook)) {
+    public static void UnsetKeyHook()
+    {
+        if (keyHook != IntPtr.Zero)
+        {
+            if (!UnhookWindowsHookEx(keyHook))
+            {
                 throw new Win32Exception();
             }
         }
     }
 
-    public static void UnsetMouseHook() {
-        if (mouseHook != IntPtr.Zero) {
-            if (!UnhookWindowsHookEx(mouseHook)) {
+    public static void UnsetMouseHook()
+    {
+        if (mouseHook != IntPtr.Zero)
+        {
+            if (!UnhookWindowsHookEx(mouseHook))
+            {
                 throw new Win32Exception();
             }
         }

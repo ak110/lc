@@ -6,10 +6,12 @@ namespace Launcher.UI;
 /// <summary>
 /// ツリーランチャー
 /// </summary>
-public partial class TreeLauncherForm : Form {
+public partial class TreeLauncherForm : Form
+{
     DummyForm owner;
 
-    public TreeLauncherForm(DummyForm owner) {
+    public TreeLauncherForm(DummyForm owner)
+    {
         InitializeComponent();
         this.owner = owner;
         Show(owner);
@@ -25,14 +27,17 @@ public partial class TreeLauncherForm : Form {
     /// <summary>
     /// ツリーランチャーを表示する
     /// </summary>
-    public void ShowLauncher() {
+    public void ShowLauncher()
+    {
         Hide();
         Show();
         Activate();
         BringToFront();
         listView1.SelectedIndices.Clear();
-        foreach (var s in Screen.AllScreens) {
-            if (s.WorkingArea.Contains(Cursor.Position)) {
+        foreach (var s in Screen.AllScreens)
+        {
+            if (s.WorkingArea.Contains(Cursor.Position))
+            {
                 Location = new Point(
                     s.WorkingArea.X + (s.WorkingArea.Width - Width) / 2,
                     s.WorkingArea.Y + (s.WorkingArea.Height - Height) / 2);
@@ -41,19 +46,25 @@ public partial class TreeLauncherForm : Form {
         }
     }
 
-    private void listView1_Click(object sender, EventArgs e) {
+    private void listView1_Click(object sender, EventArgs e)
+    {
 
     }
 
-    private void listView1_DragOver(object sender, DragEventArgs e) {
-        if (e.Data.GetDataPresent(DataFormats.FileDrop)) {
+    private void listView1_DragOver(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
             e.Effect = DragDropEffects.Link;
         }
     }
 
-    private void listView1_DragDrop(object sender, DragEventArgs e) {
-        if (e.Data.GetDataPresent(DataFormats.FileDrop)) {
-            foreach (string file in (string[])e.Data.GetData(DataFormats.FileDrop)) {
+    private void listView1_DragDrop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            foreach (string file in (string[])e.Data.GetData(DataFormats.FileDrop))
+            {
                 owner.TreeCommandList.Add(new Command() { FileName = file });
             }
             owner.TreeCommandList.Serialize(".treecmd.cfg");
@@ -64,6 +75,7 @@ public partial class TreeLauncherForm : Form {
     /// <summary>
     /// ツリーを更新する
     /// </summary>
-    private void UpdateTree() {
+    private void UpdateTree()
+    {
     }
 }

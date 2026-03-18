@@ -8,11 +8,13 @@ namespace Launcher.Tests;
 /// <summary>
 /// enum化・property化後もXMLシリアライズ互換性が保たれることを検証
 /// </summary>
-public class SerializationTests {
+public class SerializationTests
+{
     // --- Config ラウンドトリップ ---
 
     [Fact]
-    public void Config_ラウンドトリップでデフォルト値が保持される() {
+    public void Config_ラウンドトリップでデフォルト値が保持される()
+    {
         var original = new Config();
         var xml = SerializeToString(original);
         var deserialized = DeserializeFromString<Config>(xml);
@@ -27,8 +29,10 @@ public class SerializationTests {
     }
 
     [Fact]
-    public void Config_全enum値がラウンドトリップで保持される() {
-        var original = new Config {
+    public void Config_全enum値がラウンドトリップで保持される()
+    {
+        var original = new Config
+        {
             CloseButton = CloseButtonBehavior.Disabled,
             IconDoubleClick = TrayIconAction.ShowConfig,
             ItemDoubleClick = ItemAction.OpenDirectory,
@@ -46,8 +50,10 @@ public class SerializationTests {
     // --- Command ラウンドトリップ ---
 
     [Fact]
-    public void Command_ラウンドトリップで全フィールドが保持される() {
-        var original = new Command {
+    public void Command_ラウンドトリップで全フィールドが保持される()
+    {
+        var original = new Command
+        {
             Name = "notepad",
             FileName = @"C:\Windows\notepad.exe",
             Param = "/test",
@@ -71,7 +77,8 @@ public class SerializationTests {
     // --- 旧int値との互換性 ---
 
     [Fact]
-    public void Command_旧int値のShowフィールドがenum値にデシリアライズされる() {
+    public void Command_旧int値のShowフィールドがenum値にデシリアライズされる()
+    {
         // 旧形式: <Show>2</Show> → WindowStyle.Maximized
         var xml = @"<?xml version=""1.0""?>
 <Command>
@@ -89,7 +96,8 @@ public class SerializationTests {
     }
 
     [Fact]
-    public void Config_旧int値のCloseButtonがenum値にデシリアライズされる() {
+    public void Config_旧int値のCloseButtonがenum値にデシリアライズされる()
+    {
         // 旧形式: <CloseButton>0</CloseButton> → CloseButtonBehavior.Disabled
         var xml = @"<?xml version=""1.0""?>
 <Config>
@@ -108,7 +116,8 @@ public class SerializationTests {
     // --- CommandList ラウンドトリップ ---
 
     [Fact]
-    public void CommandList_ラウンドトリップで全コマンドが保持される() {
+    public void CommandList_ラウンドトリップで全コマンドが保持される()
+    {
         var original = new CommandList();
         original.Commands.Add(new Command { Name = "alpha", FileName = "a.exe" });
         original.Commands.Add(new Command { Name = "beta", FileName = "b.exe", Show = WindowStyle.Hidden });
@@ -124,14 +133,16 @@ public class SerializationTests {
 
     // --- ヘルパー ---
 
-    private static string SerializeToString<T>(T obj) {
+    private static string SerializeToString<T>(T obj)
+    {
         using var writer = new StringWriter();
         var serializer = new XmlSerializer(typeof(T));
         serializer.Serialize(writer, obj);
         return writer.ToString();
     }
 
-    private static T DeserializeFromString<T>(string xml) {
+    private static T DeserializeFromString<T>(string xml)
+    {
         using var reader = new StringReader(xml);
         var serializer = new XmlSerializer(typeof(T));
         return (T)serializer.Deserialize(reader)!;

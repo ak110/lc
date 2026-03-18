@@ -1,4 +1,4 @@
-# 開発環境セットアップガイド
+# 開発ガイド
 
 ## 前提条件
 
@@ -71,6 +71,28 @@ pnpm run lint
 dotnet format Launcher.sln
 pnpm run lint:fix
 ```
+
+## リリース手順
+
+GitHub Actionsの`Release`ワークフローを手動実行してリリースする。
+
+### GitHub CLIから実行
+
+```bash
+# 1. リリース実行（いずれか1つ）
+gh workflow run release.yml --field "bump=バグフィックス"
+gh workflow run release.yml --field "bump=マイナーバージョンアップ"
+gh workflow run release.yml --field "bump=メジャーバージョンアップ"
+
+# 2. ワークフロー完了を待ち、バージョンバンプコミットを取り込む
+gh run list --workflow=release.yml -L1 --json databaseId -q ".[0].databaseId" | xargs -I{} sh -c 'gh run watch {} && git pull'
+```
+
+<!-- textlint-disable -->
+
+結果の確認: <https://github.com/ak110/lc/actions>
+
+<!-- textlint-enable -->
 
 ## プロジェクト構成
 

@@ -63,7 +63,7 @@
 ## 関連ドキュメント
 
 - @README.md
-- @docs/setup.md
+- @docs/development.md
 
 ---
 

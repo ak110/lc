@@ -5,13 +5,15 @@ namespace Launcher.UI;
 /// <summary>
 /// 複数のラジオボタンをまとめて扱うためのクラス。
 /// </summary>
-public class Radios {
+public class Radios
+{
     RadioButton[] radios;
 
     /// <summary>
     /// ラジオボタンから作成。
     /// </summary>
-    public Radios(params RadioButton[] radios) {
+    public Radios(params RadioButton[] radios)
+    {
         this.radios = radios;
     }
 
@@ -21,18 +23,22 @@ public class Radios {
     /// </summary>
     /// <param name="parent">RadioButtonの親パネルなど</param>
     /// <param name="radioCount">RadioButtonの数。Assert()するだけ。</param>
-    public Radios(Control parent, int radioCount) {
+    public Radios(Control parent, int radioCount)
+    {
         List<RadioButton> list = new List<RadioButton>();
         // ラジオボタンを(敢えて再帰はせずに1階層だけ)探す
-        foreach (Control c in parent.Controls) {
+        foreach (Control c in parent.Controls)
+        {
             RadioButton r = c as RadioButton;
-            if (r != null) {
+            if (r != null)
+            {
                 list.Add(r);
             }
         }
         System.Diagnostics.Debug.Assert(list.Count == radioCount);
         // タブオーダーでソート
-        list.Sort(delegate(RadioButton a, RadioButton b) {
+        list.Sort(delegate (RadioButton a, RadioButton b)
+        {
             return a.TabIndex.CompareTo(b.TabIndex);
         });
         // 結果を格納
@@ -42,21 +48,27 @@ public class Radios {
     /// <summary>
     /// 値の取得・設定。
     /// </summary>
-    public int Value {
-        get {
+    public int Value
+    {
+        get
+        {
             int n = -1;
-            for (int i = 0; i < radios.Length; i++) {
-                if (radios[i].Checked) {
+            for (int i = 0; i < radios.Length; i++)
+            {
+                if (radios[i].Checked)
+                {
                     System.Diagnostics.Debug.Assert(n == -1);
                     n = i;
                 }
             }
             return n;
         }
-        set {
+        set
+        {
             System.Diagnostics.Debug.Assert(0 <= value);
             System.Diagnostics.Debug.Assert(value < radios.Length);
-            for (int i = 0; i < radios.Length; i++) {
+            for (int i = 0; i < radios.Length; i++)
+            {
                 radios[i].Checked = i == value;
             }
         }

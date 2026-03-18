@@ -6,14 +6,19 @@ namespace Launcher.Win32;
 /// <summary>
 /// 共通のP/Invoke宣言
 /// </summary>
-internal static class NativeMethods {
+internal static class NativeMethods
+{
     /// <summary>
     /// 現在のユーザーがAdminかどうか
     /// </summary>
-    public static bool IsUserAnAdmin() {
-        try {
+    public static bool IsUserAnAdmin()
+    {
+        try
+        {
             return IsUserAnAdminNative();
-        } catch (EntryPointNotFoundException) {
+        }
+        catch (EntryPointNotFoundException)
+        {
         }
         return false;
     }
