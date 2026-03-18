@@ -55,8 +55,7 @@ public class GitHubUpdateClient
     public static bool IsUpdateAvailable(GitHubRelease release, UpdateRecord record)
     {
         if (release == null) return false;
-        string currentVersion = GetCurrentVersion();
-        if (string.IsNullOrEmpty(currentVersion)) return false;
+        string currentVersion = Infrastructure.AppVersion.TagName;
         // スキップ済みバージョンなら無視
         if (release.TagName == record.SkippedVersion) return false;
         // 既知のバージョンと同じなら無視
@@ -79,18 +78,4 @@ public class GitHubUpdateClient
         }
     }
 
-    /// <summary>
-    /// 現在のバージョン (AssemblyInformationalVersion or AssemblyVersion)
-    /// </summary>
-    private static string GetCurrentVersion()
-    {
-        var assembly = System.Reflection.Assembly.GetEntryAssembly();
-        if (assembly == null) return null;
-        var infoVersion = assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false);
-        if (infoVersion.Length > 0)
-        {
-            return ((System.Reflection.AssemblyInformationalVersionAttribute)infoVersion[0]).InformationalVersion;
-        }
-        return assembly.GetName().Version?.ToString();
-    }
 }

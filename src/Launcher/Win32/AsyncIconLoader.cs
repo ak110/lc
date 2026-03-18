@@ -14,12 +14,15 @@ public class IconLoadedEventArgs : EventArgs
     public string FileName;
     public bool Small;
     public readonly object Arg;
-    public IconLoadedEventArgs(System.Drawing.Icon icon, string fileName, bool small, object arg)
+    /// <summary>リクエスト時の世代番号</summary>
+    public readonly int Generation;
+    public IconLoadedEventArgs(System.Drawing.Icon icon, string fileName, bool small, object arg, int generation)
     {
         Icon = icon;
         FileName = fileName;
         Small = small;
         Arg = arg;
+        Generation = generation;
     }
 }
 
@@ -30,6 +33,7 @@ public class AsyncIconLoader
 {
     object lockObject = new object();
     volatile bool valid = false;
+    int generation = 0;
     List<Thread> threads = new List<Thread>();
     Queue<Request> queue = new Queue<Request>();
     struct Request
@@ -37,12 +41,22 @@ public class AsyncIconLoader
         public string FileName;
         public bool Small;
         public object Arg;
-        public Request(string fileName, bool small, object arg)
+        public int Generation;
+        public Request(string fileName, bool small, object arg, int generation)
         {
             FileName = fileName;
             Small = small;
             Arg = arg;
+            Generation = generation;
         }
+    }
+
+    /// <summary>
+    /// 現在の世代番号。UIスレッドから参照して古い結果を破棄するために使用。
+    /// </summary>
+    public int Generation
+    {
+        get { lock (lockObject) { return generation; } }
     }
 
     /// <summary>
@@ -51,20 +65,18 @@ public class AsyncIconLoader
     public event EventHandler<IconLoadedEventArgs> IconLoaded;
 
     /// <summary>
-    /// キューをクリアしてスレッド停止
+    /// キューをクリアする（ノンブロッキング）。
+    /// 世代をインクリメントし、古いリクエストの結果はUIスレッドで破棄される。
     /// </summary>
     public void Clear()
     {
         lock (lockObject)
         {
+            generation++;
             valid = false;
+            queue.Clear();
             Monitor.PulseAll(lockObject);
         }
-        foreach (var thread in threads)
-        {
-            thread.Join(3000); // .NET 8 では Thread.Abort() が使えないため、タイムアウト付き Join で待機
-        }
-        threads.Clear();
     }
 
     /// <summary>
@@ -83,7 +95,7 @@ public class AsyncIconLoader
                 thread.Start();
                 threads.Add(thread);
             }
-            queue.Enqueue(new Request(fileName, small, arg));
+            queue.Enqueue(new Request(fileName, small, arg, generation));
             Monitor.Pulse(lockObject);
         }
     }
@@ -93,22 +105,22 @@ public class AsyncIconLoader
     /// </summary>
     void OnThread()
     {
-        while (valid)
+        while (true)
         {
-            // Dequeue
             Request r;
             lock (lockObject)
             {
-                if (queue.Count <= 0)
+                // キューが空なら待機
+                while (queue.Count <= 0)
                 {
+                    if (!valid) return; // Clear()後でキューも空ならスレッド終了
                     Monitor.Wait(lockObject);
-                    continue;
                 }
-                else
-                {
-                    r = queue.Dequeue();
-                }
+                r = queue.Dequeue();
             }
+
+            // 世代が古ければスキップ
+            if (r.Generation != generation) continue;
 
             // アイコン読み込み
             try
@@ -116,11 +128,8 @@ public class AsyncIconLoader
                 using (var icon = IconExtractor.ExtractAssociatedIcon(
                      PathHelper.PathNormalize(r.FileName), r.Small))
                 {
-
-                    if (!valid)
-                    {
-                        break;
-                    }
+                    // 世代が変わっていたらスキップ
+                    if (r.Generation != generation) continue;
 
                     CallEvent(r, icon);
                 }
@@ -140,7 +149,7 @@ public class AsyncIconLoader
         if (IconLoaded != null)
         {
             IconLoaded(this, new IconLoadedEventArgs(
-                icon, r.FileName, r.Small, r.Arg));
+                icon, r.FileName, r.Small, r.Arg, r.Generation));
         }
     }
 }

@@ -44,9 +44,7 @@ public partial class DummyForm : Form
         TreeCommandList = CommandList.Deserialize(".treecmd.cfg");
         try { data = Data.Deserialize(); } catch { }
 
-        int build = System.Diagnostics.Process.GetCurrentProcess()
-            .MainModule.FileVersionInfo.FileBuildPart;
-        notifyIcon1.Text = "らんちゃ build-" + build;
+        notifyIcon1.Text = Infrastructure.AppVersion.Title;
         notifyIcon1.Visible = config.TrayIcon;
 
         data.WindowHandle = Handle.ToInt64();

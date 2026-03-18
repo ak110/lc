@@ -23,9 +23,7 @@ public partial class MainForm : Form
         ContextMenuStrip = mainMenu;
         Visible = false;
 
-        int build = System.Diagnostics.Process.GetCurrentProcess()
-            .MainModule.FileVersionInfo.FileBuildPart;
-        Text = "らんちゃ build-" + build;
+        Text = Infrastructure.AppVersion.Title;
 
         ownerForm = dummyForm;
         Owner = ownerForm;
@@ -515,6 +513,9 @@ public partial class MainForm : Form
             {
                 try
                 {
+                    // 世代が古い結果は破棄（Clear()後の古いリクエスト結果を無視）
+                    if (e.Generation != iconLoader.Generation) return;
+
                     if (e.Icon != null)
                     {
                         imageList1.Images.Add(command.FileName, (System.Drawing.Icon)e.Icon.Clone());

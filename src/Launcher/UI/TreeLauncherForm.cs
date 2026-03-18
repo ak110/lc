@@ -17,9 +17,7 @@ public partial class TreeLauncherForm : Form
         Show(owner);
         Hide();
 
-        int build = System.Diagnostics.Process.GetCurrentProcess()
-            .MainModule.FileVersionInfo.FileBuildPart;
-        Text = "らんちゃ build-" + build;
+        Text = Infrastructure.AppVersion.Title;
 
         UpdateTree();
     }
