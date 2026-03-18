@@ -2,267 +2,267 @@
 using System.Collections;
 using System.ComponentModel;
 
-namespace Launcher.UI {
-	/// <summary>
-	/// ラジオボタンのリストを管理するコントロール。
-	/// </summary>
-	[DefaultProperty("Items")]
-	[DefaultEvent("SelectedIndexChanged")]
-	public partial class RadioButtonList : UserControl {
-		object lockObject = new object();
-		int selectedIndex = 0;
-		List<RadioButton> items = new List<RadioButton>();
+namespace Launcher.UI;
 
-		public RadioButtonList() {
-			InitializeComponent();
-		}
+/// <summary>
+/// ラジオボタンのリストを管理するコントロール。
+/// </summary>
+[DefaultProperty("Items")]
+[DefaultEvent("SelectedIndexChanged")]
+public partial class RadioButtonList : UserControl {
+    object lockObject = new object();
+    int selectedIndex = 0;
+    List<RadioButton> items = new List<RadioButton>();
 
-		void radioButton_CheckedChanged(object sender, EventArgs e) {
-			RadioButton r = (RadioButton)sender;
-			if (r.Checked) {
-				int index = items.IndexOf(r);
-				if (selectedIndex != index) {
-					selectedIndex = index;
-					// イベントのコールバック
-					if (SelectedIndexChanged != null) {
-						SelectedIndexChanged(this, EventArgs.Empty);
-					}
-				}
-			}
-		}
+    public RadioButtonList() {
+        InitializeComponent();
+    }
 
-		/// <summary>
-		/// 項目のインデックス
-		/// </summary>
-		[DefaultValue(0)]
-		public int SelectedIndex {
-			get { return selectedIndex; }
-			set {
-				lock (lockObject) {
-					if (selectedIndex != value) {
-						if (value == -1) {
-							items[selectedIndex].Checked = false;
-						} else {
-							items[value].Checked = true;
-						}
-					}
-				}
-			}
-		}
+    void radioButton_CheckedChanged(object sender, EventArgs e) {
+        RadioButton r = (RadioButton)sender;
+        if (r.Checked) {
+            int index = items.IndexOf(r);
+            if (selectedIndex != index) {
+                selectedIndex = index;
+                // イベントのコールバック
+                if (SelectedIndexChanged != null) {
+                    SelectedIndexChanged(this, EventArgs.Empty);
+                }
+            }
+        }
+    }
 
-		/// <summary>
-		/// SelectedIndex変更されたイベント
-		/// </summary>
-		public event EventHandler SelectedIndexChanged;
+    /// <summary>
+    /// 項目のインデックス
+    /// </summary>
+    [DefaultValue(0)]
+    public int SelectedIndex {
+        get { return selectedIndex; }
+        set {
+            lock (lockObject) {
+                if (selectedIndex != value) {
+                    if (value == -1) {
+                        items[selectedIndex].Checked = false;
+                    } else {
+                        items[value].Checked = true;
+                    }
+                }
+            }
+        }
+    }
 
-		/// <summary>
-		/// 選択された項目
-		/// </summary>
-		public object SelectedItem {
-			get {
-				lock (lockObject) {
-					if (0 <= selectedIndex && selectedIndex < items.Count) {
-						return items[selectedIndex].Tag;
-					}
-				}
-				return null;
-			}
-			set {
-				lock (lockObject) {
-					SelectedIndex = items.FindIndex(delegate(RadioButton r) { return r.Tag.Equals(value); });
-				}
-			}
-		}
+    /// <summary>
+    /// SelectedIndex変更されたイベント
+    /// </summary>
+    public event EventHandler SelectedIndexChanged;
 
-		/// <summary>
-		/// 項目のリスト
-		/// </summary>
-		public object[] Items {
-			get {
-				object[] array = new object[items.Count];
-				new ObjectCollection(this).CopyTo(array, 0);
-				return array;
-			}
-			set {
-				lock (lockObject) {
-					items.Clear();
-					new ObjectCollection(this).AddRange(value);
-				}
-			}
-		}
-		public string[] StringItems {
-			get { return Array.ConvertAll(Items, x => x.ToString()); }
-			set { Items = value; }
-		}
+    /// <summary>
+    /// 選択された項目
+    /// </summary>
+    public object SelectedItem {
+        get {
+            lock (lockObject) {
+                if (0 <= selectedIndex && selectedIndex < items.Count) {
+                    return items[selectedIndex].Tag;
+                }
+            }
+            return null;
+        }
+        set {
+            lock (lockObject) {
+                SelectedIndex = items.FindIndex(delegate(RadioButton r) { return r.Tag.Equals(value); });
+            }
+        }
+    }
 
-		/// <summary>
-		/// ラジオボタンのレイアウトを更新
-		/// </summary>
-		void UpdateLayout() {
-			lock (lockObject) {
-				Controls.Clear();
-				int maxWidth = 8, lastBottom = 0;
-				foreach (RadioButton r in items) {
-					r.TabIndex = Controls.Count;
-					r.Location = new Point(0, lastBottom);
-					Controls.Add(r);
-					lastBottom = r.Bottom;
-					if (maxWidth < r.Right) maxWidth = r.Right;
-				}
-				if (lastBottom <= 0) lastBottom = 8;
-				ClientSize = new Size(maxWidth, lastBottom);
-				PerformLayout();
-			}
-		}
+    /// <summary>
+    /// 項目のリスト
+    /// </summary>
+    public object[] Items {
+        get {
+            object[] array = new object[items.Count];
+            new ObjectCollection(this).CopyTo(array, 0);
+            return array;
+        }
+        set {
+            lock (lockObject) {
+                items.Clear();
+                new ObjectCollection(this).AddRange(value);
+            }
+        }
+    }
+    public string[] StringItems {
+        get { return Array.ConvertAll(Items, x => x.ToString()); }
+        set { Items = value; }
+    }
 
-		/// <summary>
-		/// Itemsの型
-		/// </summary>
-		[ListBindable(false)]
-		public class ObjectCollection : IList, ICollection, IEnumerable {
-			RadioButtonList owner;
+    /// <summary>
+    /// ラジオボタンのレイアウトを更新
+    /// </summary>
+    void UpdateLayout() {
+        lock (lockObject) {
+            Controls.Clear();
+            int maxWidth = 8, lastBottom = 0;
+            foreach (RadioButton r in items) {
+                r.TabIndex = Controls.Count;
+                r.Location = new Point(0, lastBottom);
+                Controls.Add(r);
+                lastBottom = r.Bottom;
+                if (maxWidth < r.Right) maxWidth = r.Right;
+            }
+            if (lastBottom <= 0) lastBottom = 8;
+            ClientSize = new Size(maxWidth, lastBottom);
+            PerformLayout();
+        }
+    }
 
-			public ObjectCollection(RadioButtonList owner) {
-				this.owner = owner;
-			}
+    /// <summary>
+    /// Itemsの型
+    /// </summary>
+    [ListBindable(false)]
+    public class ObjectCollection : IList, ICollection, IEnumerable {
+        RadioButtonList owner;
 
-			public int Count {
-				get { return owner.items.Count; }
-			}
+        public ObjectCollection(RadioButtonList owner) {
+            this.owner = owner;
+        }
 
-			public bool IsReadOnly {
-				get { return false; }
-			}
+        public int Count {
+            get { return owner.items.Count; }
+        }
 
-			[DesignerSerializationVisibility(0)]
-			[Browsable(false)]
-			public virtual object this[int index] {
-				get {
-					lock (owner.lockObject) {
-						if (index < 0 || owner.items.Count <= index)
-							throw new ArgumentOutOfRangeException("index");
-						return owner.items[index].Tag;
-					}
-				}
-				set {
-					lock (owner.lockObject) {
-						if (index < 0 || owner.items.Count <= index)
-							throw new ArgumentOutOfRangeException("index");
-						owner.items[index].Tag = value;
-						owner.items[index].Text = value.ToString();
-					}
-				}
-			}
+        public bool IsReadOnly {
+            get { return false; }
+        }
 
-			public int Add(object item) {
-				if (item == null) {
-					throw new ArgumentNullException("item");
-				}
-				lock (owner.lockObject) {
-					owner.items.Add(CreateRadioButton(item));
-					owner.UpdateLayout();
-					return owner.items.Count - 1;
-				}
-			}
+        [DesignerSerializationVisibility(0)]
+        [Browsable(false)]
+        public virtual object this[int index] {
+            get {
+                lock (owner.lockObject) {
+                    if (index < 0 || owner.items.Count <= index)
+                        throw new ArgumentOutOfRangeException("index");
+                    return owner.items[index].Tag;
+                }
+            }
+            set {
+                lock (owner.lockObject) {
+                    if (index < 0 || owner.items.Count <= index)
+                        throw new ArgumentOutOfRangeException("index");
+                    owner.items[index].Tag = value;
+                    owner.items[index].Text = value.ToString();
+                }
+            }
+        }
 
-			public void AddRange(ObjectCollection items) {
-				foreach (object v in items) {
-					Add(v);
-				}
-			}
+        public int Add(object item) {
+            if (item == null) {
+                throw new ArgumentNullException("item");
+            }
+            lock (owner.lockObject) {
+                owner.items.Add(CreateRadioButton(item));
+                owner.UpdateLayout();
+                return owner.items.Count - 1;
+            }
+        }
 
-			public void AddRange(object[] items) {
-				foreach (object v in items) {
-					Add(v);
-				}
-			}
+        public void AddRange(ObjectCollection items) {
+            foreach (object v in items) {
+                Add(v);
+            }
+        }
 
-			public virtual void Clear() {
-				lock (owner.lockObject) {
-					foreach (RadioButton r in owner.items) r.Dispose();
-					owner.items.Clear();
-				}
-			}
+        public void AddRange(object[] items) {
+            foreach (object v in items) {
+                Add(v);
+            }
+        }
 
-			public bool Contains(object value) {
-				return owner.items.Exists(delegate(RadioButton r) { return r.Tag.Equals(value); });
-			}
+        public virtual void Clear() {
+            lock (owner.lockObject) {
+                foreach (RadioButton r in owner.items) r.Dispose();
+                owner.items.Clear();
+            }
+        }
 
-			public void CopyTo(object[] destination, int arrayIndex) {
-				for (int i = 0; i < owner.items.Count; i++) {
-					destination[arrayIndex + i] = owner.items[i].Tag;
-				}
-			}
+        public bool Contains(object value) {
+            return owner.items.Exists(delegate(RadioButton r) { return r.Tag.Equals(value); });
+        }
 
-			public IEnumerator GetEnumerator() {
-				foreach (RadioButton item in owner.items) {
-					yield return item.Tag;
-				}
-			}
+        public void CopyTo(object[] destination, int arrayIndex) {
+            for (int i = 0; i < owner.items.Count; i++) {
+                destination[arrayIndex + i] = owner.items[i].Tag;
+            }
+        }
 
-			public int IndexOf(object value) {
-				if (value == null) {
-					throw new ArgumentNullException("value");
-				}
+        public IEnumerator GetEnumerator() {
+            foreach (RadioButton item in owner.items) {
+                yield return item.Tag;
+            }
+        }
 
-				return owner.items.FindIndex(delegate(RadioButton r) { return r.Tag.Equals(value); });
-			}
+        public int IndexOf(object value) {
+            if (value == null) {
+                throw new ArgumentNullException("value");
+            }
 
-			public void Insert(int index, object item) {
-				lock (owner.lockObject) {
-					owner.items.Insert(index, CreateRadioButton(item));
-					owner.UpdateLayout();
-				}
-			}
+            return owner.items.FindIndex(delegate(RadioButton r) { return r.Tag.Equals(value); });
+        }
 
-			public void Remove(object value) {
-				Remove(IndexOf(value));
-			}
+        public void Insert(int index, object item) {
+            lock (owner.lockObject) {
+                owner.items.Insert(index, CreateRadioButton(item));
+                owner.UpdateLayout();
+            }
+        }
 
-			public void RemoveAt(int index) {
-				lock (owner.lockObject) {
-					owner.items.RemoveAt(index);
-					owner.UpdateLayout();
-				}
-			}
+        public void Remove(object value) {
+            Remove(IndexOf(value));
+        }
 
-			#region IList メンバ
+        public void RemoveAt(int index) {
+            lock (owner.lockObject) {
+                owner.items.RemoveAt(index);
+                owner.UpdateLayout();
+            }
+        }
 
-			bool IList.IsFixedSize {
-				get { return false; }
-			}
+        #region IList メンバ
 
-			#endregion
+        bool IList.IsFixedSize {
+            get { return false; }
+        }
 
-			#region ICollection メンバ
+        #endregion
 
-			void ICollection.CopyTo(Array array, int index) {
-				for (int i = 0; i < owner.items.Count; i++) {
-					array.SetValue(owner.items[i].Tag, index + i);
-				}
-			}
+        #region ICollection メンバ
 
-			bool ICollection.IsSynchronized {
-				get { return true; }
-			}
+        void ICollection.CopyTo(Array array, int index) {
+            for (int i = 0; i < owner.items.Count; i++) {
+                array.SetValue(owner.items[i].Tag, index + i);
+            }
+        }
 
-			object ICollection.SyncRoot {
-				get { return owner.lockObject; }
-			}
+        bool ICollection.IsSynchronized {
+            get { return true; }
+        }
 
-			#endregion
+        object ICollection.SyncRoot {
+            get { return owner.lockObject; }
+        }
 
-			private RadioButton CreateRadioButton(object item) {
-				RadioButton r = new RadioButton();
-				r.Tag = item;
-				r.Text = item.ToString();
-				r.Checked = owner.items.Count == owner.selectedIndex;
-				r.AutoSize = true;
-				r.UseVisualStyleBackColor = true;
-				r.TabStop = true;
-				r.CheckedChanged += new EventHandler(owner.radioButton_CheckedChanged);
-				return r;
-			}
-		}
-	}
+        #endregion
+
+        private RadioButton CreateRadioButton(object item) {
+            RadioButton r = new RadioButton();
+            r.Tag = item;
+            r.Text = item.ToString();
+            r.Checked = owner.items.Count == owner.selectedIndex;
+            r.AutoSize = true;
+            r.UseVisualStyleBackColor = true;
+            r.TabStop = true;
+            r.CheckedChanged += new EventHandler(owner.radioButton_CheckedChanged);
+            return r;
+        }
+    }
 }
