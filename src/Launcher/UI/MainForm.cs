@@ -6,16 +6,8 @@ namespace Launcher.UI;
 
 public partial class MainForm : Form
 {
-    /// <summary>入力欄とコマンドリストの状態</summary>
-    enum InputState
-    {
-        Empty,        // 入力欄が空
-        NoMatch,      // 該当コマンド無し
-        PartialMatch, // 部分一致のみ有り
-        PrefixMatch,  // 前方一致有り
-    }
-
     DummyForm ownerForm;
+    MainFormPresenter presenter;
 
     InputState state;
     int lastFocus;   // エディットボックスにフォーカスがあった場合0, リストな場合1
@@ -36,6 +28,9 @@ public partial class MainForm : Form
 
         ownerForm = dummyForm;
         Owner = ownerForm;
+        presenter = new MainFormPresenter(
+            () => ownerForm.CommandList,
+            () => ownerForm.Config);
 
         iconLoader.IconLoaded += new EventHandler<IconLoadedEventArgs>(iconLoader_IconLoaded);
 
@@ -599,45 +594,21 @@ public partial class MainForm : Form
     /// </summary>
     private void InnerTextChanged()
     {
-        string input = GetInputText();
-        var commands = ownerForm.CommandList.FindMatch(input, ownerForm.Config);
+        var result = presenter.ProcessTextChange(GetInputText());
+        state = result.State;
 
-        if (commands.Any())
+        // 補完処理（テキストボックスへの反映はUI操作のためForm側で行う）
+        if (result.CompletionText != null)
         {
-            var firstCommand = commands.First();
-            // 該当するコマンドが1個以上あった
-            if (string.IsNullOrEmpty(input))
-            {
-                state = InputState.Empty;
-            }
-            else if (input.Length <= firstCommand.Name.Length &&
-                string.Compare(input, 0, firstCommand.Name, 0,
-                input.Length, ownerForm.Config.CommandIgnoreCase) == 0)
-            {
-                // 補完処理。
-                if (input.Length < firstCommand.Name.Length)
-                {
-                    textBox1.Text = string.Concat(input, firstCommand.Name.AsSpan(input.Length));
-                    textBox1.Select(input.Length, textBox1.Text.Length - input.Length);
-                }
-                state = InputState.PrefixMatch;
-            }
-            else
-            {
-                state = InputState.PartialMatch;
-            }
-        }
-        else
-        {
-            // 該当するコマンドが1個も無い
-            state = InputState.NoMatch;
+            textBox1.Text = result.CompletionText;
+            textBox1.Select(result.SelectionStart, result.SelectionLength);
         }
 
         // コマンドをリストビューへ（AddRangeでまとめて追加して描画コストを削減）
         listView1.Items.Clear();
-        var items = new ListViewItem[commands.Count()];
+        var items = new ListViewItem[result.MatchedCommands.Count];
         int idx = 0;
-        foreach (var command in commands)
+        foreach (var command in result.MatchedCommands)
         {
             ListViewItem item = new ListViewItem(command.Name);
             item.SubItems.Add(command.FileName + " " + command.Param);
@@ -658,32 +629,9 @@ public partial class MainForm : Form
     /// </summary>
     private void UpdateButtonText()
     {
-        // リストビューにフォーカスがある場合はコマンド有無に関わらず実行系ボタン表示
-        InputState? effectiveState = lastFocus == 1 ? null : state;
-
-        // OKボタン
-        switch (effectiveState)
-        {
-            case InputState.Empty: button1.Text = "設定"; break;
-            case InputState.NoMatch: button1.Text = "追加"; break;
-            default:
-                switch (ModifierKeys)
-                {
-                    case Keys.Control: button1.Text = "ｺﾏﾝﾄﾞ"; break;
-                    case Keys.Shift: button1.Text = "ﾌｫﾙﾀﾞ"; break;
-                    default: button1.Text = "実行"; break;
-                }
-                break;
-        }
-        // キャンセルボタン
-        if (state == InputState.Empty)
-        {
-            button2.Text = "隠す";
-        }
-        else
-        {
-            button2.Text = "消す";
-        }
+        var texts = MainFormPresenter.GetButtonTexts(state, lastFocus, ModifierKeys);
+        button1.Text = texts.Button1Text;
+        button2.Text = texts.Button2Text;
     }
 
     /// <summary>
@@ -691,84 +639,65 @@ public partial class MainForm : Form
     /// </summary>
     private void button1_Click(object sender, EventArgs e)
     {
-        Command? command = null;
-        if (lastFocus == 0)
+        // フォーカス位置に応じたコマンド取得
+        Command? firstCommand = listView1.Items.Count > 0
+            ? (Command)listView1.Items[0].Tag! : null;
+        Command? selectedCommand = listView1.SelectedItems.Count > 0
+            ? (Command)listView1.SelectedItems[0].Tag! : null;
+
+        var result = MainFormPresenter.DetermineAction(
+            state, lastFocus, firstCommand, selectedCommand, ModifierKeys);
+
+        switch (result.Action)
         {
-            // 通常のエディットボックスからの実行
-            if (0 < listView1.Items.Count)
-            {
-                command = (Command)listView1.Items[0].Tag!;
-            }
-        }
-        else
-        { // if (lastFocus == 1)
-            // リストビューからの実行
-            if (0 < listView1.SelectedItems.Count)
-            {
-                command = (Command)listView1.SelectedItems[0].Tag!;
-            }
-        }
-        if (state == InputState.Empty && lastFocus == 0)
-        {
-            // 設定ダイアログ
-            ownerForm.ShowConfigDialog();
-        }
-        else if (command == null)
-        {
-            System.Diagnostics.Debug.Assert(state == InputState.NoMatch);
-            // 追加
-            command = new Command();
-            command.Name = GetInputText();
-            using (EditCommandForm form = new EditCommandForm(command))
-            {
-                if (form.ShowDialog(this) == DialogResult.OK)
+            case MainAction.ShowConfig:
+                ownerForm.ShowConfigDialog();
+                break;
+
+            case MainAction.AddCommand:
                 {
-                    new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(command);
-                    ownerForm.CommandList.Add(command);
-                    ownerForm.CommandList.Serialize(".cmd.cfg");
-                    ApplyConfig();
-                    textBox1.Clear(); // 消しちゃう
+                    var command = new Command();
+                    command.Name = GetInputText();
+                    using EditCommandForm form = new EditCommandForm(command);
+                    if (form.ShowDialog(this) == DialogResult.OK)
+                    {
+                        new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(command);
+                        ownerForm.CommandList.Add(command);
+                        ownerForm.CommandList.Serialize(".cmd.cfg");
+                        ApplyConfig();
+                        textBox1.Clear();
+                    }
                 }
-            }
-        }
-        else
-        {
-            // 実行・設定・フォルダ開く
-            switch (ModifierKeys)
-            {
-                case Keys.Control:
-                    // 設定
-                    using (EditCommandForm form = new EditCommandForm(command))
-                    {
-                        if (form.ShowDialog(this) == DialogResult.OK)
-                        {
-                            new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(command);
-                            ownerForm.CommandList.Serialize(".cmd.cfg");
-                            ApplyConfig();
-                            textBox1.Clear(); // 消しちゃう
-                        }
-                    }
-                    break;
+                break;
 
-                case Keys.Shift:
-                    // フォルダ開く
-
-                    OpenDirectory(command);
-                    if (ownerForm.Config.HideOnRun)
+            case MainAction.EditCommand:
+                {
+                    using EditCommandForm form = new EditCommandForm(result.TargetCommand!);
+                    if (form.ShowDialog(this) == DialogResult.OK)
                     {
-                        HideWindow();
+                        new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(result.TargetCommand!);
+                        ownerForm.CommandList.Serialize(".cmd.cfg");
+                        ApplyConfig();
+                        textBox1.Clear();
                     }
-                    break;
+                }
+                break;
 
-                default:
-                    // 実行
-                    ExecuteCommand(command, textBox1.Text);
-                    if (ownerForm.Config.HideOnRun)
-                    {
-                        HideWindow();
-                    }
-                    break;
-            }
+            case MainAction.OpenDirectory:
+                OpenDirectory(result.TargetCommand!);
+                if (ownerForm.Config.HideOnRun)
+                {
+                    HideWindow();
+                }
+                break;
+
+            case MainAction.Execute:
+                ExecuteCommand(result.TargetCommand!, textBox1.Text);
+                if (ownerForm.Config.HideOnRun)
+                {
+                    HideWindow();
+                }
+                break;
         }
     }
 

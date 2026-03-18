@@ -18,10 +18,8 @@ public partial class ButtonLauncherForm : Form
     const int ButtonHeight = 64;
 
     // D&D用
-    Button? dragSource;
-    ButtonEntry? dragEntry;
-    ButtonTab? dragSourceTab;
-    Point dragStartPoint;
+    Button? dragSource;              // UI固有のためForm側に残す
+    readonly DragDropState dragState = new DragDropState();
 
     ButtonLauncherData Data => owner.ButtonLauncherData;
 
@@ -322,8 +320,12 @@ public partial class ButtonLauncherForm : Form
         if (tabPage == null) return;
 
         // 現在のセルサイズからColumns/Rowsを再計算
-        int newCols = Math.Max(1, ClientSize.Width / ButtonWidth);
-        int newRows = Math.Max(1, (ClientSize.Height - toolStrip1.Height - tabControl1.ItemSize.Height) / ButtonHeight);
+        var grid = ButtonLauncherPresenter.CalculateGridSize(
+            ClientSize.Width, ClientSize.Height,
+            toolStrip1.Height, tabControl1.ItemSize.Height,
+            ButtonWidth, ButtonHeight);
+        int newCols = grid.Columns;
+        int newRows = grid.Rows;
 
         if (newCols != Data.Columns || newRows != Data.Rows)
         {
@@ -420,9 +422,7 @@ public partial class ButtonLauncherForm : Form
             if (entry != null && !entry.IsEmpty)
             {
                 dragSource = btn;
-                dragEntry = entry;
-                dragSourceTab = tabData;
-                dragStartPoint = e.Location;
+                dragState.Start(entry, tabData!, e.Location);
             }
         }
     }
@@ -519,20 +519,17 @@ public partial class ButtonLauncherForm : Form
 
     private void GridButton_MouseMove(object? sender, MouseEventArgs e)
     {
-        if (dragSource == null || dragEntry == null) return;
+        if (dragSource == null || !dragState.IsActive) return;
         if (e.Button != MouseButtons.Left) return;
 
         // ドラッグ閾値を超えたらDoDragDropを開始
-        var dragSize = SystemInformation.DragSize;
-        if (Math.Abs(e.X - dragStartPoint.X) > dragSize.Width / 2 ||
-            Math.Abs(e.Y - dragStartPoint.Y) > dragSize.Height / 2)
+        if (dragState.ShouldBeginDrag(e.Location, SystemInformation.DragSize))
         {
             var btn = (Button)sender!;
-            btn.DoDragDrop(dragEntry, DragDropEffects.Move);
+            btn.DoDragDrop(dragState.DragEntry!, DragDropEffects.Move);
             // DoDragDropはブロッキング。戻り後にフィールドをクリア
             dragSource = null;
-            dragEntry = null;
-            dragSourceTab = null;
+            dragState.Reset();
         }
     }
 
@@ -542,8 +539,7 @@ public partial class ButtonLauncherForm : Form
         if (e.Button == MouseButtons.Left)
         {
             dragSource = null;
-            dragEntry = null;
-            dragSourceTab = null;
+            dragState.Reset();
         }
     }
 
@@ -584,25 +580,16 @@ public partial class ButtonLauncherForm : Form
                 SaveData();
             }
         }
-        else if (dragSource != null && dragEntry != null && dragSourceTab != null)
+        else if (dragSource != null && dragState.IsActive && dragState.SourceTab != null)
         {
             // ボタン間D&D（クロスタブ対応）
             var srcPos = (ButtonPosition)dragSource.Tag!;
-            var srcTabData = dragSourceTab;
+            var srcTabData = dragState.SourceTab;
 
-            // 移動先の既存エントリ
-            var destEntry = destTabData.GetButton(pos.Row, pos.Col);
-
-            // スワップ
-            destTabData.SetButton(pos.Row, pos.Col, ButtonEntry.FromCommand(dragEntry, pos.Row, pos.Col));
-            if (destEntry != null && !destEntry.IsEmpty)
-            {
-                srcTabData.SetButton(srcPos.Row, srcPos.Col, ButtonEntry.FromCommand(destEntry, srcPos.Row, srcPos.Col));
-            }
-            else
-            {
-                srcTabData.SetButton(srcPos.Row, srcPos.Col, null);
-            }
+            ButtonLauncherPresenter.SwapButtons(
+                srcTabData, srcPos.Row, srcPos.Col,
+                destTabData, pos.Row, pos.Col,
+                dragState.DragEntry!);
 
             // ソースとデスティネーションが異なるタブの場合は両方再構築
             if (srcTabData != destTabData)
