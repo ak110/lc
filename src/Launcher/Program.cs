@@ -56,7 +56,7 @@ static class Program
                     {
                         Data data = Data.Deserialize();
                         WindowHelper window =
-                            new WindowHelper((IntPtr)data.WindowHandle);
+                            new WindowHelper(checked((IntPtr)data.WindowHandle));
                         window.PostMessage(WM.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
                     }
                     catch
@@ -71,7 +71,7 @@ static class Program
                     {
                         Data data = Data.Deserialize();
                         WindowHelper window =
-                            new WindowHelper((IntPtr)data.WindowHandle);
+                            new WindowHelper(checked((IntPtr)data.WindowHandle));
                         window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RESTART);
                     }
                     catch
@@ -96,7 +96,7 @@ static class Program
                             {
                                 Data data = Data.Deserialize();
                                 WindowHelper window =
-                                    new WindowHelper((IntPtr)data.WindowHandle);
+                                    new WindowHelper(checked((IntPtr)data.WindowHandle));
                                 window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RELOAD);
                             }
                             catch
@@ -117,7 +117,7 @@ static class Program
 
             if (!singleInstance.FirstRun)
             {
-                singleInstance.SetActive();
+                SingleInstance.SetActive();
                 return;
             }
 

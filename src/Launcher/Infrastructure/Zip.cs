@@ -89,7 +89,7 @@ public class ZipReader : IDisposable
     /// <summary>
     /// エンドレコードを検索
     /// </summary>
-    private long FindEndRec(StreamRandAccessor acc)
+    private static long FindEndRec(StreamRandAccessor acc)
     {
         long stoppos;
         //	ulongって引き算とか比較が面倒くさいですなぁ．．（´Д｀）
@@ -127,6 +127,7 @@ public class ZipReader : IDisposable
     /// </summary>
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         if (!leaveOpen)
         {
             stream.Close();

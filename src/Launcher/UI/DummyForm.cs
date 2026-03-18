@@ -224,7 +224,7 @@ public partial class DummyForm : Form
 
             data.UpdateRecord.LastChecked = DateTime.Now;
 
-            if (client.IsUpdateAvailable(release, data.UpdateRecord))
+            if (GitHubUpdateClient.IsUpdateAvailable(release, data.UpdateRecord))
             {
                 data.UpdateRecord.LastKnownVersion = release.TagName;
                 data.Serialize();
@@ -254,7 +254,7 @@ public partial class DummyForm : Form
 
             data.UpdateRecord.LastChecked = DateTime.Now;
 
-            if (client.IsUpdateAvailable(release, data.UpdateRecord))
+            if (GitHubUpdateClient.IsUpdateAvailable(release, data.UpdateRecord))
             {
                 data.UpdateRecord.LastKnownVersion = release.TagName;
                 data.Serialize();

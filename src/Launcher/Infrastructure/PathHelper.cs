@@ -22,11 +22,11 @@ public static class PathHelper
     {
         if (string.IsNullOrEmpty(path))
         {
-            throw new ArgumentNullException("path");
+            throw new ArgumentNullException(nameof(path));
         }
         if (string.IsNullOrEmpty(baseDir))
         {
-            throw new ArgumentNullException("baseDir");
+            throw new ArgumentNullException(nameof(baseDir));
         }
         // 念のため正規化
         path = PathHelper.PathNormalizeWithFullPath(path);
@@ -481,7 +481,7 @@ public static class PathHelper
         }
     }
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
 
@@ -498,7 +498,7 @@ public static class PathHelper
                 string tmp = Path.Combine(path, "{6F5EC475-CA08-485c-B782-AEC4466FE3E1}.tmp");
                 if (!File.Exists(tmp))
                 {
-                    File.WriteAllBytes(tmp, new byte[0]);
+                    File.WriteAllBytes(tmp, Array.Empty<byte>());
                     bool writable = File.Exists(tmp);
                     if (writable)
                     {

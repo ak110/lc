@@ -20,7 +20,7 @@ public class ConfigStore
         get
         {
             string path = Path.ChangeExtension(
-                Process.GetCurrentProcess().MainModule.FileName, null);
+                Environment.ProcessPath, null);
 #if DEBUG
             if (path.EndsWith(".vshost"))
             {

@@ -252,10 +252,12 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// <summary>
     /// 後方互換性のための処理
     /// </summary>
+    private static readonly string[] LineSeparators = ["\r\n", "\n"];
+
     public static Command LoadFrom(string name, string data)
     {
         Command cmd = new Command();
-        string[] list = data.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
+        string[] list = data.Split(LineSeparators, StringSplitOptions.None);
         int i = 0;
         if (name == null)
         {

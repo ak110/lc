@@ -52,7 +52,7 @@ public class GitHubUpdateClient
     /// <summary>
     /// 更新が利用可能か判定
     /// </summary>
-    public bool IsUpdateAvailable(GitHubRelease release, UpdateRecord record)
+    public static bool IsUpdateAvailable(GitHubRelease release, UpdateRecord record)
     {
         if (release == null) return false;
         string currentVersion = GetCurrentVersion();

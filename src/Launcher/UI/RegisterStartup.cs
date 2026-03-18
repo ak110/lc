@@ -66,7 +66,7 @@ public partial class RegisterStartup : UserControl
         if (string.IsNullOrEmpty(baseName))
         {
             return Path.GetFileNameWithoutExtension(
-                Process.GetCurrentProcess().MainModule.FileName);
+                Environment.ProcessPath);
         }
         return baseName;
     }
@@ -114,7 +114,7 @@ public partial class RegisterStartup : UserControl
     {
         using (ShellLink link = new ShellLink())
         {
-            link.TargetPath = Process.GetCurrentProcess().MainModule.FileName;
+            link.TargetPath = Environment.ProcessPath;
             link.Arguments = "";
             //link.WorkingDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
             link.Description = "";
@@ -175,7 +175,7 @@ public partial class RegisterStartup : UserControl
         }
     }
 
-    private bool IsCommonStartupWritable()
+    private static bool IsCommonStartupWritable()
     {
         return PathHelper.IsWritable(ShellEnvironment.GetFolderPath(
             ShellEnvironment.SpecialFolder.CommonStartup));

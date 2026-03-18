@@ -75,7 +75,7 @@ public partial class TreeLauncherForm : Form
     /// <summary>
     /// ツリーを更新する
     /// </summary>
-    private void UpdateTree()
+    private static void UpdateTree()
     {
     }
 }

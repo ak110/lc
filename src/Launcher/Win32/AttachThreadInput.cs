@@ -32,6 +32,7 @@ public class AttachThreadInput : IDisposable
     /// </summary>
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         if (current != foreground)
         {
             bool result = AttachThreadInput_(current, foreground, false);

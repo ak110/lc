@@ -67,7 +67,7 @@ public static class IconExtractor
                                                     // in the upper 8 bits of the iIcon
                                                     //#endif
 
-    [DllImport("shell32.dll")]
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     static extern IntPtr SHGetFileInfo(string pszPath, int dwFileAttributes, ref SHFILEINFO psfi, int cbSizeFileInfo, int uFlags);
 
     [DllImport("user32.dll")]

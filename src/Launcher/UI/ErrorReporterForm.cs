@@ -16,7 +16,7 @@ public partial class ErrorReporterForm : Form
 
         this.exception = e;
         label1.Text = e.Message;
-        textBox2.Text = ErrorReporter.Instance.GetDetailMessage(exception);
+        textBox2.Text = ErrorReporter.GetDetailMessage(exception);
 
         // 閉じる。
         button4_Click(this, null);

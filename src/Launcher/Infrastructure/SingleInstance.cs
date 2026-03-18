@@ -33,7 +33,7 @@ public class SingleInstance : IDisposable
     private static string GetMutexName()
     {
         //string moduleFileName = Application.ExecutablePath;
-        string moduleFileName = Process.GetCurrentProcess().MainModule.FileName;
+        string moduleFileName = Environment.ProcessPath;
         //moduleFileName = Path.GetFullPath(Environment.ExpandEnvironmentVariables(moduleFileName));
         string mutexName = moduleFileName.ToLower().Replace('\\', '/');
         return mutexName;
@@ -63,6 +63,7 @@ public class SingleInstance : IDisposable
     /// </summary>
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         mutex.Close();
     }
 
@@ -77,7 +78,7 @@ public class SingleInstance : IDisposable
     /// <summary>
     /// 既に起動済みなウィンドウをアクティブにする
     /// </summary>
-    public void SetActive()
+    public static void SetActive()
     {
         foreach (Process p in GetProcesses())
         {
@@ -104,7 +105,7 @@ public class SingleInstance : IDisposable
     /// <summary>
     /// 自分のモジュールファイル名と同じファイル名なプロセスを列挙（多分０～１個のはず）
     /// </summary>
-    public List<Process> GetProcesses()
+    public static List<Process> GetProcesses()
     {
         List<Process> list = new List<Process>();
         Process current = Process.GetCurrentProcess();

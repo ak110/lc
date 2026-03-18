@@ -56,7 +56,7 @@ public static class UpdatePerformer
             progress?.Report("更新を適用しています...");
             string batchPath = Path.Combine(tempDir, "_update.bat");
             string batchContent = GenerateBatchScript(
-                Process.GetCurrentProcess().Id,
+                Environment.ProcessId,
                 appDir,
                 tempDir,
                 Application.ExecutablePath,

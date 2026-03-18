@@ -44,7 +44,7 @@ public static class AppBase
         started = false;
         if (restart)
         {
-            Process.Start(Process.GetCurrentProcess().MainModule.FileName);
+            Process.Start(Environment.ProcessPath);
         }
     }
 
@@ -66,6 +66,7 @@ public static class AppBase
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             AppBase.OnExit();
         }
     }

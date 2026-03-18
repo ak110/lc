@@ -553,7 +553,7 @@ public partial class MainForm : Form
         string input = GetInputText();
         var commands = ownerForm.CommandList.FindMatch(input, ownerForm.Config);
 
-        if (0 < commands.Count())
+        if (commands.Any())
         {
             var firstCommand = commands.First();
             // 該当するコマンドが1個以上あった
@@ -568,7 +568,7 @@ public partial class MainForm : Form
                 // 補完処理。
                 if (input.Length < firstCommand.Name.Length)
                 {
-                    textBox1.Text = input + firstCommand.Name.Substring(input.Length);
+                    textBox1.Text = string.Concat(input, firstCommand.Name.AsSpan(input.Length));
                     textBox1.Select(input.Length, textBox1.Text.Length - input.Length);
                 }
                 state = 3; // state:前方一致アリ

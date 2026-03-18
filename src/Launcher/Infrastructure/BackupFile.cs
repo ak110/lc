@@ -61,6 +61,7 @@ public class BackupFile : IDisposable
     /// </summary>
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         if (handle != null)
         {
             handle.Dispose();
@@ -263,7 +264,7 @@ public class BackupFile : IDisposable
     const uint FILE_FLAG_OPEN_NO_RECALL = 0x00100000;
     const uint FILE_FLAG_FIRST_PIPE_INSTANCE = 0x00080000;
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern SafeFileHandle CreateFile(string lpFileName,
         uint dwDesiredAccess, uint dwShareMode, IntPtr lpSecurityAttributes,
         uint dwCreationDisposition, uint dwFlagsAndAttributes, IntPtr hTemplateFile);

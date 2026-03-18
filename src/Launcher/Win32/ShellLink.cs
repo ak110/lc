@@ -339,6 +339,7 @@ public sealed class ShellLink : IDisposable
     /// </summary>
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         if (shellLinkW != null)
         {
             Marshal.ReleaseComObject(shellLinkW);

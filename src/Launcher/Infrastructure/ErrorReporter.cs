@@ -150,7 +150,7 @@ public class ErrorReporter
     /// <summary>
     /// 例外の詳細メッセージを組み立てて返す
     /// </summary>
-    public string GetDetailMessage(Exception e)
+    public static string GetDetailMessage(Exception e)
     {
         StringBuilder builder = new StringBuilder();
         AppendExceptionString(builder, e);

@@ -5,8 +5,10 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NeutralLanguage>ja</NeutralLanguage>
     <AnalysisLevel>latest-minimum</AnalysisLevel>
-    <!-- Phase 2 で latest-recommended + TreatWarningsAsErrors に引き上げ -->
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- リビルド時のファイルロック警告は環境依存のため除外 -->
+    <NoWarn>MSB3061;MSB3101</NoWarn>
   </PropertyGroup>
 </Project>

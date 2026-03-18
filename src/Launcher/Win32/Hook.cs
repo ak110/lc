@@ -244,7 +244,7 @@ public static class Hook
     [UnmanagedFunctionPointer(CallingConvention.Winapi)]
     delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam);
 
-    [DllImport("kernel32", CharSet = CharSet.Auto, SetLastError = true)]
+    [DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern IntPtr GetModuleHandle(string lpModuleName);
     [DllImport("user32", CharSet = CharSet.Auto, SetLastError = true)]
     static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, IntPtr hMod, int dwThreadId);

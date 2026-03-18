@@ -175,7 +175,7 @@ public partial class RadioButtonList : UserControl
                 lock (owner.lockObject)
                 {
                     if (index < 0 || owner.items.Count <= index)
-                        throw new ArgumentOutOfRangeException("index");
+                        throw new ArgumentOutOfRangeException(nameof(index));
                     return owner.items[index].Tag;
                 }
             }
@@ -184,7 +184,7 @@ public partial class RadioButtonList : UserControl
                 lock (owner.lockObject)
                 {
                     if (index < 0 || owner.items.Count <= index)
-                        throw new ArgumentOutOfRangeException("index");
+                        throw new ArgumentOutOfRangeException(nameof(index));
                     owner.items[index].Tag = value;
                     owner.items[index].Text = value.ToString();
                 }
@@ -193,10 +193,7 @@ public partial class RadioButtonList : UserControl
 
         public int Add(object item)
         {
-            if (item == null)
-            {
-                throw new ArgumentNullException("item");
-            }
+            ArgumentNullException.ThrowIfNull(item);
             lock (owner.lockObject)
             {
                 owner.items.Add(CreateRadioButton(item));
@@ -253,10 +250,7 @@ public partial class RadioButtonList : UserControl
 
         public int IndexOf(object value)
         {
-            if (value == null)
-            {
-                throw new ArgumentNullException("value");
-            }
+            ArgumentNullException.ThrowIfNull(value);
 
             return owner.items.FindIndex(delegate (RadioButton r) { return r.Tag.Equals(value); });
         }

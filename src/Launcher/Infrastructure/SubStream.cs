@@ -86,7 +86,7 @@ public class SubStream : Stream
             case SeekOrigin.Current: pos = Position + offset; break;
             case SeekOrigin.End: pos = Length - offset; break;
             default:
-                throw new ArgumentOutOfRangeException("origin");
+                throw new ArgumentOutOfRangeException(nameof(origin));
         }
         Position = pos;
         return pos;

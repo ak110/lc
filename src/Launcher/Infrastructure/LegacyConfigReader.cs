@@ -137,7 +137,7 @@ public class LegacyConfigReader
     /// <summary>
     /// Pointとして取得
     /// </summary>
-    public Point Point(string n)
+    public static Point Point(string n)
     {
         string[] s = n.Split(',');
         if (s.Length != 2) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗しました");
@@ -146,7 +146,7 @@ public class LegacyConfigReader
     /// <summary>
     /// Sizeとして取得
     /// </summary>
-    public Size Size(string n)
+    public static Size Size(string n)
     {
         string[] s = n.Split(',');
         if (s.Length != 2) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗しました");
@@ -155,7 +155,7 @@ public class LegacyConfigReader
     /// <summary>
     /// Rectangleとして取得
     /// </summary>
-    public Rectangle Rect(string n)
+    public static Rectangle Rect(string n)
     {
         string[] s = n.Split(',');
         if (s.Length != 4) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗しました");

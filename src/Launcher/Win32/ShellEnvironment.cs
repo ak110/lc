@@ -27,13 +27,15 @@ public static class ShellEnvironment
     public static string GetFolderPath(SpecialFolder folder)
     {
         IMalloc malloc = null;
-        SHGetMalloc(out malloc);
+        int hr = SHGetMalloc(out malloc);
+        if (hr != 0) throw new IOException("特殊フォルダパスの取得に失敗");
 
         IntPtr idl = IntPtr.Zero;
         switch (folder)
         {
             case SpecialFolder.CommonStartup:
-                SHGetSpecialFolderLocation(IntPtr.Zero, CSIDL_COMMON_STARTUP, out idl);
+                hr = SHGetSpecialFolderLocation(IntPtr.Zero, CSIDL_COMMON_STARTUP, out idl);
+                if (hr != 0) throw new IOException("特殊フォルダパスの取得に失敗");
                 break;
         }
 
@@ -43,7 +45,11 @@ public static class ShellEnvironment
         }
 
         StringBuilder path = new StringBuilder(512);
-        SHGetPathFromIDList(idl, path);
+        if (SHGetPathFromIDList(idl, path) == 0)
+        {
+            malloc.Free(idl);
+            throw new IOException("特殊フォルダパスの取得に失敗");
+        }
 
         malloc.Free(idl);
 
@@ -69,7 +75,7 @@ public static class ShellEnvironment
     [DllImport("shell32.dll")]
     static extern int SHGetSpecialFolderLocation(IntPtr hwndOwner, int nFolder, out IntPtr ppidl);
 
-    [DllImport("shell32.dll")]
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     static extern int SHGetPathFromIDList(IntPtr pidl, StringBuilder Path);
 
     const int CSIDL_DESKTOP = 0x0000;
