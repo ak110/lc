@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Launcher.Win32;
 
@@ -117,7 +118,7 @@ public static class FormsHelper
                 SystemParametersInfo(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0);
                 SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, IntPtr.Zero, 0);
             }
-            catch (Exception e)
+            catch (Win32Exception e)
             {
                 System.Diagnostics.Debug.WriteLine(e.ToString());
             }
@@ -138,7 +139,7 @@ public static class FormsHelper
                 {
                     SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0);
                 }
-                catch (Exception e)
+                catch (Win32Exception e)
                 {
                     System.Diagnostics.Debug.WriteLine(e.ToString());
                 }

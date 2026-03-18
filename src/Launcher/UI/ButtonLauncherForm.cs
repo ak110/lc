@@ -252,7 +252,13 @@ public partial class ButtonLauncherForm : Form
             Show();
             FormsHelper.ActivateForce(this);
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ShowLauncher失敗: {ex}");
+            MessageBox.Show($"ボタンランチャーの表示に失敗しました:\n{ex.Message}", "エラー",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (System.ComponentModel.Win32Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"ShowLauncher失敗: {ex}");
             MessageBox.Show($"ボタンランチャーの表示に失敗しました:\n{ex.Message}", "エラー",
@@ -355,7 +361,17 @@ public partial class ButtonLauncherForm : Form
                 Hide();
             }
         }
-        catch (Exception ex)
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            MessageBox.Show(this, $"実行に失敗しました: {ex.Message}", "エラー",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (IOException ex)
+        {
+            MessageBox.Show(this, $"実行に失敗しました: {ex.Message}", "エラー",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (InvalidOperationException ex)
         {
             MessageBox.Show(this, $"実行に失敗しました: {ex.Message}", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);

@@ -99,6 +99,8 @@ sealed class HookManager
                 }
             }
         }
+        // フックコールバック内では例外を外に漏らすとフックチェーンが壊れるため、全例外をキャッチする
+#pragma warning disable CA1031 // フックコールバック内の最終防御ライン
         catch (Exception ex)
         {
             Debug.WriteLine($"OnKeyHookで例外: {ex}");
@@ -108,6 +110,7 @@ sealed class HookManager
                 $"キーボードフック処理中にエラーが発生しました:\n{ex.Message}\n\n{ex.StackTrace}",
                 "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error));
         }
+#pragma warning restore CA1031
     }
 
     void OnMouseHook(object? sender, MouseHookEventArgs e)
@@ -163,6 +166,8 @@ sealed class HookManager
                 }
             }
         }
+        // フックコールバック内では例外を外に漏らすとフックチェーンが壊れるため、全例外をキャッチする
+#pragma warning disable CA1031 // フックコールバック内の最終防御ライン
         catch (Exception ex)
         {
             Debug.WriteLine($"OnMouseHookで例外: {ex}");
@@ -170,5 +175,6 @@ sealed class HookManager
                 $"マウスフック処理中にエラーが発生しました:\n{ex.Message}\n\n{ex.StackTrace}",
                 "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error));
         }
+#pragma warning restore CA1031
     }
 }

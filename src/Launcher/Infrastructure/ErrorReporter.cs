@@ -1,4 +1,3 @@
-#nullable disable
 using System.Text;
 using System.Windows.Forms;
 using Launcher.UI;
@@ -17,7 +16,7 @@ public class ErrorReporter
     /// </summary>
     public static ErrorReporter Instance => instance;
 
-    Control owner;
+    Control? owner;
 
     object lockObject = new object();
     bool localLock;
@@ -29,7 +28,7 @@ public class ErrorReporter
     /// <summary>
     /// オーナーウィンドウ
     /// </summary>
-    public Control Owner
+    public Control? Owner
     {
         get { return owner; }
         set { owner = value; }
@@ -48,7 +47,7 @@ public class ErrorReporter
     /// アプリケーションの再起動を行う。
     /// 必ず実装すべし。
     /// </summary>
-    public event EventHandler RestartApplication;
+    public event EventHandler? RestartApplication;
 
     /// <summary>
     /// アプリケーションの終了を行う。
@@ -57,7 +56,7 @@ public class ErrorReporter
     /// <remarks>
     /// Application.Exit()するだけでいい気がする…。
     /// </remarks>
-    public event EventHandler ExitApplication;
+    public event EventHandler? ExitApplication;
 
     /// <summary>
     /// ハンドラを登録する。
@@ -75,7 +74,7 @@ public class ErrorReporter
         Application.ThreadException -= new ThreadExceptionEventHandler(Application_ThreadException);
     }
 
-    void form_Disposed(object sender, EventArgs e)
+    void form_Disposed(object? sender, EventArgs e)
     {
         owner = null;
     }
@@ -83,7 +82,7 @@ public class ErrorReporter
     /// <summary>
     /// トラップされなかった例外が発生すると呼び出されるイベント。
     /// </summary>
-    void Application_ThreadException(object sender, ThreadExceptionEventArgs e)
+    void Application_ThreadException(object? sender, ThreadExceptionEventArgs e)
     {
         OnException(e.Exception);
     }
@@ -107,21 +106,24 @@ public class ErrorReporter
             switch (ShowReporterForm(e))
             {
                 case DialogResult.Abort: // 終了
-                    ExitApplication(this, EventArgs.Empty);
+                    ExitApplication?.Invoke(this, EventArgs.Empty);
                     break;
                 case DialogResult.Retry: // 再起動
-                    RestartApplication(this, EventArgs.Empty);
+                    RestartApplication?.Invoke(this, EventArgs.Empty);
                     break;
                 case DialogResult.None:
                 case DialogResult.Ignore: // 続行
                     break;
             }
         }
+        // エラーレポーター自体の例外ハンドリング（最終防御ライン）
+#pragma warning disable CA1031 // エラーレポーターは最終防御ラインのため全例外をキャッチする
         catch (Exception ex)
         {
             System.Diagnostics.Debug.Fail(ex.ToString());
             // ここに再帰すると面倒なので。。
         }
+#pragma warning restore CA1031
         finally
         {
             localLock = false;
@@ -178,18 +180,18 @@ public class ErrorReporter
             builder.AppendLine(e.Source);
             builder.AppendLine();
         }
-        Exception ie = e.InnerException;
+        Exception? ie = e.InnerException;
         if (ie != null)
         {
             builder.Append("InnerException -> ");
             AppendExceptionString(builder, ie);
             builder.AppendLine(" <- InnerException");
         }
-        Exception be = e.GetBaseException();
+        Exception? be = e.GetBaseException();
         if (be != null && be != ie && !object.Equals(be, e))
         {
             builder.Append("BaseException -> ");
-            AppendExceptionString(builder, ie);
+            AppendExceptionString(builder, be);
             builder.Append(" <- BaseException");
         }
     }

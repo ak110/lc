@@ -1,4 +1,3 @@
-#nullable disable
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net.Http;
@@ -21,7 +20,7 @@ public static class UpdatePerformer
     /// <summary>
     /// 更新を実行する。ZIPダウンロード→展開→バッチスクリプト生成・起動→アプリ終了。
     /// </summary>
-    public static async Task PerformUpdateAsync(GitHubRelease release, IProgress<string> progress = null)
+    public static async Task PerformUpdateAsync(GitHubRelease release, IProgress<string>? progress = null)
     {
         // ZIPアセットを検索
         var zipAsset = release.Assets?.Find(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
@@ -30,7 +29,7 @@ public static class UpdatePerformer
             throw new InvalidOperationException("ZIPアセットが見つかりません。");
         }
 
-        string appDir = Path.GetDirectoryName(Application.ExecutablePath);
+        string appDir = Path.GetDirectoryName(Application.ExecutablePath)!;
         string tempDir = Path.Combine(Path.GetTempPath(), "launcher_update_" + Guid.NewGuid().ToString("N")[..8]);
         string zipPath = tempDir + ".zip";
 
@@ -83,8 +82,8 @@ public static class UpdatePerformer
         catch
         {
             // 失敗時はクリーンアップ
-            try { if (File.Exists(zipPath)) File.Delete(zipPath); } catch { }
-            try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true); } catch { }
+            try { if (File.Exists(zipPath)) File.Delete(zipPath); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             throw;
         }
     }

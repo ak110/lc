@@ -570,7 +570,11 @@ public partial class MainForm : Form
                         }
                     }
                 }
-                catch (Exception ex)
+                catch (InvalidOperationException ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(ex.ToString());
+                }
+                catch (ArgumentException ex)
                 {
                     System.Diagnostics.Debug.WriteLine(ex.ToString());
                 }
@@ -580,8 +584,9 @@ public partial class MainForm : Form
                 }
             }));
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
+            // Invoke失敗（フォームが破棄済み等。ObjectDisposedExceptionも含む）
             e.Icon?.Dispose();
             System.Diagnostics.Debug.WriteLine(ex.ToString());
         }
@@ -827,7 +832,11 @@ public partial class MainForm : Form
         {
             System.Diagnostics.Debug.Fail(e.ToString()); // 邪魔なので黙殺。オプションで普通にMessageBoxの方がいいかも？
         }
-        catch (Exception e)
+        catch (IOException e)
+        {
+            ErrorMessageBox(e);
+        }
+        catch (InvalidOperationException e)
         {
             ErrorMessageBox(e);
         }
@@ -849,15 +858,15 @@ public partial class MainForm : Form
                     MessageBox.Show(this, msg, "エラー",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                catch
+                catch (InvalidOperationException)
                 {
-                    // 無視。
+                    // フォーム破棄済み等で表示不可（ObjectDisposedExceptionも含む）
                 }
             }));
         }
-        catch
+        catch (InvalidOperationException)
         {
-            // 無視。
+            // Invoke失敗（ObjectDisposedExceptionも含む）
         }
     }
 

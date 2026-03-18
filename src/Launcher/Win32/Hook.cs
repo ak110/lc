@@ -151,6 +151,8 @@ public static class Hook
     public static void SetKeyHook()
     {
         UnsetKeyHook();
+        // フックプロシージャ内では例外を外に漏らすとシステム全体に影響するため、全例外をキャッチする
+#pragma warning disable CA1031 // フックプロシージャは全例外をキャッチしてCallNextHookExを呼ぶ必要がある
         keyProc = new LowLevelKeyboardProc(delegate (int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam)
         {
             try
@@ -171,6 +173,7 @@ public static class Hook
                 return CallNextHookEx(keyHook, nCode, wParam, ref lParam);
             }
         });
+#pragma warning restore CA1031
         IntPtr hModule = GetModuleHandle(null);
         keyHook = SetWindowsHookEx(WH_KEYBOARD_LL, keyProc, hModule, 0);
         if (keyHook == IntPtr.Zero)
@@ -185,6 +188,8 @@ public static class Hook
     public static void SetMouseHook()
     {
         UnsetMouseHook();
+        // フックプロシージャ内では例外を外に漏らすとシステム全体に影響するため、全例外をキャッチする
+#pragma warning disable CA1031 // フックプロシージャは全例外をキャッチしてCallNextHookExを呼ぶ必要がある
         mouseProc = new LowLevelMouseProc(delegate (int nCode, IntPtr wParam, ref MSLLHOOKSTRUCT lParam)
         {
             try
@@ -205,6 +210,7 @@ public static class Hook
                 return CallNextHookEx(mouseHook, nCode, wParam, ref lParam);
             }
         });
+#pragma warning restore CA1031
         IntPtr hModule = GetModuleHandle(null);
         mouseHook = SetWindowsHookEx(WH_MOUSE_LL, mouseProc, hModule, 0);
         if (mouseHook == IntPtr.Zero)

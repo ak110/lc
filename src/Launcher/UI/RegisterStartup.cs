@@ -166,7 +166,10 @@ public partial class RegisterStartup : UserControl
             {
                 sendto = File.Exists(GetSendToName()) ? 1 : 0;
             }
-            catch
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
             {
             }
             button5.Enabled = sendto == 0;

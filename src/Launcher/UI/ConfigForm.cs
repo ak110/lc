@@ -32,7 +32,11 @@ public partial class ConfigForm : Form
         {
             comboBox1.SelectedItem = KeyTable.GetKeyName(hk.First!.Value);
         }
-        catch
+        catch (ArgumentException)
+        {
+            comboBox1.SelectedItem = "Space";
+        }
+        catch (InvalidOperationException)
         {
             comboBox1.SelectedItem = "Space";
         }

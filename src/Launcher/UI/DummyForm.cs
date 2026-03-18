@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http;
 using Launcher.Core;
 using Launcher.Infrastructure;
 using Launcher.Updater;
@@ -38,7 +39,7 @@ public partial class DummyForm : Form
         config = Config.Deserialize();
         CommandList = CommandList.Deserialize(".cmd.cfg");
         ButtonLauncherData = ButtonLauncherData.Deserialize();
-        try { data = Data.Deserialize(); } catch { }
+        try { data = Data.Deserialize(); } catch (IOException) { } catch (InvalidOperationException) { }
 
         notifyIcon1.Text = Infrastructure.AppVersion.Title;
         notifyIcon1.Visible = config.TrayIcon;
@@ -115,12 +116,15 @@ public partial class DummyForm : Form
                         buttonLauncherForm?.ShowLauncher();
                     }
                 }
+                // WndProc内の例外ハンドラ: WinFormsのメッセージループ内なので握りつぶす必要がある
+#pragma warning disable CA1031 // WndProcはメッセージループの最終防御ライン
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"WndProc WM_APPMSG処理で例外: {ex}");
                     MessageBox.Show($"メッセージ処理中にエラーが発生しました:\n{ex.Message}\n\n{ex.StackTrace}",
                         "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+#pragma warning restore CA1031
             }
         }
         base.WndProc(ref m);
@@ -262,7 +266,17 @@ public partial class DummyForm : Form
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"更新チェックに失敗しました。\n{ex.Message}", AppVersion.Title,
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (TaskCanceledException ex)
+        {
+            MessageBox.Show($"更新チェックに失敗しました。\n{ex.Message}", AppVersion.Title,
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (IOException ex)
         {
             MessageBox.Show($"更新チェックに失敗しました。\n{ex.Message}", AppVersion.Title,
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -283,7 +297,19 @@ public partial class DummyForm : Form
                 {
                     await form.PerformUpdateAsync();
                 }
-                catch (Exception ex)
+                catch (HttpRequestException ex)
+                {
+                    Debug.WriteLine($"更新失敗: {ex.Message}");
+                    MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                catch (IOException ex)
+                {
+                    Debug.WriteLine($"更新失敗: {ex.Message}");
+                    MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                catch (InvalidOperationException ex)
                 {
                     Debug.WriteLine($"更新失敗: {ex.Message}");
                     MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",

@@ -26,10 +26,14 @@ static class Program
             if (appDir == null) return;
             foreach (var file in Directory.GetFiles(appDir, "*.old"))
             {
-                try { File.Delete(file); } catch { }
+                try { File.Delete(file); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
         }
-        catch
+        catch (IOException)
+        {
+            // クリーンアップ失敗は無視
+        }
+        catch (UnauthorizedAccessException)
         {
             // クリーンアップ失敗は無視
         }
@@ -64,6 +68,8 @@ static class Program
             {
                 if (args[i] == "/close")
                 {
+                    // エントリポイントでのIPC送信: 常駐プロセスが存在しない場合など多様な失敗がありうる
+#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
                     try
                     {
                         Data data = Data.Deserialize();
@@ -71,14 +77,16 @@ static class Program
                             new WindowHelper(checked((IntPtr)data.WindowHandle));
                         window.PostMessage(WM.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
                     }
-                    catch
+                    catch (Exception)
                     {
                         // とりあえずエラーは無視。
                     }
+#pragma warning restore CA1031
                     return;
                 }
                 else if (args[i] == "/restart")
                 {
+#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
                     try
                     {
                         Data data = Data.Deserialize();
@@ -86,10 +94,11 @@ static class Program
                             new WindowHelper(checked((IntPtr)data.WindowHandle));
                         window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RESTART);
                     }
-                    catch
+                    catch (Exception)
                     {
                         // とりあえずエラーは無視。
                     }
+#pragma warning restore CA1031
                     return;
                 }
                 else if (File.Exists(args[i]) || Directory.Exists(args[i]))
@@ -104,6 +113,7 @@ static class Program
                             commandList.Add(command);
                             commandList.Serialize(".cmd.cfg");
 
+#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
                             try
                             {
                                 Data data = Data.Deserialize();
@@ -111,10 +121,11 @@ static class Program
                                     new WindowHelper(checked((IntPtr)data.WindowHandle));
                                 window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RELOAD);
                             }
-                            catch
+                            catch (Exception)
                             {
                                 // とりあえずエラーは無視。
                             }
+#pragma warning restore CA1031
                         }
                         exit = true;
                     }
