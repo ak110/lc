@@ -1,4 +1,3 @@
-#nullable disable
 using System.Collections;
 using System.ComponentModel;
 
@@ -20,9 +19,9 @@ public partial class RadioButtonList : UserControl
         InitializeComponent();
     }
 
-    void radioButton_CheckedChanged(object sender, EventArgs e)
+    void radioButton_CheckedChanged(object? sender, EventArgs e)
     {
-        RadioButton r = (RadioButton)sender;
+        RadioButton r = (RadioButton)sender!;
         if (r.Checked)
         {
             int index = items.IndexOf(r);
@@ -67,12 +66,12 @@ public partial class RadioButtonList : UserControl
     /// <summary>
     /// SelectedIndex変更されたイベント
     /// </summary>
-    public event EventHandler SelectedIndexChanged;
+    public event EventHandler? SelectedIndexChanged;
 
     /// <summary>
     /// 選択された項目
     /// </summary>
-    public object SelectedItem
+    public object? SelectedItem
     {
         get
         {
@@ -89,7 +88,7 @@ public partial class RadioButtonList : UserControl
         {
             lock (lockObject)
             {
-                SelectedIndex = items.FindIndex(delegate (RadioButton r) { return r.Tag.Equals(value); });
+                SelectedIndex = items.FindIndex(delegate (RadioButton r) { return r.Tag?.Equals(value) == true; });
             }
         }
     }
@@ -97,11 +96,11 @@ public partial class RadioButtonList : UserControl
     /// <summary>
     /// 項目のリスト
     /// </summary>
-    public object[] Items
+    public object?[] Items
     {
         get
         {
-            object[] array = new object[items.Count];
+            object?[] array = new object?[items.Count];
             new ObjectCollection(this).CopyTo(array, 0);
             return array;
         }
@@ -114,10 +113,10 @@ public partial class RadioButtonList : UserControl
             }
         }
     }
-    public string[] StringItems
+    public string?[] StringItems
     {
-        get { return Array.ConvertAll(Items, x => x.ToString()); }
-        set { Items = value; }
+        get { return Array.ConvertAll(Items, x => x?.ToString()); }
+        set { Items = value!; }
     }
 
     /// <summary>
@@ -168,7 +167,7 @@ public partial class RadioButtonList : UserControl
 
         [DesignerSerializationVisibility(0)]
         [Browsable(false)]
-        public virtual object this[int index]
+        public virtual object? this[int index]
         {
             get
             {
@@ -185,13 +184,13 @@ public partial class RadioButtonList : UserControl
                 {
                     if (index < 0 || owner.items.Count <= index)
                         throw new ArgumentOutOfRangeException(nameof(index));
-                    owner.items[index].Tag = value;
-                    owner.items[index].Text = value.ToString();
+                    owner.items[index].Tag = value!;
+                    owner.items[index].Text = value?.ToString() ?? "";
                 }
             }
         }
 
-        public int Add(object item)
+        public int Add(object? item)
         {
             ArgumentNullException.ThrowIfNull(item);
             lock (owner.lockObject)
@@ -210,9 +209,9 @@ public partial class RadioButtonList : UserControl
             }
         }
 
-        public void AddRange(object[] items)
+        public void AddRange(object?[] items)
         {
-            foreach (object v in items)
+            foreach (object? v in items)
             {
                 Add(v);
             }
@@ -227,12 +226,12 @@ public partial class RadioButtonList : UserControl
             }
         }
 
-        public bool Contains(object value)
+        public bool Contains(object? value)
         {
-            return owner.items.Exists(delegate (RadioButton r) { return r.Tag.Equals(value); });
+            return owner.items.Exists(delegate (RadioButton r) { return r.Tag?.Equals(value) == true; });
         }
 
-        public void CopyTo(object[] destination, int arrayIndex)
+        public void CopyTo(object?[] destination, int arrayIndex)
         {
             for (int i = 0; i < owner.items.Count; i++)
             {
@@ -248,15 +247,16 @@ public partial class RadioButtonList : UserControl
             }
         }
 
-        public int IndexOf(object value)
+        public int IndexOf(object? value)
         {
             ArgumentNullException.ThrowIfNull(value);
 
-            return owner.items.FindIndex(delegate (RadioButton r) { return r.Tag.Equals(value); });
+            return owner.items.FindIndex(delegate (RadioButton r) { return r.Tag?.Equals(value) == true; });
         }
 
-        public void Insert(int index, object item)
+        public void Insert(int index, object? item)
         {
+            ArgumentNullException.ThrowIfNull(item);
             lock (owner.lockObject)
             {
 #pragma warning disable CA2000 // Controls コレクションがRadioButtonのライフサイクルを管理
@@ -266,7 +266,7 @@ public partial class RadioButtonList : UserControl
             }
         }
 
-        public void Remove(object value)
+        public void Remove(object? value)
         {
             Remove(IndexOf(value));
         }
@@ -315,7 +315,7 @@ public partial class RadioButtonList : UserControl
         {
             RadioButton r = new RadioButton();
             r.Tag = item;
-            r.Text = item.ToString();
+            r.Text = item.ToString() ?? "";
             r.Checked = owner.items.Count == owner.selectedIndex;
             r.AutoSize = true;
             r.UseVisualStyleBackColor = true;

@@ -1,4 +1,3 @@
-#nullable disable
 using System.ComponentModel;
 using Launcher.Core;
 using Launcher.Win32;
@@ -58,7 +57,7 @@ public partial class MainForm : Form
         // ハンドル作成（アイコン非同期読み込みのInvokeに必要）
         _ = Handle;
         // リストビューの構築とアイコン読み込みを事前実行
-        textBox1_TextChanged(this, null);
+        textBox1_TextChanged(this, EventArgs.Empty);
         ApplyConfig();
         // 初回表示時にtextBox1へフォーカスを設定（Alt+Spaceでシステムメニューが出る問題の対策）
         ActiveControl = textBox1;
@@ -71,7 +70,7 @@ public partial class MainForm : Form
     {
         if (initialized) return;
         // PreInitialize未実行時のフォールバック
-        textBox1_TextChanged(this, null);
+        textBox1_TextChanged(this, EventArgs.Empty);
         ApplyConfig();
     }
 
@@ -369,10 +368,10 @@ public partial class MainForm : Form
     {
         switch (ownerForm.Config.ItemDoubleClick)
         {
-            case ItemAction.Execute: 実行RToolStripMenuItem_Click(this, null); break;
-            case ItemAction.EditConfig: フォルダを開くFToolStripMenuItem_Click(this, null); break;
-            case ItemAction.OpenDirectory: 設定CToolStripMenuItem1_Click(this, null); break;
-            case ItemAction.None: 削除DToolStripMenuItem_Click(this, null); break;
+            case ItemAction.Execute: 実行RToolStripMenuItem_Click(this, EventArgs.Empty); break;
+            case ItemAction.EditConfig: フォルダを開くFToolStripMenuItem_Click(this, EventArgs.Empty); break;
+            case ItemAction.OpenDirectory: 設定CToolStripMenuItem1_Click(this, EventArgs.Empty); break;
+            case ItemAction.None: 削除DToolStripMenuItem_Click(this, EventArgs.Empty); break;
         }
     }
 
@@ -412,7 +411,7 @@ public partial class MainForm : Form
         }
         else if (e.KeyCode == Keys.Apps)
         { // メニュー
-            listView1.ContextMenuStrip.Show(listView1, new Point());
+            listView1.ContextMenuStrip!.Show(listView1, new Point());
             e.Handled = true;
         }
         else if (e.KeyCode == Keys.Enter && e.Modifiers == Keys.Control)
@@ -457,7 +456,7 @@ public partial class MainForm : Form
     {
         if (listView1.SelectedItems.Count == 1)
         {
-            Command command = (Command)listView1.SelectedItems[0].Tag;
+            Command command = (Command)listView1.SelectedItems[0].Tag!;
             ActivateTextBox();
             ExecuteCommand(command, "");
         }
@@ -467,7 +466,7 @@ public partial class MainForm : Form
     {
         if (listView1.SelectedItems.Count == 1)
         {
-            Command command = (Command)listView1.SelectedItems[0].Tag;
+            Command command = (Command)listView1.SelectedItems[0].Tag!;
             ActivateTextBox();
             OpenDirectory(command);
         }
@@ -477,7 +476,7 @@ public partial class MainForm : Form
     {
         if (listView1.SelectedItems.Count == 1)
         {
-            Command command = (Command)listView1.SelectedItems[0].Tag;
+            Command command = (Command)listView1.SelectedItems[0].Tag!;
             ActivateTextBox();
             using (EditCommandForm form = new EditCommandForm(command))
             {
@@ -496,7 +495,7 @@ public partial class MainForm : Form
         if (listView1.SelectedItems.Count == 1)
         {
             var removeItem = listView1.SelectedItems[0];
-            var command = (Command)removeItem.Tag;
+            var command = (Command)removeItem.Tag!;
             ActivateTextBox();
             if (MessageBox.Show(this, "コマンド " + command.Name + " を削除します。", "確認",
                 MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK)
@@ -513,7 +512,7 @@ public partial class MainForm : Form
     {
         if (listView1.SelectedItems.Count == 1)
         {
-            Command command = ((Command)listView1.SelectedItems[0].Tag).Clone();
+            Command command = ((Command)listView1.SelectedItems[0].Tag!).Clone();
             ActivateTextBox();
             using (EditCommandForm form = new EditCommandForm(command))
             {
@@ -537,7 +536,7 @@ public partial class MainForm : Form
     /// <summary>
     /// アイコン読み込まれたイベント。
     /// </summary>
-    void iconLoader_IconLoaded(object sender, IconLoadedEventArgs e)
+    void iconLoader_IconLoaded(object? sender, IconLoadedEventArgs e)
     {
         // Invoke()にはハンドルが必要（CreatedはShow()まで立たないのでIsHandleCreatedで判定）
         if (!IsHandleCreated || IsDisposed)
@@ -547,7 +546,7 @@ public partial class MainForm : Form
         }
         try
         {
-            Command command = (Command)e.Arg;
+            Command command = (Command)e.Arg!;
             Invoke(new MethodInvoker(delegate ()
             {
                 try
@@ -557,7 +556,7 @@ public partial class MainForm : Form
 
                     if (e.Icon != null)
                     {
-                        imageList1.Images.Add(command.FileName, (System.Drawing.Icon)e.Icon.Clone());
+                        imageList1.Images.Add(command.FileName, (System.Drawing.Icon)e.Icon.Clone()!);
                     }
                     command.IconIndex = imageList1.Images.IndexOfKey(command.FileName);
                     // リストビューに存在してたらセットしとく
@@ -687,13 +686,13 @@ public partial class MainForm : Form
     /// </summary>
     private void button1_Click(object sender, EventArgs e)
     {
-        Command command = null;
+        Command? command = null;
         if (lastFocus == 0)
         {
             // 通常のエディットボックスからの実行
             if (0 < listView1.Items.Count)
             {
-                command = (Command)listView1.Items[0].Tag;
+                command = (Command)listView1.Items[0].Tag!;
             }
         }
         else
@@ -701,7 +700,7 @@ public partial class MainForm : Form
             // リストビューからの実行
             if (0 < listView1.SelectedItems.Count)
             {
-                command = (Command)listView1.SelectedItems[0].Tag;
+                command = (Command)listView1.SelectedItems[0].Tag!;
             }
         }
         if (state == InputState.Empty && lastFocus == 0)
@@ -779,9 +778,9 @@ public partial class MainForm : Form
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start(command);
     }
-    private void OpenDirectoryThread(object arg)
+    private void OpenDirectoryThread(object? arg)
     {
-        Command cmd = (Command)arg;
+        Command cmd = (Command)arg!;
         cmd.OpenDirectory(ownerForm.Config);
     }
 
@@ -816,11 +815,11 @@ public partial class MainForm : Form
     /// <summary>
     /// ThreadPool上で実行される処理。
     /// </summary>
-    private void ExecuteThread(object args)
+    private void ExecuteThread(object? args)
     {
         try
         {
-            ExecuteParams ep = (ExecuteParams)args;
+            ExecuteParams ep = (ExecuteParams)args!;
             ep.Command.Execute(ep.Input,
                 ownerForm.Config, ep.Handle);
         }

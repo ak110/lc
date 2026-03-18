@@ -1,4 +1,3 @@
-#nullable disable
 using Launcher.Core;
 using Launcher.Infrastructure;
 using Launcher.Win32;
@@ -31,7 +30,7 @@ public partial class ConfigForm : Form
         checkBox4.Checked = (hk.Second & KeyTable.Modifiers.Win) != 0;
         try
         {
-            comboBox1.SelectedItem = KeyTable.GetKeyName(hk.First.Value);
+            comboBox1.SelectedItem = KeyTable.GetKeyName(hk.First!.Value);
         }
         catch
         {
@@ -50,14 +49,14 @@ public partial class ConfigForm : Form
         comboBox3.SelectedIndex = (int)config.ButtonLauncherActivation;
     }
 
-    private void buttonOk_Click(object sender, EventArgs e)
+    private void buttonOk_Click(object? sender, EventArgs e)
     {
         string key = "";
         if (checkBox1.Checked) key += "Ctrl+";
         if (checkBox2.Checked) key += "Alt+";
         if (checkBox3.Checked) key += "Shift+";
         if (checkBox4.Checked) key += "Win+";
-        config.HotKey = key + comboBox1.SelectedItem.ToString();
+        config.HotKey = key + (comboBox1.SelectedItem?.ToString() ?? "");
         config.TrayIcon = checkBox5.Checked;
         config.IconDoubleClick = (TrayIconAction)radioButtonList1.SelectedIndex;
         config.ItemDoubleClick = (ItemAction)radioButtonList2.SelectedIndex;
@@ -74,7 +73,7 @@ public partial class ConfigForm : Form
     /// <summary>
     /// 置換環境変数の設定ボタン
     /// </summary>
-    private void button1_Click(object sender, EventArgs e)
+    private void button1_Click(object? sender, EventArgs e)
     {
         using (EnvConfigForm form = new EnvConfigForm(config.ReplaceEnv))
         {

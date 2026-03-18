@@ -1,4 +1,3 @@
-#nullable disable
 using Launcher.Infrastructure;
 
 namespace Launcher.UI;
@@ -19,7 +18,7 @@ public partial class ErrorReporterForm : Form
         textBox2.Text = ErrorReporter.GetDetailMessage(exception);
 
         // 閉じる。
-        button4_Click(this, null);
+        button4_Click(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -34,7 +33,7 @@ public partial class ErrorReporterForm : Form
     /// <summary>
     /// 詳細ボタン
     /// </summary>
-    private void button4_Click(object sender, EventArgs e)
+    private void button4_Click(object? sender, EventArgs e)
     {
         if (button4.Text == ">> 詳細(&D)")
         {

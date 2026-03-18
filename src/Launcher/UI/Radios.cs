@@ -1,5 +1,3 @@
-#nullable disable
-
 namespace Launcher.UI;
 
 /// <summary>
@@ -29,7 +27,7 @@ public class Radios
         // ラジオボタンを(敢えて再帰はせずに1階層だけ)探す
         foreach (Control c in parent.Controls)
         {
-            RadioButton r = c as RadioButton;
+            RadioButton? r = c as RadioButton;
             if (r != null)
             {
                 list.Add(r);

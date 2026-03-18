@@ -1,4 +1,3 @@
-#nullable disable
 using Launcher.Core;
 using Launcher.Win32;
 
@@ -19,9 +18,9 @@ public partial class ButtonLauncherForm : Form
     const int ButtonHeight = 64;
 
     // D&D用
-    Button dragSource;
-    ButtonEntry dragEntry;
-    ButtonTab dragSourceTab;
+    Button? dragSource;
+    ButtonEntry? dragEntry;
+    ButtonTab? dragSourceTab;
     Point dragStartPoint;
 
     ButtonLauncherData Data => owner.ButtonLauncherData;
@@ -163,7 +162,7 @@ public partial class ButtonLauncherForm : Form
     /// <summary>
     /// グリッド上のボタンを1つ作成
     /// </summary>
-    private Button CreateGridButton(ButtonEntry entry, int row, int col)
+    private Button CreateGridButton(ButtonEntry? entry, int row, int col)
     {
         var btn = new Button
         {
@@ -285,7 +284,7 @@ public partial class ButtonLauncherForm : Form
 
     #region ロック機能
 
-    private void lockButton_Click(object sender, EventArgs e)
+    private void lockButton_Click(object? sender, EventArgs e)
     {
         Data.IsLocked = lockButton.Checked;
         ApplyLockState();
@@ -337,10 +336,10 @@ public partial class ButtonLauncherForm : Form
 
     #region ボタンクリック・コマンド実行
 
-    private void GridButton_Click(object sender, EventArgs e)
+    private void GridButton_Click(object? sender, EventArgs e)
     {
-        var btn = (Button)sender;
-        var pos = (ButtonPosition)btn.Tag;
+        var btn = (Button)sender!;
+        var pos = (ButtonPosition)btn.Tag!;
         var tabData = GetCurrentTabData();
         if (tabData == null) return;
 
@@ -367,14 +366,14 @@ public partial class ButtonLauncherForm : Form
 
     #region 右クリックメニュー
 
-    private Button contextMenuTarget;
+    private Button? contextMenuTarget;
 
     /// <summary>
     /// ボタン右クリックメニューのOpening時にメニュー項目の有効/無効を設定
     /// </summary>
-    private void ButtonContextMenu_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+    private void ButtonContextMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e)
     {
-        var menu = (ContextMenuStrip)sender;
+        var menu = (ContextMenuStrip)sender!;
         contextMenuTarget = menu.SourceControl as Button;
         if (contextMenuTarget == null)
         {
@@ -382,7 +381,7 @@ public partial class ButtonLauncherForm : Form
             return;
         }
 
-        var pos = (ButtonPosition)contextMenuTarget.Tag;
+        var pos = (ButtonPosition)contextMenuTarget.Tag!;
         var tabData = GetCurrentTabData();
         var entry = tabData?.GetButton(pos.Row, pos.Col);
 
@@ -393,13 +392,13 @@ public partial class ButtonLauncherForm : Form
         buttonContextMenu.Items[6].Enabled = hasCommand; // 削除
     }
 
-    private void GridButton_MouseDown(object sender, MouseEventArgs e)
+    private void GridButton_MouseDown(object? sender, MouseEventArgs e)
     {
         if (e.Button == MouseButtons.Left && Data.IsLocked)
         {
             // ロック時のD&D開始準備（実際のDoDragDropはMouseMoveで閾値超過時に呼ぶ）
-            var btn = (Button)sender;
-            var pos = (ButtonPosition)btn.Tag;
+            var btn = (Button)sender!;
+            var pos = (ButtonPosition)btn.Tag!;
             var tabData = GetCurrentTabData();
             var entry = tabData?.GetButton(pos.Row, pos.Col);
             if (entry != null && !entry.IsEmpty)
@@ -412,16 +411,16 @@ public partial class ButtonLauncherForm : Form
         }
     }
 
-    private void ButtonMenu_Execute(object sender, EventArgs e)
+    private void ButtonMenu_Execute(object? sender, EventArgs e)
     {
         if (contextMenuTarget == null) return;
         GridButton_Click(contextMenuTarget, EventArgs.Empty);
     }
 
-    private void ButtonMenu_Edit(object sender, EventArgs e)
+    private void ButtonMenu_Edit(object? sender, EventArgs e)
     {
         if (contextMenuTarget == null) return;
-        var pos = (ButtonPosition)contextMenuTarget.Tag;
+        var pos = (ButtonPosition)contextMenuTarget.Tag!;
         var tabData = GetCurrentTabData();
         if (tabData == null) return;
 
@@ -434,29 +433,29 @@ public partial class ButtonLauncherForm : Form
             entry = new ButtonEntry { Row = pos.Row, Col = pos.Col };
         }
 
-        using (var form = new EditCommandForm(entry))
+        using (var form = new EditCommandForm(entry!))
         {
             if (form.ShowDialog(this) == DialogResult.OK)
             {
                 if (isNew)
                 {
                     // 新規: FileNameが設定されていれば保存
-                    if (!entry.IsEmpty)
+                    if (!entry!.IsEmpty)
                     {
                         tabData.SetButton(pos.Row, pos.Col, entry);
                     }
                 }
-                contextMenuTarget.Text = entry.Name ?? "";
+                contextMenuTarget!.Text = entry!.Name ?? "";
                 iconLoader.Load(entry.FileName, false, contextMenuTarget);
                 SaveData();
             }
         }
     }
 
-    private void ButtonMenu_OpenFolder(object sender, EventArgs e)
+    private void ButtonMenu_OpenFolder(object? sender, EventArgs e)
     {
         if (contextMenuTarget == null) return;
-        var pos = (ButtonPosition)contextMenuTarget.Tag;
+        var pos = (ButtonPosition)contextMenuTarget.Tag!;
         var tabData = GetCurrentTabData();
         var entry = tabData?.GetButton(pos.Row, pos.Col);
         if (entry == null || entry.IsEmpty) return;
@@ -464,10 +463,10 @@ public partial class ButtonLauncherForm : Form
         entry.OpenDirectory(owner.Config);
     }
 
-    private void ButtonMenu_AssignFromCommand(object sender, EventArgs e)
+    private void ButtonMenu_AssignFromCommand(object? sender, EventArgs e)
     {
         if (contextMenuTarget == null) return;
-        var pos = (ButtonPosition)contextMenuTarget.Tag;
+        var pos = (ButtonPosition)contextMenuTarget.Tag!;
         var tabData = GetCurrentTabData();
         if (tabData == null) return;
 
@@ -485,10 +484,10 @@ public partial class ButtonLauncherForm : Form
         }
     }
 
-    private void ButtonMenu_Delete(object sender, EventArgs e)
+    private void ButtonMenu_Delete(object? sender, EventArgs e)
     {
         if (contextMenuTarget == null) return;
-        var pos = (ButtonPosition)contextMenuTarget.Tag;
+        var pos = (ButtonPosition)contextMenuTarget.Tag!;
         var tabData = GetCurrentTabData();
         if (tabData == null) return;
 
@@ -502,7 +501,7 @@ public partial class ButtonLauncherForm : Form
 
     #region ファイルD&D / ボタンD&D
 
-    private void GridButton_MouseMove(object sender, MouseEventArgs e)
+    private void GridButton_MouseMove(object? sender, MouseEventArgs e)
     {
         if (dragSource == null || dragEntry == null) return;
         if (e.Button != MouseButtons.Left) return;
@@ -512,7 +511,7 @@ public partial class ButtonLauncherForm : Form
         if (Math.Abs(e.X - dragStartPoint.X) > dragSize.Width / 2 ||
             Math.Abs(e.Y - dragStartPoint.Y) > dragSize.Height / 2)
         {
-            var btn = (Button)sender;
+            var btn = (Button)sender!;
             btn.DoDragDrop(dragEntry, DragDropEffects.Move);
             // DoDragDropはブロッキング。戻り後にフィールドをクリア
             dragSource = null;
@@ -521,7 +520,7 @@ public partial class ButtonLauncherForm : Form
         }
     }
 
-    private void GridButton_MouseUp(object sender, MouseEventArgs e)
+    private void GridButton_MouseUp(object? sender, MouseEventArgs e)
     {
         // ドラッグ閾値未到達でリリースした場合のクリア（通常クリック動作を壊さない）
         if (e.Button == MouseButtons.Left)
@@ -532,9 +531,9 @@ public partial class ButtonLauncherForm : Form
         }
     }
 
-    private void GridButton_DragEnter(object sender, DragEventArgs e)
+    private void GridButton_DragEnter(object? sender, DragEventArgs e)
     {
-        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        if (e.Data!.GetDataPresent(DataFormats.FileDrop))
         {
             e.Effect = DragDropEffects.Link;
         }
@@ -548,17 +547,17 @@ public partial class ButtonLauncherForm : Form
         }
     }
 
-    private void GridButton_DragDrop(object sender, DragEventArgs e)
+    private void GridButton_DragDrop(object? sender, DragEventArgs e)
     {
-        var btn = (Button)sender;
-        var pos = (ButtonPosition)btn.Tag;
+        var btn = (Button)sender!;
+        var pos = (ButtonPosition)btn.Tag!;
         var destTabData = GetCurrentTabData();
         if (destTabData == null) return;
 
-        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        if (e.Data!.GetDataPresent(DataFormats.FileDrop))
         {
             // ファイルD&D → コマンド登録
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            string[] files = (string[])e.Data!.GetData(DataFormats.FileDrop)!;
             if (files.Length > 0)
             {
                 var cmd = Command.FromFile(files[0]);
@@ -572,7 +571,7 @@ public partial class ButtonLauncherForm : Form
         else if (dragSource != null && dragEntry != null && dragSourceTab != null)
         {
             // ボタン間D&D（クロスタブ対応）
-            var srcPos = (ButtonPosition)dragSource.Tag;
+            var srcPos = (ButtonPosition)dragSource.Tag!;
             var srcTabData = dragSourceTab;
 
             // 移動先の既存エントリ
@@ -602,7 +601,7 @@ public partial class ButtonLauncherForm : Form
     /// <summary>
     /// タブヘッダー上でのドラッグオーバー: マウス位置のタブに切り替え
     /// </summary>
-    private void TabControl1_DragOver(object sender, DragEventArgs e)
+    private void TabControl1_DragOver(object? sender, DragEventArgs e)
     {
         if (dragSource == null) { e.Effect = DragDropEffects.None; return; }
 
@@ -624,7 +623,7 @@ public partial class ButtonLauncherForm : Form
     /// <summary>
     /// タブヘッダー上にドロップされた場合のフォールバック
     /// </summary>
-    private void TabControl1_DragDrop(object sender, DragEventArgs e)
+    private void TabControl1_DragDrop(object? sender, DragEventArgs e)
     {
         // タブヘッダー上にドロップされた場合は何もしない（ボタン上へのドロップで処理される）
     }
@@ -633,7 +632,7 @@ public partial class ButtonLauncherForm : Form
 
     #region タブ管理
 
-    private void TabControl1_MouseClick(object sender, MouseEventArgs e)
+    private void TabControl1_MouseClick(object? sender, MouseEventArgs e)
     {
         if (e.Button != MouseButtons.Right) return;
 
@@ -648,7 +647,7 @@ public partial class ButtonLauncherForm : Form
 
     private void AddTab()
     {
-        string name = ShowInputDialog("タブ名を入力してください:", "タブの追加", $"Tab{Data.Tabs.Count + 1}");
+        string? name = ShowInputDialog("タブ名を入力してください:", "タブの追加", $"Tab{Data.Tabs.Count + 1}");
         if (name == null) return;
 
         var tab = new ButtonTab { Name = name };
@@ -666,8 +665,8 @@ public partial class ButtonLauncherForm : Form
         var tabPage = tabControl1.SelectedTab;
         if (tabPage == null) return;
 
-        var tabData = (ButtonTab)tabPage.Tag;
-        string name = ShowInputDialog("新しいタブ名:", "タブ名の変更", tabData.Name);
+        var tabData = (ButtonTab)tabPage.Tag!;
+        string? name = ShowInputDialog("新しいタブ名:", "タブ名の変更", tabData.Name);
         if (name == null) return;
 
         tabData.Name = name;
@@ -692,7 +691,7 @@ public partial class ButtonLauncherForm : Form
         var tabPage = tabControl1.SelectedTab;
         if (tabPage == null) return;
 
-        var tabData = (ButtonTab)tabPage.Tag;
+        var tabData = (ButtonTab)tabPage.Tag!;
         if (MessageBox.Show(this, $"タブ「{tabData.Name}」を削除しますか？", "確認",
             MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
 
@@ -705,7 +704,7 @@ public partial class ButtonLauncherForm : Form
         SaveData();
     }
 
-    private void tabControl1_MouseWheel(object sender, MouseEventArgs e)
+    private void tabControl1_MouseWheel(object? sender, MouseEventArgs e)
     {
         int count = tabControl1.TabPages.Count;
         if (count <= 1) return;
@@ -725,7 +724,7 @@ public partial class ButtonLauncherForm : Form
 
     #region アイコン読み込み
 
-    private void IconLoader_IconLoaded(object sender, IconLoadedEventArgs e)
+    private void IconLoader_IconLoaded(object? sender, IconLoadedEventArgs e)
     {
         if (e.Generation != iconLoader.Generation)
         {
@@ -761,7 +760,7 @@ public partial class ButtonLauncherForm : Form
 
     #region ヘルパー
 
-    private ButtonTab GetCurrentTabData()
+    private ButtonTab? GetCurrentTabData()
     {
         return tabControl1.SelectedTab?.Tag as ButtonTab;
     }
@@ -774,18 +773,18 @@ public partial class ButtonLauncherForm : Form
     /// <summary>
     /// 指定タブページのグリッドを再構築
     /// </summary>
-    private void RebuildTab(TabPage tabPage)
+    private void RebuildTab(TabPage? tabPage)
     {
         if (tabPage == null) return;
         iconLoader.Clear();
-        var tabData = (ButtonTab)tabPage.Tag;
+        var tabData = (ButtonTab)tabPage.Tag!;
         BuildGrid(tabPage, tabData);
     }
 
     /// <summary>
     /// ButtonTabに対応するTabPageを検索
     /// </summary>
-    private TabPage FindTabPage(ButtonTab tabData)
+    private TabPage? FindTabPage(ButtonTab tabData)
     {
         foreach (TabPage page in tabControl1.TabPages)
         {
@@ -802,7 +801,7 @@ public partial class ButtonLauncherForm : Form
     /// <summary>
     /// 簡易入力ダイアログ
     /// </summary>
-    private static string ShowInputDialog(string prompt, string title, string defaultValue)
+    private static string? ShowInputDialog(string prompt, string title, string defaultValue)
     {
         using (var form = new Form())
         {
@@ -846,7 +845,7 @@ public partial class ButtonLauncherForm : Form
 internal sealed class CommandSelectDialog : Form
 {
     readonly ListView listView;
-    public Command SelectedCommand { get; private set; }
+    public Command? SelectedCommand { get; private set; }
 
     public CommandSelectDialog(CommandList commandList)
     {
@@ -873,7 +872,7 @@ internal sealed class CommandSelectDialog : Form
         {
             if (listView.SelectedItems.Count == 1)
             {
-                SelectedCommand = (Command)listView.SelectedItems[0].Tag;
+                SelectedCommand = (Command)listView.SelectedItems[0].Tag!;
                 DialogResult = DialogResult.OK;
                 Close();
             }
@@ -897,7 +896,7 @@ internal sealed class CommandSelectDialog : Form
         {
             if (listView.SelectedItems.Count == 1)
             {
-                SelectedCommand = (Command)listView.SelectedItems[0].Tag;
+                SelectedCommand = (Command)listView.SelectedItems[0].Tag!;
             }
         };
         var cancel = new Button

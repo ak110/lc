@@ -1,4 +1,3 @@
-#nullable disable
 using Launcher.Core;
 
 namespace Launcher.UI;
@@ -26,13 +25,13 @@ public partial class EditCommandForm : Form
         textBox1.Text = v.Name;
         textBox2.Text = v.FileName;
         textBox3.Text = v.Param;
-        textBox4.Text = v.WorkDir;
+        textBox4.Text = v.WorkDir ?? "";
         new Radios(groupBox1, 6).Value = (int)v.Show;
         new Radios(groupBox2, 6).Value = (int)v.Priority;
         checkBox1.Checked = v.RunAsAdmin;
     }
 
-    private void buttonOk_Click(object sender, EventArgs e)
+    private void buttonOk_Click(object? sender, EventArgs e)
     {
         v.Name = textBox1.Text;
         v.FileName = textBox2.Text;

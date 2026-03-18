@@ -1,4 +1,3 @@
-#nullable disable
 using System.Windows.Forms;
 using Launcher.Core;
 using Launcher.Infrastructure;
@@ -23,7 +22,8 @@ static class Program
     {
         try
         {
-            string appDir = Path.GetDirectoryName(Application.ExecutablePath);
+            string? appDir = Path.GetDirectoryName(Application.ExecutablePath);
+            if (appDir == null) return;
             foreach (var file in Directory.GetFiles(appDir, "*.old"))
             {
                 try { File.Delete(file); } catch { }

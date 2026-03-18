@@ -1,4 +1,3 @@
-#nullable disable
 using System.Runtime.InteropServices;
 using Launcher.Win32;
 
@@ -80,10 +79,10 @@ public static class FormsHelper
 
     #region 閉じるボタンを無効にするためのWinAPIなど。
 
-    static void form_Resize(object sender, EventArgs e)
+    static void form_Resize(object? sender, EventArgs e)
     {
         // 最大化とかした時に戻っちゃう気がするので再設定
-        Control form = sender as Control;
+        Control? form = sender as Control;
         if (form != null)
             EnableMenuItem(GetSystemMenu(form.Handle, false), SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
     }
@@ -167,11 +166,11 @@ public static class FormsHelper
     /// <summary>
     /// ノードを再帰的に探す。
     /// </summary>
-    public static TreeNode Find(TreeView tree, Predicate<TreeNode> predict)
+    public static TreeNode? Find(TreeView tree, Predicate<TreeNode> predict)
     {
         foreach (TreeNode node in tree.Nodes)
         {
-            TreeNode ret = Find(node, predict);
+            TreeNode? ret = Find(node, predict);
             if (ret != null) return ret;
         }
         return null;
@@ -179,12 +178,12 @@ public static class FormsHelper
     /// <summary>
     /// ノードを再帰的に探す。
     /// </summary>
-    public static TreeNode Find(TreeNode node, Predicate<TreeNode> predict)
+    public static TreeNode? Find(TreeNode node, Predicate<TreeNode> predict)
     {
         if (predict(node)) return node;
         foreach (TreeNode child in node.Nodes)
         {
-            TreeNode posterity = Find(child, predict);
+            TreeNode? posterity = Find(child, predict);
             if (posterity != null) return posterity;
         }
         return null;
@@ -193,7 +192,7 @@ public static class FormsHelper
     /// <summary>
     /// アイテムを探す。
     /// </summary>
-    public static ListViewItem Find(ListView listView, Predicate<ListViewItem> predict)
+    public static ListViewItem? Find(ListView listView, Predicate<ListViewItem> predict)
     {
         foreach (ListViewItem item in listView.Items)
         {
@@ -306,7 +305,7 @@ public static class FormsHelper
     /// <summary>
     /// DragDropイベントの処理時に、ドロップ先のノードを取得する処理。
     /// </summary>
-    public static TreeNode GetDropTarget(TreeView treeView, DragEventArgs e)
+    public static TreeNode? GetDropTarget(TreeView treeView, DragEventArgs e)
     {
         Point p = treeView.PointToClient(new Point(e.X, e.Y));
         return treeView.GetNodeAt(p.X, p.Y);
@@ -314,7 +313,7 @@ public static class FormsHelper
     /// <summary>
     /// DragDropイベントの処理時に、ドロップ先のノードを取得する処理。
     /// </summary>
-    public static ListViewItem GetDropTarget(ListView listView, DragEventArgs e)
+    public static ListViewItem? GetDropTarget(ListView listView, DragEventArgs e)
     {
         Point p = listView.PointToClient(new Point(e.X, e.Y));
         return listView.GetItemAt(p.X, p.Y);
@@ -322,7 +321,7 @@ public static class FormsHelper
     /// <summary>
     /// DragDropイベントの処理時に、ドロップ先のノードを取得する処理。
     /// </summary>
-    public static object GetDropTarget(ListBox listBox, DragEventArgs e)
+    public static object? GetDropTarget(ListBox listBox, DragEventArgs e)
     {
         int? n = GetDropTargetIndex(listBox, e);
         return n.HasValue ? listBox.Items[n.Value] : null;
@@ -490,7 +489,7 @@ public static class FormsHelper
         listBox.BeginUpdate();
         try
         {
-            object selected = listBox.SelectedItem;
+            object? selected = listBox.SelectedItem;
             object[] objs = new object[listBox.Items.Count];
             listBox.Items.CopyTo(objs, 0);
             Array.Sort(objs, delegate (object a, object b)

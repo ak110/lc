@@ -1,4 +1,3 @@
-#nullable disable
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -13,15 +12,15 @@ namespace Launcher.UI;
 [DefaultProperty("BaseName")]
 public partial class RegisterStartup : UserControl
 {
-    string baseName;
-    string sendToName;
+    string? baseName;
+    string? sendToName;
 
     public RegisterStartup()
     {
         InitializeComponent();
     }
 
-    private void RegisterStartup_Load(object sender, EventArgs e)
+    private void RegisterStartup_Load(object? sender, EventArgs e)
     {
         UpdateButtonValid();
     }
@@ -30,7 +29,7 @@ public partial class RegisterStartup : UserControl
 
     [DefaultValue(null)]
     [Description("作成するショートカットのファイル名(拡張子を除く)")]
-    public string BaseName
+    public string? BaseName
     {
         get { return baseName; }
         set { baseName = value; }
@@ -53,7 +52,7 @@ public partial class RegisterStartup : UserControl
 
     [DefaultValue(null)]
     [Description("送るに登録するファイル名(拡張子を除く＋省略可)。デフォルトならBaseNameを使用する。")]
-    public string SendToName
+    public string? SendToName
     {
         get { return sendToName; }
         set { sendToName = value; }
@@ -66,42 +65,42 @@ public partial class RegisterStartup : UserControl
         if (string.IsNullOrEmpty(baseName))
         {
             return Path.GetFileNameWithoutExtension(
-                Environment.ProcessPath);
+                Environment.ProcessPath)!;
         }
         return baseName;
     }
 
-    private void button1_Click(object sender, EventArgs e)
+    private void button1_Click(object? sender, EventArgs e)
     {
         CreateShortcut(GetCommonStartupLinkName());
         UpdateButtonValid();
     }
 
-    private void button2_Click(object sender, EventArgs e)
+    private void button2_Click(object? sender, EventArgs e)
     {
         File.Delete(GetCommonStartupLinkName());
         UpdateButtonValid();
     }
 
-    private void button3_Click(object sender, EventArgs e)
+    private void button3_Click(object? sender, EventArgs e)
     {
         CreateShortcut(GetStartupLinkName());
         UpdateButtonValid();
     }
 
-    private void button4_Click(object sender, EventArgs e)
+    private void button4_Click(object? sender, EventArgs e)
     {
         File.Delete(GetStartupLinkName());
         UpdateButtonValid();
     }
 
-    private void button5_Click(object sender, EventArgs e)
+    private void button5_Click(object? sender, EventArgs e)
     {
         CreateShortcut(GetSendToName());
         UpdateButtonValid();
     }
 
-    private void button6_Click(object sender, EventArgs e)
+    private void button6_Click(object? sender, EventArgs e)
     {
         File.Delete(GetSendToName());
         UpdateButtonValid();
@@ -114,7 +113,7 @@ public partial class RegisterStartup : UserControl
     {
         using (ShellLink link = new ShellLink())
         {
-            link.TargetPath = Environment.ProcessPath;
+            link.TargetPath = Environment.ProcessPath!;
             link.Arguments = "";
             //link.WorkingDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
             link.Description = "";

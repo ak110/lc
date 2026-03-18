@@ -1,4 +1,3 @@
-#nullable disable
 using System.Diagnostics;
 using Launcher.Core;
 using Launcher.Win32;
@@ -70,7 +69,7 @@ sealed class HookManager
         Hook.MouseHook -= OnMouseHook;
     }
 
-    void OnKeyHook(object sender, KeyHookEventArgs e)
+    void OnKeyHook(object? sender, KeyHookEventArgs e)
     {
         try
         {
@@ -111,7 +110,7 @@ sealed class HookManager
         }
     }
 
-    void OnMouseHook(object sender, MouseHookEventArgs e)
+    void OnMouseHook(object? sender, MouseHookEventArgs e)
     {
         try
         {

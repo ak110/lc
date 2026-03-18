@@ -1,4 +1,3 @@
-#nullable disable
 using System.IO;
 using Launcher.Infrastructure;
 
@@ -22,16 +21,16 @@ public partial class EnvConfigForm : Form
 
         foreach (System.Collections.DictionaryEntry p in Environment.GetEnvironmentVariables())
         {
-            string value = p.Value.ToString();
+            string? value = p.Value?.ToString();
             //try { value = FileName.GetFullPath(value); } catch { }
-            if (Directory.Exists(value) || File.Exists(value))
+            if (value != null && (Directory.Exists(value) || File.Exists(value)))
             {
-                string name = p.Key.ToString();
-                if (this.replaceEnv.Contains(name))
+                string? name = p.Key?.ToString();
+                if (name != null && this.replaceEnv.Contains(name))
                 {
                     //listBox2.Items.Add(name);
                 }
-                else
+                else if (name != null)
                 {
                     listBox1.Items.Add(name);
                 }
@@ -39,7 +38,7 @@ public partial class EnvConfigForm : Form
         }
     }
 
-    private void buttonOk_Click(object sender, EventArgs e)
+    private void buttonOk_Click(object? sender, EventArgs e)
     {
         replaceEnv = FormsHelper.GetArray<string>(listBox2);
     }
@@ -47,9 +46,9 @@ public partial class EnvConfigForm : Form
     /// <summary>
     /// 追加
     /// </summary>
-    private void button1_Click(object sender, EventArgs e)
+    private void button1_Click(object? sender, EventArgs e)
     {
-        string item = listBox1.SelectedItem as string;
+        string? item = listBox1.SelectedItem as string;
         if (item != null)
         {
             FormsHelper.RemoveSelected(listBox1);
@@ -60,9 +59,9 @@ public partial class EnvConfigForm : Form
     /// <summary>
     /// 削除
     /// </summary>
-    private void button2_Click(object sender, EventArgs e)
+    private void button2_Click(object? sender, EventArgs e)
     {
-        string item = listBox2.SelectedItem as string;
+        string? item = listBox2.SelectedItem as string;
         if (item != null)
         {
             FormsHelper.RemoveSelected(listBox2);

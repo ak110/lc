@@ -1,4 +1,3 @@
-#nullable disable
 using Launcher.Core;
 using Launcher.Win32;
 
@@ -11,7 +10,7 @@ public partial class CommandManagementForm : Form
 {
     readonly DummyForm owner;
     readonly AsyncIconLoader iconLoader = new AsyncIconLoader();
-    ImageList imageList;
+    ImageList? imageList;
 
     public CommandManagementForm(DummyForm owner)
     {
@@ -38,7 +37,7 @@ public partial class CommandManagementForm : Form
         listView1.BeginUpdate();
         listView1.Items.Clear();
         iconLoader.Clear();
-        imageList.Images.Clear();
+        imageList?.Images.Clear();
 
         foreach (var cmd in owner.CommandList.Commands)
         {
@@ -61,7 +60,7 @@ public partial class CommandManagementForm : Form
         UpdateButtonState();
     }
 
-    private void IconLoader_IconLoaded(object sender, IconLoadedEventArgs e)
+    private void IconLoader_IconLoaded(object? sender, IconLoadedEventArgs e)
     {
         if (e.Generation != iconLoader.Generation) return;
         if (!IsHandleCreated) return;
@@ -71,10 +70,10 @@ public partial class CommandManagementForm : Form
             if (IsDisposed) return;
             if (e.Icon == null) return;
 
-            var item = (ListViewItem)e.Arg;
+            var item = (ListViewItem)e.Arg!;
             if (item.ListView == null) return;
 
-            int index = imageList.Images.Count;
+            int index = imageList!.Images.Count;
             imageList.Images.Add(e.Icon);
             item.ImageIndex = index;
         });
@@ -87,12 +86,12 @@ public partial class CommandManagementForm : Form
         buttonDelete.Enabled = count > 0;
     }
 
-    private void listView1_SelectedIndexChanged(object sender, EventArgs e)
+    private void listView1_SelectedIndexChanged(object? sender, EventArgs e)
     {
         UpdateButtonState();
     }
 
-    private void listView1_DoubleClick(object sender, EventArgs e)
+    private void listView1_DoubleClick(object? sender, EventArgs e)
     {
         if (listView1.SelectedItems.Count == 1)
         {
@@ -100,7 +99,7 @@ public partial class CommandManagementForm : Form
         }
     }
 
-    private void buttonEdit_Click(object sender, EventArgs e)
+    private void buttonEdit_Click(object? sender, EventArgs e)
     {
         EditSelectedCommand();
     }
@@ -110,7 +109,7 @@ public partial class CommandManagementForm : Form
         if (listView1.SelectedItems.Count != 1) return;
 
         var item = listView1.SelectedItems[0];
-        var cmd = (Command)item.Tag;
+        var cmd = (Command)item.Tag!;
 
         using (var form = new EditCommandForm(cmd))
         {
@@ -126,7 +125,7 @@ public partial class CommandManagementForm : Form
         }
     }
 
-    private void buttonDelete_Click(object sender, EventArgs e)
+    private void buttonDelete_Click(object? sender, EventArgs e)
     {
         int count = listView1.SelectedItems.Count;
         if (count <= 0) return;
@@ -144,7 +143,7 @@ public partial class CommandManagementForm : Form
         var toRemove = new List<Command>();
         foreach (ListViewItem item in listView1.SelectedItems)
         {
-            toRemove.Add((Command)item.Tag);
+            toRemove.Add((Command)item.Tag!);
         }
         foreach (var cmd in toRemove)
         {

@@ -1,4 +1,3 @@
-#nullable disable
 using System.Diagnostics;
 using Launcher.Core;
 using Launcher.Infrastructure;
@@ -16,7 +15,7 @@ public partial class DummyForm : Form
 
     HookManager hookManager;
     MainForm mainForm;
-    ButtonLauncherForm buttonLauncherForm;
+    ButtonLauncherForm? buttonLauncherForm;
 
     public Config Config
     {
@@ -170,7 +169,7 @@ public partial class DummyForm : Form
         switch (config.IconDoubleClick)
         {
             case TrayIconAction.ShowHide: ShowHide(); break;
-            case TrayIconAction.ShowConfig: 設定CToolStripMenuItem_Click(this, null); break;
+            case TrayIconAction.ShowConfig: 設定CToolStripMenuItem_Click(this, EventArgs.Empty); break;
             default: break;
         }
     }
