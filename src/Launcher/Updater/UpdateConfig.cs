@@ -1,49 +1,31 @@
 #nullable disable
+using System.Xml.Serialization;
 
 namespace Launcher.Updater;
 
-public enum ProxyType : int {
-	None,
-	System,
-	Custom
-}
 /// <summary>
-/// 通信設定など。
+/// GitHub Releases連携の更新設定
 /// </summary>
 [Serializable]
-public class UpdateConfig : ICloneable {
-	/// <summary>
-	/// プロクシサーバー
-	/// </summary>
-	public ProxyType ProxyType = ProxyType.System;
-	/// <summary>
-	/// プロクシサーバー
-	/// </summary>
-	public string ProxyServer = "proxy.example.com:80";
+public class UpdateConfig {
+    /// <summary>
+    /// GitHubリポジトリのオーナー
+    /// </summary>
+    public string Owner { get; set; } = "";
 
-	/// <summary>
-	/// バックアップを行うのかどうか
-	/// </summary>
-	public bool Backup = true;
-	/// <summary>
-	/// バックアップ世代数
-	/// </summary>
-	public int BackupCount = 4;
+    /// <summary>
+    /// GitHubリポジトリ名
+    /// </summary>
+    public string Repository { get; set; } = "";
 
-	/// <summary>
-	/// 複製の作成
-	/// </summary>
-	public UpdateConfig Clone() {
-		UpdateConfig copy = (UpdateConfig)MemberwiseClone();
-		// string以外の参照型なメンバがあればここでコピー
-		return copy;
-	}
+    /// <summary>
+    /// 更新チェック間隔（日数）。0で無効
+    /// </summary>
+    public int CheckIntervalDays { get; set; } = 7;
 
-	#region ICloneable メンバ
-
-	object ICloneable.Clone() {
-		return Clone();
-	}
-
-	#endregion
+    /// <summary>
+    /// 更新チェックが有効かどうか
+    /// </summary>
+    [XmlIgnore]
+    public bool IsEnabled => !string.IsNullOrEmpty(Owner) && !string.IsNullOrEmpty(Repository) && CheckIntervalDays > 0;
 }

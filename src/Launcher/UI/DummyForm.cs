@@ -184,25 +184,31 @@ public partial class DummyForm : Form {
 
 
     private void ネットワーク更新設定OToolStripMenuItem_Click(object sender, EventArgs e) {
-        using (UpdateConfigForm form = new UpdateConfigForm(config.UpdateConfig)) {
-            if (form.ShowDialog(this) == DialogResult.OK) {
-                config.UpdateConfig = form.Config;
-                config.Serialize();
-            }
-        }
+        // TODO: GitHub Releases用の設定UIを実装する
     }
 
-    private void ネットワーク更新NToolStripMenuItem_Click(object sender, EventArgs e) {
-        //string url = "http://tqzh.tk:24497/data/lc.cfg";
-        string url = "http://hp.vector.co.jp/authors/VA039571/lc.cfg";
-        using (UpdateForm form = new UpdateForm(url,
-            config.UpdateConfig, data.UpdateRecord)) {
-            form.ShowDialog(this);
-            data.UpdateRecord = form.UpdateRecord;
-            data.Serialize();
-            if (form.Finished) {
-                Close();
+    private async void ネットワーク更新NToolStripMenuItem_Click(object sender, EventArgs e) {
+        var client = new GitHubUpdateClient(config.UpdateConfig);
+        try {
+            var release = await client.GetLatestReleaseAsync();
+            if (release == null) return;
+
+            data.UpdateRecord.LastChecked = DateTime.Now;
+
+            if (client.IsUpdateAvailable(release, data.UpdateRecord)) {
+                data.UpdateRecord.LastKnownVersion = release.TagName;
+                using (var form = new UpdateForm(release)) {
+                    var result = form.ShowDialog(this);
+                    if (result == DialogResult.Ignore) {
+                        // スキップ
+                        data.UpdateRecord.SkippedVersion = release.TagName;
+                    }
+                }
             }
+
+            data.Serialize();
+        } catch (Exception ex) {
+            Debug.WriteLine($"更新チェック失敗: {ex.Message}");
         }
     }
 
