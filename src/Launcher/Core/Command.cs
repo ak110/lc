@@ -41,9 +41,8 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// <summary>
     /// アイコンのインデックス
     /// </summary>
-    [NonSerialized]
     [XmlIgnore]
-    public int IconIndex = -1;
+    public int IconIndex { get; set; } = -1;
 
     /// <summary>
     /// 複製の作成
@@ -306,16 +305,6 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         return CommandMatcher.GetMatchScore(Name, input, config);
     }
 
-#if DEBUG
-    static Command()
-    {
-        Config config = new Config();
-        Command cmd = new Command();
-        cmd.Name = "htdocs";
-        int n = cmd.GetMatchScore("docs", config);
-        Debug.Assert(n != 0);
-    }
-#endif
 
     /// <summary>
     /// 指定されたファイルからコマンドのデフォルトを適当に作成。

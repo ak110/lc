@@ -181,4 +181,13 @@ public class CommandMatcherTests
         commandName.Should().Be("cmd");
         arguments.Should().BeNull();
     }
+
+    // --- 部分一致の回帰テスト（旧Command静的コンストラクタの検証を置換） ---
+
+    [Fact]
+    public void GetMatchScore_htdocsにdocsで部分一致する()
+    {
+        int score = CommandMatcher.GetMatchScore("htdocs", "docs", _config);
+        score.Should().BePositive("'htdocs'に'docs'は部分一致するべき");
+    }
 }

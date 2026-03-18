@@ -25,4 +25,11 @@ internal static class NativeMethods
     [DllImport("shell32.dll", EntryPoint = "IsUserAnAdmin")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool IsUserAnAdminNative();
+
+    /// <summary>
+    /// ハードリンクの作成
+    /// </summary>
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
 }

@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 
 namespace Launcher.Infrastructure;
@@ -225,7 +224,10 @@ public static class PathHelper
                 try { DeleteFileForce(destTmpName2); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
         }
+        // クリーンアップ後に再throwするため、広くキャッチする必要がある
+#pragma warning disable CA1031
         catch (Exception)
+#pragma warning restore CA1031
         {
             try
             {
@@ -295,7 +297,10 @@ public static class PathHelper
                 throw new FileChangedOnCopyException(srcInfo.FullName);
             }
         }
+        // クリーンアップ後に再throwするため、広くキャッチする必要がある
+#pragma warning disable CA1031
         catch (Exception)
+#pragma warning restore CA1031
         {
             try
             {
@@ -478,7 +483,7 @@ public static class PathHelper
     {
         try
         {
-            if (!CreateHardLink(fileName, existingFileName, IntPtr.Zero))
+            if (!Win32.NativeMethods.CreateHardLink(fileName, existingFileName, IntPtr.Zero))
             {
                 throw new IOException("ハードリンクの作成に失敗しました");
             }
@@ -488,10 +493,6 @@ public static class PathHelper
             throw new IOException("ハードリンクの作成が未対応です。", e);
         }
     }
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
 
     /// <summary>
     /// PHPのis_writable()的な。

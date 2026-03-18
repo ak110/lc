@@ -9,7 +9,7 @@ namespace Launcher.Infrastructure;
 [Serializable]
 public class ConfigStore
 {
-    static object lockObject = new object();
+    static readonly object lockObject = new object();
 
     /// <summary>
     /// デフォルトのディレクトリパス＋拡張子を除いたベースファイル名を取得。
