@@ -192,9 +192,9 @@ public class CommandTests
     {
         var cmd = new Command();
 
-        cmd.Name.Should().BeNull();
-        cmd.FileName.Should().BeNull();
-        cmd.Param.Should().BeNull();
+        cmd.Name.Should().BeEmpty();
+        cmd.FileName.Should().BeEmpty();
+        cmd.Param.Should().BeEmpty();
         cmd.WorkDir.Should().BeNull();
         cmd.Show.Should().Be(WindowStyle.Normal);
         cmd.Priority.Should().Be(ProcessPriorityLevel.Normal);

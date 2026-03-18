@@ -1,4 +1,3 @@
-#nullable disable
 using System.Drawing;
 using System.Text;
 
@@ -35,7 +34,7 @@ public class LegacyConfigReader
     {
         while (true)
         {
-            string line = reader.ReadLine();
+            string? line = reader.ReadLine();
             if (line == null) break;
             int n = line.IndexOf(" = ");
             if (0 <= n)

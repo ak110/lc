@@ -1,4 +1,3 @@
-#nullable disable
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -18,7 +17,7 @@ namespace Launcher.Infrastructure;
 /// </example>
 public sealed class SingleInstance : IDisposable
 {
-    Mutex mutex;
+    Mutex? mutex;
     bool firstRun;
 
     /// <summary>
@@ -33,7 +32,7 @@ public sealed class SingleInstance : IDisposable
     private static string GetMutexName()
     {
         //string moduleFileName = Application.ExecutablePath;
-        string moduleFileName = Environment.ProcessPath;
+        string moduleFileName = Environment.ProcessPath!;
         //moduleFileName = Path.GetFullPath(Environment.ExpandEnvironmentVariables(moduleFileName));
         string mutexName = moduleFileName.ToLower().Replace('\\', '/');
         return mutexName;
@@ -51,10 +50,20 @@ public sealed class SingleInstance : IDisposable
             mutex = new Mutex(false, mutexName);
             firstRun = mutex.WaitOne(0, false);
         }
-        catch
+        catch (IOException)
         {
             // 多重起動な事にしてしまう。
             firstRun = false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // 多重起動な事にしてしまう。
+            firstRun = false;
+        }
+        catch (AbandonedMutexException)
+        {
+            // 前回のプロセスが異常終了した場合。Mutexは取得済みなので初回起動扱い。
+            firstRun = true;
         }
     }
 
@@ -64,7 +73,7 @@ public sealed class SingleInstance : IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        mutex.Close();
+        mutex?.Close();
     }
 
     /// <summary>
@@ -82,10 +91,17 @@ public sealed class SingleInstance : IDisposable
     {
         foreach (Process p in GetProcesses())
         {
-            if (p.MainWindowHandle != IntPtr.Zero)
+            try
             {
-                SetForegroundWindow(p.MainWindowHandle);
-                BringWindowToTop(p.MainWindowHandle);
+                if (p.MainWindowHandle != IntPtr.Zero)
+                {
+                    SetForegroundWindow(p.MainWindowHandle);
+                    BringWindowToTop(p.MainWindowHandle);
+                }
+            }
+            finally
+            {
+                p.Dispose();
             }
         }
     }
@@ -108,22 +124,24 @@ public sealed class SingleInstance : IDisposable
     public static List<Process> GetProcesses()
     {
         List<Process> list = new List<Process>();
-        Process current = Process.GetCurrentProcess();
+        using Process current = Process.GetCurrentProcess();
         Process[] processes = Process.GetProcessesByName(current.ProcessName);
         foreach (Process p in processes)
         {
             // 自分なら無視
             if (p.Id == current.Id)
             {
+                p.Dispose();
                 continue;
             }
             // ファイル名違うなら無視
-            if (!string.Equals(p.MainModule.FileName,
-                current.MainModule.FileName, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(p.MainModule?.FileName,
+                current.MainModule?.FileName, StringComparison.OrdinalIgnoreCase))
             {
+                p.Dispose();
                 continue;
             }
-            // 追加
+            // 追加（呼び出し元でDisposeする責務）
             list.Add(p);
         }
         return list;

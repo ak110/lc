@@ -1,4 +1,3 @@
-#nullable disable
 using System.Windows.Forms;
 
 namespace Launcher.Updater;
@@ -8,9 +7,9 @@ namespace Launcher.Updater;
 /// </summary>
 public class UpdateForm : Form
 {
-    private Label labelMessage;
-    private Button buttonUpdate;
-    private Button buttonLater;
+    private Label labelMessage = null!;
+    private Button buttonUpdate = null!;
+    private Button buttonLater = null!;
 
     private readonly GitHubRelease _release;
 

@@ -1,6 +1,6 @@
-#nullable disable
 using System.Drawing;
 using System.IO;
+using System.Xml;
 using System.Xml.Serialization;
 using Launcher.Infrastructure;
 
@@ -36,7 +36,15 @@ public class ButtonLauncherData : ConfigStore
         {
             return Deserialize<ButtonLauncherData>(".btns.cfg");
         }
-        catch
+        catch (InvalidOperationException)
+        {
+            return new ButtonLauncherData();
+        }
+        catch (XmlException)
+        {
+            return new ButtonLauncherData();
+        }
+        catch (IOException)
         {
             return new ButtonLauncherData();
         }
@@ -54,7 +62,7 @@ public class ButtonTab
     /// <summary>
     /// 指定位置のボタンを取得。未割り当てならnull。
     /// </summary>
-    public ButtonEntry GetButton(int row, int col)
+    public ButtonEntry? GetButton(int row, int col)
     {
         return Buttons.Find(b => b.Row == row && b.Col == col);
     }
@@ -62,7 +70,7 @@ public class ButtonTab
     /// <summary>
     /// 指定位置のボタンを設定。nullなら削除。
     /// </summary>
-    public void SetButton(int row, int col, ButtonEntry entry)
+    public void SetButton(int row, int col, ButtonEntry? entry)
     {
         Buttons.RemoveAll(b => b.Row == row && b.Col == col);
         if (entry != null)

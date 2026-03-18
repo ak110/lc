@@ -1,4 +1,3 @@
-#nullable disable
 using System.Diagnostics;
 
 namespace Launcher.Infrastructure;

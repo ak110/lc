@@ -1,4 +1,3 @@
-#nullable disable
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
@@ -20,7 +19,7 @@ public class FileChangedOnCopyException : IOException
 /// </summary>
 public sealed class BackupFile : IDisposable
 {
-    SafeFileHandle handle;
+    SafeFileHandle? handle;
     bool processSecurity;
 
     /// <summary>
@@ -91,7 +90,7 @@ public sealed class BackupFile : IDisposable
 
         while (true)
         {
-            if (!BackupRead(handle, buffer,
+            if (!BackupRead(handle!, buffer,
                 (uint)buffer.Length, ref bytesRead,
                 false, processSecurity, ref context))
             {
@@ -104,7 +103,7 @@ public sealed class BackupFile : IDisposable
             destination.Write(buffer, 0, (int)bytesRead);
         }
 
-        if (!BackupRead(IntPtr.Zero, null,
+        if (!BackupRead(IntPtr.Zero, null!,
             0, ref bytesRead, true, processSecurity,
             ref context))
         {
@@ -131,7 +130,7 @@ public sealed class BackupFile : IDisposable
             {
                 break;
             }
-            if (!BackupWrite(handle, buffer,
+            if (!BackupWrite(handle!, buffer,
                 bytesRead, ref bytesWritten,
                 false, processSecurity, ref context) ||
                 bytesRead != bytesWritten)
@@ -141,7 +140,7 @@ public sealed class BackupFile : IDisposable
         }
 
         if (!BackupWrite(IntPtr.Zero,
-            null, 0, ref bytesWritten,
+            null!, 0, ref bytesWritten,
             true, processSecurity, ref context))
         {
             throw new IOException("ファイルへの書き込みに失敗", new Win32Exception());
@@ -164,7 +163,7 @@ public sealed class BackupFile : IDisposable
 
         while (true)
         {
-            if (!BackupRead(handle, buffer,
+            if (!BackupRead(handle!, buffer,
                 (uint)buffer.Length, ref bytesRead,
                 false, processSecurity, ref readContext))
             {
@@ -174,7 +173,7 @@ public sealed class BackupFile : IDisposable
             {
                 break;
             }
-            if (!BackupWrite(destination.handle, buffer,
+            if (!BackupWrite(destination.handle!, buffer,
                 bytesRead, ref bytesWritten,
                 false, processSecurity, ref writeContext) ||
                 bytesRead != bytesWritten)
@@ -183,14 +182,14 @@ public sealed class BackupFile : IDisposable
             }
         }
 
-        if (!BackupRead(IntPtr.Zero, null,
+        if (!BackupRead(IntPtr.Zero, null!,
             0, ref bytesRead, true, processSecurity,
             ref readContext))
         {
             throw new IOException("ファイルのコピーに失敗", new Win32Exception());
         }
         if (!BackupWrite(IntPtr.Zero,
-            null, 0, ref bytesWritten,
+            null!, 0, ref bytesWritten,
             true, processSecurity, ref writeContext))
         {
             throw new IOException("ファイルのコピーに失敗", new Win32Exception());

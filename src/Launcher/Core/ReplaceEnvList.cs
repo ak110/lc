@@ -1,4 +1,3 @@
-#nullable disable
 using System.IO;
 
 namespace Launcher.Core;
@@ -17,7 +16,7 @@ sealed class ReplaceEnvList
     {
         foreach (string name in list)
         {
-            string value = Environment.GetEnvironmentVariable(name);
+            string? value = Environment.GetEnvironmentVariable(name);
             if (!string.IsNullOrEmpty(value))
             {
                 vars.Add(new KeyValuePair<string, string>("%" + name + "%", value));
@@ -55,35 +54,25 @@ sealed class ReplaceEnvList
     /// </summary>
     public void Replace(Command command)
     {
-        // パスを置換
+        // 読み取り→置換→書き込みを一貫して行うためメソッド全体をロック
+        lock (lockObj)
         {
-            string old = command.FileName;
-            string rep = InnerReplace(old);
+            // パスを置換
+            string? rep = InnerReplace(command.FileName);
             if (!string.IsNullOrEmpty(rep))
             {
-                lock (lockObj)
-                {
-                    if (command.FileName == old)
-                        command.FileName = rep;
-                }
+                command.FileName = rep;
             }
-        }
-        // 作業フォルダを置換
-        {
-            string old = command.WorkDir;
-            string rep = InnerReplace(old);
-            if (!string.IsNullOrEmpty(rep))
+            // 作業フォルダを置換
+            string? repDir = InnerReplace(command.WorkDir);
+            if (!string.IsNullOrEmpty(repDir))
             {
-                lock (lockObj)
-                {
-                    if (command.WorkDir == old)
-                        command.WorkDir = rep;
-                }
+                command.WorkDir = repDir;
             }
         }
     }
 
-    private string InnerReplace(string str)
+    private string? InnerReplace(string? str)
     {
         // ひとまず逆向きに置換
         string str2 = InnerReplace2(str, false);
@@ -96,11 +85,11 @@ sealed class ReplaceEnvList
         return InnerReplace2(str2, true);
     }
 
-    private string InnerReplace2(string str, bool valueToName)
+    private string InnerReplace2(string? str, bool valueToName)
     {
         if (string.IsNullOrEmpty(str))
         {
-            return str;
+            return str ?? string.Empty;
         }
         foreach (KeyValuePair<string, string> p in vars)
         {

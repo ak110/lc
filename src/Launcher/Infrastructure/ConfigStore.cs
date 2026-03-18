@@ -1,4 +1,3 @@
-#nullable disable
 using System.Diagnostics;
 using System.Xml.Serialization;
 
@@ -20,7 +19,7 @@ public class ConfigStore
         get
         {
             string path = Path.ChangeExtension(
-                Environment.ProcessPath, null);
+                Environment.ProcessPath, null)!;
 #if DEBUG
             if (path.EndsWith(".vshost"))
             {
@@ -58,7 +57,7 @@ public class ConfigStore
     /// <param name="fileName">保存するファイル名</param>
     public void SerializeToFile(string fileName)
     {
-        using (Mutex mutex = Lock(fileName))
+        using (var mutex = Lock(fileName))
         {
             string tmpFileName = fileName + ".tmp";
             using (FileStream stream = File.Create(tmpFileName))
@@ -126,12 +125,12 @@ public class ConfigStore
     /// </summary>
     public static T DeserializeFromFile<T>(string fileName)
     {
-        using (Mutex mutex = Lock(fileName))
+        using (var mutex = Lock(fileName))
         {
             using (FileStream stream = File.OpenRead(fileName))
             {
                 XmlSerializer formatter = new XmlSerializer(typeof(T));
-                return (T)formatter.Deserialize(stream);
+                return (T)formatter.Deserialize(stream)!;
             }
         }
     }
@@ -146,18 +145,43 @@ public class ConfigStore
         using (StringReader stream = new StringReader(data))
         {
             XmlSerializer formatter = new XmlSerializer(typeof(T));
-            return (T)formatter.Deserialize(stream);
+            return (T)formatter.Deserialize(stream)!;
         }
     }
 
-    static Mutex Lock(string fileName)
+    static MutexLock Lock(string fileName)
     {
         lock (lockObject)
         {
             string mutexName = fileName.ToLower().Replace('\\', '/');
             Mutex mutex = new Mutex(false, mutexName);
             mutex.WaitOne();
-            return mutex;
+            return new MutexLock(mutex);
+        }
+    }
+
+    /// <summary>
+    /// Mutexの取得・解放を安全に行うラッパー。
+    /// ReleaseMutex()を呼んでからClose()することで、
+    /// 他プロセスでAbandonedMutexExceptionが発生するのを防ぐ。
+    /// </summary>
+    private sealed class MutexLock : IDisposable
+    {
+        private Mutex? mutex;
+
+        public MutexLock(Mutex mutex)
+        {
+            this.mutex = mutex;
+        }
+
+        public void Dispose()
+        {
+            if (mutex != null)
+            {
+                mutex.ReleaseMutex();
+                mutex.Close();
+                mutex = null;
+            }
         }
     }
 }

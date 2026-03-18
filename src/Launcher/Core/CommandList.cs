@@ -1,5 +1,5 @@
-#nullable disable
 using System.IO;
+using System.Xml;
 using Launcher.Infrastructure;
 
 namespace Launcher.Core;
@@ -56,8 +56,9 @@ public class CommandList : ConfigStore, ICloneable
         {
             return Deserialize<CommandList>(ext);
         }
-        catch
+        catch (Exception ex) when (ex is InvalidOperationException or XmlException or IOException)
         {
+            // XMLデシリアライズ失敗時はレガシー形式での読み込みを試みる
             string name = DefaultBaseName + ext;
             if (File.Exists(name))
             {
@@ -66,7 +67,7 @@ public class CommandList : ConfigStore, ICloneable
                 {
                     return CommandList.LoadFrom(reader);
                 }
-                catch
+                catch (Exception ex2) when (ex2 is InvalidOperationException or IOException or FormatException)
                 {
                 }
             }

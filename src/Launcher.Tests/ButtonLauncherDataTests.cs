@@ -94,7 +94,7 @@ public class ButtonLauncherDataTests
     [Fact]
     public void ButtonEntry_IsEmptyはFileNameが空なら真()
     {
-        new ButtonEntry { FileName = null }.IsEmpty.Should().BeTrue();
+        new ButtonEntry { FileName = null! }.IsEmpty.Should().BeTrue();
         new ButtonEntry { FileName = "" }.IsEmpty.Should().BeTrue();
         new ButtonEntry { FileName = "test.exe" }.IsEmpty.Should().BeFalse();
     }

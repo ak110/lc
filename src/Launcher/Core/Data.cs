@@ -1,4 +1,5 @@
-#nullable disable
+using System.IO;
+using System.Xml;
 using Launcher.Infrastructure;
 using Launcher.Updater;
 
@@ -29,7 +30,15 @@ public class Data : ConfigStore
         {
             return Deserialize<Data>(".dat");
         }
-        catch
+        catch (InvalidOperationException)
+        {
+            return new Data();
+        }
+        catch (XmlException)
+        {
+            return new Data();
+        }
+        catch (IOException)
         {
             return new Data();
         }

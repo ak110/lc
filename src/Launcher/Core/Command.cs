@@ -1,4 +1,3 @@
-#nullable disable
 using System.Diagnostics;
 using System.IO;
 using System.Xml.Serialization;
@@ -13,19 +12,19 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// <summary>
     /// コマンド名
     /// </summary>
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
     /// <summary>
     /// 実行ファイル等へのパス
     /// </summary>
-    public string FileName { get; set; }
+    public string FileName { get; set; } = string.Empty;
     /// <summary>
     /// 実行時の引数
     /// </summary>
-    public string Param { get; set; }
+    public string Param { get; set; } = string.Empty;
     /// <summary>
     /// 作業ディレクトリ
     /// </summary>
-    public string WorkDir { get; set; }
+    public string? WorkDir { get; set; }
     /// <summary>
     /// 表示モード
     /// </summary>
@@ -66,20 +65,17 @@ public class Command : ICloneable, IComparable<Command>, IComparable
 
     #region IComparable<Command> メンバ
 
-    public int CompareTo(Command other)
+    public int CompareTo(Command? other)
     {
         if (other == null) return 1;
-        if (Name == null && other.Name == null) return 0;
-        if (Name == null) return -1;
-        if (other.Name == null) return 1;
-        return Name.CompareTo(other.Name);
+        return string.Compare(Name, other.Name, StringComparison.Ordinal);
     }
 
     #endregion
 
     #region IComparable メンバ
 
-    public int CompareTo(object obj)
+    public int CompareTo(object? obj)
     {
         return CompareTo(obj as Command);
     }
@@ -91,7 +87,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// </summary>
     public void OpenDirectory(Config config)
     {
-        string path = PathHelper.PathNormalize(FileName);
+        string? path = PathHelper.PathNormalize(FileName);
         if (File.Exists(path) || Directory.Exists(path))
         {
             ProcessStartInfo info = new ProcessStartInfo();
@@ -100,14 +96,14 @@ public class Command : ICloneable, IComparable<Command>, IComparable
                 config.OpenParentFilerParam1 +
                 path +
                 config.OpenParentFilerParam2);
-            using (Process p = Process.Start(info)) { }
+            using (Process? p = Process.Start(info)) { }
         }
         else
         {
             while (!string.IsNullOrEmpty(path))
             {
                 path = Path.GetDirectoryName(path);
-                if (Directory.Exists(path))
+                if (path != null && Directory.Exists(path))
                 {
                     InnerOpenExistsDirectory(config, path);
                     break;
@@ -123,12 +119,12 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         {
             info.FileName = PathHelper.PathNormalize(config.Filer);
             info.Arguments = path;
-            using (Process p = Process.Start(info)) { }
+            using (Process? p = Process.Start(info)) { }
         }
         else
         {
             info.FileName = path;
-            using (Process p = Process.Start(info)) { }
+            using (Process? p = Process.Start(info)) { }
         }
     }
 
@@ -137,7 +133,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// </summary>
     public void Execute(string input, Config config, IntPtr owner)
     {
-        string args;
+        string? args;
         if (string.IsNullOrEmpty(input))
         {
             args = "";
@@ -149,7 +145,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         }
 
         string fileName = PathHelper.PathNormalize(FileName);
-        string workDir;
+        string? workDir;
         if (string.IsNullOrEmpty(WorkDir))
         {
             if (Directory.Exists(fileName))
@@ -158,7 +154,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
             }
             else
             {
-                string dir = Path.GetDirectoryName(fileName);
+                string? dir = Path.GetDirectoryName(fileName);
                 if (!string.IsNullOrEmpty(dir) &&
                     Directory.Exists(dir))
                 {
@@ -254,7 +250,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// </summary>
     private static readonly string[] LineSeparators = ["\r\n", "\n"];
 
-    public static Command LoadFrom(string name, string data)
+    public static Command LoadFrom(string? name, string data)
     {
         Command cmd = new Command();
         string[] list = data.Split(LineSeparators, StringSplitOptions.None);
@@ -288,7 +284,8 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// </summary>
     public bool IsMatch(string input, Config config)
     {
-        string commandName, arguments;
+        string commandName;
+        string? arguments;
         return ParseInput(input, config, out commandName, out arguments);
     }
 
@@ -296,9 +293,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// 入力文字列を、コマンド名と引数に分ける。
     /// </summary>
     /// <returns>コマンド名が一致した場合はtrue。falseだと割と適当な結果が返る。</returns>
-#nullable enable
     public bool ParseInput(string input, Config config, out string commandName, out string? arguments)
-#nullable disable
     {
         return CommandMatcher.ParseInput(Name, input, config, out commandName, out arguments);
     }
@@ -340,10 +335,10 @@ public class Command : ICloneable, IComparable<Command>, IComparable
                     string workingDirectory = PathHelper.PathNormalize(link.WorkingDirectory);
                     command.Name = Path.GetFileNameWithoutExtension(targetPath);
                     command.FileName = targetPath;
-                    command.Param = link.Arguments;
+                    command.Param = link.Arguments ?? string.Empty;
                     command.WorkDir =
                         PathHelper.EqualsPath(
-                        Path.GetDirectoryName(targetPath),
+                        Path.GetDirectoryName(targetPath) ?? string.Empty,
                         workingDirectory) &&
                         2 <= workingDirectory.Length &&
                         workingDirectory[1] == ':' ? null : workingDirectory;
@@ -363,9 +358,13 @@ public class Command : ICloneable, IComparable<Command>, IComparable
                     return command;
                 }
             }
-            catch
+            catch (IOException)
             {
                 // エラー時はそのまま↓へ。
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
+                // ShellLinkのCOM操作失敗時もそのまま↓へ。
             }
         }
         // lnk以外

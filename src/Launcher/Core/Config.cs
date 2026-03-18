@@ -1,8 +1,8 @@
-#nullable disable
 using System.Drawing;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using System.Xml;
 using System.Xml.Serialization;
 using Launcher.Infrastructure;
 
@@ -99,22 +99,38 @@ public class Config : ConfigStore, ICloneable
         {
             return Deserialize<Config>(".cfg");
         }
-        catch
+        catch (InvalidOperationException)
         {
-            string name = DefaultBaseName + ".cfg";
-            if (File.Exists(name))
-            {
-                LegacyConfigReader reader = new LegacyConfigReader(name);
-                try
-                {
-                    return Config.LoadFrom(reader);
-                }
-                catch
-                {
-                }
-            }
-            return new Config();
+            return TryLoadLegacyConfig();
         }
+        catch (XmlException)
+        {
+            return TryLoadLegacyConfig();
+        }
+        catch (IOException)
+        {
+            return TryLoadLegacyConfig();
+        }
+    }
+
+    /// <summary>
+    /// レガシー設定ファイルからの読み込みを試行する
+    /// </summary>
+    private static Config TryLoadLegacyConfig()
+    {
+        string name = DefaultBaseName + ".cfg";
+        if (File.Exists(name))
+        {
+            LegacyConfigReader reader = new LegacyConfigReader(name);
+            try
+            {
+                return Config.LoadFrom(reader);
+            }
+            catch (IOException) { }
+            catch (FormatException) { }
+            catch (IndexOutOfRangeException) { }
+        }
+        return new Config();
     }
 
     #endregion

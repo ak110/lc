@@ -26,8 +26,15 @@ jobs:
       - run: dotnet build Launcher.sln -c Release
         name: Build
 
-      - run: dotnet test Launcher.sln --no-build -c Release
+      - run: dotnet test Launcher.sln --no-build -c Release --collect:"XPlat Code Coverage"
         name: Test
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: "**/TestResults/**/coverage.cobertura.xml"
+          retention-days: 30
 
   docs:
     runs-on: ubuntu-latest

@@ -100,10 +100,10 @@ public class PathHelperTests
     [Fact]
     public void GetRelativeSubPath_null引数はArgumentNullException()
     {
-        var act1 = () => PathHelper.GetRelativeSubPath(null, @"C:\base");
+        var act1 = () => PathHelper.GetRelativeSubPath(null!, @"C:\base");
         act1.Should().Throw<ArgumentNullException>();
 
-        var act2 = () => PathHelper.GetRelativeSubPath(@"C:\path", null);
+        var act2 = () => PathHelper.GetRelativeSubPath(@"C:\path", null!);
         act2.Should().Throw<ArgumentNullException>();
     }
 
@@ -125,6 +125,6 @@ public class PathHelperTests
     [Fact]
     public void PathNormalizeWithFullPath_nullは空文字を返す()
     {
-        PathHelper.PathNormalizeWithFullPath(null).Should().BeEmpty();
+        PathHelper.PathNormalizeWithFullPath(null!).Should().BeEmpty();
     }
 }

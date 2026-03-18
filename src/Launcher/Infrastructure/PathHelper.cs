@@ -1,4 +1,3 @@
-#nullable disable
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 
@@ -137,7 +136,8 @@ public static class PathHelper
             attributes = src.Attributes;
             src.Attributes = FileAttributes.Normal;
         }
-        catch { }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
 
         try
         {
@@ -167,15 +167,15 @@ public static class PathHelper
         // 属性とかを適当に取得(コピーに時間かかるかもしれないので先に取っておく)
         FileInfo src = new FileInfo(sourceName);
         FileAttributes? attributes = null;
-        FileSecurity security = null;
+        FileSecurity? security = null;
         DateTime? creationTime = null;
         DateTime? lastAccessTime = null;
         DateTime? lastWriteTime = null;
-        try { attributes = src.Attributes; } catch { }
-        try { security = src.GetAccessControl(); } catch { }
-        try { creationTime = src.CreationTime; } catch { }
-        try { lastAccessTime = src.LastAccessTime; } catch { }
-        try { lastWriteTime = src.LastWriteTime; } catch { }
+        try { attributes = src.Attributes; } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        try { security = src.GetAccessControl(); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        try { creationTime = src.CreationTime; } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        try { lastAccessTime = src.LastAccessTime; } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        try { lastWriteTime = src.LastWriteTime; } catch (IOException) { } catch (UnauthorizedAccessException) { }
 
         try
         {
@@ -188,11 +188,11 @@ public static class PathHelper
             FileInfo dst = new FileInfo(destName);
             if (dst.Exists)
             {
-                if (lastWriteTime.HasValue) try { dst.LastWriteTime = lastWriteTime.Value; } catch { }
-                if (lastAccessTime.HasValue) try { dst.LastAccessTime = lastAccessTime.Value; } catch { }
-                if (creationTime.HasValue) try { dst.CreationTime = creationTime.Value; } catch { }
-                if (security != null) try { dst.SetAccessControl(security); } catch { }
-                if (attributes.HasValue) try { dst.Attributes = attributes.Value; } catch { }
+                if (lastWriteTime.HasValue) try { dst.LastWriteTime = lastWriteTime.Value; } catch (IOException) { } catch (UnauthorizedAccessException) { }
+                if (lastAccessTime.HasValue) try { dst.LastAccessTime = lastAccessTime.Value; } catch (IOException) { } catch (UnauthorizedAccessException) { }
+                if (creationTime.HasValue) try { dst.CreationTime = creationTime.Value; } catch (IOException) { } catch (UnauthorizedAccessException) { }
+                if (security != null) try { dst.SetAccessControl(security); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+                if (attributes.HasValue) try { dst.Attributes = attributes.Value; } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
         }
     }
@@ -213,7 +213,7 @@ public static class PathHelper
             //File.Copy(sourceName, destFileName, true); // overwrite = true
             CopyFileWithoutLock(sourceName, destTmpName1, true); // overwrite = true
             // コピー先が存在してたらリネーム
-            try { MoveFileForce(destName, destTmpName2); } catch { }
+            try { MoveFileForce(destName, destTmpName2); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             try
             {
                 // コピー先へリネーム
@@ -222,10 +222,10 @@ public static class PathHelper
             finally
             {
                 // 元コピー先を削除
-                try { DeleteFileForce(destTmpName2); } catch { }
+                try { DeleteFileForce(destTmpName2); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
         }
-        catch
+        catch (Exception)
         {
             try
             {
@@ -234,7 +234,8 @@ public static class PathHelper
                     DeleteFileForce(destTmpName2);
                 }
             }
-            catch { }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
             throw;
         }
     }
@@ -294,7 +295,7 @@ public static class PathHelper
                 throw new FileChangedOnCopyException(srcInfo.FullName);
             }
         }
-        catch
+        catch (Exception)
         {
             try
             {
@@ -304,9 +305,8 @@ public static class PathHelper
                     dstInfo.Delete();
                 }
             }
-            catch
-            {
-            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
             throw;
         }
     }
@@ -335,7 +335,11 @@ public static class PathHelper
                 info.Attributes &= ~(FileAttributes.ReadOnly |
                     FileAttributes.System | FileAttributes.Hidden); // 削除の邪魔になりそうなのは解除しといてみる
             }
-            catch (Exception e)
+            catch (IOException e)
+            {
+                System.Diagnostics.Debug.Fail(e.Message);
+            }
+            catch (UnauthorizedAccessException e)
             {
                 System.Diagnostics.Debug.Fail(e.Message);
             }
@@ -402,14 +406,14 @@ public static class PathHelper
     /// <param name="recursive">再帰的に削除するかどうか</param>
     public static void DeleteForce(FileSystemInfo fsi, bool recursive)
     {
-        FileInfo fi = fsi as FileInfo;
+        FileInfo? fi = fsi as FileInfo;
         if (fi != null)
         {
             DeleteFileForce(fi);
         }
         else
         {
-            DirectoryInfo di = fsi as DirectoryInfo;
+            DirectoryInfo? di = fsi as DirectoryInfo;
             if (di != null)
             {
                 DeleteDirectoryForce(di, recursive);
@@ -425,7 +429,7 @@ public static class PathHelper
     public static string GetCorrectPath(string path)
     {
         string fullPath = Path.GetFullPath(path);
-        string root = Path.GetPathRoot(fullPath);
+        string root = Path.GetPathRoot(fullPath) ?? string.Empty;
         string[] dirs = path.Substring(root.Length).Split(Path.DirectorySeparatorChar);
         string ret = root;
         foreach (string name in dirs)
@@ -445,7 +449,12 @@ public static class PathHelper
                         ret = Path.Combine(ret, name);
                     }
                 }
-                catch (Exception e)
+                catch (IOException e)
+                {
+                    System.Diagnostics.Debug.Fail(e.Message);
+                    ret = Path.Combine(ret, name);
+                }
+                catch (UnauthorizedAccessException e)
                 {
                     System.Diagnostics.Debug.Fail(e.Message);
                     ret = Path.Combine(ret, name);

@@ -1,4 +1,3 @@
-#nullable disable
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
@@ -217,7 +216,7 @@ public sealed class ZipReader : IDisposable
     /// </summary>
     public void Extract(string fileName, ZipEntry e)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(fileName));
+        Directory.CreateDirectory(Path.GetDirectoryName(fileName)!);
         using (Stream s = Open(e))
         using (FileStream file = File.Create(fileName))
         {
@@ -279,7 +278,7 @@ sealed class StreamRandAccessor
     {
         _stream.Seek(pos, SeekOrigin.Begin);
         int s;
-        try { s = _stream.Read(data, 0, (int)size); } catch { s = 0; }
+        try { s = _stream.Read(data, 0, (int)size); } catch (IOException) { s = 0; } catch (ObjectDisposedException) { s = 0; }
         return s;
     }
 

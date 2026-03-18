@@ -1,4 +1,3 @@
-#nullable disable
 using System.Diagnostics;
 using System.Windows.Forms;
 
@@ -44,7 +43,7 @@ public static class AppBase
         started = false;
         if (restart)
         {
-            Process.Start(Environment.ProcessPath);
+            Process.Start(Environment.ProcessPath!);
         }
     }
 
@@ -71,12 +70,12 @@ public static class AppBase
         }
     }
 
-    static void errorReporter_ExitApplication(object sender, EventArgs e)
+    static void errorReporter_ExitApplication(object? sender, EventArgs e)
     {
         Application.Exit();
     }
 
-    static void errorReporter_RestartApplication(object sender, EventArgs e)
+    static void errorReporter_RestartApplication(object? sender, EventArgs e)
     {
         restart = true;
         Application.Exit();

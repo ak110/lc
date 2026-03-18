@@ -1,4 +1,3 @@
-#nullable disable
 using System.Xml.Serialization;
 
 namespace Launcher.Core;
