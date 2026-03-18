@@ -29,7 +29,6 @@ namespace Launcher.UI {
 			this.textBox2 = new System.Windows.Forms.TextBox();
 			this.button1 = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
-			this.button3 = new System.Windows.Forms.Button();
 			this.button2 = new System.Windows.Forms.Button();
 			this.button4 = new System.Windows.Forms.Button();
 			this.button5 = new System.Windows.Forms.Button();
@@ -63,7 +62,7 @@ namespace Launcher.UI {
 			this.button1.Location = new System.Drawing.Point(288, 248);
 			this.button1.Name = "button1";
 			this.button1.Size = new System.Drawing.Size(75, 23);
-			this.button1.TabIndex = 7;
+			this.button1.TabIndex = 6;
 			this.button1.Text = "終了(&Q)";
 			this.toolTip1.SetToolTip(this.button1, "アプリケーションを終了します。");
 			this.button1.UseVisualStyleBackColor = true;
@@ -79,18 +78,6 @@ namespace Launcher.UI {
 			this.label1.Text = "   ";
 			this.label1.UseMnemonic = false;
 			//
-			// button3
-			//
-			this.button3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.button3.Location = new System.Drawing.Point(16, 248);
-			this.button3.Name = "button3";
-			this.button3.Size = new System.Drawing.Size(75, 23);
-			this.button3.TabIndex = 4;
-			this.button3.Text = "送信(&S)";
-			this.toolTip1.SetToolTip(this.button3, "開発元にエラーレポートを送信します。");
-			this.button3.UseVisualStyleBackColor = true;
-			this.button3.Click += new System.EventHandler(this.button3_Click);
-			//
 			// button2
 			//
 			this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -98,7 +85,7 @@ namespace Launcher.UI {
 			this.button2.Location = new System.Drawing.Point(208, 248);
 			this.button2.Name = "button2";
 			this.button2.Size = new System.Drawing.Size(75, 23);
-			this.button2.TabIndex = 6;
+			this.button2.TabIndex = 5;
 			this.button2.Text = "再起動(&R)";
 			this.toolTip1.SetToolTip(this.button2, "アプリケーションを再起動します。");
 			this.button2.UseVisualStyleBackColor = true;
@@ -121,7 +108,7 @@ namespace Launcher.UI {
 			this.button5.Location = new System.Drawing.Point(128, 248);
 			this.button5.Name = "button5";
 			this.button5.Size = new System.Drawing.Size(75, 23);
-			this.button5.TabIndex = 5;
+			this.button5.TabIndex = 4;
 			this.button5.Text = "続行(&C)";
 			this.toolTip1.SetToolTip(this.button5, "エラーを無視して続行します。\r\n正常に動作するとは限らないので、早めに終了または再起動を行う事を推奨します。");
 			this.button5.UseVisualStyleBackColor = true;
@@ -134,7 +121,6 @@ namespace Launcher.UI {
 			this.Controls.Add(this.button5);
 			this.Controls.Add(this.button4);
 			this.Controls.Add(this.button2);
-			this.Controls.Add(this.button3);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.button1);
 			this.Controls.Add(this.textBox2);
@@ -156,7 +142,6 @@ namespace Launcher.UI {
 		private System.Windows.Forms.TextBox textBox2;
 		private System.Windows.Forms.Button button1;
 		private System.Windows.Forms.Label label1;
-		private System.Windows.Forms.Button button3;
 		private System.Windows.Forms.Button button2;
 		private System.Windows.Forms.Button button4;
 		private System.Windows.Forms.Button button5;

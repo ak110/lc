@@ -29,28 +29,6 @@ public partial class ErrorReporterForm : Form {
     }
 
     /// <summary>
-    /// 送信ボタン
-    /// </summary>
-    private void button3_Click(object sender, EventArgs e) {
-        if (MessageBox.Show(this, "エラーレポートを開発元に送信します。", "確認",
-            MessageBoxButtons.OKCancel) == DialogResult.OK) {
-            try {
-                ErrorReporter.Instance.SendReport(exception);
-            } catch (Exception ee) {
-                MessageBox.Show(this, ee.Message, "エラー");
-                return;
-            }
-            button3.Enabled = false;
-            MessageBox.Show(this, "エラーレポートは正常に送信されました。" + Environment.NewLine +
-                "ご協力ありがとうございました。" + Environment.NewLine +
-                 Environment.NewLine +
-                 "間もなく修正できるかもしれません。" + Environment.NewLine +
-                "ネットワーク更新してみてください。",
-                "送信完了");
-        }
-    }
-
-    /// <summary>
     /// 詳細ボタン
     /// </summary>
     private void button4_Click(object sender, EventArgs e) {

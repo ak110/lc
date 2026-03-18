@@ -174,19 +174,6 @@ public partial class DummyForm : Form {
         System.Diagnostics.Process.Start(System.IO.Path.GetDirectoryName(Application.ExecutablePath));
     }
 
-    private void 配布サイトを開くWToolStripMenuItem_Click(object sender, EventArgs e) {
-        System.Diagnostics.Process.Start("http://hp.vector.co.jp/authors/VA039571/");
-    }
-
-    private void 作者へメールを送るEToolStripMenuItem_Click(object sender, EventArgs e) {
-        System.Diagnostics.Process.Start("http://tqzh.tk:24497/site/mail/");
-    }
-
-
-    private void ネットワーク更新設定OToolStripMenuItem_Click(object sender, EventArgs e) {
-        // TODO: GitHub Releases用の設定UIを実装する
-    }
-
     private async void ネットワーク更新NToolStripMenuItem_Click(object sender, EventArgs e) {
         var client = new GitHubUpdateClient(config.UpdateConfig);
         try {
@@ -248,7 +235,6 @@ public partial class DummyForm : Form {
         if (e.HookCode == Hook.HC_ACTION) {
             bool todo = (e.WParam == Hook.WM_KEYDOWN ||
                           e.WParam == Hook.WM_SYSKEYDOWN);
-            //bool todo = (pkbhs.flags & Hook.LLKHF_UP) == 0;
             if (todo) {
                 if (e.HookStruct.vkCode == (int)hotkeyVK &&
                     KeyTable.GetModifiers() == modifiers) {

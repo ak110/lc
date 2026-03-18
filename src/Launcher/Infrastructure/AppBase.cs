@@ -22,8 +22,6 @@ public static class AppBase
 		errorReporter.RestartApplication += new EventHandler(errorReporter_RestartApplication);
 		errorReporter.Register();
 
-		//AppDomain.CurrentDomain.DomainUnload += new EventHandler(CurrentDomain_DomainUnload);
-
 		started = true;
 	}
 

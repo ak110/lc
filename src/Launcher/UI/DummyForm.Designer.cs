@@ -32,10 +32,7 @@ namespace Launcher.UI {
 			this.メインウィンドウを表示非表示VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
 			this.実行ファイルのあるフォルダを開くMToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.配布サイトを開くWToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.作者へメールを送るEToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
-			this.ネットワーク更新設定OToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.ネットワーク更新NToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
 			this.再起動RToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -56,10 +53,7 @@ namespace Launcher.UI {
             this.メインウィンドウを表示非表示VToolStripMenuItem,
             this.toolStripSeparator1,
             this.実行ファイルのあるフォルダを開くMToolStripMenuItem,
-            this.配布サイトを開くWToolStripMenuItem,
-            this.作者へメールを送るEToolStripMenuItem,
             this.toolStripSeparator3,
-            this.ネットワーク更新設定OToolStripMenuItem,
             this.ネットワーク更新NToolStripMenuItem,
             this.toolStripSeparator2,
             this.再起動RToolStripMenuItem,
@@ -93,31 +87,10 @@ namespace Launcher.UI {
 			this.実行ファイルのあるフォルダを開くMToolStripMenuItem.Text = "実行ファイルのあるフォルダを開く(&M)";
 			this.実行ファイルのあるフォルダを開くMToolStripMenuItem.Click += new System.EventHandler(this.実行ファイルのあるフォルダを開くMToolStripMenuItem_Click);
 			//
-			// 配布サイトを開くWToolStripMenuItem
-			//
-			this.配布サイトを開くWToolStripMenuItem.Name = "配布サイトを開くWToolStripMenuItem";
-			this.配布サイトを開くWToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
-			this.配布サイトを開くWToolStripMenuItem.Text = "配布サイトを開く(&W)";
-			this.配布サイトを開くWToolStripMenuItem.Click += new System.EventHandler(this.配布サイトを開くWToolStripMenuItem_Click);
-			//
-			// 作者へメールを送るEToolStripMenuItem
-			//
-			this.作者へメールを送るEToolStripMenuItem.Name = "作者へメールを送るEToolStripMenuItem";
-			this.作者へメールを送るEToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
-			this.作者へメールを送るEToolStripMenuItem.Text = "作者へメールを送る(&E)";
-			this.作者へメールを送るEToolStripMenuItem.Click += new System.EventHandler(this.作者へメールを送るEToolStripMenuItem_Click);
-			//
 			// toolStripSeparator3
 			//
 			this.toolStripSeparator3.Name = "toolStripSeparator3";
 			this.toolStripSeparator3.Size = new System.Drawing.Size(285, 6);
-			//
-			// ネットワーク更新設定OToolStripMenuItem
-			//
-			this.ネットワーク更新設定OToolStripMenuItem.Name = "ネットワーク更新設定OToolStripMenuItem";
-			this.ネットワーク更新設定OToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
-			this.ネットワーク更新設定OToolStripMenuItem.Text = "ネットワーク更新設定(&O)";
-			this.ネットワーク更新設定OToolStripMenuItem.Click += new System.EventHandler(this.ネットワーク更新設定OToolStripMenuItem_Click);
 			//
 			// ネットワーク更新NToolStripMenuItem
 			//
@@ -174,10 +147,7 @@ namespace Launcher.UI {
 		private System.Windows.Forms.ToolStripMenuItem 設定CToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
 		private System.Windows.Forms.ToolStripMenuItem 実行ファイルのあるフォルダを開くMToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem 配布サイトを開くWToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem 作者へメールを送るEToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
-		private System.Windows.Forms.ToolStripMenuItem ネットワーク更新設定OToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem ネットワーク更新NToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
 		private System.Windows.Forms.ToolStripMenuItem 終了XToolStripMenuItem;

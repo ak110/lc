@@ -44,8 +44,6 @@ static class Program {
 						// とりあえずエラーは無視。
 					}
 					return;
-				//} else if (args[i] == "/run" && i + 1 < args.Length) {
-				// TODO: 実装
 				} else if (File.Exists(args[i]) || Directory.Exists(args[i])) {
 					Command command = Command.FromFile(args[i]);
 					new ReplaceEnvList(Config.Deserialize().ReplaceEnv).Replace(command);

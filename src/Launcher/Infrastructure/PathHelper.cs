@@ -84,24 +84,6 @@ public static class PathHelper
     }
 
     /// <summary>
-    /// @"\\?\" を先頭にくっつける。
-    /// </summary>
-    /// <param name="path">パスな文字列</param>
-    /// <returns>変換後のパス</returns>
-    public static string StrictPath(string path) {
-        if (2 < path.Length) {
-            if (path[2] == Path.DirectorySeparatorChar) {
-                if (path[1] == Path.VolumeSeparatorChar) {
-                    return @"\\?\" + path;
-                }
-            } else if (path[2] != '?' && path.StartsWith(@"\\")) {
-                return @"¥¥?¥UNC¥" + path.Substring(2);
-            }
-        }
-        return path;
-    }
-
-    /// <summary>
     /// 空なディレクトリならtrueを返す
     /// </summary>
     /// <param name="path">調べるディレクトリへのパス</param>
@@ -111,7 +93,6 @@ public static class PathHelper
         if (!Directory.Exists(path)) {
             throw new DirectoryNotFoundException("ディレクトリ '" + path + "' が存在しません");
         }
-        // ↓もっとちゃんとした調べ方あるかもしれんけどとりあえず適当実装
         string[] entries = Directory.GetFileSystemEntries(path);
         return entries.Length <= 0;
     }
@@ -258,13 +239,11 @@ public static class PathHelper
                     if (n == 0) break;
                     dst.Write(buffer, 0, n);
                 }
-                // ↑この辺途中で他から書き換えられたりするとどうなるんだろ？ 無視？(´ω`)
             }
 
             srcInfo.Refresh();
             if (srcInfo.LastWriteTime != srcLastWrite ||
                 srcInfo.Length != srcLength) {
-                // ↑どーも頼りない検出方法だが。。
                 dstInfo.Delete();
                 throw new FileChangedOnCopyException(srcInfo.FullName);
             }
@@ -362,8 +341,6 @@ public static class PathHelper
             DirectoryInfo di = fsi as DirectoryInfo;
             if (di != null) {
                 DeleteDirectoryForce(di, recursive);
-            } else {
-                // (´ω`)？
             }
         }
     }
@@ -374,7 +351,7 @@ public static class PathHelper
     /// <param name="path">大文字小文字が変なファイル名とか短いファイル名とか相対パスとか。</param>
     /// <returns>ちゃんとしたファイル名</returns>
     public static string GetCorrectPath(string path) {
-        string fullPath = Path.GetFullPath(path); // ←これだけでいい気もする。。
+        string fullPath = Path.GetFullPath(path);
         string root = Path.GetPathRoot(fullPath);
         string[] dirs = path.Substring(root.Length).Split(Path.DirectorySeparatorChar);
         string ret = root;
@@ -420,31 +397,7 @@ public static class PathHelper
     static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
 
     /// <summary>
-    /// PHPのis_readable()的な。
-    /// 適当実装。
-    /// </summary>
-    public static bool IsReadable(string path) {
-        if (Directory.Exists(path)) {
-            System.Diagnostics.Debug.Fail("未実装！");
-            throw new NotImplementedException();
-        } else if (File.Exists(path)) {
-            try {
-                // 実際に開いてしまってみる
-                using (FileStream s = File.OpenRead(path)) {
-                    return s.CanRead;
-                }
-            } catch (UnauthorizedAccessException) {
-            } catch (IOException) {
-            }
-            return false;
-        } else {
-            return false;
-        }
-    }
-
-    /// <summary>
     /// PHPのis_writable()的な。
-    /// 適当実装。
     /// </summary>
     public static bool IsWritable(string path) {
         if (Directory.Exists(path)) {
@@ -478,14 +431,4 @@ public static class PathHelper
         }
     }
 
-    /// <summary>
-    /// フルパスならtrue。
-    /// </summary>
-    public static bool IsFullPath(string fileName) {
-        return 2 < fileName.Length &&
-            char.IsLower(fileName[0]) &&
-            fileName[1] == ':' &&
-            File.Exists(fileName) ||
-            Directory.Exists(fileName);
-    }
 }

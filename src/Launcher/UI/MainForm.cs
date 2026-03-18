@@ -11,7 +11,7 @@ public partial class MainForm : Form {
     int state; // 0:空っぽ  1:該当コマンド無し  2:部分一致のみ有り  3:前方一致有り
     int lastFocus;   // エディットボックスにフォーカスがあった場合0, リストな場合1
 
-    bool recurseGard = false; //再帰防止
+    bool recurseGuard = false; //再帰防止
 
     AsyncIconLoader iconLoader =
         new AsyncIconLoader();
@@ -99,14 +99,12 @@ public partial class MainForm : Form {
 
     public void ShowWindow() {
         Location = ownerForm.Config.WindowPos;
-        //Show();
         FormsHelper.ActivateForce(this);
     }
 
     public void HideWindow() {
         Hide();
         textBox1.Clear();
-        //SetListViewSelection(0);
     }
 
     #endregion
@@ -179,8 +177,8 @@ public partial class MainForm : Form {
     /// テキストが入力された
     /// </summary>
     private void textBox1_TextChanged(object sender, EventArgs e) {
-        if (recurseGard) return;
-        recurseGard = true;
+        if (recurseGuard) return;
+        recurseGuard = true;
         SuspendLayout();
         listView1.BeginUpdate();
         try {
@@ -188,7 +186,7 @@ public partial class MainForm : Form {
         } finally {
             listView1.EndUpdate();
             ResumeLayout();
-            recurseGard = false;
+            recurseGuard = false;
         }
     }
 
@@ -201,12 +199,12 @@ public partial class MainForm : Form {
             int n2 = n1 + textBox1.SelectionLength;
             if (textBox1.Text.Length == n2) {
                 // 選択されてるとこを削除して、あとはデフォルトの処理に任せる
-                System.Diagnostics.Debug.Assert(!recurseGard);
-                recurseGard = true;
+                System.Diagnostics.Debug.Assert(!recurseGuard);
+                recurseGuard = true;
                 try {
                     textBox1.SelectedText = "";
                 } finally {
-                    recurseGard = false;
+                    recurseGuard = false;
                 }
             }
         }
@@ -225,8 +223,6 @@ public partial class MainForm : Form {
         } else if (e.KeyCode == Keys.Down) { // ↓キー
             if (0 < listView1.Items.Count) {
                 SetListViewSelection(0);
-                //SetListViewSelection(Math.Min(1, listView1.Items.Count - 1));
-                //listView1.EnsureVisible(0);
                 listView1.Select();
                 e.Handled = true; // 処理した
             }
@@ -621,7 +617,6 @@ public partial class MainForm : Form {
 #if DEBUG
 		ExecuteThread(new ExecuteParams(command, input, Handle));
 #else
-        //ThreadPool.QueueUserWorkItem(ExecuteThread, input);
         Thread thread = new Thread(
             new ParameterizedThreadStart(ExecuteThread));
         thread.IsBackground = true;

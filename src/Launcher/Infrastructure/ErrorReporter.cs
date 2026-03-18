@@ -1,7 +1,4 @@
 #nullable disable
-using System.Collections;
-using System.Collections.Specialized;
-using System.Net;
 using System.Text;
 using System.Windows.Forms;
 using Launcher.UI;
@@ -13,35 +10,19 @@ namespace Launcher.Infrastructure;
 /// </summary>
 public class ErrorReporter
 {
+	static readonly ErrorReporter instance = new ErrorReporter();
+
 	/// <summary>
 	/// Singletonなインスタンスの取得
 	/// </summary>
-	public static ErrorReporter Instance {
-		get {
-			return Singleton<ErrorReporter>.GetInstance(delegate() {
-				return new ErrorReporter();
-			});
-		}
-	}
+	public static ErrorReporter Instance => instance;
 
-	string url = "http://tqzh.tk:24497/site/error/";
-	Dictionary<string, string> additionalInfo = new Dictionary<string, string>();
 	Control owner = null;
 
 	object lockObject = new object();
 	bool localLock = false;
 
 	private ErrorReporter() {
-		// デフォルトで登録してしまう？
-		//Register();
-	}
-
-	/// <summary>
-	/// 送信先URL
-	/// </summary>
-	public string URL {
-		get { return url; }
-		set { url = value; }
 	}
 
 	/// <summary>
@@ -58,13 +39,6 @@ public class ErrorReporter
 	public void SetOwner(Control form) {
 		owner = form;
 		form.Disposed += new EventHandler(form_Disposed);
-	}
-
-	/// <summary>
-	/// アプリケーション固有の追加情報
-	/// </summary>
-	public Dictionary<string, string> AdditionalInfo {
-		get { return additionalInfo; }
 	}
 
 	/// <summary>
@@ -86,22 +60,14 @@ public class ErrorReporter
 	/// ハンドラを登録する。
 	/// </summary>
 	public void Register() {
-		//*
 		Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
-		/*/
-		AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
-		//*/
 	}
 
 	/// <summary>
 	/// ハンドラを登録解除する。
 	/// </summary>
 	public void UnRegister() {
-		//*
 		Application.ThreadException -= new ThreadExceptionEventHandler(Application_ThreadException);
-		/*/
-		AppDomain.CurrentDomain.UnhandledException -= new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
-		//*/
 	}
 
 	void form_Disposed(object sender, EventArgs e) {
@@ -122,7 +88,6 @@ public class ErrorReporter
 	public void OnException(Exception e) {
 		lock (lockObject) {
 			if (localLock) {
-				//System.Diagnostics.Process.GetCurrentProcess().Kill();
 				return;
 			}
 			localLock = true;
@@ -163,28 +128,6 @@ public class ErrorReporter
 	}
 
 	/// <summary>
-	/// エラーレポートの送信処理
-	/// </summary>
-	/// <param name="e">例外オブジェクト</param>
-	public void SendReport(Exception e) {
-		NameValueCollection c = new NameValueCollection();
-		c["Message"] = e.Message.Trim();
-		c["Details"] = GetDetailMessage(e).Trim();
-		c["ExceptionData"] = Serialize(e.Data).Trim();
-		c["AdditionalInfo"] = Serialize(additionalInfo).Trim();
-		c["ApplicationInfo"] = System.Diagnostics.Process.GetCurrentProcess()
-			.MainModule.FileVersionInfo.ToString();
-		c["ExeLastUpdate"] = System.IO.File.GetLastWriteTime(
-			System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName).ToString("yyyy-MM-dd HH:mm:ss");
-		c["StackTrace"] = e.StackTrace;
-
-		using (WebClient client = new WebClient()) {
-			client.Proxy = WebRequest.GetSystemWebProxy(); // めちゃどうでもよく決め打ち。
-			client.UploadValues(url, c);
-		}
-	}
-
-	/// <summary>
 	/// 例外の詳細メッセージを組み立てて返す
 	/// </summary>
 	public string GetDetailMessage(Exception e) {
@@ -217,23 +160,10 @@ public class ErrorReporter
 			builder.AppendLine(" <- InnerException");
 		}
 		Exception be = e.GetBaseException();
-		if (be != null && be != ie && !object.Equals(be, e)) { // ？(´ω`)
+		if (be != null && be != ie && !object.Equals(be, e)) {
 			builder.Append("BaseException -> ");
 			AppendExceptionString(builder, ie);
 			builder.Append(" <- BaseException");
 		}
 	}
-
-	private static string Serialize(IDictionary data) {
-		//return Serializer<List<string>>.SerializeToString(Convert(data));
-		return string.Join(Environment.NewLine, Convert(data).ToArray());
-	}
-	private static List<string> Convert(IDictionary data) {
-		List<string> result = new List<string>();
-		foreach (DictionaryEntry p in data) {
-			result.Add(string.Format("{0}: {1}", p.Key.ToString().Trim(), p.Value.ToString().Trim()));
-		}
-		return result;
-	}
-
 }
