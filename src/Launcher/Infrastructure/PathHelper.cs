@@ -31,19 +31,18 @@ public static class PathHelper
         // 念のため正規化
         path = PathHelper.PathNormalizeWithFullPath(path);
         baseDir = PathHelper.PathNormalizeWithFullPath(baseDir);
-        // baseDirの終端を \\ に統一
+        // 同一ディレクトリ判定（baseDirに\を付加する前に行う）
+        if (string.Equals(path, baseDir, StringComparison.OrdinalIgnoreCase))
+        {
+            return ".";
+        }
+        // baseDirの終端を \\ に統一（startsWith判定用）
         if (baseDir[baseDir.Length - 1] != Path.DirectorySeparatorChar)
         {
             baseDir += Path.DirectorySeparatorChar.ToString();
         }
-        string pathLc = path.ToLower();
-        string baseDirLc = baseDir.ToLower();
-        if (pathLc == baseDirLc)
-        {
-            return "."; // "" ？
-        }
         // pathがbaseDirの下位ではない場合
-        if (!pathLc.StartsWith(baseDirLc))
+        if (!path.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
         {
             throw new IOException(path + " の相対パスの生成に失敗しました。");
         }
