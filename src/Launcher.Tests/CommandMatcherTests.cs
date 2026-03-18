@@ -115,7 +115,7 @@ public class CommandMatcherTests
     public void ParseInput_完全一致でコマンド名と引数を分離()
     {
         bool result = CommandMatcher.ParseInput("notepad", "notepad test.txt", _config,
-            out string commandName, out string arguments);
+            out string commandName, out string? arguments);
         result.Should().BeTrue();
         commandName.Should().Be("notepad");
         arguments.Should().Be("test.txt");
@@ -125,7 +125,7 @@ public class CommandMatcherTests
     public void ParseInput_不一致時はfalse()
     {
         bool result = CommandMatcher.ParseInput("notepad", "note", _config,
-            out string commandName, out string arguments);
+            out string commandName, out string? arguments);
         result.Should().BeFalse();
         commandName.Should().Be("note");
         arguments.Should().BeNull();
@@ -135,7 +135,7 @@ public class CommandMatcherTests
     public void ParseInput_引数なしの完全一致()
     {
         bool result = CommandMatcher.ParseInput("notepad", "notepad", _config,
-            out string commandName, out string arguments);
+            out string commandName, out string? arguments);
         result.Should().BeTrue();
         commandName.Should().Be("notepad");
         arguments.Should().BeEmpty();
@@ -169,7 +169,7 @@ public class CommandMatcherTests
     [Fact]
     public void ParseInputNotMatch_スペースで分離()
     {
-        CommandMatcher.ParseInputNotMatch("cmd args here", out string commandName, out string arguments);
+        CommandMatcher.ParseInputNotMatch("cmd args here", out string commandName, out string? arguments);
         commandName.Should().Be("cmd");
         arguments.Should().Be("args here");
     }
@@ -177,7 +177,7 @@ public class CommandMatcherTests
     [Fact]
     public void ParseInputNotMatch_スペースなし()
     {
-        CommandMatcher.ParseInputNotMatch("cmd", out string commandName, out string arguments);
+        CommandMatcher.ParseInputNotMatch("cmd", out string commandName, out string? arguments);
         commandName.Should().Be("cmd");
         arguments.Should().BeNull();
     }

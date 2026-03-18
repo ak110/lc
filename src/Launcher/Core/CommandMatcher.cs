@@ -1,5 +1,3 @@
-#nullable disable
-
 namespace Launcher.Core;
 
 /// <summary>
@@ -16,8 +14,7 @@ public static class CommandMatcher
     /// </summary>
     public static int GetMatchScore(string name, string input, Config config)
     {
-        string commandName, arguments;
-        ParseInput(name, input, config, out commandName, out arguments);
+        ParseInput(name, input, config, out string commandName, out _);
         // 先頭一致
         int result = InnerGetMatchScore(name, commandName, config, 0);
         if (0 < result)
@@ -95,7 +92,7 @@ public static class CommandMatcher
     /// 入力文字列を、コマンド名と引数に分ける。
     /// </summary>
     /// <returns>コマンド名が一致した場合はtrue。falseだと割と適当な結果が返る。</returns>
-    public static bool ParseInput(string name, string input, Config config, out string commandName, out string arguments)
+    public static bool ParseInput(string name, string input, Config config, out string commandName, out string? arguments)
     {
         int n = GetMatchLength(name, input, config);
         // コマンド名と完全一致
@@ -116,7 +113,7 @@ public static class CommandMatcher
     /// <summary>
     /// 入力文字列をコマンド名と引数に分ける（マッチしない場合用）
     /// </summary>
-    public static void ParseInputNotMatch(string input, out string commandName, out string arguments)
+    public static void ParseInputNotMatch(string input, out string commandName, out string? arguments)
     {
         int n = input.IndexOf(' ');
         if (0 <= n)

@@ -296,7 +296,9 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// 入力文字列を、コマンド名と引数に分ける。
     /// </summary>
     /// <returns>コマンド名が一致した場合はtrue。falseだと割と適当な結果が返る。</returns>
-    public bool ParseInput(string input, Config config, out string commandName, out string arguments)
+#nullable enable
+    public bool ParseInput(string input, Config config, out string commandName, out string? arguments)
+#nullable disable
     {
         return CommandMatcher.ParseInput(Name, input, config, out commandName, out arguments);
     }
