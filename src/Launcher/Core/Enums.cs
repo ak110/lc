@@ -68,3 +68,13 @@ public enum AdminElevation
     [XmlEnum("1")] RunAsCommand = 1,
     [XmlEnum("2")] VistaElevator = 2,
 }
+
+/// <summary>
+/// ボタン型ランチャーの起動方法
+/// </summary>
+public enum ButtonLauncherActivation
+{
+    [XmlEnum("0")] Disabled = 0,
+    [XmlEnum("1")] LeftThenRight = 1,
+    [XmlEnum("2")] RightThenLeft = 2,
+}

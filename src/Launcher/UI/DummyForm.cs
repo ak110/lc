@@ -18,8 +18,9 @@ public partial class DummyForm : Form
     KeyTable.Modifiers modifiers;
 
     MainForm mainForm = null;
-    TreeLauncherForm treeLauncherForm = null;
+    ButtonLauncherForm buttonLauncherForm = null;
     bool lbuttonDown;
+    bool rbuttonDown;
 
     public Config Config
     {
@@ -27,7 +28,7 @@ public partial class DummyForm : Form
     }
 
     public CommandList CommandList { get; private set; }
-    public CommandList TreeCommandList { get; private set; }
+    public ButtonLauncherData ButtonLauncherData { get; private set; }
 
     public DummyForm()
     {
@@ -41,7 +42,7 @@ public partial class DummyForm : Form
         // 設定ファイルの読み込み
         config = Config.Deserialize();
         CommandList = CommandList.Deserialize(".cmd.cfg");
-        TreeCommandList = CommandList.Deserialize(".treecmd.cfg");
+        ButtonLauncherData = ButtonLauncherData.Deserialize();
         try { data = Data.Deserialize(); } catch { }
 
         notifyIcon1.Text = Infrastructure.AppVersion.Title;
@@ -55,9 +56,9 @@ public partial class DummyForm : Form
         {
             mainForm.Show(this);
         }
-        if (config.UseTreeLauncher)
+        if (config.ButtonLauncherActivation != Core.ButtonLauncherActivation.Disabled)
         {
-            treeLauncherForm = new TreeLauncherForm(this);
+            buttonLauncherForm = new ButtonLauncherForm(this);
         }
 
         ApplyConfig();
@@ -153,7 +154,7 @@ public partial class DummyForm : Form
     public void Reload()
     {
         CommandList = CommandList.Deserialize(".cmd.cfg");
-        TreeCommandList = CommandList.Deserialize(".treecmd.cfg");
+        ButtonLauncherData = ButtonLauncherData.Deserialize();
         if (!mainForm.IsDisposed)
         {
             mainForm.ApplyConfig();
@@ -178,6 +179,25 @@ public partial class DummyForm : Form
     private void 設定CToolStripMenuItem_Click(object sender, EventArgs e)
     {
         ShowConfigDialog();
+    }
+
+    private void コマンドの管理LToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        using (var form = new CommandManagementForm(this))
+        {
+            form.ShowDialog(this);
+        }
+    }
+
+    /// <summary>
+    /// MainFormの表示を更新
+    /// </summary>
+    public void RefreshMainForm()
+    {
+        if (!mainForm.IsDisposed)
+        {
+            mainForm.ApplyConfig();
+        }
     }
 
     /// <summary>
@@ -364,27 +384,36 @@ public partial class DummyForm : Form
 
     void Hook_MouseHook(object sender, MouseHookEventArgs e)
     {
-        if (config.UseTreeLauncher)
+        if (config.ButtonLauncherActivation == Core.ButtonLauncherActivation.Disabled) return;
+        if (e.HookCode != Hook.HC_ACTION) return;
+
+        if (e.WParam == Hook.WM_LBUTTONDOWN)
         {
-            if (e.HookCode == Hook.HC_ACTION)
+            lbuttonDown = true;
+            // 右→左: 右ボタン押下中に左クリック
+            if (config.ButtonLauncherActivation == Core.ButtonLauncherActivation.RightThenLeft && rbuttonDown)
             {
-                if (e.WParam == Hook.WM_LBUTTONDOWN)
-                {
-                    lbuttonDown = true;
-                }
-                else if (e.WParam == Hook.WM_LBUTTONUP)
-                {
-                    lbuttonDown = false;
-                }
-                else if (e.WParam == Hook.WM_RBUTTONDOWN)
-                {
-                    if (lbuttonDown)
-                    {
-                        treeLauncherForm.ShowLauncher();
-                        e.Handled = true;
-                    }
-                }
+                buttonLauncherForm.ShowLauncher();
+                e.Handled = true;
             }
+        }
+        else if (e.WParam == Hook.WM_LBUTTONUP)
+        {
+            lbuttonDown = false;
+        }
+        else if (e.WParam == Hook.WM_RBUTTONDOWN)
+        {
+            rbuttonDown = true;
+            // 左→右: 左ボタン押下中に右クリック
+            if (config.ButtonLauncherActivation == Core.ButtonLauncherActivation.LeftThenRight && lbuttonDown)
+            {
+                buttonLauncherForm.ShowLauncher();
+                e.Handled = true;
+            }
+        }
+        else if (e.WParam == Hook.WM_RBUTTONUP)
+        {
+            rbuttonDown = false;
         }
     }
 }

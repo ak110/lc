@@ -1,0 +1,737 @@
+#nullable disable
+using Launcher.Core;
+using Launcher.Win32;
+
+namespace Launcher.UI;
+
+/// <summary>
+/// ボタン型ランチャーフォーム
+/// </summary>
+public partial class ButtonLauncherForm : Form
+{
+    readonly DummyForm owner;
+    readonly AsyncIconLoader iconLoader = new AsyncIconLoader();
+    readonly ContextMenuStrip buttonContextMenu;
+
+    // ボタンサイズ
+    const int ButtonWidth = 64;
+    const int ButtonHeight = 64;
+
+    // D&D用
+    Button dragSource;
+    ButtonEntry dragEntry;
+
+    ButtonLauncherData Data => owner.ButtonLauncherData;
+
+    public ButtonLauncherForm(DummyForm owner)
+    {
+        InitializeComponent();
+        this.owner = owner;
+
+        Text = Infrastructure.AppVersion.Title;
+
+        // ボタン右クリックメニュー
+        buttonContextMenu = new ContextMenuStrip();
+        buttonContextMenu.Items.Add("実行(&X)", null, ButtonMenu_Execute);
+        buttonContextMenu.Items.Add("編集(&E)", null, ButtonMenu_Edit);
+        buttonContextMenu.Items.Add("フォルダを開く(&O)", null, ButtonMenu_OpenFolder);
+        buttonContextMenu.Items.Add(new ToolStripSeparator());
+        buttonContextMenu.Items.Add("コマンドから割り当て(&A)", null, ButtonMenu_AssignFromCommand);
+        buttonContextMenu.Items.Add(new ToolStripSeparator());
+        buttonContextMenu.Items.Add("削除(&D)", null, ButtonMenu_Delete);
+
+        // タブ右クリックメニュー
+        tabControl1.MouseClick += TabControl1_MouseClick;
+
+        iconLoader.IconLoaded += IconLoader_IconLoaded;
+
+        // ロック状態を復元
+        lockButton.Checked = Data.IsLocked;
+        ApplyLockState();
+
+        // タブを構築
+        BuildTabs();
+
+        // 初期状態は非表示
+        Show(owner);
+        Hide();
+    }
+
+    #region タブ・グリッド構築
+
+    /// <summary>
+    /// 全タブを構築
+    /// </summary>
+    private void BuildTabs()
+    {
+        tabControl1.TabPages.Clear();
+
+        // タブがなければデフォルト1つ作る
+        if (Data.Tabs.Count == 0)
+        {
+            Data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        }
+
+        foreach (var tab in Data.Tabs)
+        {
+            var tabPage = new TabPage(tab.Name) { Tag = tab };
+            BuildGrid(tabPage, tab);
+            tabControl1.TabPages.Add(tabPage);
+        }
+
+        // デフォルトタブ
+        if (Data.DefaultTabIndex >= 0 && Data.DefaultTabIndex < tabControl1.TabPages.Count)
+        {
+            tabControl1.SelectedIndex = Data.DefaultTabIndex;
+        }
+    }
+
+    /// <summary>
+    /// タブ内にグリッドボタンを配置
+    /// </summary>
+    private void BuildGrid(TabPage tabPage, ButtonTab tabData)
+    {
+        tabPage.Controls.Clear();
+        iconLoader.Clear();
+
+        var panel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = Data.Columns,
+            RowCount = Data.Rows,
+            CellBorderStyle = TableLayoutPanelCellBorderStyle.Single,
+            AutoScroll = false,
+        };
+
+        // 均等配分
+        panel.ColumnStyles.Clear();
+        for (int c = 0; c < Data.Columns; c++)
+        {
+            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / Data.Columns));
+        }
+        panel.RowStyles.Clear();
+        for (int r = 0; r < Data.Rows; r++)
+        {
+            panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100f / Data.Rows));
+        }
+
+        for (int r = 0; r < Data.Rows; r++)
+        {
+            for (int c = 0; c < Data.Columns; c++)
+            {
+                var entry = tabData.GetButton(r, c);
+                var btn = CreateGridButton(entry, r, c);
+                panel.Controls.Add(btn, c, r);
+            }
+        }
+
+        tabPage.Controls.Add(panel);
+    }
+
+    /// <summary>
+    /// グリッド上のボタンを1つ作成
+    /// </summary>
+    private Button CreateGridButton(ButtonEntry entry, int row, int col)
+    {
+        var btn = new Button
+        {
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0),
+            FlatStyle = FlatStyle.Flat,
+            TextAlign = ContentAlignment.BottomCenter,
+            ImageAlign = ContentAlignment.TopCenter,
+            AllowDrop = true,
+            Tag = new ButtonPosition(row, col),
+        };
+        btn.FlatAppearance.BorderSize = 0;
+
+        if (entry != null && !entry.IsEmpty)
+        {
+            btn.Text = entry.Name ?? "";
+            // アイコンの非同期読み込み
+            iconLoader.Load(entry.FileName, false, btn);
+        }
+        else
+        {
+            btn.Text = "";
+        }
+
+        btn.Click += GridButton_Click;
+        btn.MouseDown += GridButton_MouseDown;
+        btn.DragEnter += GridButton_DragEnter;
+        btn.DragDrop += GridButton_DragDrop;
+
+        return btn;
+    }
+
+    /// <summary>
+    /// ボタン位置情報
+    /// </summary>
+    private record ButtonPosition(int Row, int Col);
+
+    #endregion
+
+    #region 表示・非表示
+
+    /// <summary>
+    /// ランチャーを表示（マウスカーソル中心に配置）
+    /// </summary>
+    public void ShowLauncher()
+    {
+        // ウィンドウサイズの復元
+        if (Data.WindowSize != Size.Empty)
+        {
+            ClientSize = Data.WindowSize;
+        }
+
+        // マウスカーソル中心に配置
+        var cursor = Cursor.Position;
+        int x = cursor.X - Width / 2;
+        int y = cursor.Y - Height / 2;
+
+        // 画面端クランプ
+        foreach (var screen in Screen.AllScreens)
+        {
+            if (screen.WorkingArea.Contains(cursor))
+            {
+                var area = screen.WorkingArea;
+                x = Math.Max(area.Left, Math.Min(x, area.Right - Width));
+                y = Math.Max(area.Top, Math.Min(y, area.Bottom - Height));
+                break;
+            }
+        }
+
+        Location = new Point(x, y);
+
+        // デフォルトタブに切り替え
+        if (Data.DefaultTabIndex >= 0 && Data.DefaultTabIndex < tabControl1.TabPages.Count)
+        {
+            tabControl1.SelectedIndex = Data.DefaultTabIndex;
+        }
+
+        Hide();
+        Show();
+        Activate();
+        BringToFront();
+    }
+
+    protected override void OnDeactivate(EventArgs e)
+    {
+        base.OnDeactivate(e);
+        // ロック解除時は非表示
+        if (!Data.IsLocked)
+        {
+            Hide();
+        }
+    }
+
+    #endregion
+
+    #region ロック機能
+
+    private void lockButton_Click(object sender, EventArgs e)
+    {
+        Data.IsLocked = lockButton.Checked;
+        ApplyLockState();
+        SaveData();
+    }
+
+    private void ApplyLockState()
+    {
+        if (Data.IsLocked)
+        {
+            FormBorderStyle = FormBorderStyle.Sizable;
+            lockButton.Text = "Locked";
+        }
+        else
+        {
+            FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            lockButton.Text = "Lock";
+        }
+        TopMost = true;
+    }
+
+    protected override void OnResizeEnd(EventArgs e)
+    {
+        base.OnResizeEnd(e);
+        if (!Data.IsLocked) return;
+
+        // リサイズ後にグリッドサイズを再計算
+        var tabPage = tabControl1.SelectedTab;
+        if (tabPage == null) return;
+
+        // 現在のセルサイズからColumns/Rowsを再計算
+        int newCols = Math.Max(1, ClientSize.Width / ButtonWidth);
+        int newRows = Math.Max(1, (ClientSize.Height - toolStrip1.Height - tabControl1.ItemSize.Height) / ButtonHeight);
+
+        if (newCols != Data.Columns || newRows != Data.Rows)
+        {
+            Data.Columns = newCols;
+            Data.Rows = newRows;
+            RebuildCurrentTab();
+            SaveData();
+        }
+
+        Data.WindowSize = ClientSize;
+        Data.WindowPos = Location;
+        SaveData();
+    }
+
+    #endregion
+
+    #region ボタンクリック・コマンド実行
+
+    private void GridButton_Click(object sender, EventArgs e)
+    {
+        var btn = (Button)sender;
+        var pos = (ButtonPosition)btn.Tag;
+        var tabData = GetCurrentTabData();
+        if (tabData == null) return;
+
+        var entry = tabData.GetButton(pos.Row, pos.Col);
+        if (entry == null || entry.IsEmpty) return;
+
+        // 実行
+        try
+        {
+            entry.Execute("", owner.Config, owner.Handle);
+            if (!Data.IsLocked)
+            {
+                Hide();
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"実行に失敗しました: {ex.Message}", "エラー",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    #endregion
+
+    #region 右クリックメニュー
+
+    private Button contextMenuTarget;
+
+    private void GridButton_MouseDown(object sender, MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Right)
+        {
+            contextMenuTarget = (Button)sender;
+            var pos = (ButtonPosition)contextMenuTarget.Tag;
+            var tabData = GetCurrentTabData();
+            var entry = tabData?.GetButton(pos.Row, pos.Col);
+
+            // メニュー項目の有効/無効
+            bool hasCommand = entry != null && !entry.IsEmpty;
+            buttonContextMenu.Items[0].Enabled = hasCommand; // 実行
+            buttonContextMenu.Items[1].Enabled = hasCommand; // 編集
+            buttonContextMenu.Items[2].Enabled = hasCommand; // フォルダを開く
+            buttonContextMenu.Items[6].Enabled = hasCommand; // 削除
+
+            buttonContextMenu.Show(contextMenuTarget, e.Location);
+        }
+        else if (e.Button == MouseButtons.Left && Data.IsLocked)
+        {
+            // ロック時のD&D開始準備
+            var btn = (Button)sender;
+            var pos = (ButtonPosition)btn.Tag;
+            var tabData = GetCurrentTabData();
+            var entry = tabData?.GetButton(pos.Row, pos.Col);
+            if (entry != null && !entry.IsEmpty)
+            {
+                dragSource = btn;
+                dragEntry = entry;
+            }
+        }
+    }
+
+    private void ButtonMenu_Execute(object sender, EventArgs e)
+    {
+        if (contextMenuTarget == null) return;
+        GridButton_Click(contextMenuTarget, EventArgs.Empty);
+    }
+
+    private void ButtonMenu_Edit(object sender, EventArgs e)
+    {
+        if (contextMenuTarget == null) return;
+        var pos = (ButtonPosition)contextMenuTarget.Tag;
+        var tabData = GetCurrentTabData();
+        var entry = tabData?.GetButton(pos.Row, pos.Col);
+        if (entry == null || entry.IsEmpty) return;
+
+        using (var form = new EditCommandForm(entry))
+        {
+            if (form.ShowDialog(this) == DialogResult.OK)
+            {
+                // EditCommandFormが直接entryを更新する
+                contextMenuTarget.Text = entry.Name ?? "";
+                iconLoader.Load(entry.FileName, false, contextMenuTarget);
+                SaveData();
+            }
+        }
+    }
+
+    private void ButtonMenu_OpenFolder(object sender, EventArgs e)
+    {
+        if (contextMenuTarget == null) return;
+        var pos = (ButtonPosition)contextMenuTarget.Tag;
+        var tabData = GetCurrentTabData();
+        var entry = tabData?.GetButton(pos.Row, pos.Col);
+        if (entry == null || entry.IsEmpty) return;
+
+        entry.OpenDirectory(owner.Config);
+    }
+
+    private void ButtonMenu_AssignFromCommand(object sender, EventArgs e)
+    {
+        if (contextMenuTarget == null) return;
+        var pos = (ButtonPosition)contextMenuTarget.Tag;
+        var tabData = GetCurrentTabData();
+        if (tabData == null) return;
+
+        // コマンド選択ダイアログ
+        using (var dlg = new CommandSelectDialog(owner.CommandList))
+        {
+            if (dlg.ShowDialog(this) == DialogResult.OK && dlg.SelectedCommand != null)
+            {
+                var newEntry = ButtonEntry.FromCommand(dlg.SelectedCommand, pos.Row, pos.Col);
+                tabData.SetButton(pos.Row, pos.Col, newEntry);
+                contextMenuTarget.Text = newEntry.Name ?? "";
+                iconLoader.Load(newEntry.FileName, false, contextMenuTarget);
+                SaveData();
+            }
+        }
+    }
+
+    private void ButtonMenu_Delete(object sender, EventArgs e)
+    {
+        if (contextMenuTarget == null) return;
+        var pos = (ButtonPosition)contextMenuTarget.Tag;
+        var tabData = GetCurrentTabData();
+        if (tabData == null) return;
+
+        tabData.SetButton(pos.Row, pos.Col, null);
+        contextMenuTarget.Text = "";
+        contextMenuTarget.Image = null;
+        SaveData();
+    }
+
+    #endregion
+
+    #region ファイルD&D / ボタンD&D
+
+    private void GridButton_DragEnter(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            e.Effect = DragDropEffects.Link;
+        }
+        else if (e.Data.GetDataPresent(typeof(ButtonEntry)))
+        {
+            e.Effect = DragDropEffects.Move;
+        }
+        else
+        {
+            e.Effect = DragDropEffects.None;
+        }
+    }
+
+    private void GridButton_DragDrop(object sender, DragEventArgs e)
+    {
+        var btn = (Button)sender;
+        var pos = (ButtonPosition)btn.Tag;
+        var tabData = GetCurrentTabData();
+        if (tabData == null) return;
+
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            // ファイルD&D → コマンド登録
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files.Length > 0)
+            {
+                var cmd = Command.FromFile(files[0]);
+                var entry = ButtonEntry.FromCommand(cmd, pos.Row, pos.Col);
+                tabData.SetButton(pos.Row, pos.Col, entry);
+                btn.Text = entry.Name ?? "";
+                iconLoader.Load(entry.FileName, false, btn);
+                SaveData();
+            }
+        }
+        else if (dragSource != null && dragEntry != null)
+        {
+            // ボタン間D&D
+            var srcPos = (ButtonPosition)dragSource.Tag;
+            var srcTabData = GetCurrentTabData();
+
+            // 移動先の既存エントリ
+            var destEntry = tabData.GetButton(pos.Row, pos.Col);
+
+            // スワップ
+            tabData.SetButton(pos.Row, pos.Col, ButtonEntry.FromCommand(dragEntry, pos.Row, pos.Col));
+            if (destEntry != null && !destEntry.IsEmpty)
+            {
+                srcTabData.SetButton(srcPos.Row, srcPos.Col, ButtonEntry.FromCommand(destEntry, srcPos.Row, srcPos.Col));
+            }
+            else
+            {
+                srcTabData.SetButton(srcPos.Row, srcPos.Col, null);
+            }
+
+            RebuildCurrentTab();
+            SaveData();
+
+            dragSource = null;
+            dragEntry = null;
+        }
+    }
+
+    #endregion
+
+    #region タブ管理
+
+    private void TabControl1_MouseClick(object sender, MouseEventArgs e)
+    {
+        if (e.Button != MouseButtons.Right) return;
+
+        var menu = new ContextMenuStrip();
+        menu.Items.Add("タブを追加(&A)", null, (s, ev) => AddTab());
+        menu.Items.Add("タブ名を変更(&R)", null, (s, ev) => RenameTab());
+        menu.Items.Add("デフォルトタブに設定(&D)", null, (s, ev) => SetDefaultTab());
+        menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add("タブを削除(&X)", null, (s, ev) => DeleteTab());
+        menu.Show(tabControl1, e.Location);
+    }
+
+    private void AddTab()
+    {
+        string name = ShowInputDialog("タブ名を入力してください:", "タブの追加", $"Tab{Data.Tabs.Count + 1}");
+        if (name == null) return;
+
+        var tab = new ButtonTab { Name = name };
+        Data.Tabs.Add(tab);
+
+        var tabPage = new TabPage(name) { Tag = tab };
+        BuildGrid(tabPage, tab);
+        tabControl1.TabPages.Add(tabPage);
+        tabControl1.SelectedTab = tabPage;
+        SaveData();
+    }
+
+    private void RenameTab()
+    {
+        var tabPage = tabControl1.SelectedTab;
+        if (tabPage == null) return;
+
+        var tabData = (ButtonTab)tabPage.Tag;
+        string name = ShowInputDialog("新しいタブ名:", "タブ名の変更", tabData.Name);
+        if (name == null) return;
+
+        tabData.Name = name;
+        tabPage.Text = name;
+        SaveData();
+    }
+
+    private void SetDefaultTab()
+    {
+        Data.DefaultTabIndex = tabControl1.SelectedIndex;
+        SaveData();
+    }
+
+    private void DeleteTab()
+    {
+        if (tabControl1.TabPages.Count <= 1)
+        {
+            MessageBox.Show(this, "最後のタブは削除できません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        var tabPage = tabControl1.SelectedTab;
+        if (tabPage == null) return;
+
+        var tabData = (ButtonTab)tabPage.Tag;
+        if (MessageBox.Show(this, $"タブ「{tabData.Name}」を削除しますか？", "確認",
+            MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+
+        Data.Tabs.Remove(tabData);
+        tabControl1.TabPages.Remove(tabPage);
+        if (Data.DefaultTabIndex >= Data.Tabs.Count)
+        {
+            Data.DefaultTabIndex = 0;
+        }
+        SaveData();
+    }
+
+    private void tabControl1_MouseWheel(object sender, MouseEventArgs e)
+    {
+        int count = tabControl1.TabPages.Count;
+        if (count <= 1) return;
+
+        int index = tabControl1.SelectedIndex;
+        if (e.Delta > 0)
+        {
+            tabControl1.SelectedIndex = (index - 1 + count) % count;
+        }
+        else if (e.Delta < 0)
+        {
+            tabControl1.SelectedIndex = (index + 1) % count;
+        }
+    }
+
+    #endregion
+
+    #region アイコン読み込み
+
+    private void IconLoader_IconLoaded(object sender, IconLoadedEventArgs e)
+    {
+        if (e.Generation != iconLoader.Generation) return;
+
+        BeginInvoke(() =>
+        {
+            if (IsDisposed) return;
+            if (e.Icon == null) return;
+
+            var btn = e.Arg as Button;
+            if (btn == null || btn.IsDisposed) return;
+
+            btn.Image = e.Icon.ToBitmap();
+        });
+    }
+
+    #endregion
+
+    #region ヘルパー
+
+    private ButtonTab GetCurrentTabData()
+    {
+        return tabControl1.SelectedTab?.Tag as ButtonTab;
+    }
+
+    private void RebuildCurrentTab()
+    {
+        var tabPage = tabControl1.SelectedTab;
+        if (tabPage == null) return;
+        var tabData = (ButtonTab)tabPage.Tag;
+        BuildGrid(tabPage, tabData);
+    }
+
+    private void SaveData()
+    {
+        Data.Serialize();
+    }
+
+    /// <summary>
+    /// 簡易入力ダイアログ
+    /// </summary>
+    private static string ShowInputDialog(string prompt, string title, string defaultValue)
+    {
+        using (var form = new Form())
+        {
+            form.Text = title;
+            form.ClientSize = new Size(300, 100);
+            form.FormBorderStyle = FormBorderStyle.FixedDialog;
+            form.StartPosition = FormStartPosition.CenterParent;
+            form.MaximizeBox = false;
+            form.MinimizeBox = false;
+
+            var label = new Label { Text = prompt, Left = 8, Top = 8, Width = 280 };
+            var textBox = new TextBox { Text = defaultValue, Left = 8, Top = 32, Width = 280 };
+            var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Left = 120, Top = 64, Width = 75 };
+            var cancel = new Button { Text = "キャンセル", DialogResult = DialogResult.Cancel, Left = 200, Top = 64, Width = 75 };
+
+            form.Controls.AddRange(new Control[] { label, textBox, ok, cancel });
+            form.AcceptButton = ok;
+            form.CancelButton = cancel;
+
+            return form.ShowDialog() == DialogResult.OK ? textBox.Text : null;
+        }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            iconLoader.Clear();
+            buttonContextMenu?.Dispose();
+            components?.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// コマンド選択ダイアログ
+/// </summary>
+internal class CommandSelectDialog : Form
+{
+    readonly ListView listView;
+    public Command SelectedCommand { get; private set; }
+
+    public CommandSelectDialog(CommandList commandList)
+    {
+        Text = "コマンドの選択";
+        ClientSize = new Size(400, 350);
+        FormBorderStyle = FormBorderStyle.FixedDialog;
+        StartPosition = FormStartPosition.CenterParent;
+        MaximizeBox = false;
+        MinimizeBox = false;
+
+        listView = new ListView
+        {
+            Dock = DockStyle.Top,
+            Height = 300,
+            View = View.Details,
+            FullRowSelect = true,
+            HideSelection = false,
+            MultiSelect = false,
+        };
+        listView.Columns.Add("名前", 150);
+        listView.Columns.Add("ファイル名", 230);
+        listView.DoubleClick += (s, e) =>
+        {
+            if (listView.SelectedItems.Count == 1)
+            {
+                SelectedCommand = (Command)listView.SelectedItems[0].Tag;
+                DialogResult = DialogResult.OK;
+                Close();
+            }
+        };
+
+        foreach (var cmd in commandList.Commands)
+        {
+            var item = new ListViewItem(cmd.Name ?? "") { Tag = cmd };
+            item.SubItems.Add(cmd.FileName ?? "");
+            listView.Items.Add(item);
+        }
+
+        var ok = new Button
+        {
+            Text = "OK",
+            DialogResult = DialogResult.OK,
+            Location = new Point(230, 315),
+            Width = 75,
+        };
+        ok.Click += (s, e) =>
+        {
+            if (listView.SelectedItems.Count == 1)
+            {
+                SelectedCommand = (Command)listView.SelectedItems[0].Tag;
+            }
+        };
+        var cancel = new Button
+        {
+            Text = "キャンセル",
+            DialogResult = DialogResult.Cancel,
+            Location = new Point(310, 315),
+            Width = 75,
+        };
+
+        Controls.Add(listView);
+        Controls.Add(ok);
+        Controls.Add(cancel);
+        AcceptButton = ok;
+        CancelButton = cancel;
+    }
+}

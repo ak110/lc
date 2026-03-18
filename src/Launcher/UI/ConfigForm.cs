@@ -47,6 +47,7 @@ public partial class ConfigForm : Form
         checkBox10.Checked = config.WindowNoResize;
         checkBox11.Checked = config.HideOnRun;
         comboBox2.SelectedIndex = (int)config.CloseButton;
+        comboBox3.SelectedIndex = (int)config.ButtonLauncherActivation;
     }
 
     private void buttonOk_Click(object sender, EventArgs e)
@@ -67,6 +68,7 @@ public partial class ConfigForm : Form
         config.WindowNoResize = checkBox10.Checked;
         config.HideOnRun = checkBox11.Checked;
         config.CloseButton = (CloseButtonBehavior)comboBox2.SelectedIndex;
+        config.ButtonLauncherActivation = (ButtonLauncherActivation)comboBox3.SelectedIndex;
     }
 
     /// <summary>

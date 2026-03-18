@@ -52,18 +52,22 @@ namespace Launcher.UI {
             this.registerStartup1 = new Launcher.UI.RegisterStartup();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.checkBox11 = new System.Windows.Forms.CheckBox();
+            this.groupBox6 = new System.Windows.Forms.GroupBox();
+            this.comboBox3 = new System.Windows.Forms.ComboBox();
+            this.label5 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.groupBox5.SuspendLayout();
+            this.groupBox6.SuspendLayout();
             this.SuspendLayout();
             //
             // buttonOk
             //
             this.buttonOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonOk.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.buttonOk.Location = new System.Drawing.Point(286, 347);
+            this.buttonOk.Location = new System.Drawing.Point(286, 416);
             this.buttonOk.Name = "buttonOk";
             this.buttonOk.Size = new System.Drawing.Size(75, 23);
             this.buttonOk.TabIndex = 0;
@@ -75,7 +79,7 @@ namespace Launcher.UI {
             //
             this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.buttonCancel.Location = new System.Drawing.Point(366, 347);
+            this.buttonCancel.Location = new System.Drawing.Point(366, 416);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 1;
@@ -370,13 +374,47 @@ namespace Launcher.UI {
             this.checkBox11.Text = "実行後隠す(&H)";
             this.checkBox11.UseVisualStyleBackColor = true;
             //
+            // groupBox6
+            //
+            this.groupBox6.Controls.Add(this.comboBox3);
+            this.groupBox6.Controls.Add(this.label5);
+            this.groupBox6.Location = new System.Drawing.Point(8, 384);
+            this.groupBox6.Name = "groupBox6";
+            this.groupBox6.Size = new System.Drawing.Size(440, 52);
+            this.groupBox6.TabIndex = 8;
+            this.groupBox6.TabStop = false;
+            this.groupBox6.Text = "ボタンランチャー";
+            //
+            // comboBox3
+            //
+            this.comboBox3.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBox3.FormattingEnabled = true;
+            this.comboBox3.Items.AddRange(new object[] {
+            "無効",
+            "左ボタンを押しながら右クリック",
+            "右ボタンを押しながら左クリック"});
+            this.comboBox3.Location = new System.Drawing.Point(80, 20);
+            this.comboBox3.Name = "comboBox3";
+            this.comboBox3.Size = new System.Drawing.Size(220, 20);
+            this.comboBox3.TabIndex = 1;
+            //
+            // label5
+            //
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(14, 24);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(55, 12);
+            this.label5.TabIndex = 0;
+            this.label5.Text = "起動方法";
+            //
             // ConfigForm
             //
             this.AcceptButton = this.buttonOk;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.buttonCancel;
-            this.ClientSize = new System.Drawing.Size(458, 388);
+            this.ClientSize = new System.Drawing.Size(458, 452);
+            this.Controls.Add(this.groupBox6);
             this.Controls.Add(this.groupBox5);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
@@ -398,6 +436,8 @@ namespace Launcher.UI {
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             this.groupBox5.ResumeLayout(false);
+            this.groupBox6.ResumeLayout(false);
+            this.groupBox6.PerformLayout();
             this.ResumeLayout(false);
 
 		}
@@ -432,5 +472,8 @@ namespace Launcher.UI {
         private System.Windows.Forms.CheckBox checkBox6;
 		private System.Windows.Forms.Button button1;
         private System.Windows.Forms.CheckBox checkBox11;
+        private System.Windows.Forms.GroupBox groupBox6;
+        private System.Windows.Forms.ComboBox comboBox3;
+        private System.Windows.Forms.Label label5;
 	}
 }

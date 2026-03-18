@@ -3,6 +3,7 @@ using System.Drawing;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using System.Xml.Serialization;
 using Launcher.Infrastructure;
 using Launcher.Updater;
 
@@ -43,7 +44,23 @@ public class Config : ConfigStore, ICloneable
     public string RunAsCommandLine { get; set; } = "/user:Administrator /savecred";
     public string VECmdPath { get; set; } = @"%ProgramFiles%\Vistaのエレベータ\VECmd.exe";
 
-    public bool UseTreeLauncher { get; set; } = false;
+    public ButtonLauncherActivation ButtonLauncherActivation { get; set; } = ButtonLauncherActivation.Disabled;
+
+    /// <summary>
+    /// 後方互換: 旧UseTreeLauncher=true → LeftThenRight にマッピング
+    /// </summary>
+    [XmlElement("UseTreeLauncher")]
+    public bool UseTreeLauncherCompat
+    {
+        get => ButtonLauncherActivation != ButtonLauncherActivation.Disabled;
+        set
+        {
+            if (value && ButtonLauncherActivation == ButtonLauncherActivation.Disabled)
+            {
+                ButtonLauncherActivation = ButtonLauncherActivation.LeftThenRight;
+            }
+        }
+    }
 
     public UpdateConfig UpdateConfig { get; set; } = new UpdateConfig();
 

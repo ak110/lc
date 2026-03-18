@@ -29,6 +29,7 @@ namespace Launcher.UI {
 			this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
 			this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.設定CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.コマンドの管理LToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.メインウィンドウを表示非表示VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
 			this.実行ファイルのあるフォルダを開くMToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -50,6 +51,7 @@ namespace Launcher.UI {
 			//
 			this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.設定CToolStripMenuItem,
+            this.コマンドの管理LToolStripMenuItem,
             this.メインウィンドウを表示非表示VToolStripMenuItem,
             this.toolStripSeparator1,
             this.実行ファイルのあるフォルダを開くMToolStripMenuItem,
@@ -67,6 +69,13 @@ namespace Launcher.UI {
 			this.設定CToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.設定CToolStripMenuItem.Text = "設定(&C)";
 			this.設定CToolStripMenuItem.Click += new System.EventHandler(this.設定CToolStripMenuItem_Click);
+			//
+			// コマンドの管理LToolStripMenuItem
+			//
+			this.コマンドの管理LToolStripMenuItem.Name = "コマンドの管理LToolStripMenuItem";
+			this.コマンドの管理LToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
+			this.コマンドの管理LToolStripMenuItem.Text = "コマンドの管理(&L)";
+			this.コマンドの管理LToolStripMenuItem.Click += new System.EventHandler(this.コマンドの管理LToolStripMenuItem_Click);
 			//
 			// メインウィンドウを表示非表示VToolStripMenuItem
 			//
@@ -145,6 +154,7 @@ namespace Launcher.UI {
 		private System.Windows.Forms.NotifyIcon notifyIcon1;
 		private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
 		private System.Windows.Forms.ToolStripMenuItem 設定CToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem コマンドの管理LToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
 		private System.Windows.Forms.ToolStripMenuItem 実行ファイルのあるフォルダを開くMToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;

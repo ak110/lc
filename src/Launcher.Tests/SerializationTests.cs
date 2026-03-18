@@ -113,6 +113,43 @@ public class SerializationTests
         config.RunAsAdminType.Should().Be(AdminElevation.VistaElevator);
     }
 
+    // --- Config ButtonLauncherActivation ---
+
+    [Theory]
+    [InlineData(ButtonLauncherActivation.Disabled)]
+    [InlineData(ButtonLauncherActivation.LeftThenRight)]
+    [InlineData(ButtonLauncherActivation.RightThenLeft)]
+    public void Config_ButtonLauncherActivationがラウンドトリップで保持される(ButtonLauncherActivation value)
+    {
+        var original = new Config { ButtonLauncherActivation = value };
+        var xml = SerializeToString(original);
+        var deserialized = DeserializeFromString<Config>(xml);
+        deserialized.ButtonLauncherActivation.Should().Be(value);
+    }
+
+    [Fact]
+    public void Config_旧UseTreeLauncher_trueがLeftThenRightにマッピングされる()
+    {
+        // 旧形式: <UseTreeLauncher>true</UseTreeLauncher>
+        var xml = @"<?xml version=""1.0""?>
+<Config>
+  <UseTreeLauncher>true</UseTreeLauncher>
+</Config>";
+        var config = DeserializeFromString<Config>(xml);
+        config.ButtonLauncherActivation.Should().Be(ButtonLauncherActivation.LeftThenRight);
+    }
+
+    [Fact]
+    public void Config_旧UseTreeLauncher_falseでDisabledのまま()
+    {
+        var xml = @"<?xml version=""1.0""?>
+<Config>
+  <UseTreeLauncher>false</UseTreeLauncher>
+</Config>";
+        var config = DeserializeFromString<Config>(xml);
+        config.ButtonLauncherActivation.Should().Be(ButtonLauncherActivation.Disabled);
+    }
+
     // --- CommandList ラウンドトリップ ---
 
     [Fact]
