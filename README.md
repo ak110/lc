@@ -3,16 +3,16 @@
 [![CI](https://github.com/ak110/lc/actions/workflows/ci.yml/badge.svg)](https://github.com/ak110/lc/actions/workflows/ci.yml)
 [![Release](https://github.com/ak110/lc/actions/workflows/release.yml/badge.svg)](https://github.com/ak110/lc/actions/workflows/release.yml)
 
-コマンドラインランチャーです。
+コマンドラインランチャー＆ボタン型ランチャー。
 
 ## 主な機能
 
 ### コマンド型ランチャー
 
-- コマンドの一覧表示（アイコン付き）
+- コマンドの一覧表示
 - 入力に応じて先頭一致・部分一致で表示コマンドの絞り込み
 - 先頭一致時の入力補完
-- 常駐してホットキーによる起動（キーは変更可能）
+- 常駐してホットキーによる起動
 - 「送る」へコマンドの登録用ショートカットの作成
 
 ### ボタン型ランチャー
