@@ -9,7 +9,7 @@ public class UpdatePerformerTests
     [Fact]
     public void GenerateBatchScript_親プロセス待機コードが含まれる()
     {
-        var files = new List<string> { "test.exe", "test.dll" };
+        List<string> files = ["test.exe", "test.dll"];
         var result = UpdatePerformer.GenerateBatchScript(
             1234, @"C:\app", @"C:\temp\update", @"C:\app\test.exe", files);
 
@@ -21,7 +21,7 @@ public class UpdatePerformerTests
     [Fact]
     public void GenerateBatchScript_ZIP内ファイルのみリネーム対象()
     {
-        var files = new List<string> { "app.exe", "lib.dll" };
+        List<string> files = ["app.exe", "lib.dll"];
         var result = UpdatePerformer.GenerateBatchScript(
             1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
 
@@ -35,7 +35,7 @@ public class UpdatePerformerTests
     [Fact]
     public void GenerateBatchScript_xcopyでファイルコピー()
     {
-        var files = new List<string> { "app.exe" };
+        List<string> files = ["app.exe"];
         var result = UpdatePerformer.GenerateBatchScript(
             1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
 
@@ -45,7 +45,7 @@ public class UpdatePerformerTests
     [Fact]
     public void GenerateBatchScript_アプリ起動コマンドが含まれる()
     {
-        var files = new List<string> { "app.exe" };
+        List<string> files = ["app.exe"];
         var result = UpdatePerformer.GenerateBatchScript(
             1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
 
@@ -55,7 +55,7 @@ public class UpdatePerformerTests
     [Fact]
     public void GenerateBatchScript_oldファイル削除コマンドが含まれる()
     {
-        var files = new List<string> { "app.exe", "sub\\lib.dll" };
+        List<string> files = ["app.exe", "sub\\lib.dll"];
         var result = UpdatePerformer.GenerateBatchScript(
             1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
 
@@ -66,7 +66,7 @@ public class UpdatePerformerTests
     [Fact]
     public void GenerateBatchScript_一時ディレクトリ削除が含まれる()
     {
-        var files = new List<string> { "app.exe" };
+        List<string> files = ["app.exe"];
         var result = UpdatePerformer.GenerateBatchScript(
             1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
 
@@ -77,7 +77,7 @@ public class UpdatePerformerTests
     [Fact]
     public void GenerateBatchScript_echoオフとexit()
     {
-        var files = new List<string> { "app.exe" };
+        List<string> files = ["app.exe"];
         var result = UpdatePerformer.GenerateBatchScript(
             1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
 

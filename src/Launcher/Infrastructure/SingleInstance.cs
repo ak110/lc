@@ -123,7 +123,7 @@ public sealed class SingleInstance : IDisposable
     /// </summary>
     public static List<Process> GetProcesses()
     {
-        List<Process> list = new List<Process>();
+        List<Process> list = [];
         using Process current = Process.GetCurrentProcess();
         Process[] processes = Process.GetProcessesByName(current.ProcessName);
         foreach (Process p in processes)

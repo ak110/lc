@@ -115,7 +115,7 @@ public class CommandList : ConfigStore, ICloneable
     {
         if (string.IsNullOrEmpty(input))
         {
-            return new List<Command>(Commands);
+            return [.. Commands];
         }
         return Commands
             .Select(x => new { Command = x, Score = x.GetMatchScore(input, config) })

@@ -211,7 +211,7 @@ public static class KeyTable
     public static (Keys? Key, Modifiers Modifiers) GetKeyWithModifiers(string str)
     {
         Modifiers modifiers = 0;
-        List<string> m = new List<string>(str.Split('+'));
+        List<string> m = [.. str.Split('+')];
         if (m.Contains("Ctrl"))
         {
             modifiers = Modifiers.Ctrl;

@@ -16,7 +16,7 @@ public partial class EnvConfigForm : Form
     {
         InitializeComponent();
 
-        this.replaceEnv = new List<string>(replaceEnv);
+        this.replaceEnv = [.. replaceEnv];
         FormsHelper.SetArray(listBox2, this.replaceEnv);
 
         foreach (System.Collections.DictionaryEntry p in Environment.GetEnvironmentVariables())

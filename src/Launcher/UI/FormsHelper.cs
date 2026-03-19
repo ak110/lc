@@ -403,7 +403,7 @@ public static class FormsHelper
     /// </summary>
     public static List<T> GetArray<T>(ListBox c)
     {
-        List<T> array = new List<T>();
+        List<T> array = [];
         foreach (object item in c.Items)
         {
             array.Add((T)item);
@@ -416,7 +416,7 @@ public static class FormsHelper
     /// </summary>
     public static List<T> GetArray<T>(ComboBox c)
     {
-        List<T> array = new List<T>();
+        List<T> array = [];
         foreach (object item in c.Items)
         {
             array.Add((T)item);

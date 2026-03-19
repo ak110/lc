@@ -18,7 +18,7 @@ public class ReplaceEnvListTests
     public void コンストラクタ_既知の環境変数が収集される()
     {
         // SystemRootは通常 C:\Windows のような値を持つ
-        var envList = new ReplaceEnvList(new List<string> { "SystemRoot" });
+        var envList = new ReplaceEnvList(["SystemRoot"]);
 
         // Replace(Command)を呼んで、実在するパスが置換されることを確認
         string systemRoot = Environment.GetEnvironmentVariable("SystemRoot")!;
@@ -38,7 +38,7 @@ public class ReplaceEnvListTests
     public void コンストラクタ_存在しない環境変数は無視される()
     {
         // 存在しない環境変数名を指定しても例外が出ない
-        var envList = new ReplaceEnvList(new List<string> { "THIS_ENV_VAR_SHOULD_NOT_EXIST_12345" });
+        var envList = new ReplaceEnvList(["THIS_ENV_VAR_SHOULD_NOT_EXIST_12345"]);
 
         var cmd = new Command
         {
@@ -57,7 +57,7 @@ public class ReplaceEnvListTests
     [Fact]
     public void Replace_実在しないパスは置換されない()
     {
-        var envList = new ReplaceEnvList(new List<string> { "SystemRoot" });
+        var envList = new ReplaceEnvList(["SystemRoot"]);
 
         var cmd = new Command
         {
@@ -84,7 +84,7 @@ public class ReplaceEnvListTests
             return;
         }
 
-        var envList = new ReplaceEnvList(new List<string> { "SystemRoot" });
+        var envList = new ReplaceEnvList(["SystemRoot"]);
         var cmd = new Command
         {
             FileName = system32,
@@ -103,7 +103,7 @@ public class ReplaceEnvListTests
     {
         string systemRoot = Environment.GetEnvironmentVariable("SystemRoot")!;
 
-        var envList = new ReplaceEnvList(new List<string> { "SystemRoot" });
+        var envList = new ReplaceEnvList(["SystemRoot"]);
         var cmd = new Command
         {
             FileName = @"Z:\nonexistent",
@@ -125,7 +125,7 @@ public class ReplaceEnvListTests
     {
         string systemRoot = Environment.GetEnvironmentVariable("SystemRoot")!;
 
-        var envList = new ReplaceEnvList(new List<string> { "SystemRoot" });
+        var envList = new ReplaceEnvList(["SystemRoot"]);
         var list = new CommandList();
         list.Commands.Add(new Command { Name = "cmd1", FileName = systemRoot });
         list.Commands.Add(new Command { Name = "cmd2", FileName = @"Z:\nonexistent" });
@@ -141,7 +141,7 @@ public class ReplaceEnvListTests
     [Fact]
     public void コンストラクタ_空リストでも例外が出ない()
     {
-        var envList = new ReplaceEnvList(new List<string>());
+        var envList = new ReplaceEnvList([]);
 
         var cmd = new Command { FileName = @"C:\test" };
         envList.Replace(cmd);

@@ -23,7 +23,7 @@ public class Radios
     /// <param name="radioCount">RadioButtonの数。Assert()するだけ。</param>
     public Radios(Control parent, int radioCount)
     {
-        List<RadioButton> list = new List<RadioButton>();
+        List<RadioButton> list = [];
         // ラジオボタンを(敢えて再帰はせずに1階層だけ)探す
         foreach (Control c in parent.Controls)
         {

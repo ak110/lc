@@ -250,14 +250,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         var cmd = new Command();
         string[] list = data.Split(LineSeparators, StringSplitOptions.None);
         int i = 0;
-        if (name == null)
-        {
-            cmd.Name = list[i++];
-        }
-        else
-        {
-            cmd.Name = name;
-        }
+        cmd.Name = name ?? list[i++];
         cmd.FileName = list[i++];
         cmd.Param = list[i++];
         cmd.WorkDir = list[i++];
@@ -300,7 +293,6 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     {
         return CommandMatcher.GetMatchScore(Name, input, config);
     }
-
 
     /// <summary>
     /// 指定されたファイルからコマンドのデフォルトを適当に作成。

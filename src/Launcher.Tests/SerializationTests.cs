@@ -80,16 +80,18 @@ public class SerializationTests
     public void Command_旧int値のShowフィールドがenum値にデシリアライズされる()
     {
         // 旧形式: <Show>2</Show> → WindowStyle.Maximized
-        var xml = @"<?xml version=""1.0""?>
-<Command>
-  <Name>test</Name>
-  <FileName>test.exe</FileName>
-  <Param></Param>
-  <WorkDir></WorkDir>
-  <Show>2</Show>
-  <Priority>1</Priority>
-  <RunAsAdmin>false</RunAsAdmin>
-</Command>";
+        var xml = """
+            <?xml version="1.0"?>
+            <Command>
+              <Name>test</Name>
+              <FileName>test.exe</FileName>
+              <Param></Param>
+              <WorkDir></WorkDir>
+              <Show>2</Show>
+              <Priority>1</Priority>
+              <RunAsAdmin>false</RunAsAdmin>
+            </Command>
+            """;
         var command = DeserializeFromString<Command>(xml);
         command.Show.Should().Be(WindowStyle.Maximized);
         command.Priority.Should().Be(ProcessPriorityLevel.High);
@@ -99,13 +101,15 @@ public class SerializationTests
     public void Config_旧int値のCloseButtonがenum値にデシリアライズされる()
     {
         // 旧形式: <CloseButton>0</CloseButton> → CloseButtonBehavior.Disabled
-        var xml = @"<?xml version=""1.0""?>
-<Config>
-  <CloseButton>0</CloseButton>
-  <IconDoubleClick>1</IconDoubleClick>
-  <ItemDoubleClick>2</ItemDoubleClick>
-  <RunAsAdminType>2</RunAsAdminType>
-</Config>";
+        var xml = """
+            <?xml version="1.0"?>
+            <Config>
+              <CloseButton>0</CloseButton>
+              <IconDoubleClick>1</IconDoubleClick>
+              <ItemDoubleClick>2</ItemDoubleClick>
+              <RunAsAdminType>2</RunAsAdminType>
+            </Config>
+            """;
         var config = DeserializeFromString<Config>(xml);
         config.CloseButton.Should().Be(CloseButtonBehavior.Disabled);
         config.IconDoubleClick.Should().Be(TrayIconAction.ShowConfig);
@@ -131,10 +135,12 @@ public class SerializationTests
     public void Config_旧UseTreeLauncher_trueがLeftThenRightにマッピングされる()
     {
         // 旧形式: <UseTreeLauncher>true</UseTreeLauncher>
-        var xml = @"<?xml version=""1.0""?>
-<Config>
-  <UseTreeLauncher>true</UseTreeLauncher>
-</Config>";
+        var xml = """
+            <?xml version="1.0"?>
+            <Config>
+              <UseTreeLauncher>true</UseTreeLauncher>
+            </Config>
+            """;
         var config = DeserializeFromString<Config>(xml);
         config.ButtonLauncherActivation.Should().Be(ButtonLauncherActivation.LeftThenRight);
     }
@@ -142,10 +148,12 @@ public class SerializationTests
     [Fact]
     public void Config_旧UseTreeLauncher_falseでDisabledのまま()
     {
-        var xml = @"<?xml version=""1.0""?>
-<Config>
-  <UseTreeLauncher>false</UseTreeLauncher>
-</Config>";
+        var xml = """
+            <?xml version="1.0"?>
+            <Config>
+              <UseTreeLauncher>false</UseTreeLauncher>
+            </Config>
+            """;
         var config = DeserializeFromString<Config>(xml);
         config.ButtonLauncherActivation.Should().Be(ButtonLauncherActivation.Disabled);
     }

@@ -35,7 +35,6 @@ public record ButtonClickResult(MainAction Action, Command? TargetCommand);
 /// </summary>
 public class MainFormPresenter(Func<CommandList> getCommandList, Func<Config> getConfig)
 {
-
     /// <summary>
     /// テキスト入力変更時のロジック。
     /// コマンドマッチングと補完テキストの決定を行う。

@@ -123,7 +123,7 @@ public class ConfigTests
             OpenParentFilerParam2 = "",
             LargeIcon = false,
             TrayIcon = false,
-            ReplaceEnv = new List<string> { "SystemRoot", "ProgramFiles" },
+            ReplaceEnv = ["SystemRoot", "ProgramFiles"],
             CloseButton = CloseButtonBehavior.Close,
             WindowNoResize = true,
             WindowTopMost = true,
@@ -202,7 +202,7 @@ public class ConfigTests
     {
         var original = new Config
         {
-            ReplaceEnv = new List<string> { "SystemRoot", "ProgramFiles" },
+            ReplaceEnv = ["SystemRoot", "ProgramFiles"],
         };
 
         var clone = original.Clone();

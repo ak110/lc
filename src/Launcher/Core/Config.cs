@@ -61,7 +61,6 @@ public class Config : ConfigStore, ICloneable
         }
     }
 
-
     /// <summary>
     /// 複製の作成
     /// </summary>
@@ -69,7 +68,7 @@ public class Config : ConfigStore, ICloneable
     {
         Config copy = (Config)MemberwiseClone();
         // MemberwiseCloneはListの参照を共有するためディープコピーする
-        copy.ReplaceEnv = new List<string>(ReplaceEnv);
+        copy.ReplaceEnv = [.. ReplaceEnv];
         return copy;
     }
 
@@ -168,8 +167,7 @@ public class Config : ConfigStore, ICloneable
 
         data.LargeIcon = reader.Bool("LargeIcon");
         data.TrayIcon = reader.Bool("TrayIcon");
-        data.ReplaceEnv = new List<string>(
-            reader.Indirect("ReplaceEnv").Split('%'));
+        data.ReplaceEnv = [.. reader.Indirect("ReplaceEnv").Split('%')];
 
         data.CloseButton = reader.Bool("WindowNoClose") ? CloseButtonBehavior.Disabled : CloseButtonBehavior.Hide;
         data.WindowNoResize = reader.Bool("WindowNoResize");

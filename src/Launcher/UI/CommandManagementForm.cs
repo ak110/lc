@@ -141,7 +141,7 @@ public partial class CommandManagementForm : Form
         }
 
         // 選択されたコマンドを削除（全件リロードせずListViewItemを直接削除）
-        var toRemove = new List<ListViewItem>();
+        List<ListViewItem> toRemove = [];
         foreach (ListViewItem item in listView1.SelectedItems)
         {
             toRemove.Add(item);

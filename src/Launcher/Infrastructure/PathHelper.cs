@@ -497,7 +497,7 @@ public static class PathHelper
                 string tmp = Path.Combine(path, "{6F5EC475-CA08-485c-B782-AEC4466FE3E1}.tmp");
                 if (!File.Exists(tmp))
                 {
-                    File.WriteAllBytes(tmp, Array.Empty<byte>());
+                    File.WriteAllBytes(tmp, []);
                     bool writable = File.Exists(tmp);
                     if (writable)
                     {
@@ -535,5 +535,4 @@ public static class PathHelper
             return false;
         }
     }
-
 }

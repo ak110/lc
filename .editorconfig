@@ -12,6 +12,12 @@ insert_final_newline = true
 end_of_line = crlf
 dotnet_sort_system_directives_first = true
 csharp_style_namespace_declarations = file_scoped:warning
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
+csharp_style_prefer_extended_property_pattern = true:suggestion
+dotnet_style_prefer_collection_expression = true:suggestion
 
 # === 有効化する重要なルール ===
 
@@ -92,4 +98,4 @@ dotnet_diagnostic.RCS1139.severity = none
 dotnet_diagnostic.RCS1197.severity = warning  # string.Format → 文字列補間
 dotnet_diagnostic.RCS1072.severity = warning  # 冗長なデリゲート生成
 dotnet_diagnostic.RCS1220.severity = warning  # パターンマッチング推奨
-dotnet_diagnostic.RCS1036.severity = none      # using宣言文の利用推奨（段階的に対応）
+dotnet_diagnostic.RCS1036.severity = warning   # using宣言文の利用推奨（修正完了済み）

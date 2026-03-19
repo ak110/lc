@@ -11,7 +11,7 @@ public sealed class ZipReader : IDisposable
 {
     readonly Stream stream;
     readonly bool leaveOpen;
-    readonly List<ZipEntry> entries = new List<ZipEntry>();
+    readonly List<ZipEntry> entries = [];
 
     /// <summary>
     /// 初期化。

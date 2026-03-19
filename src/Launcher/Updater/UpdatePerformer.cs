@@ -93,7 +93,7 @@ public static class UpdatePerformer
     /// </summary>
     private static List<string> GetRelativeFiles(string baseDir)
     {
-        var files = new List<string>();
+        List<string> files = [];
         foreach (var fullPath in Directory.GetFiles(baseDir, "*", SearchOption.AllDirectories))
         {
             string relativePath = Path.GetRelativePath(baseDir, fullPath);

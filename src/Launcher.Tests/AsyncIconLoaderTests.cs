@@ -13,7 +13,7 @@ public class AsyncIconLoaderTests
     public void Clear後にLoad可能()
     {
         using var loader = new AsyncIconLoader(workerCount: 1);
-        var receivedEvents = new List<IconLoadedEventArgs>();
+        List<IconLoadedEventArgs> receivedEvents = [];
         loader.IconLoaded += (s, e) => receivedEvents.Add(e);
 
         // Load → Clear → 再Load のサイクルが例外なく動作すること
@@ -83,7 +83,7 @@ public class AsyncIconLoaderTests
     public void IconLoadedイベントに世代番号が含まれる()
     {
         using var loader = new AsyncIconLoader(workerCount: 1, extractIcon: (_, _) => null);
-        var events = new List<IconLoadedEventArgs>();
+        List<IconLoadedEventArgs> events = [];
         loader.IconLoaded += (s, e) => events.Add(e);
 
         int gen = loader.Generation;
@@ -137,7 +137,7 @@ public class AsyncIconLoaderTests
                 Interlocked.Increment(ref callCount);
                 return null; // nullだがアイコン取得自体は成功扱い
             });
-        var events = new List<IconLoadedEventArgs>();
+        List<IconLoadedEventArgs> events = [];
         loader.IconLoaded += (s, e) => events.Add(e);
 
         loader.Load("test.exe", true, "arg");
@@ -160,7 +160,7 @@ public class AsyncIconLoaderTests
                 return null; // 2回目は成功（nullアイコン = 成功扱い）
             });
         using var done = new ManualResetEventSlim();
-        var events = new List<IconLoadedEventArgs>();
+        List<IconLoadedEventArgs> events = [];
         loader.IconLoaded += (s, e) =>
         {
             events.Add(e);
@@ -186,7 +186,7 @@ public class AsyncIconLoaderTests
                 throw new FileLoadException("常に失敗");
             });
         using var done = new ManualResetEventSlim();
-        var events = new List<IconLoadedEventArgs>();
+        List<IconLoadedEventArgs> events = [];
         loader.IconLoaded += (s, e) =>
         {
             events.Add(e);
@@ -210,7 +210,7 @@ public class AsyncIconLoaderTests
             workerCount: 4,
             extractIcon: (_, _) => null);
         using var allDone = new CountdownEvent(count);
-        var events = new List<IconLoadedEventArgs>();
+        List<IconLoadedEventArgs> events = [];
         loader.IconLoaded += (s, e) =>
         {
             lock (events)

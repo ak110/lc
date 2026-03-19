@@ -739,7 +739,6 @@ public partial class ButtonLauncherForm : Form
 
     #region タブ管理
 
-
     private void AddTab()
     {
         string? name = ShowInputDialog("タブ名を入力してください:", "タブの追加", $"Tab{Data.Tabs.Count + 1}");

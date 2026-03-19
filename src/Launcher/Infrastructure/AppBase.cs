@@ -80,5 +80,4 @@ public static class AppBase
         restart = true;
         Application.Exit();
     }
-
 }
