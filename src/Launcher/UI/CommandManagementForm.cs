@@ -68,6 +68,8 @@ public partial class CommandManagementForm : Form
         BeginInvoke(() =>
         {
             if (IsDisposed) return;
+            // BeginInvoke待機中にClear()された場合の二重チェック
+            if (e.Generation != iconLoader.Generation) return;
             if (e.Icon == null) return;
 
             var item = (ListViewItem)e.Arg!;
@@ -139,26 +141,28 @@ public partial class CommandManagementForm : Form
             return;
         }
 
-        // 選択されたコマンドを削除
-        var toRemove = new List<Command>();
+        // 選択されたコマンドを削除（全件リロードせずListViewItemを直接削除）
+        var toRemove = new List<ListViewItem>();
         foreach (ListViewItem item in listView1.SelectedItems)
         {
-            toRemove.Add((Command)item.Tag!);
+            toRemove.Add(item);
         }
-        foreach (var cmd in toRemove)
+        listView1.BeginUpdate();
+        foreach (var item in toRemove)
         {
-            owner.CommandList.Commands.Remove(cmd);
+            owner.CommandList.Commands.Remove((Command)item.Tag!);
+            listView1.Items.Remove(item);
         }
+        listView1.EndUpdate();
 
         SaveAndApply();
-        LoadCommands();
     }
 
     private void SaveAndApply()
     {
         owner.CommandList.Serialize(".cmd.cfg");
-        // MainFormの表示を更新
-        owner.RefreshMainForm();
+        // MainFormのコマンド一覧だけ更新（アイコン再読込は不要）
+        owner.RefreshMainFormCommandList();
     }
 
     protected override void Dispose(bool disposing)

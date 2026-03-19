@@ -120,6 +120,14 @@ public partial class MainForm : Form
         thread.Start();
     }
 
+    /// <summary>
+    /// コマンド一覧の表示だけを更新（アイコン再読込なし）
+    /// </summary>
+    public void RefreshCommandList()
+    {
+        textBox1_TextChanged(this, EventArgs.Empty);
+    }
+
     private void ReloadIcons()
     {
         iconLoader.Clear();

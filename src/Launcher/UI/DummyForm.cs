@@ -203,6 +203,17 @@ public partial class DummyForm : Form
     }
 
     /// <summary>
+    /// MainFormのコマンド一覧表示だけを更新（アイコン再読込なし）
+    /// </summary>
+    public void RefreshMainFormCommandList()
+    {
+        if (!mainForm.IsDisposed)
+        {
+            mainForm.RefreshCommandList();
+        }
+    }
+
+    /// <summary>
     /// コンフィグダイアログ。
     /// </summary>
     public void ShowConfigDialog()

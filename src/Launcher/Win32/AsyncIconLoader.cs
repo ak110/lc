@@ -93,9 +93,11 @@ public sealed class AsyncIconLoader : IDisposable
     {
         ThreadPriority = threadPriority;
         this.extractIcon = extractIcon ?? DefaultExtractIcon;
+        // Dispose()とのレース回避: スレッド開始前にトークンを取得しておく
+        var token = cts.Token;
         for (int i = 0; i < workerCount; i++)
         {
-            var thread = new Thread(() => OnThread(cts.Token));
+            var thread = new Thread(() => OnThread(token));
             thread.SetApartmentState(ApartmentState.STA); // Shell API (SHGetFileInfo) にはSTAが必須
             thread.IsBackground = true;
             thread.Priority = threadPriority;
