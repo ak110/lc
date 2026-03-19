@@ -3,12 +3,17 @@
 ## 前提条件
 
 - Windows 10/11
-- [mise](https://mise.jdx.dev/)（.NET SDK・Node.jsのバージョン管理）
+- [mise](https://mise.jdx.dev/)（.NET SDK・Node.js・pnpmのバージョン管理）
 - [Visual Studio Code](https://code.visualstudio.com/)
-- [pnpm](https://pnpm.io/)（Node.jsパッケージマネージャ）
 
-`mise install`で.NET SDKとNode.jsをまとめてインストール可能。
-バージョンは`mise.toml`で管理される。
+## セットアップ
+
+```cmd
+mise install && mise run setup
+```
+
+これだけで .NET SDK、Node.js、pnpmのインストールと依存パッケージのセットアップが完了する。
+バージョンは `mise.toml` で一元管理される。
 
 ## 推奨VSCode拡張機能
 
@@ -19,55 +24,32 @@
 - **markdownlint** (`DavidAnson.vscode-markdownlint`) — Markdownリンター
 - **Prettier** (`esbenp.prettier-vscode`) — YAML/JSONフォーマッター
 
-## セットアップ
+## miseタスク一覧
 
-```cmd
-rem ツールチェインと依存パッケージのインストール
-mise install && mise run setup
+| コマンド | 説明 |
+|---------|------|
+| `mise run build` | ビルド |
+| `mise run test` | テスト実行 |
+| `mise run lint` | Lint チェック（C# + ドキュメント） |
+| `mise run format` | 全自動修正（C# + ドキュメント） |
+| `mise run run` | アプリケーション実行 |
+| `mise run publish` | Release ビルド + 成果物出力 |
+| `mise run ci` | build + lint + test の一括実行 |
+| `mise run coverage` | テストカバレッジ計測 |
+| `mise run watch` | テスト自動実行（ファイル変更監視） |
+| `mise run clean` | ビルド成果物のクリーン |
 
-rem ビルド確認
-mise run build
-```
-
-## .NET SDKの更新
-
-```cmd
-mise upgrade dotnet
-```
-
-## ビルド
-
-```cmd
-mise run build
-```
-
-VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスクを実行する。
-
-## テスト
-
-```cmd
-mise run test
-```
+VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスク（build）を実行する。
 
 ## デバッグ
 
 1. VSCodeで`F5`を押すとデバッグ起動
 2. `.vscode/launch.json`に起動設定を定義済み
 
-## 実行
+## .NET SDKの更新
 
 ```cmd
-dotnet run --project src/Launcher/Launcher.csproj
-```
-
-## Lint
-
-```cmd
-rem チェックのみ
-mise run lint
-
-rem 全自動修正
-mise run format
+mise upgrade dotnet
 ```
 
 ## リリース手順

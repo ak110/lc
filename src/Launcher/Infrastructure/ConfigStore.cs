@@ -155,7 +155,11 @@ public class ConfigStore
         {
             string mutexName = fileName.ToLower().Replace('\\', '/');
             Mutex mutex = new Mutex(false, mutexName);
-            mutex.WaitOne();
+            if (!mutex.WaitOne(30000))
+            {
+                mutex.Close();
+                throw new TimeoutException($"設定ファイルのロック取得がタイムアウトしました: {fileName}");
+            }
             return new MutexLock(mutex);
         }
     }

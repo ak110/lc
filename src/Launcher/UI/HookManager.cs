@@ -45,8 +45,8 @@ sealed class HookManager
     public void UpdateHotkey(string hotKeyString)
     {
         var hk = KeyTable.GetKeyWithModifiers(hotKeyString);
-        hotkeyVK = KeyTable.KeysToVKey(hk.First);
-        modifiers = hk.Second;
+        hotkeyVK = KeyTable.KeysToVKey(hk.Key);
+        modifiers = hk.Modifiers;
     }
 
     /// <summary>

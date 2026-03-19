@@ -1,5 +1,4 @@
 using Launcher.Core;
-using Launcher.Infrastructure;
 using Launcher.Win32;
 
 namespace Launcher.UI;
@@ -22,15 +21,14 @@ public partial class ConfigForm : Form
         comboBox1.Items.AddRange(
             KeyTable.GetKeyNames(false));
 
-        Pair<KeyTable.Keys?, KeyTable.Modifiers>
-            hk = KeyTable.GetKeyWithModifiers(config.HotKey);
-        checkBox1.Checked = (hk.Second & KeyTable.Modifiers.Ctrl) != 0;
-        checkBox2.Checked = (hk.Second & KeyTable.Modifiers.Alt) != 0;
-        checkBox3.Checked = (hk.Second & KeyTable.Modifiers.Shift) != 0;
-        checkBox4.Checked = (hk.Second & KeyTable.Modifiers.Win) != 0;
+        var hk = KeyTable.GetKeyWithModifiers(config.HotKey);
+        checkBox1.Checked = (hk.Modifiers & KeyTable.Modifiers.Ctrl) != 0;
+        checkBox2.Checked = (hk.Modifiers & KeyTable.Modifiers.Alt) != 0;
+        checkBox3.Checked = (hk.Modifiers & KeyTable.Modifiers.Shift) != 0;
+        checkBox4.Checked = (hk.Modifiers & KeyTable.Modifiers.Win) != 0;
         try
         {
-            comboBox1.SelectedItem = KeyTable.GetKeyName(hk.First!.Value);
+            comboBox1.SelectedItem = KeyTable.GetKeyName(hk.Key!.Value);
         }
         catch (ArgumentException)
         {

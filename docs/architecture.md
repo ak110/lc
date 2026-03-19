@@ -32,6 +32,8 @@ src/Launcher/
 - **Config** — アプリケーション設定。ホットキー、ウィンドウ設定、ファイラ設定、ボタンランチャー起動方法等
 - **ButtonLauncherData** — ボタン型ランチャーのデータ。タブ・ボタン配置・グリッドサイズ等を管理
 - **ButtonTab** / **ButtonEntry** — ボタンランチャーのタブとボタンのモデル
+- **MainFormPresenter** — MainFormのUIロジック。コマンド検索・選択・実行の制御
+- **ButtonLauncherPresenter** — ButtonLauncherFormのUIロジック。ボタン操作・D&D・タブ管理の制御
 
 ### Infrastructure
 
@@ -51,6 +53,7 @@ WinFormsのフォーム群。
 - **DummyForm** — 常駐用の不可視フォーム。ホットキーフック、トレイアイコン、設定管理、ボタンランチャー管理を担当
 - **MainForm** — コマンド型ランチャー。テキストボックスによるコマンド検索、リストビューによるコマンド一覧表示、コマンド実行
 - **ButtonLauncherForm** — ボタン型ランチャー。タブ付きグリッドにコマンドをボタンとして配置。D&D対応
+- **HookManager** — グローバルキーボード・マウスフックの管理。ホットキーやマウス操作のイベント通知
 - **CommandManagementForm** — コマンド管理画面。コマンド一覧の表示・編集・削除
 - **ConfigForm** — 設定ダイアログ
 - **EditCommandForm** — コマンド編集ダイアログ

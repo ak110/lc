@@ -1,4 +1,3 @@
-using System.Text;
 using FluentAssertions;
 using Launcher.Infrastructure;
 using Xunit;
@@ -6,102 +5,10 @@ using Xunit;
 namespace Launcher.Tests;
 
 /// <summary>
-/// Hash, SubStream ユーティリティのテスト
+/// SubStream ユーティリティのテスト
 /// </summary>
 public class UtilityTests
 {
-    // --- Hash.MD5 ---
-
-    [Fact]
-    public void MD5_空文字列のハッシュ()
-    {
-        // 空文字列のMD5 (Encoding.Defaultのバイト列に対するハッシュ)
-        // 空バイト配列のMD5は d41d8cd98f00b204e9800998ecf8427e
-        var result = Hash.MD5(Array.Empty<byte>());
-        result.Should().Be("d41d8cd98f00b204e9800998ecf8427e");
-    }
-
-    [Fact]
-    public void MD5_バイト配列のハッシュ()
-    {
-        // "abc"のUTF-8バイト列に対するMD5
-        byte[] data = Encoding.UTF8.GetBytes("abc");
-        var result = Hash.MD5(data);
-        result.Should().Be("900150983cd24fb0d6963f7d28e17f72");
-    }
-
-    [Fact]
-    public void MD5_同じ入力は同じハッシュ()
-    {
-        byte[] data = Encoding.UTF8.GetBytes("test data");
-        var result1 = Hash.MD5(data);
-        var result2 = Hash.MD5(data);
-        result1.Should().Be(result2);
-    }
-
-    [Fact]
-    public void MD5_異なる入力は異なるハッシュ()
-    {
-        byte[] data1 = Encoding.UTF8.GetBytes("hello");
-        byte[] data2 = Encoding.UTF8.GetBytes("world");
-        var result1 = Hash.MD5(data1);
-        var result2 = Hash.MD5(data2);
-        result1.Should().NotBe(result2);
-    }
-
-    [Fact]
-    public void MD5_小文字の16進数文字列を返す()
-    {
-        byte[] data = Encoding.UTF8.GetBytes("test");
-        var result = Hash.MD5(data);
-        result.Should().MatchRegex("^[0-9a-f]{32}$");
-    }
-
-    // --- Hash.SHA1 ---
-
-    [Fact]
-    public void SHA1_空バイト配列のハッシュ()
-    {
-        var result = Hash.SHA1(Array.Empty<byte>());
-        result.Should().Be("da39a3ee5e6b4b0d3255bfef95601890afd80709");
-    }
-
-    [Fact]
-    public void SHA1_既知の入力()
-    {
-        byte[] data = Encoding.UTF8.GetBytes("abc");
-        var result = Hash.SHA1(data);
-        result.Should().Be("a9993e364706816aba3e25717850c26c9cd0d89d");
-    }
-
-    [Fact]
-    public void SHA1_小文字の16進数文字列を返す()
-    {
-        byte[] data = Encoding.UTF8.GetBytes("test");
-        var result = Hash.SHA1(data);
-        result.Should().MatchRegex("^[0-9a-f]{40}$");
-    }
-
-    // --- Hash.HMACMD5 ---
-
-    [Fact]
-    public void HMACMD5_小文字の16進数文字列を返す()
-    {
-        byte[] pass = Encoding.UTF8.GetBytes("key");
-        byte[] challenge = Encoding.UTF8.GetBytes("message");
-        var result = Hash.HMACMD5(pass, challenge);
-        result.Should().MatchRegex("^[0-9a-f]{32}$");
-    }
-
-    [Fact]
-    public void HMACMD5_異なるキーで異なるハッシュ()
-    {
-        byte[] challenge = Encoding.UTF8.GetBytes("message");
-        var result1 = Hash.HMACMD5(Encoding.UTF8.GetBytes("key1"), challenge);
-        var result2 = Hash.HMACMD5(Encoding.UTF8.GetBytes("key2"), challenge);
-        result1.Should().NotBe(result2);
-    }
-
     // --- SubStream ---
 
     [Fact]

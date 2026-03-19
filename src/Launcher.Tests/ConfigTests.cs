@@ -196,4 +196,23 @@ public class ConfigTests
 
         original.HotKey.Should().Be("Win+Space");
     }
+
+    [Fact]
+    public void Clone_ReplaceEnvがディープコピーされる()
+    {
+        var original = new Config
+        {
+            ReplaceEnv = new List<string> { "SystemRoot", "ProgramFiles" },
+        };
+
+        var clone = original.Clone();
+
+        // clone側を変更しても元に影響しないことを確認
+        clone.ReplaceEnv.Add("TEMP");
+        clone.ReplaceEnv.Remove("SystemRoot");
+
+        original.ReplaceEnv.Should().HaveCount(2);
+        original.ReplaceEnv[0].Should().Be("SystemRoot");
+        original.ReplaceEnv[1].Should().Be("ProgramFiles");
+    }
 }

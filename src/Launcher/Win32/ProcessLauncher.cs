@@ -52,16 +52,22 @@ public class ProcessLauncher
     public static void Start(ShellProcessStartInfo info, System.Diagnostics.ProcessPriorityClass priority)
     {
         IntPtr hProcess = InnerStart(info);
-        switch (priority)
+        try
         {
-            case System.Diagnostics.ProcessPriorityClass.RealTime: SetPriorityClass(hProcess, REALTIME_PRIORITY_CLASS); break;
-            case System.Diagnostics.ProcessPriorityClass.High: SetPriorityClass(hProcess, HIGH_PRIORITY_CLASS); break;
-            case System.Diagnostics.ProcessPriorityClass.AboveNormal: SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS); break;
-            case System.Diagnostics.ProcessPriorityClass.Normal: SetPriorityClass(hProcess, NORMAL_PRIORITY_CLASS); break;
-            case System.Diagnostics.ProcessPriorityClass.BelowNormal: SetPriorityClass(hProcess, BELOW_NORMAL_PRIORITY_CLASS); break;
-            case System.Diagnostics.ProcessPriorityClass.Idle: SetPriorityClass(hProcess, IDLE_PRIORITY_CLASS); break;
+            switch (priority)
+            {
+                case System.Diagnostics.ProcessPriorityClass.RealTime: SetPriorityClass(hProcess, REALTIME_PRIORITY_CLASS); break;
+                case System.Diagnostics.ProcessPriorityClass.High: SetPriorityClass(hProcess, HIGH_PRIORITY_CLASS); break;
+                case System.Diagnostics.ProcessPriorityClass.AboveNormal: SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS); break;
+                case System.Diagnostics.ProcessPriorityClass.Normal: SetPriorityClass(hProcess, NORMAL_PRIORITY_CLASS); break;
+                case System.Diagnostics.ProcessPriorityClass.BelowNormal: SetPriorityClass(hProcess, BELOW_NORMAL_PRIORITY_CLASS); break;
+                case System.Diagnostics.ProcessPriorityClass.Idle: SetPriorityClass(hProcess, IDLE_PRIORITY_CLASS); break;
+            }
         }
-        CloseHandle(hProcess);
+        finally
+        {
+            CloseHandle(hProcess);
+        }
     }
 
     private static IntPtr InnerStart(ShellProcessStartInfo info)

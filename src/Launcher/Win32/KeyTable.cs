@@ -208,7 +208,7 @@ public static class KeyTable
     /// <summary>
     /// キーの名前からKeysの取得
     /// </summary>
-    public static Pair<Keys?, Modifiers> GetKeyWithModifiers(string str)
+    public static (Keys? Key, Modifiers Modifiers) GetKeyWithModifiers(string str)
     {
         Modifiers modifiers = 0;
         List<string> m = new List<string>(str.Split('+'));
@@ -230,8 +230,8 @@ public static class KeyTable
         }
         Keys? key = GetKey(m[m.Count - 1]);
         return key.HasValue ?
-            new Pair<Keys?, Modifiers>(key.Value, modifiers) :
-            new Pair<Keys?, Modifiers>(null, 0);
+            (key.Value, modifiers) :
+            (null, (Modifiers)0);
     }
 
     /// <summary>
@@ -255,11 +255,11 @@ public static class KeyTable
     /// キーの名前からOSの仮想キーコードの取得
     /// 低速のため注意。
     /// </summary>
-    public static Pair<SystemKeys, Modifiers> GetVKey(string str)
+    public static (SystemKeys Key, Modifiers Modifiers) GetVKey(string str)
     {
-        Pair<Keys?, Modifiers> p = GetKeyWithModifiers(str);
-        SystemKeys n = p.First.HasValue ? KeysToVKey(p.First.Value) : SystemKeys.None;
-        return new Pair<SystemKeys, Modifiers>(n, p.Second);
+        var p = GetKeyWithModifiers(str);
+        SystemKeys n = p.Key.HasValue ? KeysToVKey(p.Key.Value) : SystemKeys.None;
+        return (n, p.Modifiers);
     }
 
     /// <summary>

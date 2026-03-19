@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -17,8 +16,6 @@ namespace Launcher.Win32;
 [Guid("00021401-0000-0000-C000-000000000046")]
 [ClassInterface(ClassInterfaceType.None)]
 internal class ShellLinkObject { }
-
-#region "Unicode用"
 
 /// <summary>
 /// IShellLinkWインターフェイス
@@ -109,99 +106,6 @@ struct WIN32_FIND_DATAW
 
 #endregion
 
-#region "ANSI用"
-
-/// <summary>
-/// IShellLinkAインターフェイス
-/// </summary>
-[ComImport]
-[Guid("000214EE-0000-0000-C000-000000000046")]
-[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-internal interface IShellLinkA
-{
-    void GetPath(
-        [Out, MarshalAs(UnmanagedType.LPStr)] StringBuilder pszFile,
-        int cch,
-        [MarshalAs(UnmanagedType.Struct)] ref WIN32_FIND_DATAA pfd,
-        uint fFlags
-        );
-
-    void GetIDList(out IntPtr ppidl);
-
-    void SetIDList(IntPtr pidl);
-
-    void GetDescription([Out, MarshalAs(UnmanagedType.LPStr)] StringBuilder pszName, int cch);
-
-    void SetDescription([MarshalAs(UnmanagedType.LPStr)] string pszName);
-
-    void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPStr)] StringBuilder pszDir, int cch);
-
-    void SetWorkingDirectory([MarshalAs(UnmanagedType.LPStr)] string pszDir);
-
-    void GetArguments([Out, MarshalAs(UnmanagedType.LPStr)] StringBuilder pszArgs, int cch);
-
-    void SetArguments([MarshalAs(UnmanagedType.LPStr)] string pszArgs);
-
-    void GetHotkey(out ushort pwHotkey);
-
-    void SetHotkey(ushort wHotkey);
-
-    void GetShowCmd(out int piShowCmd);
-
-    void SetShowCmd(int iShowCmd);
-
-    void GetIconLocation(
-        [Out, MarshalAs(UnmanagedType.LPStr)] StringBuilder pszIconPath,
-        int cch,
-        out int piIcon
-        );
-
-    void SetIconLocation(
-        [MarshalAs(UnmanagedType.LPStr)] string pszIconPath,
-        int iIcon
-        );
-
-    void SetRelativePath(
-        [MarshalAs(UnmanagedType.LPStr)] string pszPathRel,
-        uint dwReserved
-        );
-
-    void Resolve(
-        IntPtr hwnd,
-        uint fFlags
-        );
-
-    void SetPath([MarshalAs(UnmanagedType.LPStr)] string pszFile);
-}
-
-/// <summary>
-/// WIN32_FIND_DATAA 構造体
-/// </summary>
-[StructLayout(LayoutKind.Sequential, Pack = 4, CharSet = CharSet.Ansi)]
-struct WIN32_FIND_DATAA
-{
-    public const int MAX_PATH = 260;
-
-    public uint dwFileAttributes;
-    public FILETIME ftCreationTime;
-    public FILETIME ftLastAccessTime;
-    public FILETIME ftLastWriteTime;
-    public uint nFileSizeHigh;
-    public uint nFileSizeLow;
-    public uint dwReserved0;
-    public uint dwReserved1;
-
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_PATH)]
-    public string? cFileName;
-
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 14)]
-    public string? cAlternateFileName;
-}
-
-#endregion
-
-#endregion
-
 /// <summary>
 /// ショートカットに関する処理を行うためのクラスです。
 /// </summary>
@@ -209,13 +113,9 @@ public sealed class ShellLink : IDisposable
 {
     // IShellLinkインターフェイス
     private IShellLinkW? shellLinkW;
-    private IShellLinkA? shellLinkA;
 
     // カレントファイル
     private string currentFile;
-
-    // 実行環境
-    private bool isUnicodeEnvironment;
 
     // 各種定数
     internal const int MAX_PATH = 260;
@@ -289,25 +189,9 @@ public sealed class ShellLink : IDisposable
     {
         currentFile = "";
 
-        shellLinkW = null;
-        shellLinkA = null;
-
         try
         {
-            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT)
-            {
-                // Unicode用
-                shellLinkW = (IShellLinkW)(new ShellLinkObject());
-
-                isUnicodeEnvironment = true;
-            }
-            else
-            {
-                // Ansi用
-                shellLinkA = (IShellLinkA)(new ShellLinkObject());
-
-                isUnicodeEnvironment = false;
-            }
+            shellLinkW = (IShellLinkW)(new ShellLinkObject());
         }
         catch
         {
@@ -344,12 +228,6 @@ public sealed class ShellLink : IDisposable
             Marshal.ReleaseComObject(shellLinkW);
             shellLinkW = null;
         }
-
-        if (shellLinkA != null)
-        {
-            Marshal.ReleaseComObject(shellLinkA);
-            shellLinkA = null;
-        }
     }
 
     #endregion
@@ -372,32 +250,13 @@ public sealed class ShellLink : IDisposable
         get
         {
             StringBuilder targetPath = new StringBuilder(MAX_PATH, MAX_PATH);
-
-            if (isUnicodeEnvironment)
-            {
-                WIN32_FIND_DATAW data = new WIN32_FIND_DATAW();
-
-                shellLinkW!.GetPath(targetPath, targetPath.Capacity, ref data, SLGP_UNCPRIORITY);
-            }
-            else
-            {
-                WIN32_FIND_DATAA data = new WIN32_FIND_DATAA();
-
-                shellLinkA!.GetPath(targetPath, targetPath.Capacity, ref data, SLGP_UNCPRIORITY);
-            }
-
+            WIN32_FIND_DATAW data = new WIN32_FIND_DATAW();
+            shellLinkW!.GetPath(targetPath, targetPath.Capacity, ref data, SLGP_UNCPRIORITY);
             return targetPath.ToString();
         }
         set
         {
-            if (isUnicodeEnvironment)
-            {
-                shellLinkW!.SetPath(value);
-            }
-            else
-            {
-                shellLinkA!.SetPath(value);
-            }
+            shellLinkW!.SetPath(value);
         }
     }
 
@@ -409,28 +268,12 @@ public sealed class ShellLink : IDisposable
         get
         {
             StringBuilder workingDirectory = new StringBuilder(MAX_PATH, MAX_PATH);
-
-            if (isUnicodeEnvironment)
-            {
-                shellLinkW!.GetWorkingDirectory(workingDirectory, workingDirectory.Capacity);
-            }
-            else
-            {
-                shellLinkA!.GetWorkingDirectory(workingDirectory, workingDirectory.Capacity);
-            }
-
+            shellLinkW!.GetWorkingDirectory(workingDirectory, workingDirectory.Capacity);
             return workingDirectory.ToString();
         }
         set
         {
-            if (isUnicodeEnvironment)
-            {
-                shellLinkW!.SetWorkingDirectory(value);
-            }
-            else
-            {
-                shellLinkA!.SetWorkingDirectory(value);
-            }
+            shellLinkW!.SetWorkingDirectory(value);
         }
     }
 
@@ -442,28 +285,12 @@ public sealed class ShellLink : IDisposable
         get
         {
             StringBuilder arguments = new StringBuilder(MAX_PATH, MAX_PATH);
-
-            if (isUnicodeEnvironment)
-            {
-                shellLinkW!.GetArguments(arguments, arguments.Capacity);
-            }
-            else
-            {
-                shellLinkA!.GetArguments(arguments, arguments.Capacity);
-            }
-
+            shellLinkW!.GetArguments(arguments, arguments.Capacity);
             return arguments.ToString();
         }
         set
         {
-            if (isUnicodeEnvironment)
-            {
-                shellLinkW!.SetArguments(value);
-            }
-            else
-            {
-                shellLinkA!.SetArguments(value);
-            }
+            shellLinkW!.SetArguments(value);
         }
     }
 
@@ -475,28 +302,12 @@ public sealed class ShellLink : IDisposable
         get
         {
             StringBuilder description = new StringBuilder(MAX_PATH, MAX_PATH);
-
-            if (isUnicodeEnvironment)
-            {
-                shellLinkW!.GetDescription(description, description.Capacity);
-            }
-            else
-            {
-                shellLinkA!.GetDescription(description, description.Capacity);
-            }
-
+            shellLinkW!.GetDescription(description, description.Capacity);
             return description.ToString();
         }
         set
         {
-            if (isUnicodeEnvironment)
-            {
-                shellLinkW!.SetDescription(value);
-            }
-            else
-            {
-                shellLinkA!.SetDescription(value);
-            }
+            shellLinkW!.SetDescription(value);
         }
     }
 
@@ -507,20 +318,12 @@ public sealed class ShellLink : IDisposable
     {
         get
         {
-            int iconIndex = 0;
-            string iconFile = "";
-
-            GetIconLocation(out iconFile, out iconIndex);
-
+            GetIconLocation(out string iconFile, out _);
             return iconFile;
         }
         set
         {
-            int iconIndex = 0;
-            string iconFile = "";
-
-            GetIconLocation(out iconFile, out iconIndex);
-
+            GetIconLocation(out _, out int iconIndex);
             SetIconLocation(value, iconIndex);
         }
     }
@@ -532,20 +335,12 @@ public sealed class ShellLink : IDisposable
     {
         get
         {
-            int iconIndex = 0;
-            string iconPath = "";
-
-            GetIconLocation(out iconPath, out iconIndex);
-
+            GetIconLocation(out _, out int iconIndex);
             return iconIndex;
         }
         set
         {
-            int iconIndex = 0;
-            string iconPath = "";
-
-            GetIconLocation(out iconPath, out iconIndex);
-
+            GetIconLocation(out string iconPath, out _);
             SetIconLocation(iconPath, value);
         }
     }
@@ -553,39 +348,19 @@ public sealed class ShellLink : IDisposable
     /// <summary>
     /// アイコンのファイルとインデックスを取得する
     /// </summary>
-    /// <param name="iconFile">アイコンのファイル</param>
-    /// <param name="iconIndex">アイコンのインデックス</param>
     private void GetIconLocation(out string iconFile, out int iconIndex)
     {
         StringBuilder iconFileBuffer = new StringBuilder(MAX_PATH, MAX_PATH);
-
-        if (isUnicodeEnvironment)
-        {
-            shellLinkW!.GetIconLocation(iconFileBuffer, iconFileBuffer.Capacity, out iconIndex);
-        }
-        else
-        {
-            shellLinkA!.GetIconLocation(iconFileBuffer, iconFileBuffer.Capacity, out iconIndex);
-        }
-
+        shellLinkW!.GetIconLocation(iconFileBuffer, iconFileBuffer.Capacity, out iconIndex);
         iconFile = iconFileBuffer.ToString();
     }
 
     /// <summary>
     /// アイコンのファイルとインデックスを設定する
     /// </summary>
-    /// <param name="iconFile">アイコンのファイル</param>
-    /// <param name="iconIndex">アイコンのインデックス</param>
     private void SetIconLocation(string iconFile, int iconIndex)
     {
-        if (isUnicodeEnvironment)
-        {
-            shellLinkW!.SetIconLocation(iconFile, iconIndex);
-        }
-        else
-        {
-            shellLinkA!.SetIconLocation(iconFile, iconIndex);
-        }
+        shellLinkW!.SetIconLocation(iconFile, iconIndex);
     }
 
     /// <summary>
@@ -595,29 +370,12 @@ public sealed class ShellLink : IDisposable
     {
         get
         {
-            int showCmd = 0;
-
-            if (isUnicodeEnvironment)
-            {
-                shellLinkW!.GetShowCmd(out showCmd);
-            }
-            else
-            {
-                shellLinkA!.GetShowCmd(out showCmd);
-            }
-
+            shellLinkW!.GetShowCmd(out int showCmd);
             return (ShellLinkDisplayMode)showCmd;
         }
         set
         {
-            if (isUnicodeEnvironment)
-            {
-                shellLinkW!.SetShowCmd((int)value);
-            }
-            else
-            {
-                shellLinkA!.SetShowCmd((int)value);
-            }
+            shellLinkW!.SetShowCmd((int)value);
         }
     }
 
@@ -628,29 +386,12 @@ public sealed class ShellLink : IDisposable
     {
         get
         {
-            ushort hotKey = 0;
-
-            if (isUnicodeEnvironment)
-            {
-                shellLinkW!.GetHotkey(out hotKey);
-            }
-            else
-            {
-                shellLinkA!.GetHotkey(out hotKey);
-            }
-
+            shellLinkW!.GetHotkey(out ushort hotKey);
             return (Keys)hotKey;
         }
         set
         {
-            if (isUnicodeEnvironment)
-            {
-                shellLinkW!.SetHotkey((ushort)value);
-            }
-            else
-            {
-                shellLinkA!.SetHotkey((ushort)value);
-            }
+            shellLinkW!.SetHotkey((ushort)value);
         }
     }
 
@@ -664,14 +405,7 @@ public sealed class ShellLink : IDisposable
     /// <returns>IPersistFileインターフェイス。取得できなかった場合はnull。</returns>
     private UCOMIPersistFile? GetIPersistFile()
     {
-        if (isUnicodeEnvironment)
-        {
-            return shellLinkW as UCOMIPersistFile;
-        }
-        else
-        {
-            return shellLinkA as UCOMIPersistFile;
-        }
+        return shellLinkW as UCOMIPersistFile;
     }
 
     /// <summary>
@@ -769,14 +503,7 @@ public sealed class ShellLink : IDisposable
         }
 
         // ショートカットに関する情報を読み込み
-        if (isUnicodeEnvironment)
-        {
-            shellLinkW!.Resolve(hWnd, flags);
-        }
-        else
-        {
-            shellLinkA!.Resolve(hWnd, flags);
-        }
+        shellLinkW!.Resolve(hWnd, flags);
 
         // カレントファイルを指定
         currentFile = linkFile;

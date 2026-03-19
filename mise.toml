@@ -1,6 +1,7 @@
 [tools]
 dotnet = "10"
 node = "lts"
+pnpm = "latest"
 
 [tasks.setup]
 run = "pnpm install"
@@ -28,6 +29,21 @@ run = "dotnet format Launcher.sln"
 
 [tasks."format:docs"]
 run = "pnpm run lint:fix"
+
+[tasks.run]
+run = "dotnet run --project src/Launcher/Launcher.csproj"
+
+[tasks.publish]
+run = "dotnet publish src/Launcher/Launcher.csproj -c Release -o publish"
+
+[tasks.ci]
+depends = ["build", "lint", "test"]
+
+[tasks.coverage]
+run = "dotnet test Launcher.sln --collect:\"XPlat Code Coverage\""
+
+[tasks.watch]
+run = "dotnet watch test --project src/Launcher.Tests/Launcher.Tests.csproj"
 
 [tasks.clean]
 run = "dotnet clean Launcher.sln"

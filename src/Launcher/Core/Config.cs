@@ -68,6 +68,8 @@ public class Config : ConfigStore, ICloneable
     public Config Clone()
     {
         Config copy = (Config)MemberwiseClone();
+        // MemberwiseCloneはListの参照を共有するためディープコピーする
+        copy.ReplaceEnv = new List<string>(ReplaceEnv);
         return copy;
     }
 
