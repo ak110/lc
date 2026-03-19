@@ -16,7 +16,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="FluentAssertions" Version="6.*" />
+    <PackageReference Include="FluentAssertions" Version="8.*" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Launcher\Launcher.csproj" />
