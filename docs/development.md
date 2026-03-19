@@ -24,19 +24,24 @@ mise install && mise run setup
 - **markdownlint** (`DavidAnson.vscode-markdownlint`) — Markdownリンター
 - **Prettier** (`esbenp.prettier-vscode`) — YAML/JSONフォーマッター
 
-## miseタスク一覧
+## miseタスク
+
+普段使うのはこの2つだけ。
+
+| コマンド | 内容 |
+|---------|------|
+| `mise run format` | format + build + lint |
+| `mise run test` | format + build + lint + test |
+
+その他。
 
 | コマンド | 説明 |
 |---------|------|
-| `mise run build` | ビルド |
-| `mise run test` | テスト実行 |
-| `mise run lint` | Lint チェック（C# + ドキュメント） |
-| `mise run format` | 全自動修正（C# + ドキュメント） |
 | `mise run run` | アプリケーション実行 |
-| `mise run publish` | Release ビルド + 成果物出力 |
-| `mise run ci` | build + lint + test の一括実行 |
-| `mise run coverage` | テストカバレッジ計測 |
 | `mise run watch` | テスト自動実行（ファイル変更監視） |
+| `mise run coverage` | テストカバレッジ計測 |
+| `mise run publish` | Release ビルド + 成果物出力 |
+| `mise run setup` | 初期セットアップ |
 | `mise run clean` | ビルド成果物のクリーン |
 
 VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスク（build）を実行する。

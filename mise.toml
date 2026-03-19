@@ -3,55 +3,45 @@ dotnet = "10"
 node = "lts"
 pnpm = "latest"
 
-[tasks.setup]
-run = "pnpm install"
-
-[tasks.build]
-run = "dotnet build Launcher.sln --no-incremental"
-
-[tasks.test]
-run = "dotnet test Launcher.sln"
-
-[tasks.lint]
-depends = ["lint:cs", "lint:docs"]
-
-[tasks."lint:cs"]
-run = "dotnet format Launcher.sln --verify-no-changes"
-
-[tasks."lint:docs"]
-run = "pnpm run lint"
+# === 日常ワークフロー ===
 
 [tasks.format]
-depends = ["format:cs", "format:docs"]
+description = "format + build + lint"
+run = [
+    "dotnet format Launcher.sln",
+    "pnpm run lint:fix",
+    "dotnet build Launcher.sln --no-incremental",
+    "dotnet format Launcher.sln --verify-no-changes",
+    "pnpm run lint",
+]
 
-[tasks."format:cs"]
-run = "dotnet format Launcher.sln"
+[tasks.test]
+description = "format + build + lint + test"
+run = [
+    "dotnet format Launcher.sln",
+    "pnpm run lint:fix",
+    "dotnet build Launcher.sln --no-incremental",
+    "dotnet format Launcher.sln --verify-no-changes",
+    "pnpm run lint",
+    "dotnet test Launcher.sln",
+]
 
-[tasks."format:docs"]
-run = "pnpm run lint:fix"
+# === 個別タスク ===
+
+[tasks.setup]
+run = "pnpm install"
 
 [tasks.run]
 run = "dotnet run --project src/Launcher/Launcher.csproj"
 
-[tasks.publish]
-run = "dotnet publish src/Launcher/Launcher.csproj -c Release -o publish"
-
-[tasks.ci]
-depends = ["build", "lint", "test"]
+[tasks.watch]
+run = "dotnet watch test --project src/Launcher.Tests/Launcher.Tests.csproj"
 
 [tasks.coverage]
 run = "dotnet test Launcher.sln --collect:\"XPlat Code Coverage\""
 
-[tasks.watch]
-run = "dotnet watch test --project src/Launcher.Tests/Launcher.Tests.csproj"
-
-[tasks.outdated]
-run = "dotnet list Launcher.sln package --outdated"
-description = "Check for outdated NuGet packages"
-
-[tasks.check]
-run = ["mise run build", "mise run test"]
-description = "Build and test (quick local check)"
+[tasks.publish]
+run = "dotnet publish src/Launcher/Launcher.csproj -c Release -o publish"
 
 [tasks.clean]
 run = "dotnet clean Launcher.sln"
