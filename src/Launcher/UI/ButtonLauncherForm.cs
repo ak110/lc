@@ -896,6 +896,8 @@ public partial class ButtonLauncherForm : Form
         if (!menuShownFromFilter) return;
         menuShownFromFilter = false;
         if (e.CloseReason != ToolStripDropDownCloseReason.AppClicked) return;
+        // 左クリックで閉じた場合は再配信不要（通常のクリック処理に任せる）
+        if (!Control.MouseButtons.HasFlag(MouseButtons.Right)) return;
 
         BeginInvoke(() =>
         {
