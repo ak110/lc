@@ -482,6 +482,7 @@ public partial class MainForm : Form
             ActivateTextBox();
             using (EditCommandForm form = new EditCommandForm(command))
             {
+                FormsHelper.CenterOnCursorScreen(form);
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {
                     ownerForm.CommandList.Serialize(".cmd.cfg");
@@ -519,6 +520,7 @@ public partial class MainForm : Form
             using (EditCommandForm form = new EditCommandForm(command))
             {
                 form.Text += " (複製の作成)";
+                FormsHelper.CenterOnCursorScreen(form);
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {
                     new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(command);
@@ -666,6 +668,7 @@ public partial class MainForm : Form
                     var command = new Command();
                     command.Name = GetInputText();
                     using EditCommandForm form = new EditCommandForm(command);
+                    FormsHelper.CenterOnCursorScreen(form);
                     if (form.ShowDialog(this) == DialogResult.OK)
                     {
                         new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(command);
@@ -680,6 +683,7 @@ public partial class MainForm : Form
             case MainAction.EditCommand:
                 {
                     using EditCommandForm form = new EditCommandForm(result.TargetCommand!);
+                    FormsHelper.CenterOnCursorScreen(form);
                     if (form.ShowDialog(this) == DialogResult.OK)
                     {
                         new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(result.TargetCommand!);

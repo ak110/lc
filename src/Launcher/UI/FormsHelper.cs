@@ -10,6 +10,20 @@ namespace Launcher.UI;
 public static class FormsHelper
 {
     /// <summary>
+    /// フォームをカーソルがあるモニターの中央に配置する。
+    /// ShowDialog()の前に呼ぶとStartPositionをManualに変更して位置を設定する。
+    /// </summary>
+    public static void CenterOnCursorScreen(Form form)
+    {
+        Screen screen = Screen.FromPoint(Cursor.Position);
+        Rectangle wa = screen.WorkingArea;
+        form.StartPosition = FormStartPosition.Manual;
+        form.Location = new Point(
+            wa.Left + (wa.Width - form.Width) / 2,
+            wa.Top + (wa.Height - form.Height) / 2);
+    }
+
+    /// <summary>
     /// クリッピングしてフォームの位置をセット
     /// </summary>
     public static void SetLocationWithClip(Control form, Point pos)

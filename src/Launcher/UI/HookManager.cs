@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Launcher.Core;
 using Launcher.Win32;
 
@@ -87,6 +88,12 @@ sealed class HookManager
                         e.Handled = true;
                         // 対応するKEYUPを1回だけ抑制
                         suppressKeyUpVK = e.HookStruct.vkCode;
+                        // Alt修飾時はダミーキー入力を注入して
+                        // Alt単独リリースによるシステムメニュー表示を防止
+                        if ((modifiers & KeyTable.Modifiers.Alt) != 0)
+                        {
+                            BreakAltSequence();
+                        }
                     }
                 }
                 else if (e.WParam == Hook.WM_KEYUP || e.WParam == Hook.WM_SYSKEYUP)
@@ -177,4 +184,20 @@ sealed class HookManager
         }
 #pragma warning restore CA1031
     }
+
+    /// <summary>
+    /// ダミーキーイベントを注入してWindowsのAltメニュー起動シーケンスを中断する。
+    /// Alt KEYUPを抑制するとAltが押しっぱなしになるため、代わりにこの手法を使う。
+    /// </summary>
+    static void BreakAltSequence()
+    {
+        // 未使用キー(VK_F24)のdown+upを注入し、Alt単独リリースと認識されることを防止
+        const byte VK_F24 = 0x87;
+        const uint KEYEVENTF_KEYUP = 0x0002;
+        keybd_event(VK_F24, 0, 0, IntPtr.Zero);
+        keybd_event(VK_F24, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
+    }
+
+    [DllImport("user32.dll")]
+    static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, IntPtr dwExtraInfo);
 }

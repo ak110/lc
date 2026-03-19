@@ -137,12 +137,9 @@ public class ErrorReporter
     {
         using (ErrorReporterForm form = new ErrorReporterForm(ex))
         {
+            FormsHelper.CenterOnCursorScreen(form);
             if (owner != null)
             {
-                if (owner.Visible)
-                {
-                    form.StartPosition = FormStartPosition.CenterParent;
-                }
                 return form.ShowDialog(owner);
             }
             return form.ShowDialog();

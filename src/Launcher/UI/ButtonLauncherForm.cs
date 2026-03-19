@@ -491,6 +491,7 @@ public partial class ButtonLauncherForm : Form
 
         using (var form = new EditCommandForm(entry!))
         {
+            FormsHelper.CenterOnCursorScreen(form);
             if (form.ShowDialog(this) == DialogResult.OK)
             {
                 if (isNew)
@@ -529,6 +530,7 @@ public partial class ButtonLauncherForm : Form
         // コマンド選択ダイアログ
         using (var dlg = new CommandSelectDialog(owner.CommandList))
         {
+            FormsHelper.CenterOnCursorScreen(dlg);
             if (dlg.ShowDialog(this) == DialogResult.OK && dlg.SelectedCommand != null)
             {
                 var newEntry = ButtonEntry.FromCommand(dlg.SelectedCommand, pos.Row, pos.Col);
@@ -886,6 +888,7 @@ public partial class ButtonLauncherForm : Form
             form.AcceptButton = ok;
             form.CancelButton = cancel;
 
+            FormsHelper.CenterOnCursorScreen(form);
             return form.ShowDialog() == DialogResult.OK ? textBox.Text : null;
         }
     }

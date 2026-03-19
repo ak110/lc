@@ -79,6 +79,7 @@ public partial class ConfigForm : Form
     {
         using (EnvConfigForm form = new EnvConfigForm(config.ReplaceEnv))
         {
+            FormsHelper.CenterOnCursorScreen(form);
             if (form.ShowDialog(this) == DialogResult.OK)
             {
                 config.ReplaceEnv = form.ReplaceEnv;

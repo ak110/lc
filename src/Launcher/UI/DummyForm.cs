@@ -187,6 +187,7 @@ public partial class DummyForm : Form
     {
         using (var form = new CommandManagementForm(this))
         {
+            FormsHelper.CenterOnCursorScreen(form);
             form.ShowDialog(this);
         }
     }
@@ -220,6 +221,7 @@ public partial class DummyForm : Form
     {
         using (ConfigForm form = new ConfigForm(config))
         {
+            FormsHelper.CenterOnCursorScreen(form);
             Form owner = !mainForm.IsDisposed && mainForm.Visible ? (Form)mainForm : (Form)this;
             if (form.ShowDialog(owner) == DialogResult.OK)
             {
@@ -301,6 +303,7 @@ public partial class DummyForm : Form
     {
         using (var form = new UpdateForm(release))
         {
+            FormsHelper.CenterOnCursorScreen(form);
             var result = form.ShowDialog(this);
             if (result == DialogResult.OK)
             {
