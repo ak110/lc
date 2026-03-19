@@ -11,6 +11,7 @@ public partial class ButtonLauncherForm : Form
     readonly DummyForm owner;
     readonly AsyncIconLoader iconLoader = new AsyncIconLoader();
     readonly ContextMenuStrip buttonContextMenu;
+    readonly ContextMenuStrip tabContextMenu;
     readonly ContextMenuStrip mainMenu;
 
     // ボタンサイズ
@@ -42,8 +43,16 @@ public partial class ButtonLauncherForm : Form
         buttonContextMenu.Items.Add("削除(&D)", null, ButtonMenu_Delete);
         buttonContextMenu.Opening += ButtonContextMenu_Opening;
 
-        // 余白右クリック時にメインメニューを表示
-        tabControl1.ContextMenuStrip = mainMenu;
+        // ツールバー右クリック時にメインメニューを表示
+        toolStrip1.ContextMenuStrip = mainMenu;
+
+        // タブヘッダー右クリックメニュー
+        tabContextMenu = new ContextMenuStrip();
+        tabContextMenu.Items.Add("タブを追加(&A)", null, (s, ev) => AddTab());
+        tabContextMenu.Items.Add("タブ名を変更(&R)", null, (s, ev) => RenameTab());
+        tabContextMenu.Items.Add("デフォルトタブに設定(&D)", null, (s, ev) => SetDefaultTab());
+        tabContextMenu.Items.Add(new ToolStripSeparator());
+        tabContextMenu.Items.Add("タブを削除(&X)", null, (s, ev) => DeleteTab());
 
         // タブ右クリックメニュー
         tabControl1.MouseClick += TabControl1_MouseClick;
@@ -639,13 +648,28 @@ public partial class ButtonLauncherForm : Form
     {
         if (e.Button != MouseButtons.Right) return;
 
-        using var menu = new ContextMenuStrip();
-        menu.Items.Add("タブを追加(&A)", null, (s, ev) => AddTab());
-        menu.Items.Add("タブ名を変更(&R)", null, (s, ev) => RenameTab());
-        menu.Items.Add("デフォルトタブに設定(&D)", null, (s, ev) => SetDefaultTab());
-        menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("タブを削除(&X)", null, (s, ev) => DeleteTab());
-        menu.Show(tabControl1, e.Location);
+        // クリック位置がどのタブヘッダー上かを判定
+        int clickedTabIndex = -1;
+        for (int i = 0; i < tabControl1.TabCount; i++)
+        {
+            if (tabControl1.GetTabRect(i).Contains(e.Location))
+            {
+                clickedTabIndex = i;
+                break;
+            }
+        }
+
+        if (clickedTabIndex >= 0)
+        {
+            // 右クリックされたタブを選択状態にする（RenameTab/DeleteTab等がSelectedTabベースのため）
+            tabControl1.SelectedIndex = clickedTabIndex;
+            tabContextMenu.Show(tabControl1, e.Location);
+        }
+        else
+        {
+            // タブストリップ空白部分: メインメニュー
+            mainMenu.Show(tabControl1, e.Location);
+        }
     }
 
     private void AddTab()
@@ -751,6 +775,8 @@ public partial class ButtonLauncherForm : Form
                 if (btn == null || btn.IsDisposed) return;
 
                 btn.Image = e.Icon.ToBitmap();
+                // 非表示中にImageが設定された場合の再描画漏れ防止
+                btn.Parent?.Invalidate(true);
             }
             finally
             {
@@ -834,6 +860,7 @@ public partial class ButtonLauncherForm : Form
         {
             iconLoader.Clear();
             buttonContextMenu?.Dispose();
+            tabContextMenu?.Dispose();
             components?.Dispose();
         }
         base.Dispose(disposing);

@@ -133,9 +133,11 @@ public sealed class AsyncIconLoader : IDisposable
                 // 世代が古ければスキップ
                 if (r.Generation != generation) continue;
 
+                // アイコン抽出とイベント通知を分離し、どちらの例外でもワーカースレッドが死なないようにする
+                System.Drawing.Icon? icon = null;
                 try
                 {
-                    var icon = IconExtractor.ExtractAssociatedIcon(
+                    icon = IconExtractor.ExtractAssociatedIcon(
                         PathHelper.PathNormalize(r.FileName), r.Small);
 
                     // アイコン抽出中にClear()された場合はスキップ
@@ -144,15 +146,25 @@ public sealed class AsyncIconLoader : IDisposable
                         icon.Dispose();
                         continue;
                     }
+                }
+                catch (Exception e) when (e is not OperationCanceledException and not ObjectDisposedException)
+                {
+                    System.Diagnostics.Debug.WriteLine($"アイコン読み込みエラー ({r.FileName}): {e}");
+                    icon?.Dispose();
+                    icon = null;
+                }
 
-                    // iconの所有権はイベントハンドラに移譲（BeginInvokeで非同期処理されるため
-                    // ワーカースレッドでDisposeしてはならない）
+                // CallEventは別のtry-catchで保護（フォームDispose済み等のrace conditionに対応）
+                try
+                {
                     CallEvent(r, icon);
                 }
-                catch (FileLoadException e)
+#pragma warning disable CA1031 // ワーカースレッド保護: イベントハンドラ側の任意例外でスレッドが死なないようにする
+                catch (Exception e)
+#pragma warning restore CA1031
                 {
-                    System.Diagnostics.Debug.WriteLine(e.ToString());
-                    CallEvent(r, null);
+                    System.Diagnostics.Debug.WriteLine($"IconLoadedイベント通知エラー: {e}");
+                    icon?.Dispose();
                 }
             }
         }
