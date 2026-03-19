@@ -71,6 +71,7 @@ public partial class RadioButtonList : UserControl
     /// <summary>
     /// 選択された項目
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public object? SelectedItem
     {
         get
@@ -96,6 +97,7 @@ public partial class RadioButtonList : UserControl
     /// <summary>
     /// 項目のリスト
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public object?[] Items
     {
         get
@@ -113,6 +115,7 @@ public partial class RadioButtonList : UserControl
             }
         }
     }
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public string?[] StringItems
     {
         get { return Array.ConvertAll(Items, x => x?.ToString()); }

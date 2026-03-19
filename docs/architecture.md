@@ -2,7 +2,7 @@
 
 ## 技術スタック
 
-- .NET 8 / C#
+- .NET 10 / C#
 - Windows Forms (WinForms)
 - Win32 API (P/Invoke)
 - GitHub Releases API（自動更新機能）

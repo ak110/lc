@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Launcher.Infrastructure;
 
 namespace Launcher.UI;
@@ -24,6 +25,7 @@ public partial class ErrorReporterForm : Form
     /// <summary>
     /// 続行ボタンを使うかどうか
     /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public bool UseContinue
     {
         get { return button5.Visible; }

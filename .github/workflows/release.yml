@@ -23,7 +23,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: "10.0.x"
 
       # Directory.Build.props から現在のバージョンを取得し、bump種別に応じてインクリメント
       - name: Bump version

@@ -3,12 +3,12 @@
 ## 前提条件
 
 - Windows 10/11
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [mise](https://mise.jdx.dev/)（.NET SDK・Node.jsのバージョン管理）
 - [Visual Studio Code](https://code.visualstudio.com/)
-- [Node.js 22](https://nodejs.org/)（ドキュメントlint用）
 - [pnpm](https://pnpm.io/)（Node.jsパッケージマネージャ）
 
-[mise](https://mise.jdx.dev/)を使えば`mise install`で.NET SDKとNode.jsをまとめてインストール可能。
+`mise install`で.NET SDKとNode.jsをまとめてインストール可能。
+バージョンは`mise.toml`で管理される。
 
 ## 推奨VSCode拡張機能
 
@@ -22,21 +22,23 @@
 ## セットアップ
 
 ```cmd
-rem Node.js依存のインストール（ドキュメントlint用）
-pnpm install
+rem ツールチェインと依存パッケージのインストール
+mise install && mise run setup
 
 rem ビルド確認
-dotnet build Launcher.sln
+mise run build
+```
+
+## .NET SDKの更新
+
+```cmd
+mise upgrade dotnet
 ```
 
 ## ビルド
 
 ```cmd
-rem ソリューション全体をビルド
-dotnet build Launcher.sln
-
-rem Releaseビルド
-dotnet build Launcher.sln -c Release
+mise run build
 ```
 
 VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスクを実行する。
@@ -44,7 +46,7 @@ VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスクを実行する
 ## テスト
 
 ```cmd
-dotnet test Launcher.sln
+mise run test
 ```
 
 ## デバッグ
@@ -61,15 +63,11 @@ dotnet run --project src/Launcher/Launcher.csproj
 ## Lint
 
 ```cmd
-rem C#フォーマットチェック
-dotnet format Launcher.sln --verify-no-changes
-
-rem ドキュメントlint
-pnpm run lint
+rem チェックのみ
+mise run lint
 
 rem 全自動修正
-dotnet format Launcher.sln
-pnpm run lint:fix
+mise run format
 ```
 
 ## リリース手順

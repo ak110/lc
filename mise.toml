@@ -1,9 +1,12 @@
 [tools]
-dotnet = "8"
-node = "22"
+dotnet = "10"
+node = "lts"
+
+[tasks.setup]
+run = "pnpm install"
 
 [tasks.build]
-run = "dotnet build Launcher.sln"
+run = "dotnet build Launcher.sln --no-incremental"
 
 [tasks.test]
 run = "dotnet test Launcher.sln"

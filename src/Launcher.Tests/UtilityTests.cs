@@ -147,7 +147,7 @@ public class UtilityTests
 
         // 1バイト読み取り: offset=2+3=5 → data[5]=5
         byte[] buffer = new byte[1];
-        sub.Read(buffer, 0, 1);
+        sub.ReadExactly(buffer, 0, 1);
         buffer[0].Should().Be(5);
     }
 
