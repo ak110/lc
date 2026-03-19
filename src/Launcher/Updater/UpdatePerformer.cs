@@ -158,6 +158,11 @@ public static class UpdatePerformer
         sb.AppendLine($"rd /S /Q \"{tempDir}\"");
         sb.AppendLine();
 
+        // xcopyでappDirにコピーされた_update.batを削除
+        string copiedBatch = Path.Combine(appDir, "_update.bat");
+        sb.AppendLine($"if exist \"{copiedBatch}\" del /F /Q \"{copiedBatch}\"");
+        sb.AppendLine();
+
         // 自身を削除して終了（バッチはtempDir内にあるのでrd /S /Qで消えるが、念のため）
         sb.AppendLine("exit");
 

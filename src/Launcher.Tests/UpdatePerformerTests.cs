@@ -75,6 +75,17 @@ public sealed class UpdatePerformerTests
     }
 
     [Fact]
+    public void GenerateBatchScript_appDir側の_update_bat削除が含まれる()
+    {
+        List<string> files = ["app.exe"];
+        var result = UpdatePerformer.GenerateBatchScript(
+            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
+
+        // xcopyでコピーされた_update.batがappDirから削除される
+        result.Should().Contain(@"del /F /Q ""C:\app\_update.bat""");
+    }
+
+    [Fact]
     public void GenerateBatchScript_echoオフとexit()
     {
         List<string> files = ["app.exe"];
