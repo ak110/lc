@@ -16,6 +16,12 @@ public partial class ButtonLauncherForm : Form
     readonly ContextMenuStrip mainMenu;
     readonly TabEmptyAreaRightClickFilter tabEmptyAreaFilter;
 
+    // IMessageFilter経由でmainMenuを表示した場合のクリック再配信用フラグ。
+    // ネイティブTabControlは空白部分でWM_CONTEXTMENUを生成しないため
+    // IMessageFilterで補完しているが、Show()で手動表示したメニューは
+    // 閉じ後のクリック再配信が行われない。このフラグで検出して再配信する。
+    bool menuShownFromFilter;
+
     // ボタンサイズ
     const int ButtonWidth = 64;
     const int ButtonHeight = 64;
@@ -54,13 +60,26 @@ public partial class ButtonLauncherForm : Form
         tabContextMenu.Items.Add("タブ名を変更(&R)", null, (s, ev) => RenameTab());
         tabContextMenu.Items.Add("デフォルトタブに設定(&D)", null, (s, ev) => SetDefaultTab());
         tabContextMenu.Items.Add(new ToolStripSeparator());
+        var moveLeftItem = tabContextMenu.Items.Add("左に移動(&L)", null, (s, ev) => MoveTab(tabControl1.SelectedIndex, tabControl1.SelectedIndex - 1));
+        var moveRightItem = tabContextMenu.Items.Add("右に移動(&G)", null, (s, ev) => MoveTab(tabControl1.SelectedIndex, tabControl1.SelectedIndex + 1));
+        tabContextMenu.Items.Add(new ToolStripSeparator());
         tabContextMenu.Items.Add("タブを削除(&X)", null, (s, ev) => DeleteTab());
+        tabContextMenu.Opening += (s, ev) =>
+        {
+            int idx = tabControl1.SelectedIndex;
+            moveLeftItem.Enabled = idx > 0;
+            moveRightItem.Enabled = idx < tabControl1.TabCount - 1;
+        };
 
         // タブヘッダーの右クリック:
         // - タブ上 → WndProcのNM_RCLICK通知で処理
         // - 空白部分 → NM_RCLICKが通知されないためIMessageFilterで補完
         tabEmptyAreaFilter = new TabEmptyAreaRightClickFilter(tabControl1, mainMenu);
+        tabEmptyAreaFilter.OnMenuShown = () => menuShownFromFilter = true;
         Application.AddMessageFilter(tabEmptyAreaFilter);
+
+        // IMessageFilter経由のShow()で表示したメニュー閉じ後のクリック再配信
+        mainMenu.Closed += MainMenu_Closed;
 
         // タブ間D&D対応
         tabControl1.AllowDrop = true;
@@ -775,12 +794,38 @@ public partial class ButtonLauncherForm : Form
         if (MessageBox.Show(this, $"タブ「{tabData.Name}」を削除しますか？", "確認",
             MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
 
+        int deletedIndex = Data.Tabs.IndexOf(tabData);
         Data.Tabs.Remove(tabData);
         tabControl1.TabPages.Remove(tabPage);
-        if (Data.DefaultTabIndex >= Data.Tabs.Count)
-        {
+
+        // DefaultTabIndexの調整
+        if (Data.DefaultTabIndex == deletedIndex)
             Data.DefaultTabIndex = 0;
-        }
+        else if (Data.DefaultTabIndex > deletedIndex)
+            Data.DefaultTabIndex--;
+
+        SaveData();
+    }
+
+    private void MoveTab(int fromIndex, int toIndex)
+    {
+        // データモデルの順序を入れ替え
+        var tab = Data.Tabs[fromIndex];
+        Data.Tabs.RemoveAt(fromIndex);
+        Data.Tabs.Insert(toIndex, tab);
+
+        // TabControlの順序を入れ替え
+        var tabPage = tabControl1.TabPages[fromIndex];
+        tabControl1.TabPages.Remove(tabPage);
+        tabControl1.TabPages.Insert(toIndex, tabPage);
+
+        // DefaultTabIndexの調整（隣接スワップ）
+        if (Data.DefaultTabIndex == fromIndex)
+            Data.DefaultTabIndex = toIndex;
+        else if (Data.DefaultTabIndex == toIndex)
+            Data.DefaultTabIndex = fromIndex;
+
+        tabControl1.SelectedIndex = toIndex;
         SaveData();
     }
 
@@ -834,6 +879,67 @@ public partial class ButtonLauncherForm : Form
             finally
             {
                 e.Icon?.Dispose();
+            }
+        });
+    }
+
+    #endregion
+
+    #region メニュー閉じ後の再配信
+
+    /// <summary>
+    /// IMessageFilter経由のShow()で表示したmainMenuが閉じた際に、
+    /// 閉じ先のコントロールを特定して適切なメニューを再配信する。
+    /// </summary>
+    private void MainMenu_Closed(object? sender, ToolStripDropDownClosedEventArgs e)
+    {
+        if (!menuShownFromFilter) return;
+        menuShownFromFilter = false;
+        if (e.CloseReason != ToolStripDropDownCloseReason.AppClicked) return;
+
+        BeginInvoke(() =>
+        {
+            var screenPos = Cursor.Position;
+
+            // ボタン上 → buttonContextMenu
+            foreach (TabPage tp in tabControl1.TabPages)
+            {
+                var panel = tp.Controls.OfType<TableLayoutPanel>().FirstOrDefault();
+                if (panel == null) continue;
+                foreach (var btn in panel.Controls.OfType<Button>())
+                {
+                    if (btn.RectangleToScreen(btn.ClientRectangle).Contains(screenPos))
+                    {
+                        buttonContextMenu.Show(btn, btn.PointToClient(screenPos));
+                        return;
+                    }
+                }
+            }
+
+            // タブヘッダー上 → tabContextMenu
+            var tabPos = tabControl1.PointToClient(screenPos);
+            for (int i = 0; i < tabControl1.TabCount; i++)
+            {
+                if (tabControl1.GetTabRect(i).Contains(tabPos))
+                {
+                    tabControl1.SelectedIndex = i;
+                    tabContextMenu.Show(screenPos);
+                    return;
+                }
+            }
+
+            // toolStrip上 → mainMenu再表示
+            if (toolStrip1.RectangleToScreen(toolStrip1.ClientRectangle).Contains(screenPos))
+            {
+                mainMenu.Show(screenPos);
+                return;
+            }
+
+            // タブ空白部分 → mainMenu再表示
+            if (tabControl1.ClientRectangle.Contains(tabPos)
+                && !tabControl1.DisplayRectangle.Contains(tabPos))
+            {
+                mainMenu.Show(screenPos);
             }
         });
     }
@@ -931,6 +1037,8 @@ public partial class ButtonLauncherForm : Form
         readonly TabControl tabControl;
         readonly ContextMenuStrip mainMenu;
 
+        public Action? OnMenuShown { get; set; }
+
         public TabEmptyAreaRightClickFilter(TabControl tabControl, ContextMenuStrip mainMenu)
         {
             this.tabControl = tabControl;
@@ -954,6 +1062,7 @@ public partial class ButtonLauncherForm : Form
 
             // 空白部分: メインメニューをTabControlに関連付けて表示
             mainMenu.Show(tabControl, pos);
+            OnMenuShown?.Invoke();
             return true;
         }
     }
