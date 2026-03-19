@@ -21,6 +21,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # 直近のCIが成功していることを確認
+      - name: Check CI status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $conclusion = gh run list --workflow=ci.yml --branch=${{ github.ref_name }} -L1 --json conclusion -q ".[0].conclusion"
+          if ($conclusion -ne "success") {
+            Write-Error "CI has not passed (status: $conclusion). Please ensure CI is green before releasing."
+            exit 1
+          }
+        shell: pwsh
+
       - uses: jdx/mise-action@v4
 
       # Directory.Build.props から現在のバージョンを取得し、bump種別に応じてインクリメント
