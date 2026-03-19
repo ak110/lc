@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Launcher.Core;
 using Launcher.Win32;
 
@@ -13,6 +14,7 @@ public partial class ButtonLauncherForm : Form
     readonly ContextMenuStrip buttonContextMenu;
     readonly ContextMenuStrip tabContextMenu;
     readonly ContextMenuStrip mainMenu;
+    readonly TabEmptyAreaRightClickFilter tabEmptyAreaFilter;
 
     // ボタンサイズ
     const int ButtonWidth = 64;
@@ -54,8 +56,11 @@ public partial class ButtonLauncherForm : Form
         tabContextMenu.Items.Add(new ToolStripSeparator());
         tabContextMenu.Items.Add("タブを削除(&X)", null, (s, ev) => DeleteTab());
 
-        // タブ右クリックメニュー
-        tabControl1.MouseClick += TabControl1_MouseClick;
+        // タブヘッダーの右クリック:
+        // - タブ上 → WndProcのNM_RCLICK通知で処理
+        // - 空白部分 → NM_RCLICKが通知されないためIMessageFilterで補完
+        tabEmptyAreaFilter = new TabEmptyAreaRightClickFilter(tabControl1, mainMenu);
+        Application.AddMessageFilter(tabEmptyAreaFilter);
 
         // タブ間D&D対応
         tabControl1.AllowDrop = true;
@@ -77,6 +82,43 @@ public partial class ButtonLauncherForm : Form
 
         // タブを構築（アイコン非同期読み込みを開始するためHandle作成後に実行）
         BuildTabs();
+    }
+
+    const int WM_NOTIFY = 0x004E;
+    const int NM_RCLICK = -5;
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct NMHDR
+    {
+        public IntPtr hwndFrom;
+        public IntPtr idFrom;
+        public int code;
+    }
+
+    protected override void WndProc(ref Message m)
+    {
+        base.WndProc(ref m);
+
+        // ネイティブTabControlからの右クリック通知でメニューを表示
+        if (m.Msg == WM_NOTIFY)
+        {
+            var nmhdr = Marshal.PtrToStructure<NMHDR>(m.LParam);
+            if (nmhdr.hwndFrom == tabControl1.Handle && nmhdr.code == NM_RCLICK)
+            {
+                var pos = tabControl1.PointToClient(Cursor.Position);
+                if (tabControl1.DisplayRectangle.Contains(pos)) return;
+
+                for (int i = 0; i < tabControl1.TabCount; i++)
+                {
+                    if (tabControl1.GetTabRect(i).Contains(pos))
+                    {
+                        tabControl1.SelectedIndex = i;
+                        tabContextMenu.Show(Cursor.Position);
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
@@ -682,33 +724,6 @@ public partial class ButtonLauncherForm : Form
 
     #region タブ管理
 
-    private void TabControl1_MouseClick(object? sender, MouseEventArgs e)
-    {
-        if (e.Button != MouseButtons.Right) return;
-
-        // クリック位置がどのタブヘッダー上かを判定
-        int clickedTabIndex = -1;
-        for (int i = 0; i < tabControl1.TabCount; i++)
-        {
-            if (tabControl1.GetTabRect(i).Contains(e.Location))
-            {
-                clickedTabIndex = i;
-                break;
-            }
-        }
-
-        if (clickedTabIndex >= 0)
-        {
-            // 右クリックされたタブを選択状態にする（RenameTab/DeleteTab等がSelectedTabベースのため）
-            tabControl1.SelectedIndex = clickedTabIndex;
-            tabContextMenu.Show(tabControl1, e.Location);
-        }
-        else
-        {
-            // タブストリップ空白部分: メインメニュー
-            mainMenu.Show(tabControl1, e.Location);
-        }
-    }
 
     private void AddTab()
     {
@@ -897,12 +912,50 @@ public partial class ButtonLauncherForm : Form
     {
         if (disposing)
         {
+            Application.RemoveMessageFilter(tabEmptyAreaFilter);
             iconLoader.Dispose();
             buttonContextMenu?.Dispose();
             tabContextMenu?.Dispose();
             components?.Dispose();
         }
         base.Dispose(disposing);
+    }
+
+    /// <summary>
+    /// タブヘッダー空白部分の右クリックでメインメニューを表示するフィルター。
+    /// NM_RCLICKはタブ上でのみ通知され空白部分では通知されないため補完する。
+    /// </summary>
+    private sealed class TabEmptyAreaRightClickFilter : IMessageFilter
+    {
+        const int WM_RBUTTONUP = 0x0205;
+        readonly TabControl tabControl;
+        readonly ContextMenuStrip mainMenu;
+
+        public TabEmptyAreaRightClickFilter(TabControl tabControl, ContextMenuStrip mainMenu)
+        {
+            this.tabControl = tabControl;
+            this.mainMenu = mainMenu;
+        }
+
+        public bool PreFilterMessage(ref Message m)
+        {
+            if (m.Msg != WM_RBUTTONUP) return false;
+            if (!tabControl.IsHandleCreated || !tabControl.Visible) return false;
+
+            var pos = tabControl.PointToClient(Cursor.Position);
+            if (!tabControl.ClientRectangle.Contains(pos)) return false;
+            if (tabControl.DisplayRectangle.Contains(pos)) return false;
+
+            // タブヘッダー上はNM_RCLICKで処理するのでスキップ
+            for (int i = 0; i < tabControl.TabCount; i++)
+            {
+                if (tabControl.GetTabRect(i).Contains(pos)) return false;
+            }
+
+            // 空白部分: メインメニューをTabControlに関連付けて表示
+            mainMenu.Show(tabControl, pos);
+            return true;
+        }
     }
 
     #endregion
