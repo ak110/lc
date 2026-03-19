@@ -43,7 +43,7 @@ run = "dotnet test Launcher.sln --collect:\"XPlat Code Coverage\""
 [tasks.publish]
 run = [
     "dotnet publish src/Launcher/Launcher.csproj -c Release -o publish",
-    "cp LICENSE README.md publish/",
+    "copy LICENSE publish\\ && copy README.md publish\\",
 ]
 
 [tasks.clean]
