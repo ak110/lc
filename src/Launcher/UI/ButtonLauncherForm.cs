@@ -97,7 +97,7 @@ public partial class ButtonLauncherForm : Form
         // BuildTabs()内のiconLoader.Load()より先にハンドルを作成する
         // Handle未作成時にIconLoadedイベントが到着するとアイコンが破棄されるため
         _ = Handle;
-        FormsHelper.DisableCloseButton(this);
+        WindowHelper.DisableCloseButton(this);
 
         // タブを構築（アイコン非同期読み込みを開始するためHandle作成後に実行）
         BuildTabs();
@@ -349,7 +349,7 @@ public partial class ButtonLauncherForm : Form
             // Hide→Show→ActivateForceの順で確実にアクティブ化
             Hide();
             Show();
-            FormsHelper.ActivateForce(this);
+            WindowHelper.ActivateForce(this);
         }
         catch (InvalidOperationException ex)
         {

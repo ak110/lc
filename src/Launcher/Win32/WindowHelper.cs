@@ -250,10 +250,107 @@ public static class WM
 }
 
 /// <summary>
-/// HWNDのラッパー。
+/// HWNDのラッパー + Win32 APIを使うウィンドウ操作のstaticヘルパー。
 /// </summary>
 public sealed class WindowHelper
 {
+    #region 閉じるボタンの無効化/有効化
+
+    /// <summary>
+    /// フォームの閉じるボタンを無効にする
+    /// </summary>
+    public static void DisableCloseButton(Control form)
+    {
+        form.Resize += new EventHandler(FormResize);
+        EnableMenuItem(GetSystemMenu(form.Handle, false), SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
+    }
+
+    /// <summary>
+    /// フォームの閉じるボタンを有効に戻す
+    /// </summary>
+    public static void EnableCloseButton(Control form)
+    {
+        form.Resize -= new EventHandler(FormResize);
+        EnableMenuItem(GetSystemMenu(form.Handle, false), SC_CLOSE, MF_BYCOMMAND | MF_ENABLED);
+    }
+
+    // 最大化などでシステムメニューがリセットされるため、Resizeで再設定
+    static void FormResize(object? sender, EventArgs e)
+    {
+        Control? form = sender as Control;
+        if (form != null)
+            EnableMenuItem(GetSystemMenu(form.Handle, false), SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
+    }
+
+    [DllImport("user32.dll")]
+    static extern IntPtr GetSystemMenu(IntPtr hWnd, [MarshalAs(UnmanagedType.Bool)] bool bRevert);
+
+    const uint SC_CLOSE = 0x0000F060u;
+    const uint MF_BYCOMMAND = 0x00000000u;
+    const uint MF_ENABLED = 0x00000000u;
+    const uint MF_GRAYED = 0x00000001u;
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool EnableMenuItem(IntPtr hMenu, uint uIDEnableItem, uint uEnable);
+
+    #endregion
+
+    #region 強制アクティブ化
+
+    /// <summary>
+    /// 強制的にアクティブにする
+    /// </summary>
+    public static void ActivateForce(Form form)
+    {
+        using var ati = new AttachThreadInput();
+        int time = 0;
+        try
+        {
+            SystemParametersInfo(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0);
+            SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, IntPtr.Zero, 0);
+        }
+        catch (System.ComponentModel.Win32Exception e)
+        {
+            System.Diagnostics.Debug.WriteLine(e.ToString());
+        }
+
+        Application.DoEvents();
+        form.Visible = true;
+        bool topMost = form.TopMost;
+        form.TopMost = true;
+        form.BringToFront();
+        Application.DoEvents();
+        form.Focus();
+        form.Activate();
+        Application.DoEvents();
+
+        if (time != 0)
+        {
+            try
+            {
+                SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0);
+            }
+            catch (System.ComponentModel.Win32Exception e)
+            {
+                System.Diagnostics.Debug.WriteLine(e.ToString());
+            }
+        }
+    }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool SystemParametersInfo(int uiAction, int uiParam, IntPtr pvParam, int fWinIni);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool SystemParametersInfo(int uiAction, int uiParam, ref int pvParam, int fWinIni);
+
+    const int SPI_GETFOREGROUNDLOCKTIMEOUT = 0x2000;
+    const int SPI_SETFOREGROUNDLOCKTIMEOUT = 0x2001;
+
+    #endregion
+
     IntPtr hwnd;
 
     public WindowHelper(IntPtr hwnd)

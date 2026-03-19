@@ -100,11 +100,11 @@ public partial class MainForm : Form
         TopMost = ownerForm.Config.WindowTopMost;
         if (ownerForm.Config.CloseButton == CloseButtonBehavior.Disabled)
         {
-            FormsHelper.DisableCloseButton(this);
+            WindowHelper.DisableCloseButton(this);
         }
         else
         {
-            FormsHelper.EnableCloseButton(this);
+            WindowHelper.EnableCloseButton(this);
         }
 
         // アイコンの再読込
@@ -149,7 +149,7 @@ public partial class MainForm : Form
     public void ShowWindow()
     {
         Location = ownerForm.Config.WindowPos;
-        FormsHelper.ActivateForce(this);
+        WindowHelper.ActivateForce(this);
     }
 
     public void HideWindow()
