@@ -136,7 +136,6 @@ public sealed class ErrorReporter
     private DialogResult ShowReporterForm(Exception ex)
     {
         using var form = new ErrorReporterForm(ex);
-        FormsHelper.CenterOnCursorScreen(form);
         if (owner != null)
         {
             return form.ShowDialog(owner);

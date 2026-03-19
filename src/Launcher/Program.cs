@@ -105,7 +105,6 @@ static class Program
                 Command command = Command.FromFile(args[i]);
                 new ReplaceEnvList(Config.Deserialize().ReplaceEnv).Replace(command);
                 using var form = new EditCommandForm(command);
-                FormsHelper.CenterOnCursorScreen(form);
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     CommandList commandList = CommandList.Deserialize(".cmd.cfg");

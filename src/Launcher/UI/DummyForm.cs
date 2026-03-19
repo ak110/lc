@@ -26,6 +26,20 @@ public partial class DummyForm : Form
     public CommandList CommandList { get; private set; }
     public ButtonLauncherData ButtonLauncherData { get; private set; }
 
+    /// <summary>
+    /// ダイアログのオーナーとして使える表示中のフォームを返す。
+    /// 不可視のDummyFormをownerにすると別モニターに表示されるため、表示中のフォームを優先する。
+    /// ownerがnullの場合、CenterParentが効かないためCenterScreenにフォールバックする。
+    /// </summary>
+    private IWin32Window? GetVisibleOwner()
+    {
+        if (buttonLauncherForm is { IsDisposed: false, Visible: true })
+            return buttonLauncherForm;
+        if (!mainForm.IsDisposed && mainForm.Visible)
+            return mainForm;
+        return null;
+    }
+
     public DummyForm()
     {
         InitializeComponent();
@@ -186,8 +200,7 @@ public partial class DummyForm : Form
     private void コマンドの管理LToolStripMenuItem_Click(object sender, EventArgs e)
     {
         using var form = new CommandManagementForm(this);
-        FormsHelper.CenterOnCursorScreen(form);
-        form.ShowDialog(this);
+        form.ShowDialog(GetVisibleOwner());
     }
 
     /// <summary>
@@ -218,9 +231,7 @@ public partial class DummyForm : Form
     public void ShowConfigDialog()
     {
         using var form = new ConfigForm(config);
-        FormsHelper.CenterOnCursorScreen(form);
-        Form owner = !mainForm.IsDisposed && mainForm.Visible ? (Form)mainForm : (Form)this;
-        if (form.ShowDialog(owner) == DialogResult.OK)
+        if (form.ShowDialog(GetVisibleOwner()) == DialogResult.OK)
         {
             config = form.Config;
             config.Serialize();
@@ -298,8 +309,7 @@ public partial class DummyForm : Form
     private async Task ShowUpdateFormAsync(GitHubRelease release)
     {
         using var form = new UpdateForm(release);
-        FormsHelper.CenterOnCursorScreen(form);
-        var result = form.ShowDialog(this);
+        var result = form.ShowDialog(GetVisibleOwner());
         if (result == DialogResult.OK)
         {
             try

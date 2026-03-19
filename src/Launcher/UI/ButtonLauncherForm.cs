@@ -458,7 +458,8 @@ public partial class ButtonLauncherForm : Form
         // 実行
         try
         {
-            entry.Execute("", owner.Config, owner.Handle);
+            // ShellExecuteExのhwndに自身のハンドルを渡し、現在のモニターでアプリを起動させる
+            entry.Execute("", owner.Config, Handle);
             if (!Data.IsLocked)
             {
                 Hide();
@@ -551,7 +552,6 @@ public partial class ButtonLauncherForm : Form
         }
 
         using var form = new EditCommandForm(entry!);
-        FormsHelper.CenterOnCursorScreen(form);
         if (form.ShowDialog(this) == DialogResult.OK)
         {
             if (isNew)
@@ -588,7 +588,6 @@ public partial class ButtonLauncherForm : Form
 
         // コマンド選択ダイアログ
         using var dlg = new CommandSelectDialog(owner.CommandList);
-        FormsHelper.CenterOnCursorScreen(dlg);
         if (dlg.ShowDialog(this) == DialogResult.OK && dlg.SelectedCommand != null)
         {
             var newEntry = ButtonEntry.FromCommand(dlg.SelectedCommand, pos.Row, pos.Col);
@@ -975,7 +974,7 @@ public partial class ButtonLauncherForm : Form
     /// <summary>
     /// 簡易入力ダイアログ
     /// </summary>
-    private static string? ShowInputDialog(string prompt, string title, string defaultValue)
+    private string? ShowInputDialog(string prompt, string title, string defaultValue)
     {
         using var form = new Form();
         form.Text = title;
@@ -994,8 +993,7 @@ public partial class ButtonLauncherForm : Form
         form.AcceptButton = ok;
         form.CancelButton = cancel;
 
-        FormsHelper.CenterOnCursorScreen(form);
-        return form.ShowDialog() == DialogResult.OK ? textBox.Text : null;
+        return form.ShowDialog(this) == DialogResult.OK ? textBox.Text : null;
     }
 
     protected override void Dispose(bool disposing)
