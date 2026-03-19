@@ -14,13 +14,11 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
+      - uses: jdx/mise-action@v4
 
-      - run: dotnet format Launcher.sln --verify-no-changes
+      - run: mise run lint:cs
         name: Check formatting
 
       - run: dotnet build Launcher.sln -c Release
@@ -29,7 +27,7 @@ jobs:
       - run: dotnet test Launcher.sln --no-build -c Release --collect:"XPlat Code Coverage"
         name: Test
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-report
@@ -39,21 +37,11 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - uses: pnpm/action-setup@v4
+      - uses: jdx/mise-action@v4
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm run textlint
-        name: textlint
-
-      - run: pnpm run markdownlint
-        name: markdownlint
-
-      - run: pnpm run prettier:check
-        name: prettier
+      - run: mise run lint:docs
+        name: Lint docs

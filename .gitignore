@@ -12,6 +12,7 @@
 TestResults/
 _ReSharper*/
 packages/
+publish/
 *.nupkg
 
 # グローバルgitignoreの "core" パターンによる誤除外を防止
