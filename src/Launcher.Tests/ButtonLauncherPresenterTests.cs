@@ -188,4 +188,201 @@ public sealed class ButtonLauncherPresenterTests
     }
 
     #endregion
+
+    #region SetDefaultTab
+
+    [Fact]
+    public void SetDefaultTab_指定インデックスが設定される()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab3" });
+
+        ButtonLauncherPresenter.SetDefaultTab(data, 2);
+
+        data.DefaultTabIndex.Should().Be(2);
+    }
+
+    [Fact]
+    public void SetDefaultTab_0に変更できる()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.DefaultTabIndex = 1;
+
+        ButtonLauncherPresenter.SetDefaultTab(data, 0);
+
+        data.DefaultTabIndex.Should().Be(0);
+    }
+
+    #endregion
+
+    #region DeleteTab
+
+    [Fact]
+    public void DeleteTab_最後の1タブは削除不可()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+
+        var result = ButtonLauncherPresenter.DeleteTab(data, 0);
+
+        result.Success.Should().BeFalse();
+        result.NewSelectedIndex.Should().Be(-1);
+        data.Tabs.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void DeleteTab_中間タブを削除()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab3" });
+
+        var result = ButtonLauncherPresenter.DeleteTab(data, 1);
+
+        result.Success.Should().BeTrue();
+        result.NewSelectedIndex.Should().Be(1);
+        data.Tabs.Should().HaveCount(2);
+        data.Tabs[0].Name.Should().Be("Tab1");
+        data.Tabs[1].Name.Should().Be("Tab3");
+    }
+
+    [Fact]
+    public void DeleteTab_末尾タブを削除すると選択インデックスが1つ前になる()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab3" });
+
+        var result = ButtonLauncherPresenter.DeleteTab(data, 2);
+
+        result.Success.Should().BeTrue();
+        result.NewSelectedIndex.Should().Be(1);
+        data.Tabs.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void DeleteTab_デフォルトタブを削除するとDefaultTabIndexが0にリセットされる()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab3" });
+        data.DefaultTabIndex = 1;
+
+        ButtonLauncherPresenter.DeleteTab(data, 1);
+
+        data.DefaultTabIndex.Should().Be(0);
+    }
+
+    [Fact]
+    public void DeleteTab_デフォルトタブより前のタブを削除するとDefaultTabIndexがデクリメントされる()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab3" });
+        data.DefaultTabIndex = 2;
+
+        ButtonLauncherPresenter.DeleteTab(data, 0);
+
+        data.DefaultTabIndex.Should().Be(1);
+    }
+
+    [Fact]
+    public void DeleteTab_デフォルトタブより後のタブを削除してもDefaultTabIndexは変わらない()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab3" });
+        data.DefaultTabIndex = 0;
+
+        ButtonLauncherPresenter.DeleteTab(data, 2);
+
+        data.DefaultTabIndex.Should().Be(0);
+    }
+
+    #endregion
+
+    #region MoveTab
+
+    [Fact]
+    public void MoveTab_前方に移動()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab3" });
+
+        ButtonLauncherPresenter.MoveTab(data, 2, 1);
+
+        data.Tabs[0].Name.Should().Be("Tab1");
+        data.Tabs[1].Name.Should().Be("Tab3");
+        data.Tabs[2].Name.Should().Be("Tab2");
+    }
+
+    [Fact]
+    public void MoveTab_後方に移動()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab3" });
+
+        ButtonLauncherPresenter.MoveTab(data, 0, 1);
+
+        data.Tabs[0].Name.Should().Be("Tab2");
+        data.Tabs[1].Name.Should().Be("Tab1");
+        data.Tabs[2].Name.Should().Be("Tab3");
+    }
+
+    [Fact]
+    public void MoveTab_移動元がデフォルトタブの場合DefaultTabIndexが追従する()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab3" });
+        data.DefaultTabIndex = 0;
+
+        ButtonLauncherPresenter.MoveTab(data, 0, 1);
+
+        data.DefaultTabIndex.Should().Be(1);
+    }
+
+    [Fact]
+    public void MoveTab_移動先がデフォルトタブの場合DefaultTabIndexがスワップされる()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab3" });
+        data.DefaultTabIndex = 1;
+
+        ButtonLauncherPresenter.MoveTab(data, 0, 1);
+
+        data.DefaultTabIndex.Should().Be(0);
+    }
+
+    [Fact]
+    public void MoveTab_無関係のデフォルトタブは変わらない()
+    {
+        var data = new ButtonLauncherData();
+        data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab2" });
+        data.Tabs.Add(new ButtonTab { Name = "Tab3" });
+        data.DefaultTabIndex = 2;
+
+        ButtonLauncherPresenter.MoveTab(data, 0, 1);
+
+        data.DefaultTabIndex.Should().Be(2);
+    }
+
+    #endregion
 }

@@ -770,7 +770,7 @@ public partial class ButtonLauncherForm : Form
 
     private void SetDefaultTab()
     {
-        Data.DefaultTabIndex = tabControl1.SelectedIndex;
+        ButtonLauncherPresenter.SetDefaultTab(Data, tabControl1.SelectedIndex);
         SaveData();
     }
 
@@ -789,36 +789,25 @@ public partial class ButtonLauncherForm : Form
         if (MessageBox.Show(this, $"タブ「{tabData.Name}」を削除しますか？", "確認",
             MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
 
-        int deletedIndex = Data.Tabs.IndexOf(tabData);
-        Data.Tabs.Remove(tabData);
-        tabControl1.TabPages.Remove(tabPage);
+        int tabIndex = Data.Tabs.IndexOf(tabData);
+        var result = ButtonLauncherPresenter.DeleteTab(Data, tabIndex);
+        if (!result.Success) return;
 
-        // DefaultTabIndexの調整
-        if (Data.DefaultTabIndex == deletedIndex)
-            Data.DefaultTabIndex = 0;
-        else if (Data.DefaultTabIndex > deletedIndex)
-            Data.DefaultTabIndex--;
+        // UI更新: TabPageを削除
+        tabControl1.TabPages.Remove(tabPage);
 
         SaveData();
     }
 
     private void MoveTab(int fromIndex, int toIndex)
     {
-        // データモデルの順序を入れ替え
-        var tab = Data.Tabs[fromIndex];
-        Data.Tabs.RemoveAt(fromIndex);
-        Data.Tabs.Insert(toIndex, tab);
+        // データモデルの順序を入れ替え + DefaultTabIndex調整
+        ButtonLauncherPresenter.MoveTab(Data, fromIndex, toIndex);
 
         // TabControlの順序を入れ替え
         var tabPage = tabControl1.TabPages[fromIndex];
         tabControl1.TabPages.Remove(tabPage);
         tabControl1.TabPages.Insert(toIndex, tabPage);
-
-        // DefaultTabIndexの調整（隣接スワップ）
-        if (Data.DefaultTabIndex == fromIndex)
-            Data.DefaultTabIndex = toIndex;
-        else if (Data.DefaultTabIndex == toIndex)
-            Data.DefaultTabIndex = fromIndex;
 
         tabControl1.SelectedIndex = toIndex;
         SaveData();

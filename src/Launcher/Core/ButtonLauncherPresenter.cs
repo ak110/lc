@@ -31,6 +31,62 @@ public static class ButtonLauncherPresenter
     }
 
     /// <summary>
+    /// デフォルトタブを設定する。
+    /// </summary>
+    public static void SetDefaultTab(ButtonLauncherData data, int tabIndex)
+    {
+        data.DefaultTabIndex = tabIndex;
+    }
+
+    /// <summary>
+    /// タブ削除の結果
+    /// </summary>
+    /// <param name="Success">削除が成功したか</param>
+    /// <param name="NewSelectedIndex">削除後に選択すべきタブインデックス（失敗時は-1）</param>
+    public record DeleteTabResult(bool Success, int NewSelectedIndex);
+
+    /// <summary>
+    /// タブを削除する。最後の1タブは削除不可。
+    /// DefaultTabIndexの調整も行う。
+    /// </summary>
+    /// <returns>削除結果</returns>
+    public static DeleteTabResult DeleteTab(ButtonLauncherData data, int tabIndex)
+    {
+        if (data.Tabs.Count <= 1)
+        {
+            return new DeleteTabResult(false, -1);
+        }
+
+        data.Tabs.RemoveAt(tabIndex);
+
+        // DefaultTabIndexの調整
+        if (data.DefaultTabIndex == tabIndex)
+            data.DefaultTabIndex = 0;
+        else if (data.DefaultTabIndex > tabIndex)
+            data.DefaultTabIndex--;
+
+        // 削除後の選択タブ: 削除位置が末尾だった場合は1つ前、それ以外は同じ位置
+        int newIndex = Math.Min(tabIndex, data.Tabs.Count - 1);
+        return new DeleteTabResult(true, newIndex);
+    }
+
+    /// <summary>
+    /// タブを移動する（隣接スワップ）。DefaultTabIndexも追従する。
+    /// </summary>
+    public static void MoveTab(ButtonLauncherData data, int fromIndex, int toIndex)
+    {
+        var tab = data.Tabs[fromIndex];
+        data.Tabs.RemoveAt(fromIndex);
+        data.Tabs.Insert(toIndex, tab);
+
+        // DefaultTabIndexの調整（隣接スワップ）
+        if (data.DefaultTabIndex == fromIndex)
+            data.DefaultTabIndex = toIndex;
+        else if (data.DefaultTabIndex == toIndex)
+            data.DefaultTabIndex = fromIndex;
+    }
+
+    /// <summary>
     /// D&Dでボタンをスワップする。
     /// ドラッグ元にはドロップ先の既存エントリを配置し、ドロップ先にはドラッグ中のエントリを配置する。
     /// ドロップ先が空の場合、ドラッグ元は空になる。
