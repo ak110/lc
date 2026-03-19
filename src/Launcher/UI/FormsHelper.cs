@@ -124,39 +124,37 @@ public static class FormsHelper
     /// </summary>
     public static void ActivateForce(Form form)
     {
-        using (var ati = new AttachThreadInput())
+        using var ati = new AttachThreadInput();
+        int time = 0;
+        try
         {
-            int time = 0;
+            SystemParametersInfo(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0);
+            SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, IntPtr.Zero, 0);
+        }
+        catch (Win32Exception e)
+        {
+            System.Diagnostics.Debug.WriteLine(e.ToString());
+        }
+
+        Application.DoEvents();
+        form.Visible = true;
+        bool topMost = form.TopMost;
+        form.TopMost = true;
+        form.BringToFront();
+        Application.DoEvents();
+        form.Focus();
+        form.Activate();
+        Application.DoEvents();
+
+        if (time != 0)
+        {
             try
             {
-                SystemParametersInfo(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0);
-                SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, IntPtr.Zero, 0);
+                SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0);
             }
             catch (Win32Exception e)
             {
                 System.Diagnostics.Debug.WriteLine(e.ToString());
-            }
-
-            Application.DoEvents();
-            form.Visible = true;
-            bool topMost = form.TopMost;
-            form.TopMost = true;
-            form.BringToFront();
-            Application.DoEvents();
-            form.Focus();
-            form.Activate();
-            Application.DoEvents();
-
-            if (time != 0)
-            {
-                try
-                {
-                    SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0);
-                }
-                catch (Win32Exception e)
-                {
-                    System.Diagnostics.Debug.WriteLine(e.ToString());
-                }
             }
         }
     }

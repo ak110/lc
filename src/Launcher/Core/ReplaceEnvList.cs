@@ -22,10 +22,7 @@ sealed class ReplaceEnvList
             }
         }
         // Valueの長さの長い順に並べる。
-        vars.Sort(delegate (KeyValuePair<string, string> x, KeyValuePair<string, string> y)
-        {
-            return -x.Value.Length.CompareTo(y.Value.Length);
-        });
+        vars.Sort((x, y) => -x.Value.Length.CompareTo(y.Value.Length));
         System.Diagnostics.Debug.Assert(vars.Count <= 1 ||
             vars[vars.Count - 1].Value.Length <= vars[0].Value.Length);
     }

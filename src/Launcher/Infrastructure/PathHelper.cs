@@ -519,10 +519,8 @@ public static class PathHelper
             try
             {
                 // 実際に開いてしまってみる
-                using (FileStream s = File.OpenWrite(path))
-                {
-                    return s.CanWrite;
-                }
+                using FileStream s = File.OpenWrite(path);
+                return s.CanWrite;
             }
             catch (UnauthorizedAccessException)
             {

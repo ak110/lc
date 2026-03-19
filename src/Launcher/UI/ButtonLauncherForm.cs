@@ -550,23 +550,21 @@ public partial class ButtonLauncherForm : Form
             entry = new ButtonEntry { Row = pos.Row, Col = pos.Col };
         }
 
-        using (var form = new EditCommandForm(entry!))
+        using var form = new EditCommandForm(entry!);
+        FormsHelper.CenterOnCursorScreen(form);
+        if (form.ShowDialog(this) == DialogResult.OK)
         {
-            FormsHelper.CenterOnCursorScreen(form);
-            if (form.ShowDialog(this) == DialogResult.OK)
+            if (isNew)
             {
-                if (isNew)
+                // 新規: FileNameが設定されていれば保存
+                if (!entry!.IsEmpty)
                 {
-                    // 新規: FileNameが設定されていれば保存
-                    if (!entry!.IsEmpty)
-                    {
-                        tabData.SetButton(pos.Row, pos.Col, entry);
-                    }
+                    tabData.SetButton(pos.Row, pos.Col, entry);
                 }
-                contextMenuTarget!.Text = entry!.Name ?? "";
-                iconLoader.Load(entry.FileName, false, contextMenuTarget);
-                SaveData();
             }
+            contextMenuTarget!.Text = entry!.Name ?? "";
+            iconLoader.Load(entry.FileName, false, contextMenuTarget);
+            SaveData();
         }
     }
 
@@ -589,17 +587,15 @@ public partial class ButtonLauncherForm : Form
         if (tabData == null) return;
 
         // コマンド選択ダイアログ
-        using (var dlg = new CommandSelectDialog(owner.CommandList))
+        using var dlg = new CommandSelectDialog(owner.CommandList);
+        FormsHelper.CenterOnCursorScreen(dlg);
+        if (dlg.ShowDialog(this) == DialogResult.OK && dlg.SelectedCommand != null)
         {
-            FormsHelper.CenterOnCursorScreen(dlg);
-            if (dlg.ShowDialog(this) == DialogResult.OK && dlg.SelectedCommand != null)
-            {
-                var newEntry = ButtonEntry.FromCommand(dlg.SelectedCommand, pos.Row, pos.Col);
-                tabData.SetButton(pos.Row, pos.Col, newEntry);
-                contextMenuTarget.Text = newEntry.Name ?? "";
-                iconLoader.Load(newEntry.FileName, false, contextMenuTarget);
-                SaveData();
-            }
+            var newEntry = ButtonEntry.FromCommand(dlg.SelectedCommand, pos.Row, pos.Col);
+            tabData.SetButton(pos.Row, pos.Col, newEntry);
+            contextMenuTarget.Text = newEntry.Name ?? "";
+            iconLoader.Load(newEntry.FileName, false, contextMenuTarget);
+            SaveData();
         }
     }
 
@@ -993,27 +989,25 @@ public partial class ButtonLauncherForm : Form
     /// </summary>
     private static string? ShowInputDialog(string prompt, string title, string defaultValue)
     {
-        using (var form = new Form())
-        {
-            form.Text = title;
-            form.ClientSize = new Size(300, 100);
-            form.FormBorderStyle = FormBorderStyle.FixedDialog;
-            form.StartPosition = FormStartPosition.CenterParent;
-            form.MaximizeBox = false;
-            form.MinimizeBox = false;
+        using var form = new Form();
+        form.Text = title;
+        form.ClientSize = new Size(300, 100);
+        form.FormBorderStyle = FormBorderStyle.FixedDialog;
+        form.StartPosition = FormStartPosition.CenterParent;
+        form.MaximizeBox = false;
+        form.MinimizeBox = false;
 
-            var label = new Label { Text = prompt, Left = 8, Top = 8, Width = 280 };
-            var textBox = new TextBox { Text = defaultValue, Left = 8, Top = 32, Width = 280 };
-            var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Left = 120, Top = 64, Width = 75 };
-            var cancel = new Button { Text = "キャンセル", DialogResult = DialogResult.Cancel, Left = 200, Top = 64, Width = 75 };
+        var label = new Label { Text = prompt, Left = 8, Top = 8, Width = 280 };
+        var textBox = new TextBox { Text = defaultValue, Left = 8, Top = 32, Width = 280 };
+        var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Left = 120, Top = 64, Width = 75 };
+        var cancel = new Button { Text = "キャンセル", DialogResult = DialogResult.Cancel, Left = 200, Top = 64, Width = 75 };
 
-            form.Controls.AddRange(new Control[] { label, textBox, ok, cancel });
-            form.AcceptButton = ok;
-            form.CancelButton = cancel;
+        form.Controls.AddRange(new Control[] { label, textBox, ok, cancel });
+        form.AcceptButton = ok;
+        form.CancelButton = cancel;
 
-            FormsHelper.CenterOnCursorScreen(form);
-            return form.ShowDialog() == DialogResult.OK ? textBox.Text : null;
-        }
+        FormsHelper.CenterOnCursorScreen(form);
+        return form.ShowDialog() == DialogResult.OK ? textBox.Text : null;
     }
 
     protected override void Dispose(bool disposing)

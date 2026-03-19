@@ -135,15 +135,13 @@ public class ErrorReporter
     /// </summary>
     private DialogResult ShowReporterForm(Exception ex)
     {
-        using (ErrorReporterForm form = new ErrorReporterForm(ex))
+        using var form = new ErrorReporterForm(ex);
+        FormsHelper.CenterOnCursorScreen(form);
+        if (owner != null)
         {
-            FormsHelper.CenterOnCursorScreen(form);
-            if (owner != null)
-            {
-                return form.ShowDialog(owner);
-            }
-            return form.ShowDialog();
+            return form.ShowDialog(owner);
         }
+        return form.ShowDialog();
     }
 
     /// <summary>

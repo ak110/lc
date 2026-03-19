@@ -57,30 +57,28 @@ public class ConfigStore
     /// <param name="fileName">保存するファイル名</param>
     public void SerializeToFile(string fileName)
     {
-        using (var mutex = Lock(fileName))
+        using var mutex = Lock(fileName);
+        string tmpFileName = fileName + ".tmp";
+        using (FileStream stream = File.Create(tmpFileName))
         {
-            string tmpFileName = fileName + ".tmp";
-            using (FileStream stream = File.Create(tmpFileName))
-            {
-                XmlSerializer s = new XmlSerializer(GetType());
-                s.Serialize(stream, this);
-            }
-            /*
-			try {
-				File.Replace(tmpFileName, fileName, null);
-			} catch (IOException) {
-				if (File.Exists(fileName)) {
-					File.Copy(tmpFileName, fileName, true);
-					File.Delete(tmpFileName);
-				} else {
-					File.Move(tmpFileName, fileName);
-				}
-			}
-			/*/
-            File.Copy(tmpFileName, fileName, true);
-            File.Delete(tmpFileName);
-            //*/
+            XmlSerializer s = new XmlSerializer(GetType());
+            s.Serialize(stream, this);
         }
+        /*
+		try {
+			File.Replace(tmpFileName, fileName, null);
+		} catch (IOException) {
+			if (File.Exists(fileName)) {
+				File.Copy(tmpFileName, fileName, true);
+				File.Delete(tmpFileName);
+			} else {
+				File.Move(tmpFileName, fileName);
+			}
+		}
+		/*/
+        File.Copy(tmpFileName, fileName, true);
+        File.Delete(tmpFileName);
+        //*/
     }
 
     /// <summary>
@@ -89,12 +87,10 @@ public class ConfigStore
     /// <returns>文字列化されたデータ</returns>
     public string SerializeToString()
     {
-        using (var stream = new StringWriter())
-        {
-            XmlSerializer s = new XmlSerializer(GetType());
-            s.Serialize(stream, this);
-            return stream.GetStringBuilder().ToString();
-        }
+        using var stream = new StringWriter();
+        XmlSerializer s = new XmlSerializer(GetType());
+        s.Serialize(stream, this);
+        return stream.GetStringBuilder().ToString();
     }
 
     /// <summary>
@@ -125,14 +121,10 @@ public class ConfigStore
     /// </summary>
     public static T DeserializeFromFile<T>(string fileName)
     {
-        using (var mutex = Lock(fileName))
-        {
-            using (FileStream stream = File.OpenRead(fileName))
-            {
-                XmlSerializer formatter = new XmlSerializer(typeof(T));
-                return (T)formatter.Deserialize(stream)!;
-            }
-        }
+        using var mutex = Lock(fileName);
+        using FileStream stream = File.OpenRead(fileName);
+        XmlSerializer formatter = new XmlSerializer(typeof(T));
+        return (T)formatter.Deserialize(stream)!;
     }
 
     /// <summary>
@@ -142,11 +134,9 @@ public class ConfigStore
     /// <returns>復元されたデータ</returns>
     public static T DeserializeFromString<T>(string data)
     {
-        using (var stream = new StringReader(data))
-        {
-            XmlSerializer formatter = new XmlSerializer(typeof(T));
-            return (T)formatter.Deserialize(stream)!;
-        }
+        using var stream = new StringReader(data);
+        XmlSerializer formatter = new XmlSerializer(typeof(T));
+        return (T)formatter.Deserialize(stream)!;
     }
 
     static MutexLock Lock(string fileName)

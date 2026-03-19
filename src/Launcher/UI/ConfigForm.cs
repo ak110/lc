@@ -77,13 +77,11 @@ public partial class ConfigForm : Form
     /// </summary>
     private void button1_Click(object? sender, EventArgs e)
     {
-        using (EnvConfigForm form = new EnvConfigForm(config.ReplaceEnv))
+        using var form = new EnvConfigForm(config.ReplaceEnv);
+        FormsHelper.CenterOnCursorScreen(form);
+        if (form.ShowDialog(this) == DialogResult.OK)
         {
-            FormsHelper.CenterOnCursorScreen(form);
-            if (form.ShowDialog(this) == DialogResult.OK)
-            {
-                config.ReplaceEnv = form.ReplaceEnv;
-            }
+            config.ReplaceEnv = form.ReplaceEnv;
         }
     }
 }

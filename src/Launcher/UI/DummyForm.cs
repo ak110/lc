@@ -185,11 +185,9 @@ public partial class DummyForm : Form
 
     private void コマンドの管理LToolStripMenuItem_Click(object sender, EventArgs e)
     {
-        using (var form = new CommandManagementForm(this))
-        {
-            FormsHelper.CenterOnCursorScreen(form);
-            form.ShowDialog(this);
-        }
+        using var form = new CommandManagementForm(this);
+        FormsHelper.CenterOnCursorScreen(form);
+        form.ShowDialog(this);
     }
 
     /// <summary>
@@ -219,20 +217,18 @@ public partial class DummyForm : Form
     /// </summary>
     public void ShowConfigDialog()
     {
-        using (ConfigForm form = new ConfigForm(config))
+        using var form = new ConfigForm(config);
+        FormsHelper.CenterOnCursorScreen(form);
+        Form owner = !mainForm.IsDisposed && mainForm.Visible ? (Form)mainForm : (Form)this;
+        if (form.ShowDialog(owner) == DialogResult.OK)
         {
-            FormsHelper.CenterOnCursorScreen(form);
-            Form owner = !mainForm.IsDisposed && mainForm.Visible ? (Form)mainForm : (Form)this;
-            if (form.ShowDialog(owner) == DialogResult.OK)
-            {
-                config = form.Config;
-                config.Serialize();
+            config = form.Config;
+            config.Serialize();
 
-                ApplyConfig();
-                if (!mainForm.IsDisposed)
-                {
-                    mainForm.ApplyConfig();
-                }
+            ApplyConfig();
+            if (!mainForm.IsDisposed)
+            {
+                mainForm.ApplyConfig();
             }
         }
     }
@@ -301,34 +297,32 @@ public partial class DummyForm : Form
     /// </summary>
     private async Task ShowUpdateFormAsync(GitHubRelease release)
     {
-        using (var form = new UpdateForm(release))
+        using var form = new UpdateForm(release);
+        FormsHelper.CenterOnCursorScreen(form);
+        var result = form.ShowDialog(this);
+        if (result == DialogResult.OK)
         {
-            FormsHelper.CenterOnCursorScreen(form);
-            var result = form.ShowDialog(this);
-            if (result == DialogResult.OK)
+            try
             {
-                try
-                {
-                    await form.PerformUpdateAsync();
-                }
-                catch (HttpRequestException ex)
-                {
-                    Debug.WriteLine($"更新失敗: {ex.Message}");
-                    MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                catch (IOException ex)
-                {
-                    Debug.WriteLine($"更新失敗: {ex.Message}");
-                    MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    Debug.WriteLine($"更新失敗: {ex.Message}");
-                    MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                await form.PerformUpdateAsync();
+            }
+            catch (HttpRequestException ex)
+            {
+                Debug.WriteLine($"更新失敗: {ex.Message}");
+                MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (IOException ex)
+            {
+                Debug.WriteLine($"更新失敗: {ex.Message}");
+                MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Debug.WriteLine($"更新失敗: {ex.Message}");
+                MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

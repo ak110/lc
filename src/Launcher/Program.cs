@@ -58,96 +58,93 @@ static class Program
         // 更新後の.oldファイルをクリーンアップ
         CleanupOldFiles();
 
-        using (var app = new AppBase.Initializer())
-        using (var singleInstance = new SingleInstance())
+        using var app = new AppBase.Initializer();
+        using var singleInstance = new SingleInstance();
+
+        bool exit = false;
+        // 引数の処理
+        for (int i = 0; i < args.Length; i++)
         {
-            bool exit = false;
-            // 引数の処理
-            for (int i = 0; i < args.Length; i++)
+            if (args[i] == "/close")
             {
-                if (args[i] == "/close")
-                {
-                    // エントリポイントでのIPC送信: 常駐プロセスが存在しない場合など多様な失敗がありうる
+                // エントリポイントでのIPC送信: 常駐プロセスが存在しない場合など多様な失敗がありうる
 #pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
-                    try
-                    {
-                        Data data = Data.Deserialize();
-                        WindowHelper window =
-                            new WindowHelper(checked((IntPtr)data.WindowHandle));
-                        window.PostMessage(WM.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
-                    }
-                    catch (Exception)
-                    {
-                        // とりあえずエラーは無視。
-                    }
-#pragma warning restore CA1031
-                    return;
-                }
-                else if (args[i] == "/restart")
+                try
                 {
-#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
-                    try
-                    {
-                        Data data = Data.Deserialize();
-                        WindowHelper window =
-                            new WindowHelper(checked((IntPtr)data.WindowHandle));
-                        window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RESTART);
-                    }
-                    catch (Exception)
-                    {
-                        // とりあえずエラーは無視。
-                    }
-#pragma warning restore CA1031
-                    return;
+                    Data data = Data.Deserialize();
+                    WindowHelper window =
+                        new WindowHelper(checked((IntPtr)data.WindowHandle));
+                    window.PostMessage(WM.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
                 }
-                else if (File.Exists(args[i]) || Directory.Exists(args[i]))
+                catch (Exception)
                 {
-                    Command command = Command.FromFile(args[i]);
-                    new ReplaceEnvList(Config.Deserialize().ReplaceEnv).Replace(command);
-                    using (EditCommandForm form = new EditCommandForm(command))
-                    {
-                        FormsHelper.CenterOnCursorScreen(form);
-                        if (form.ShowDialog() == DialogResult.OK)
-                        {
-                            CommandList commandList = CommandList.Deserialize(".cmd.cfg");
-                            commandList.Add(command);
-                            commandList.Serialize(".cmd.cfg");
-
-#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
-                            try
-                            {
-                                Data data = Data.Deserialize();
-                                WindowHelper window =
-                                    new WindowHelper(checked((IntPtr)data.WindowHandle));
-                                window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RELOAD);
-                            }
-                            catch (Exception)
-                            {
-                                // とりあえずエラーは無視。
-                            }
+                    // とりあえずエラーは無視。
+                }
 #pragma warning restore CA1031
-                        }
-                        exit = true;
-                    }
-                }
-                else
-                {
-                    // とりあえず無視
-                }
-            }
-
-            if (exit) return;
-
-            if (!singleInstance.FirstRun)
-            {
-                SingleInstance.SetActive();
                 return;
             }
+            else if (args[i] == "/restart")
+            {
+#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
+                try
+                {
+                    Data data = Data.Deserialize();
+                    WindowHelper window =
+                        new WindowHelper(checked((IntPtr)data.WindowHandle));
+                    window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RESTART);
+                }
+                catch (Exception)
+                {
+                    // とりあえずエラーは無視。
+                }
+#pragma warning restore CA1031
+                return;
+            }
+            else if (File.Exists(args[i]) || Directory.Exists(args[i]))
+            {
+                Command command = Command.FromFile(args[i]);
+                new ReplaceEnvList(Config.Deserialize().ReplaceEnv).Replace(command);
+                using var form = new EditCommandForm(command);
+                FormsHelper.CenterOnCursorScreen(form);
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    CommandList commandList = CommandList.Deserialize(".cmd.cfg");
+                    commandList.Add(command);
+                    commandList.Serialize(".cmd.cfg");
 
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            using var dummyForm = new DummyForm();
-            Application.Run(dummyForm);
+#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
+                    try
+                    {
+                        Data data = Data.Deserialize();
+                        WindowHelper window =
+                            new WindowHelper(checked((IntPtr)data.WindowHandle));
+                        window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RELOAD);
+                    }
+                    catch (Exception)
+                    {
+                        // とりあえずエラーは無視。
+                    }
+#pragma warning restore CA1031
+                }
+                exit = true;
+            }
+            else
+            {
+                // とりあえず無視
+            }
         }
+
+        if (exit) return;
+
+        if (!singleInstance.FirstRun)
+        {
+            SingleInstance.SetActive();
+            return;
+        }
+
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
+        using var dummyForm = new DummyForm();
+        Application.Run(dummyForm);
     }
 }

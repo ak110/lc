@@ -111,16 +111,14 @@ public partial class RegisterStartup : UserControl
     /// </summary>
     private static void CreateShortcut(string file)
     {
-        using (var link = new ShellLink())
-        {
-            link.TargetPath = Environment.ProcessPath!;
-            link.Arguments = "";
-            //link.WorkingDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-            link.Description = "";
-            //link.IconFile = Process.GetCurrentProcess().MainModule.FileName;
-            //link.IconIndex = 0;
-            link.Save(file);
-        }
+        using var link = new ShellLink();
+        link.TargetPath = Environment.ProcessPath!;
+        link.Arguments = "";
+        //link.WorkingDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+        link.Description = "";
+        //link.IconFile = Process.GetCurrentProcess().MainModule.FileName;
+        //link.IconIndex = 0;
+        link.Save(file);
     }
 
     /// <summary>

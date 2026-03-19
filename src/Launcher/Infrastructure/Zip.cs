@@ -195,12 +195,10 @@ public sealed class ZipReader : IDisposable
     /// </summary>
     public byte[] ReadAllBytes(ZipEntry e)
     {
-        using (Stream s = Open(e))
-        {
-            byte[] data = new byte[e.Size];
-            s.ReadExactly(data, 0, data.Length);
-            return data;
-        }
+        using Stream s = Open(e);
+        byte[] data = new byte[e.Size];
+        s.ReadExactly(data, 0, data.Length);
+        return data;
     }
 
     /// <summary>
@@ -217,16 +215,14 @@ public sealed class ZipReader : IDisposable
     public void Extract(string fileName, ZipEntry e)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(fileName)!);
-        using (Stream s = Open(e))
-        using (FileStream file = File.Create(fileName))
+        using Stream s = Open(e);
+        using FileStream file = File.Create(fileName);
+        byte[] buffer = new byte[0x1000];
+        while (true)
         {
-            byte[] buffer = new byte[0x1000];
-            while (true)
-            {
-                int len = s.Read(buffer, 0, buffer.Length);
-                if (len == 0) break;
-                file.Write(buffer, 0, len);
-            }
+            int len = s.Read(buffer, 0, buffer.Length);
+            if (len == 0) break;
+            file.Write(buffer, 0, len);
         }
         // 一応最終更新日時もセットしてみる。
         new FileInfo(fileName).LastWriteTime = e.DateTime;

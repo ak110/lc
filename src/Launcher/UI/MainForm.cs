@@ -480,15 +480,13 @@ public partial class MainForm : Form
         {
             Command command = (Command)listView1.SelectedItems[0].Tag!;
             ActivateTextBox();
-            using (EditCommandForm form = new EditCommandForm(command))
+            using var form = new EditCommandForm(command);
+            FormsHelper.CenterOnCursorScreen(form);
+            if (form.ShowDialog(this) == DialogResult.OK)
             {
-                FormsHelper.CenterOnCursorScreen(form);
-                if (form.ShowDialog(this) == DialogResult.OK)
-                {
-                    ownerForm.CommandList.Serialize(".cmd.cfg");
-                    ApplyConfig();
-                    textBox1.Clear(); // 消しちゃう
-                }
+                ownerForm.CommandList.Serialize(".cmd.cfg");
+                ApplyConfig();
+                textBox1.Clear(); // 消しちゃう
             }
         }
     }
@@ -517,18 +515,16 @@ public partial class MainForm : Form
         {
             Command command = ((Command)listView1.SelectedItems[0].Tag!).Clone();
             ActivateTextBox();
-            using (EditCommandForm form = new EditCommandForm(command))
+            using var form = new EditCommandForm(command);
+            form.Text += " (複製の作成)";
+            FormsHelper.CenterOnCursorScreen(form);
+            if (form.ShowDialog(this) == DialogResult.OK)
             {
-                form.Text += " (複製の作成)";
-                FormsHelper.CenterOnCursorScreen(form);
-                if (form.ShowDialog(this) == DialogResult.OK)
-                {
-                    new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(command);
-                    ownerForm.CommandList.Add(command);
-                    ownerForm.CommandList.Serialize(".cmd.cfg");
-                    ApplyConfig();
-                    textBox1_TextChanged(this, EventArgs.Empty);
-                }
+                new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(command);
+                ownerForm.CommandList.Add(command);
+                ownerForm.CommandList.Serialize(".cmd.cfg");
+                ApplyConfig();
+                textBox1_TextChanged(this, EventArgs.Empty);
             }
         }
     }

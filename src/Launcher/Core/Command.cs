@@ -93,7 +93,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
             info.FileName = PathHelper.PathNormalize(config.OpenParentFiler);
             info.Arguments = Environment.ExpandEnvironmentVariables(
                 $"{config.OpenParentFilerParam1}{path}{config.OpenParentFilerParam2}");
-            using (Process? p = Process.Start(info)) { }
+            using Process? p = Process.Start(info);
         }
         else
         {
@@ -116,12 +116,12 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         {
             info.FileName = PathHelper.PathNormalize(config.Filer);
             info.Arguments = path;
-            using (Process? p = Process.Start(info)) { }
+            using Process? p = Process.Start(info);
         }
         else
         {
             info.FileName = path;
-            using (Process? p = Process.Start(info)) { }
+            using Process? p = Process.Start(info);
         }
     }
 
@@ -314,27 +314,25 @@ public class Command : ICloneable, IComparable<Command>, IComparable
             // lnk
             try
             {
-                using (ShellLink link = new ShellLink(file))
+                using var link = new ShellLink(file);
+                string targetPath = PathHelper.PathNormalize(link.TargetPath);
+                string workingDirectory = PathHelper.PathNormalize(link.WorkingDirectory);
+                command.Name = Path.GetFileNameWithoutExtension(targetPath);
+                command.FileName = targetPath;
+                command.Param = link.Arguments ?? string.Empty;
+                command.WorkDir =
+                    PathHelper.EqualsPath(
+                    Path.GetDirectoryName(targetPath) ?? string.Empty,
+                    workingDirectory) &&
+                    2 <= workingDirectory.Length &&
+                    workingDirectory[1] == ':' ? null : workingDirectory;
+                command.Show = link.DisplayMode switch
                 {
-                    string targetPath = PathHelper.PathNormalize(link.TargetPath);
-                    string workingDirectory = PathHelper.PathNormalize(link.WorkingDirectory);
-                    command.Name = Path.GetFileNameWithoutExtension(targetPath);
-                    command.FileName = targetPath;
-                    command.Param = link.Arguments ?? string.Empty;
-                    command.WorkDir =
-                        PathHelper.EqualsPath(
-                        Path.GetDirectoryName(targetPath) ?? string.Empty,
-                        workingDirectory) &&
-                        2 <= workingDirectory.Length &&
-                        workingDirectory[1] == ':' ? null : workingDirectory;
-                    command.Show = link.DisplayMode switch
-                    {
-                        ShellLink.ShellLinkDisplayMode.Maximized => WindowStyle.Maximized,
-                        ShellLink.ShellLinkDisplayMode.Minimized => WindowStyle.Minimized,
-                        _ => WindowStyle.Normal,
-                    };
-                    return command;
-                }
+                    ShellLink.ShellLinkDisplayMode.Maximized => WindowStyle.Maximized,
+                    ShellLink.ShellLinkDisplayMode.Minimized => WindowStyle.Minimized,
+                    _ => WindowStyle.Normal,
+                };
+                return command;
             }
             catch (IOException)
             {

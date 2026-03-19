@@ -113,18 +113,16 @@ public partial class CommandManagementForm : Form
         var item = listView1.SelectedItems[0];
         var cmd = (Command)item.Tag!;
 
-        using (var form = new EditCommandForm(cmd))
+        using var form = new EditCommandForm(cmd);
+        FormsHelper.CenterOnCursorScreen(form);
+        if (form.ShowDialog(this) == DialogResult.OK)
         {
-            FormsHelper.CenterOnCursorScreen(form);
-            if (form.ShowDialog(this) == DialogResult.OK)
-            {
-                // EditCommandFormが直接cmdを更新するので、表示を更新
-                item.Text = cmd.Name ?? "";
-                item.SubItems[1].Text = cmd.FileName ?? "";
-                item.SubItems[2].Text = cmd.Param ?? "";
-                item.SubItems[3].Text = cmd.WorkDir ?? "";
-                SaveAndApply();
-            }
+            // EditCommandFormが直接cmdを更新するので、表示を更新
+            item.Text = cmd.Name ?? "";
+            item.SubItems[1].Text = cmd.FileName ?? "";
+            item.SubItems[2].Text = cmd.Param ?? "";
+            item.SubItems[3].Text = cmd.WorkDir ?? "";
+            SaveAndApply();
         }
     }
 

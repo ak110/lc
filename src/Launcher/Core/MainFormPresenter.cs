@@ -33,16 +33,8 @@ public record ButtonClickResult(MainAction Action, Command? TargetCommand);
 /// MainFormのビジネスロジックを担当するPresenter。
 /// UI操作を伴わない判定・計算ロジックを集約する。
 /// </summary>
-public class MainFormPresenter
+public class MainFormPresenter(Func<CommandList> getCommandList, Func<Config> getConfig)
 {
-    private readonly Func<CommandList> getCommandList;
-    private readonly Func<Config> getConfig;
-
-    public MainFormPresenter(Func<CommandList> getCommandList, Func<Config> getConfig)
-    {
-        this.getCommandList = getCommandList;
-        this.getConfig = getConfig;
-    }
 
     /// <summary>
     /// テキスト入力変更時のロジック。
