@@ -40,7 +40,8 @@ src/Launcher/
 アプリケーション基盤となるユーティリティ群。
 
 - **ConfigStore** — XMLシリアライズの基底クラス。Config、CommandList、Dataが継承
-- **PathHelper** — パス正規化、ファイルコピー（BackupAPI利用）、強制削除等
+- **PathHelper** — パス文字列操作（正規化、比較、相対パス取得）
+- **FileHelper** — ファイル・ディレクトリ操作（コピー、移動、削除、バックアップ等）
 - **AppBase** — アプリケーションの初期化・終了・再起動処理とグローバル例外ハンドリング
 - **AppVersion** — アプリケーションバージョン情報とタイトル文字列の提供
 - **SingleInstance** — 多重起動防止
