@@ -89,12 +89,10 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         string? path = PathHelper.PathNormalize(FileName);
         if (File.Exists(path) || Directory.Exists(path))
         {
-            ProcessStartInfo info = new ProcessStartInfo();
+            var info = new ProcessStartInfo();
             info.FileName = PathHelper.PathNormalize(config.OpenParentFiler);
             info.Arguments = Environment.ExpandEnvironmentVariables(
-                config.OpenParentFilerParam1 +
-                path +
-                config.OpenParentFilerParam2);
+                $"{config.OpenParentFilerParam1}{path}{config.OpenParentFilerParam2}");
             using (Process? p = Process.Start(info)) { }
         }
         else
@@ -113,7 +111,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
 
     private static void InnerOpenExistsDirectory(Config config, string path)
     {
-        ProcessStartInfo info = new ProcessStartInfo();
+        var info = new ProcessStartInfo();
         if (config.OpenDirByFiler)
         {
             info.FileName = PathHelper.PathNormalize(config.Filer);
@@ -180,10 +178,10 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         else
         {
             // 通常処理
-            param = Environment.ExpandEnvironmentVariables(Param + " " + args);
+            param = Environment.ExpandEnvironmentVariables($"{Param} {args}");
         }
 
-        ShellProcessStartInfo info = new ShellProcessStartInfo();
+        var info = new ShellProcessStartInfo();
         info.FileName = fileName;
         info.Arguments = param;
         info.WorkingDirectory = workDir;
@@ -197,10 +195,8 @@ public class Command : ICloneable, IComparable<Command>, IComparable
                 default:
                 case AdminElevation.RunAs: info.Verb = "runas"; break;
                 case AdminElevation.RunAsCommand: // runasコマンド
-                    info.Arguments = string.Format("{0} \"\\\"{1}\\\" {2}\"",
-                        config.RunAsCommandLine,
-                        info.FileName,
-                        info.Arguments.Replace("\"", "\\\""));
+                    info.Arguments = $"{config.RunAsCommandLine} \"\\\"{info.FileName}\\\" {info.Arguments.Replace("\"", "\\\"")}\"";
+
                     info.FileName = "runas";
                     break;
 
@@ -212,7 +208,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
                             info.Arguments.IndexOf(delim) < 0) break;
                         delim = c;
                     }
-                    info.Arguments = string.Format("0{0}{1}{0}{2}{0}{0}", delim, info.FileName, info.Arguments);
+                    info.Arguments = $"0{delim}{info.FileName}{delim}{info.Arguments}{delim}{delim}";
                     info.FileName = PathHelper.PathNormalize(config.VECmdPath);
                     break;
             }
@@ -251,7 +247,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
 
     public static Command LoadFrom(string? name, string data)
     {
-        Command cmd = new Command();
+        var cmd = new Command();
         string[] list = data.Split(LineSeparators, StringSplitOptions.None);
         int i = 0;
         if (name == null)
@@ -312,7 +308,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     public static Command FromFile(string file)
     {
         file = PathHelper.PathNormalize(file);
-        Command command = new Command();
+        var command = new Command();
         if (string.Equals(Path.GetExtension(file), ".lnk", StringComparison.OrdinalIgnoreCase))
         {
             // lnk
@@ -331,19 +327,12 @@ public class Command : ICloneable, IComparable<Command>, IComparable
                         workingDirectory) &&
                         2 <= workingDirectory.Length &&
                         workingDirectory[1] == ':' ? null : workingDirectory;
-                    switch (link.DisplayMode)
+                    command.Show = link.DisplayMode switch
                     {
-                        case ShellLink.ShellLinkDisplayMode.Maximized:
-                            command.Show = WindowStyle.Maximized;
-                            break;
-                        case ShellLink.ShellLinkDisplayMode.Minimized:
-                            command.Show = WindowStyle.Minimized;
-                            break;
-                        case ShellLink.ShellLinkDisplayMode.Normal:
-                        default:
-                            command.Show = WindowStyle.Normal;
-                            break;
-                    }
+                        ShellLink.ShellLinkDisplayMode.Maximized => WindowStyle.Maximized,
+                        ShellLink.ShellLinkDisplayMode.Minimized => WindowStyle.Minimized,
+                        _ => WindowStyle.Normal,
+                    };
                     return command;
                 }
             }

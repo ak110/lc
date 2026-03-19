@@ -18,8 +18,8 @@ public static class AppBase
     {
         Debug.Assert(!started);
         ErrorReporter errorReporter = ErrorReporter.Instance;
-        errorReporter.ExitApplication += new EventHandler(errorReporter_ExitApplication);
-        errorReporter.RestartApplication += new EventHandler(errorReporter_RestartApplication);
+        errorReporter.ExitApplication += errorReporter_ExitApplication;
+        errorReporter.RestartApplication += errorReporter_RestartApplication;
         errorReporter.Register();
 
         started = true;

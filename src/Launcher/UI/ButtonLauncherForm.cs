@@ -9,7 +9,7 @@ namespace Launcher.UI;
 public partial class ButtonLauncherForm : Form
 {
     readonly DummyForm owner;
-    readonly AsyncIconLoader iconLoader = new AsyncIconLoader();
+    readonly AsyncIconLoader iconLoader = new();
     readonly ContextMenuStrip buttonContextMenu;
     readonly ContextMenuStrip tabContextMenu;
     readonly ContextMenuStrip mainMenu;
@@ -20,7 +20,7 @@ public partial class ButtonLauncherForm : Form
 
     // D&D用
     Button? dragSource;              // UI固有のためForm側に残す
-    readonly DragDropState dragState = new DragDropState();
+    readonly DragDropState dragState = new();
 
     ButtonLauncherData Data => owner.ButtonLauncherData;
 

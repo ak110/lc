@@ -250,7 +250,7 @@ public sealed class ShellLink : IDisposable
         get
         {
             StringBuilder targetPath = new StringBuilder(MAX_PATH, MAX_PATH);
-            WIN32_FIND_DATAW data = new WIN32_FIND_DATAW();
+            var data = new WIN32_FIND_DATAW();
             shellLinkW!.GetPath(targetPath, targetPath.Capacity, ref data, SLGP_UNCPRIORITY);
             return targetPath.ToString();
         }

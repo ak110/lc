@@ -14,14 +14,14 @@ public enum ShellProcessWindowStyle
 
 public class ShellProcessStartInfo
 {
-    public string? Arguments;
-    public string? FileName;
-    public string? Verb;
-    public string? WorkingDirectory;
-    public ShellProcessWindowStyle WindowStyle = ShellProcessWindowStyle.Normal;
-    public bool CreateNoWindow;
-    public bool ErrorDialog = true;
-    public IntPtr ErrorDialogParentHandle = IntPtr.Zero;
+    public string? Arguments { get; set; }
+    public string? FileName { get; set; }
+    public string? Verb { get; set; }
+    public string? WorkingDirectory { get; set; }
+    public ShellProcessWindowStyle WindowStyle { get; set; } = ShellProcessWindowStyle.Normal;
+    public bool CreateNoWindow { get; set; }
+    public bool ErrorDialog { get; set; } = true;
+    public IntPtr ErrorDialogParentHandle { get; set; }
 
     public ShellProcessStartInfo()
     {
@@ -41,7 +41,7 @@ public class ShellProcessStartInfo
 /// .NETのShellExecuteEx()のラッパーはWindowStyleの辺りがビミョーなので自前用に実装。
 /// 基本的に.NETのインターフェースに大体準拠したが、拡張機能はとりあえず省略。
 /// </summary>
-public class ProcessLauncher
+public static class ProcessLauncher
 {
     public static void Start(ShellProcessStartInfo info)
     {
@@ -54,15 +54,17 @@ public class ProcessLauncher
         IntPtr hProcess = InnerStart(info);
         try
         {
-            switch (priority)
+            uint priorityValue = priority switch
             {
-                case System.Diagnostics.ProcessPriorityClass.RealTime: SetPriorityClass(hProcess, REALTIME_PRIORITY_CLASS); break;
-                case System.Diagnostics.ProcessPriorityClass.High: SetPriorityClass(hProcess, HIGH_PRIORITY_CLASS); break;
-                case System.Diagnostics.ProcessPriorityClass.AboveNormal: SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS); break;
-                case System.Diagnostics.ProcessPriorityClass.Normal: SetPriorityClass(hProcess, NORMAL_PRIORITY_CLASS); break;
-                case System.Diagnostics.ProcessPriorityClass.BelowNormal: SetPriorityClass(hProcess, BELOW_NORMAL_PRIORITY_CLASS); break;
-                case System.Diagnostics.ProcessPriorityClass.Idle: SetPriorityClass(hProcess, IDLE_PRIORITY_CLASS); break;
-            }
+                System.Diagnostics.ProcessPriorityClass.RealTime => REALTIME_PRIORITY_CLASS,
+                System.Diagnostics.ProcessPriorityClass.High => HIGH_PRIORITY_CLASS,
+                System.Diagnostics.ProcessPriorityClass.AboveNormal => ABOVE_NORMAL_PRIORITY_CLASS,
+                System.Diagnostics.ProcessPriorityClass.Normal => NORMAL_PRIORITY_CLASS,
+                System.Diagnostics.ProcessPriorityClass.BelowNormal => BELOW_NORMAL_PRIORITY_CLASS,
+                System.Diagnostics.ProcessPriorityClass.Idle => IDLE_PRIORITY_CLASS,
+                _ => NORMAL_PRIORITY_CLASS,
+            };
+            SetPriorityClass(hProcess, priorityValue);
         }
         finally
         {
@@ -72,7 +74,7 @@ public class ProcessLauncher
 
     private static IntPtr InnerStart(ShellProcessStartInfo info)
     {
-        SHELLEXECUTEINFO shinfo = new SHELLEXECUTEINFO();
+        var shinfo = new SHELLEXECUTEINFO();
         shinfo.cbSize = Marshal.SizeOf<SHELLEXECUTEINFO>();
         shinfo.fMask = SEE_MASK_NOCLOSEPROCESS;
         if (info.CreateNoWindow)
@@ -88,15 +90,16 @@ public class ProcessLauncher
         shinfo.lpFile = info.FileName;
         shinfo.lpParameters = info.Arguments;
         shinfo.lpDirectory = info.WorkingDirectory;
-        switch (info.WindowStyle)
+        shinfo.nShow = info.WindowStyle switch
         {
-            case ShellProcessWindowStyle.Normal: shinfo.nShow = SW_SHOWNORMAL; break;
-            case ShellProcessWindowStyle.Minimized: shinfo.nShow = SW_SHOWMINIMIZED; break;
-            case ShellProcessWindowStyle.Maximized: shinfo.nShow = SW_SHOWMAXIMIZED; break;
-            case ShellProcessWindowStyle.NoActivate: shinfo.nShow = SW_SHOWNOACTIVATE; break;
-            case ShellProcessWindowStyle.MinimizedNoActivate: shinfo.nShow = SW_SHOWMINNOACTIVE; break;
-            case ShellProcessWindowStyle.Hidden: shinfo.nShow = SW_HIDE; break;
-        }
+            ShellProcessWindowStyle.Normal => SW_SHOWNORMAL,
+            ShellProcessWindowStyle.Minimized => SW_SHOWMINIMIZED,
+            ShellProcessWindowStyle.Maximized => SW_SHOWMAXIMIZED,
+            ShellProcessWindowStyle.NoActivate => SW_SHOWNOACTIVATE,
+            ShellProcessWindowStyle.MinimizedNoActivate => SW_SHOWMINNOACTIVE,
+            ShellProcessWindowStyle.Hidden => SW_HIDE,
+            _ => SW_SHOWNORMAL,
+        };
         shinfo.hInstApp = IntPtr.Zero;
         shinfo.lpIDList = IntPtr.Zero;
         shinfo.lpClass = null;

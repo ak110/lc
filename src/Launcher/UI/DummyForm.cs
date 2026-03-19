@@ -11,8 +11,8 @@ namespace Launcher.UI;
 
 public partial class DummyForm : Form
 {
-    Config config = new Config();
-    Data data = new Data();
+    Config config = new();
+    Data data = new();
 
     HookManager hookManager;
     MainForm mainForm;
@@ -31,7 +31,7 @@ public partial class DummyForm : Form
         InitializeComponent();
         Visible = false;
 
-        Rectangle screenRect = new Rectangle();
+        var screenRect = new Rectangle();
         foreach (Screen s in Screen.AllScreens) { screenRect = Rectangle.Union(screenRect, s.Bounds); }
         Location = new Point(screenRect.Left - Size.Width, screenRect.Top - Size.Height);
 
@@ -340,16 +340,16 @@ public partial class DummyForm : Form
     private void ApplyConfig()
     {
         // プロセス優先度
-        switch (config.ProcessPriority)
+        Process.GetCurrentProcess().PriorityClass = config.ProcessPriority switch
         {
-            case 0: Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime; break;
-            case 1: Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High; break;
-            case 2: Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.AboveNormal; break;
-            case 3: Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.Normal; break;
-            case 4: Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal; break;
-            case 5: Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.Idle; break;
-            default: goto case 3;
-        }
+            0 => ProcessPriorityClass.RealTime,
+            1 => ProcessPriorityClass.High,
+            2 => ProcessPriorityClass.AboveNormal,
+            3 => ProcessPriorityClass.Normal,
+            4 => ProcessPriorityClass.BelowNormal,
+            5 => ProcessPriorityClass.Idle,
+            _ => ProcessPriorityClass.Normal,
+        };
         // ホットキー
         hookManager.UpdateHotkey(config.HotKey);
 

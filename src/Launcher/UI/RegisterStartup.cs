@@ -111,7 +111,7 @@ public partial class RegisterStartup : UserControl
     /// </summary>
     private static void CreateShortcut(string file)
     {
-        using (ShellLink link = new ShellLink())
+        using (var link = new ShellLink())
         {
             link.TargetPath = Environment.ProcessPath!;
             link.Arguments = "";

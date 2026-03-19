@@ -45,5 +45,13 @@ run = "dotnet test Launcher.sln --collect:\"XPlat Code Coverage\""
 [tasks.watch]
 run = "dotnet watch test --project src/Launcher.Tests/Launcher.Tests.csproj"
 
+[tasks.outdated]
+run = "dotnet list Launcher.sln package --outdated"
+description = "Check for outdated NuGet packages"
+
+[tasks.check]
+run = ["mise run build", "mise run test"]
+description = "Build and test (quick local check)"
+
 [tasks.clean]
 run = "dotnet clean Launcher.sln"

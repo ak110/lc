@@ -10,9 +10,9 @@ namespace Launcher.UI;
 [DefaultEvent("SelectedIndexChanged")]
 public partial class RadioButtonList : UserControl
 {
-    object lockObject = new object();
+    object lockObject = new();
     int selectedIndex;
-    List<RadioButton> items = new List<RadioButton>();
+    List<RadioButton> items = [];
 
     public RadioButtonList()
     {
@@ -316,7 +316,7 @@ public partial class RadioButtonList : UserControl
 
         private RadioButton CreateRadioButton(object item)
         {
-            RadioButton r = new RadioButton();
+            var r = new RadioButton();
             r.Tag = item;
             r.Text = item.ToString() ?? "";
             r.Checked = owner.items.Count == owner.selectedIndex;

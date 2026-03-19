@@ -99,7 +99,7 @@ public class LegacyConfigReader
     public string EscapedString(string n)
     {
         string str = data[n];
-        StringBuilder builder = new StringBuilder();
+        var builder = new StringBuilder();
         for (int i = 0; i < str.Length - 1; i++)
         {
             if (str[i] == '\\')

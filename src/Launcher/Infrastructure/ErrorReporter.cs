@@ -9,7 +9,7 @@ namespace Launcher.Infrastructure;
 /// </summary>
 public class ErrorReporter
 {
-    static readonly ErrorReporter instance = new ErrorReporter();
+    static readonly ErrorReporter instance = new();
 
     /// <summary>
     /// Singletonなインスタンスの取得
@@ -18,7 +18,7 @@ public class ErrorReporter
 
     Control? owner;
 
-    object lockObject = new object();
+    object lockObject = new();
     bool localLock;
 
     private ErrorReporter()
@@ -40,7 +40,7 @@ public class ErrorReporter
     public void SetOwner(Control form)
     {
         owner = form;
-        form.Disposed += new EventHandler(form_Disposed);
+        form.Disposed += form_Disposed;
     }
 
     /// <summary>
@@ -63,7 +63,7 @@ public class ErrorReporter
     /// </summary>
     public void Register()
     {
-        Application.ThreadException += new ThreadExceptionEventHandler(Application_ThreadException);
+        Application.ThreadException += Application_ThreadException;
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ public class ErrorReporter
     /// </summary>
     public void UnRegister()
     {
-        Application.ThreadException -= new ThreadExceptionEventHandler(Application_ThreadException);
+        Application.ThreadException -= Application_ThreadException;
     }
 
     void form_Disposed(object? sender, EventArgs e)
@@ -154,7 +154,7 @@ public class ErrorReporter
     /// </summary>
     public static string GetDetailMessage(Exception e)
     {
-        StringBuilder builder = new StringBuilder();
+        var builder = new StringBuilder();
         AppendExceptionString(builder, e);
         return builder.ToString();
     }

@@ -9,7 +9,7 @@ namespace Launcher.Infrastructure;
 [Serializable]
 public class ConfigStore
 {
-    static readonly object lockObject = new object();
+    static readonly object lockObject = new();
 
     /// <summary>
     /// デフォルトのディレクトリパス＋拡張子を除いたベースファイル名を取得。
@@ -89,7 +89,7 @@ public class ConfigStore
     /// <returns>文字列化されたデータ</returns>
     public string SerializeToString()
     {
-        using (StringWriter stream = new StringWriter())
+        using (var stream = new StringWriter())
         {
             XmlSerializer s = new XmlSerializer(GetType());
             s.Serialize(stream, this);
@@ -142,7 +142,7 @@ public class ConfigStore
     /// <returns>復元されたデータ</returns>
     public static T DeserializeFromString<T>(string data)
     {
-        using (StringReader stream = new StringReader(data))
+        using (var stream = new StringReader(data))
         {
             XmlSerializer formatter = new XmlSerializer(typeof(T));
             return (T)formatter.Deserialize(stream)!;
@@ -154,7 +154,7 @@ public class ConfigStore
         lock (lockObject)
         {
             string mutexName = fileName.ToLower().Replace('\\', '/');
-            Mutex mutex = new Mutex(false, mutexName);
+            var mutex = new Mutex(false, mutexName);
             if (!mutex.WaitOne(30000))
             {
                 mutex.Close();

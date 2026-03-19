@@ -9,7 +9,7 @@ namespace Launcher.UI;
 public partial class CommandManagementForm : Form
 {
     readonly DummyForm owner;
-    readonly AsyncIconLoader iconLoader = new AsyncIconLoader();
+    readonly AsyncIconLoader iconLoader = new();
     ImageList? imageList;
 
     public CommandManagementForm(DummyForm owner)

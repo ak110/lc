@@ -10,8 +10,14 @@ namespace Launcher.Infrastructure;
 [Serializable]
 public class FileChangedOnCopyException : IOException
 {
+    public FileChangedOnCopyException()
+        : base() { }
+
     public FileChangedOnCopyException(string fileName)
-        : base(string.Format("ファイル '{0}' がコピーの最中に変更されました", fileName)) { }
+        : base($"ファイル '{fileName}' がコピーの最中に変更されました") { }
+
+    public FileChangedOnCopyException(string message, Exception innerException)
+        : base(message, innerException) { }
 }
 
 /// <summary>
@@ -205,8 +211,8 @@ public sealed class BackupFile : IDisposable
     /// <exception cref="FileChangedOnCopyException"></exception>
     public static void CopyFile(string sourceName, string destFileName)
     {
-        FileInfo srcInfo = new FileInfo(sourceName);
-        FileInfo dstInfo = new FileInfo(destFileName);
+        var srcInfo = new FileInfo(sourceName);
+        var dstInfo = new FileInfo(destFileName);
         DateTime srcLastWrite = srcInfo.LastWriteTime;
         long srcLength = srcInfo.Length;
 

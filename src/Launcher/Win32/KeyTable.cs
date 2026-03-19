@@ -184,7 +184,7 @@ public static class KeyTable
     /// </summary>
     public static string GetKeyName(Keys key, Modifiers modifiers)
     {
-        StringBuilder str = new StringBuilder();
+        var str = new StringBuilder();
         if ((modifiers & Modifiers.Ctrl) != 0)
         {
             str.Append("Ctrl+");

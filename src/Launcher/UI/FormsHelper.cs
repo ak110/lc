@@ -17,11 +17,11 @@ public static class FormsHelper
         int posR = pos.X + form.Width;
         int posB = pos.Y + form.Height;
         int dist = int.MaxValue;
-        Point result = new Point();
+        var result = new Point();
         foreach (Screen screen in Screen.AllScreens)
         {
             Rectangle wa = screen.WorkingArea;
-            Point clipped = new Point();
+            var clipped = new Point();
             if (pos.X < wa.Left)
             {
                 clipped.X = wa.Left;
@@ -110,7 +110,7 @@ public static class FormsHelper
     /// </summary>
     public static void ActivateForce(Form form)
     {
-        using (AttachThreadInput ati = new AttachThreadInput())
+        using (var ati = new AttachThreadInput())
         {
             int time = 0;
             try

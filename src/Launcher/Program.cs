@@ -48,8 +48,7 @@ static class Program
         // 未処理例外のキャッチ（UIスレッド以外で発生した例外用）
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
-            var ex = e.ExceptionObject as Exception;
-            var message = ex != null
+            var message = e.ExceptionObject is Exception ex
                 ? $"未処理の例外が発生しました:\n{ex.Message}\n\n{ex.StackTrace}"
                 : $"未処理の例外が発生しました:\n{e.ExceptionObject}";
             System.Diagnostics.Debug.WriteLine(message);
@@ -59,8 +58,8 @@ static class Program
         // 更新後の.oldファイルをクリーンアップ
         CleanupOldFiles();
 
-        using (AppBase.Initializer app = new AppBase.Initializer())
-        using (SingleInstance singleInstance = new SingleInstance())
+        using (var app = new AppBase.Initializer())
+        using (var singleInstance = new SingleInstance())
         {
             bool exit = false;
             // 引数の処理

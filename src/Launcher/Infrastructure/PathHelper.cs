@@ -42,9 +42,9 @@ public static class PathHelper
         // pathがbaseDirの下位ではない場合
         if (!path.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
         {
-            throw new IOException(path + " の相対パスの生成に失敗しました。");
+            throw new IOException($"{path} の相対パスの生成に失敗しました。");
         }
-        return path.Substring(baseDir.Length);
+        return path[baseDir.Length..];
     }
 
     /// <summary>
@@ -64,7 +64,7 @@ public static class PathHelper
             .TrimEnd(Path.DirectorySeparatorChar);
         if (path.Length == 2 && path[1] == Path.VolumeSeparatorChar)
         {
-            path = path + Path.DirectorySeparatorChar;
+            path = $"{path}{Path.DirectorySeparatorChar}";
         }
         return path;
     }
@@ -101,23 +101,18 @@ public static class PathHelper
     {
         if (!Directory.Exists(path))
         {
-            throw new DirectoryNotFoundException("ディレクトリ '" + path + "' が存在しません");
+            throw new DirectoryNotFoundException($"ディレクトリ '{path}' が存在しません");
         }
-        string[] entries = Directory.GetFileSystemEntries(path);
-        return entries.Length <= 0;
+        // 全件取得を避け、1件でもあればfalseを返す
+        return !Directory.EnumerateFileSystemEntries(path).Any();
     }
 
     /// <summary>
-    /// ファイルとディレクトリを列挙(SearchOption.AllDirectories版が無いようなので…。)
+    /// ファイルとディレクトリを再帰的に列挙
     /// </summary>
     public static string[] GetFileSystemEntries(string path)
     {
-        string[] dirs = Directory.GetDirectories(path, "*", SearchOption.AllDirectories);
-        string[] files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
-        string[] entries = new string[dirs.Length + files.Length];
-        Array.Copy(dirs, entries, dirs.Length);
-        Array.Copy(files, 0, entries, dirs.Length, files.Length);
-        return entries;
+        return Directory.GetFileSystemEntries(path, "*", SearchOption.AllDirectories);
     }
 
     /// <summary>
@@ -128,7 +123,7 @@ public static class PathHelper
     /// <param name="destName">ファイルの新しいパス。</param>
     public static void MoveFileForce(string sourceName, string destName)
     {
-        FileInfo src = new FileInfo(sourceName);
+        var src = new FileInfo(sourceName);
         FileAttributes? attributes = null;
         try
         {
@@ -144,7 +139,7 @@ public static class PathHelper
         }
         finally
         {
-            FileInfo dst = new FileInfo(destName);
+            var dst = new FileInfo(destName);
             if (dst.Exists)
             {
                 if (attributes.HasValue)
@@ -164,7 +159,7 @@ public static class PathHelper
     public static void CopyFileSafeWithAttributes(string sourceName, string destName)
     {
         // 属性とかを適当に取得(コピーに時間かかるかもしれないので先に取っておく)
-        FileInfo src = new FileInfo(sourceName);
+        var src = new FileInfo(sourceName);
         FileAttributes? attributes = null;
         FileSecurity? security = null;
         DateTime? creationTime = null;
@@ -184,7 +179,7 @@ public static class PathHelper
         finally
         {
             // 属性とかを適当に設定
-            FileInfo dst = new FileInfo(destName);
+            var dst = new FileInfo(destName);
             if (dst.Exists)
             {
                 if (lastWriteTime.HasValue) try { dst.LastWriteTime = lastWriteTime.Value; } catch (IOException) { } catch (UnauthorizedAccessException) { }
@@ -268,8 +263,8 @@ public static class PathHelper
             // エラーったらそのまま続行
         }
 
-        FileInfo srcInfo = new FileInfo(sourceName);
-        FileInfo dstInfo = new FileInfo(destFileName);
+        var srcInfo = new FileInfo(sourceName);
+        var dstInfo = new FileInfo(destFileName);
         try
         {
             DateTime srcLastWrite = srcInfo.LastWriteTime;
@@ -411,18 +406,13 @@ public static class PathHelper
     /// <param name="recursive">再帰的に削除するかどうか</param>
     public static void DeleteForce(FileSystemInfo fsi, bool recursive)
     {
-        FileInfo? fi = fsi as FileInfo;
-        if (fi != null)
+        if (fsi is FileInfo fi)
         {
             DeleteFileForce(fi);
         }
-        else
+        else if (fsi is DirectoryInfo di)
         {
-            DirectoryInfo? di = fsi as DirectoryInfo;
-            if (di != null)
-            {
-                DeleteDirectoryForce(di, recursive);
-            }
+            DeleteDirectoryForce(di, recursive);
         }
     }
 
@@ -435,11 +425,11 @@ public static class PathHelper
     {
         string fullPath = Path.GetFullPath(path);
         string root = Path.GetPathRoot(fullPath) ?? string.Empty;
-        string[] dirs = path.Substring(root.Length).Split(Path.DirectorySeparatorChar);
+        string[] dirs = path[root.Length..].Split(Path.DirectorySeparatorChar);
         string ret = root;
         foreach (string name in dirs)
         {
-            DirectoryInfo di = new DirectoryInfo(ret);
+            var di = new DirectoryInfo(ret);
             if (di.Exists)
             {
                 try

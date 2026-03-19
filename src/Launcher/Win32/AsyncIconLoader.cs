@@ -10,12 +10,12 @@ namespace Launcher.Win32;
 /// </summary>
 public class IconLoadedEventArgs : EventArgs
 {
-    public readonly System.Drawing.Icon? Icon;
-    public string FileName;
-    public bool Small;
-    public readonly object? Arg;
+    public System.Drawing.Icon? Icon { get; }
+    public string FileName { get; set; }
+    public bool Small { get; set; }
+    public object? Arg { get; }
     /// <summary>リクエスト時の世代番号</summary>
-    public readonly int Generation;
+    public int Generation { get; }
     public IconLoadedEventArgs(System.Drawing.Icon? icon, string fileName, bool small, object? arg, int generation)
     {
         Icon = icon;
@@ -37,8 +37,8 @@ public class IconLoadedEventArgs : EventArgs
 /// </summary>
 public sealed class AsyncIconLoader : IDisposable
 {
-    readonly BlockingCollection<Request> queue = new BlockingCollection<Request>();
-    readonly CancellationTokenSource cts = new CancellationTokenSource();
+    readonly BlockingCollection<Request> queue = new();
+    readonly CancellationTokenSource cts = new();
     volatile int generation;
     int workerCount;
     ThreadPriority threadPriority = ThreadPriority.Normal;

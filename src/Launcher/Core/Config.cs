@@ -142,7 +142,7 @@ public class Config : ConfigStore, ICloneable
     /// </summary>
     public static Config LoadFrom(LegacyConfigReader reader)
     {
-        Config data = new Config();
+        var data = new Config();
 
         data.IconDoubleClick = (TrayIconAction)reader.Num("IconDoubleClick");
         int itemDblClick = reader.Num("ItemDoubleClick");

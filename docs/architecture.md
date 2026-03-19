@@ -115,3 +115,29 @@ Program.Main()
 | `らんちゃ.cmd.cfg` | コマンド一覧（CommandList） |
 | `らんちゃ.btns.cfg` | ボタン型ランチャーのデータ（ButtonLauncherData） |
 | `らんちゃ.dat` | ウィンドウハンドル・更新チェック記録等（Data） |
+
+## スレッディングモデル
+
+<!-- textlint-disable -->
+
+| スレッド | 用途 | 備考 |
+|---------|------|------|
+| UIスレッド (STA) | WinFormsメッセージループ、全UI操作 | `Application.Run(DummyForm)` |
+| コマンド実行スレッド (STA) | `Command.Execute()`の実行 | `MainForm.ExecuteCommand`で生成 |
+| ディレクトリ展開スレッド (STA) | `Command.OpenDirectory()`の実行 | `MainForm.OpenDirectory`で生成 |
+| アイコン読込スレッド | `AsyncIconLoader`による非同期アイコン取得 | 低優先度バックグラウンド |
+| 環境変数置換スレッド | `ReplaceEnvList`のコマンド名置換 | `MainForm.ApplyConfig`で生成 |
+| フックコールバック | キーボード/マウスフックのイベント通知 | `BeginInvoke`でUIスレッドへディスパッチ |
+
+<!-- textlint-enable -->
+
+コマンド実行とディレクトリ展開はSTAスレッドで行う（ShellExecuteExがSTA前提のため）。
+アイコン読込もShell APIのSTA制約があるため、`Task.Run`（ThreadPool/MTA）は使用不可。
+
+## フック管理
+
+`HookManager`がグローバルキーボード/マウスフックの状態管理を一元的に担当する。
+
+- **ホットキー検知**: `SetWindowsHookEx`で登録したキーボードフックのコールバックで、KEYDOWN時に仮想キーコードと修飾キーを照合。一致したらKEYUPを抑制しつつ、`BeginInvoke`でUIスレッドへShowHideメッセージを送信
+- **ボタンランチャー起動**: マウスフックでボタン押下状態（`lbuttonDown`/`rbuttonDown`）を追跡し、設定されたトリガー（左右同時押し等）を検知。トリガー発動時はUPイベントを抑制して誤操作を防止
+- **UP抑制フラグ**: `suppressNextLButtonUp`/`suppressNextRButtonUp`/`suppressKeyUpVK`で、トリガー発動後の不要なUPイベントをフック内で消費する

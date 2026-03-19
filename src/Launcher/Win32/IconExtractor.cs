@@ -19,7 +19,7 @@ public static class IconExtractor
     {
         int uFlags = SHGFI_ICON | SHGFI_SYSICONINDEX |
             (small ? SHGFI_SMALLICON : SHGFI_LARGEICON);
-        SHFILEINFO shinfo = new SHFILEINFO();
+        var shinfo = new SHFILEINFO();
         IntPtr hSuccess = SHGetFileInfo(path, 0, ref shinfo,
             Marshal.SizeOf(shinfo), uFlags);
         if (hSuccess == IntPtr.Zero)

@@ -82,7 +82,7 @@ public class CommandList : ConfigStore, ICloneable
     /// </summary>
     public static CommandList LoadFrom(LegacyConfigReader reader)
     {
-        CommandList list = new CommandList();
+        var list = new CommandList();
         int n;
         if (reader.ContainsKey("_") &&
             int.TryParse(reader.Indirect("_"), out n))
@@ -111,7 +111,6 @@ public class CommandList : ConfigStore, ICloneable
     /// <summary>
     /// 該当しそうなコマンドをリストアップして返す。
     /// </summary>
-    /// <param name="line">コマンドライン</param>
     public IEnumerable<Command> FindMatch(string input, Config config)
     {
         if (string.IsNullOrEmpty(input))

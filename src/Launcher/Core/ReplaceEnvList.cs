@@ -8,9 +8,8 @@ namespace Launcher.Core;
 sealed class ReplaceEnvList
 {
     // 置換時のスレッドセーフ用ロック（commandオブジェクト自体をロックしない）
-    readonly object lockObj = new object();
-    List<KeyValuePair<string, string>> vars
-        = new List<KeyValuePair<string, string>>();
+    readonly object lockObj = new();
+    List<KeyValuePair<string, string>> vars = [];
 
     public ReplaceEnvList(List<string> list)
     {

@@ -73,3 +73,5 @@
 
 - ビルド警告は放置すると蓄積する。`TreatWarningsAsErrors=true` で機械的に防止し、AGENTS.mdのルールで人的にも徹底する。
 - Writeツールで新規ファイルを作成すると行末がLFになることがある。コミット前に必ず `mise run format` を実行して行末マーカー(CRLF)を含むフォーマットを統一する。
+- Roslynator導入時は `.editorconfig` で `none` に抑制し、修正完了後に `warning` へ昇格するアプローチが安全。`TreatWarningsAsErrors=true` 環境では `suggestion` もビルドに表れないため、`dotnet format --diagnostics` で対象箇所を列挙する。
+- XMLシリアライズ対象プロパティのコレクション初期化子は変更禁止（デシリアライズ時の互換性リスク）。

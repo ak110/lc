@@ -15,8 +15,7 @@ public partial class MainForm : Form
     bool recurseGuard; //再帰防止
 
     // ボタン型ランチャーのアイコン読み込みを優先するため低優先度で動作
-    AsyncIconLoader iconLoader =
-        new AsyncIconLoader() { ThreadPriority = ThreadPriority.BelowNormal };
+    AsyncIconLoader iconLoader = new() { ThreadPriority = ThreadPriority.BelowNormal };
 
     public MainForm(DummyForm dummyForm, ContextMenuStrip mainMenu)
     {
@@ -32,7 +31,7 @@ public partial class MainForm : Form
             () => ownerForm.CommandList,
             () => ownerForm.Config);
 
-        iconLoader.IconLoaded += new EventHandler<IconLoadedEventArgs>(iconLoader_IconLoaded);
+        iconLoader.IconLoaded += iconLoader_IconLoaded;
 
         // ListViewのちらつき・初回表示の遅延を軽減
         listView1.GetType().GetProperty("DoubleBuffered",
@@ -706,8 +705,7 @@ public partial class MainForm : Form
     /// </summary>
     private void OpenDirectory(Command command)
     {
-        Thread thread = new Thread(
-            new ParameterizedThreadStart(OpenDirectoryThread));
+        Thread thread = new Thread(OpenDirectoryThread);
         thread.IsBackground = true;
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start(command);
@@ -738,8 +736,7 @@ public partial class MainForm : Form
 #if DEBUG
         ExecuteThread(new ExecuteParams(command, input, Handle));
 #else
-        Thread thread = new Thread(
-            new ParameterizedThreadStart(ExecuteThread));
+        Thread thread = new Thread(ExecuteThread);
         thread.IsBackground = true;
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start(new ExecuteParams(command, input, Handle));

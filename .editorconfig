@@ -55,8 +55,8 @@ dotnet_diagnostic.CA1309.severity = suggestion
 # ConfigureAwait（WinFormsではSynchronizationContextが必要）
 dotnet_diagnostic.CA2007.severity = none
 
-# 公開インスタンスフィールド（段階的にプロパティ化）
-dotnet_diagnostic.CA1051.severity = suggestion
+# 公開インスタンスフィールド
+dotnet_diagnostic.CA1051.severity = warning
 
 # XmlSerializerセキュリティ（デスクトップアプリが自身の設定ファイルを読む用途）
 dotnet_diagnostic.CA5369.severity = none
@@ -76,3 +76,19 @@ dotnet_diagnostic.CA1036.severity = suggestion
 
 # コレクションのジェネリックインターフェース実装
 dotnet_diagnostic.CA1010.severity = none
+
+# Roslynator: 空catch句（CA1031のpragma抑制と同様のパターン）
+dotnet_diagnostic.RCS1075.severity = none
+
+# Roslynator: 例外コンストラクタ（内部使用のみの例外クラスは標準パターンを強制しない）
+dotnet_diagnostic.RCS1194.severity = none
+
+# Roslynator: ドキュメントコメントのsummary不足（既存コードに大量にあるため段階的に対応）
+dotnet_diagnostic.RCS1138.severity = none
+dotnet_diagnostic.RCS1139.severity = none
+
+# === Roslynator ===
+dotnet_diagnostic.RCS1197.severity = warning  # string.Format → 文字列補間
+dotnet_diagnostic.RCS1072.severity = warning  # 冗長なデリゲート生成
+dotnet_diagnostic.RCS1220.severity = warning  # パターンマッチング推奨
+dotnet_diagnostic.RCS1036.severity = none      # using宣言文の利用推奨（段階的に対応）
