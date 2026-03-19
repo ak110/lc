@@ -177,7 +177,7 @@ public partial class RegisterStartup : UserControl
 
     private static bool IsCommonStartupWritable()
     {
-        return PathHelper.IsWritable(ShellEnvironment.GetFolderPath(
+        return FileHelper.IsWritable(ShellEnvironment.GetFolderPath(
             ShellEnvironment.SpecialFolder.CommonStartup));
     }
 

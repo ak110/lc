@@ -117,6 +117,9 @@ public sealed class ShellLink : IDisposable
     // カレントファイル
     private string currentFile;
 
+    // double-dispose防止フラグ
+    private bool disposed;
+
     // 各種定数
     internal const int MAX_PATH = 260;
 
@@ -214,7 +217,7 @@ public sealed class ShellLink : IDisposable
     /// </summary>
     ~ShellLink()
     {
-        Dispose();
+        Dispose(false);
     }
 
     /// <summary>
@@ -222,7 +225,21 @@ public sealed class ShellLink : IDisposable
     /// </summary>
     public void Dispose()
     {
+        Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// リソース解放の実体。double-dispose を防止する。
+    /// </summary>
+    private void Dispose(bool disposing)
+    {
+        if (disposed)
+        {
+            return;
+        }
+        disposed = true;
+
         if (shellLinkW != null)
         {
             Marshal.ReleaseComObject(shellLinkW);
