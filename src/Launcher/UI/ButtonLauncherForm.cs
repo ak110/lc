@@ -141,6 +141,9 @@ public partial class ButtonLauncherForm : Form
             AutoScroll = false,
         };
 
+        // レイアウト計算を一時停止して一括追加
+        panel.SuspendLayout();
+
         // 均等配分
         panel.ColumnStyles.Clear();
         for (int c = 0; c < Data.Columns; c++)
@@ -163,6 +166,7 @@ public partial class ButtonLauncherForm : Form
             }
         }
 
+        panel.ResumeLayout(true);
         tabPage.Controls.Add(panel);
     }
 
@@ -203,6 +207,34 @@ public partial class ButtonLauncherForm : Form
         btn.DragDrop += GridButton_DragDrop;
 
         return btn;
+    }
+
+    /// <summary>
+    /// 指定位置のボタンの表示を更新（D&Dスワップ時の部分更新用）
+    /// </summary>
+    private void UpdateButton(TabPage? tabPage, ButtonTab tabData, int row, int col)
+    {
+        if (tabPage == null) return;
+
+        // TableLayoutPanelからボタンを探す
+        var panel = tabPage.Controls.Count > 0 ? tabPage.Controls[0] as TableLayoutPanel : null;
+        if (panel == null) return;
+
+        var btn = panel.GetControlFromPosition(col, row) as Button;
+        if (btn == null) return;
+
+        var entry = tabData.GetButton(row, col);
+        if (entry != null && !entry.IsEmpty)
+        {
+            btn.Text = entry.Name ?? "";
+            btn.Image = null;
+            iconLoader.Load(entry.FileName, false, btn);
+        }
+        else
+        {
+            btn.Text = "";
+            btn.Image = null;
+        }
     }
 
     /// <summary>
@@ -600,12 +632,17 @@ public partial class ButtonLauncherForm : Form
                 destTabData, pos.Row, pos.Col,
                 dragState.DragEntry!);
 
-            // ソースとデスティネーションが異なるタブの場合は両方再構築
             if (srcTabData != destTabData)
             {
-                RebuildTab(FindTabPage(srcTabData));
+                // クロスタブ: ソースタブのボタンを部分更新
+                UpdateButton(FindTabPage(srcTabData), srcTabData, srcPos.Row, srcPos.Col);
             }
-            RebuildCurrentTab();
+            // デスティネーション側の2ボタンを部分更新
+            UpdateButton(tabControl1.SelectedTab, destTabData, pos.Row, pos.Col);
+            if (srcTabData == destTabData)
+            {
+                UpdateButton(tabControl1.SelectedTab, destTabData, srcPos.Row, srcPos.Col);
+            }
             SaveData();
         }
     }
@@ -775,8 +812,7 @@ public partial class ButtonLauncherForm : Form
                 if (btn == null || btn.IsDisposed) return;
 
                 btn.Image = e.Icon.ToBitmap();
-                // 非表示中にImageが設定された場合の再描画漏れ防止
-                btn.Parent?.Invalidate(true);
+                btn.Invalidate();
             }
             finally
             {
