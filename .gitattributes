@@ -1,0 +1,9 @@
+# デフォルトはLF
+* text=auto eol=lf
+
+# dotnet/Visual Studio生成ファイルはCRLF
+*.cs text eol=crlf
+*.csproj text eol=crlf
+*.sln text eol=crlf
+*.props text eol=crlf
+app.config text eol=crlf
