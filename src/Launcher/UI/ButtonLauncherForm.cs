@@ -68,16 +68,15 @@ public partial class ButtonLauncherForm : Form
         lockButton.Checked = Data.IsLocked;
         ApplyLockState();
 
-        // タブを構築
-        BuildTabs();
-
         // オーナー設定（Show→Hideだと一瞬表示されるのでプロパティで設定）
         Owner = owner;
-        // アイコン非同期読み込みのBeginInvokeに必要なハンドルを事前作成
+        // BuildTabs()内のiconLoader.Load()より先にハンドルを作成する
+        // Handle未作成時にIconLoadedイベントが到着するとアイコンが破棄されるため
         _ = Handle;
-
-        // 閉じるボタンを無効化
         FormsHelper.DisableCloseButton(this);
+
+        // タブを構築（アイコン非同期読み込みを開始するためHandle作成後に実行）
+        BuildTabs();
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
@@ -812,7 +811,8 @@ public partial class ButtonLauncherForm : Form
                 if (btn == null || btn.IsDisposed) return;
 
                 btn.Image = e.Icon.ToBitmap();
-                btn.Invalidate();
+                // 非選択タブのボタンはInvalidate()では再描画されないため親パネル全体を対象にする
+                btn.Parent?.Invalidate(true);
             }
             finally
             {
