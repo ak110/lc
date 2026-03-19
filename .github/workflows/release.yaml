@@ -26,7 +26,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $conclusion = gh run list --workflow=ci.yml --branch=${{ github.ref_name }} -L1 --json conclusion -q ".[0].conclusion"
+          $conclusion = gh run list --workflow=ci.yaml --branch=${{ github.ref_name }} -L1 --json conclusion -q ".[0].conclusion"
           if ($conclusion -ne "success") {
             Write-Error "CI has not passed (status: $conclusion). Please ensure CI is green before releasing."
             exit 1
@@ -74,6 +74,12 @@ jobs:
 
       - name: Build
         run: dotnet publish src/Launcher/Launcher.csproj -c Release -o publish/
+
+      - name: Copy LICENSE and README
+        run: |
+          Copy-Item LICENSE publish/
+          Copy-Item README.md publish/
+        shell: pwsh
 
       - name: Create ZIP
         shell: pwsh

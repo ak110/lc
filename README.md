@@ -1,7 +1,7 @@
 # らんちゃ
 
-[![CI](https://github.com/ak110/lc/actions/workflows/ci.yml/badge.svg)](https://github.com/ak110/lc/actions/workflows/ci.yml)
-[![Release](https://github.com/ak110/lc/actions/workflows/release.yml/badge.svg)](https://github.com/ak110/lc/actions/workflows/release.yml)
+[![CI](https://github.com/ak110/lc/actions/workflows/ci.yaml/badge.svg)](https://github.com/ak110/lc/actions/workflows/ci.yaml)
+[![Release](https://github.com/ak110/lc/actions/workflows/release.yaml/badge.svg)](https://github.com/ak110/lc/actions/workflows/release.yaml)
 
 コマンドラインランチャー＆ボタン型ランチャー。
 

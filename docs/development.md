@@ -65,12 +65,12 @@ GitHub Actionsの`Release`ワークフローを手動実行してリリースす
 
 ```cmd
 rem 1. リリース実行（いずれか1つ）
-gh workflow run release.yml --field "bump=バグフィックス"
-gh workflow run release.yml --field "bump=マイナーバージョンアップ"
-gh workflow run release.yml --field "bump=メジャーバージョンアップ"
+gh workflow run release.yaml --field "bump=バグフィックス"
+gh workflow run release.yaml --field "bump=マイナーバージョンアップ"
+gh workflow run release.yaml --field "bump=メジャーバージョンアップ"
 
 rem 2. ワークフロー完了を待ち、バージョンバンプコミットを取り込む
-for /f "usebackq" %i in (`gh run list --workflow=release.yml -L1 --json databaseId -q ".[0].databaseId"`) do gh run watch %i && git pull
+for /f "usebackq" %i in (`gh run list --workflow=release.yaml -L1 --json databaseId -q ".[0].databaseId"`) do gh run watch %i && git pull
 ```
 
 <!-- textlint-disable -->

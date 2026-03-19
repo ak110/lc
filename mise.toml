@@ -41,7 +41,10 @@ run = "dotnet watch test --project src/Launcher.Tests/Launcher.Tests.csproj"
 run = "dotnet test Launcher.sln --collect:\"XPlat Code Coverage\""
 
 [tasks.publish]
-run = "dotnet publish src/Launcher/Launcher.csproj -c Release -o publish"
+run = [
+    "dotnet publish src/Launcher/Launcher.csproj -c Release -o publish",
+    "cp LICENSE README.md publish/",
+]
 
 [tasks.clean]
 run = "dotnet clean Launcher.sln"
