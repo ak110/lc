@@ -64,21 +64,9 @@ public class ConfigStore
             XmlSerializer s = new XmlSerializer(GetType());
             s.Serialize(stream, this);
         }
-        /*
-		try {
-			File.Replace(tmpFileName, fileName, null);
-		} catch (IOException) {
-			if (File.Exists(fileName)) {
-				File.Copy(tmpFileName, fileName, true);
-				File.Delete(tmpFileName);
-			} else {
-				File.Move(tmpFileName, fileName);
-			}
-		}
-		/*/
-        File.Copy(tmpFileName, fileName, true);
-        File.Delete(tmpFileName);
-        //*/
+        // 同一ボリューム上のMoveは原子的なリネーム(MoveFileEx)になるため、
+        // 書き込み途中のクラッシュでファイルが破損するリスクを回避できる
+        File.Move(tmpFileName, fileName, true);
     }
 
     /// <summary>
