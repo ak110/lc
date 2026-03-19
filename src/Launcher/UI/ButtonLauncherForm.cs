@@ -894,7 +894,7 @@ public partial class ButtonLauncherForm : Form
     {
         if (disposing)
         {
-            iconLoader.Clear();
+            iconLoader.Dispose();
             buttonContextMenu?.Dispose();
             tabContextMenu?.Dispose();
             components?.Dispose();

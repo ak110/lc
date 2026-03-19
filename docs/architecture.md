@@ -125,7 +125,7 @@ Program.Main()
 | UIスレッド (STA) | WinFormsメッセージループ、全UI操作 | `Application.Run(DummyForm)` |
 | コマンド実行スレッド (STA) | `Command.Execute()`の実行 | `MainForm.ExecuteCommand`で生成 |
 | ディレクトリ展開スレッド (STA) | `Command.OpenDirectory()`の実行 | `MainForm.OpenDirectory`で生成 |
-| アイコン読込スレッド | `AsyncIconLoader`による非同期アイコン取得 | 低優先度バックグラウンド |
+| アイコン読込スレッド (STA×8) | `AsyncIconLoader`による非同期アイコン取得 | 固定8本STAワーカー + リトライ(最大2回) |
 | 環境変数置換スレッド | `ReplaceEnvList`のコマンド名置換 | `MainForm.ApplyConfig`で生成 |
 | フックコールバック | キーボード/マウスフックのイベント通知 | `BeginInvoke`でUIスレッドへディスパッチ |
 

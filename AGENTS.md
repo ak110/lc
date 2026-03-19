@@ -75,3 +75,4 @@
 - Writeツールで新規ファイルを作成すると行末がLFになることがある。コミット前に必ず `mise run format` を実行して行末マーカー(CRLF)を含むフォーマットを統一する。
 - Roslynator導入時は `.editorconfig` で `none` に抑制し、修正完了後に `warning` へ昇格するアプローチが安全。`TreatWarningsAsErrors=true` 環境では `suggestion` もビルドに表れないため、`dotnet format --diagnostics` で対象箇所を列挙する。
 - XMLシリアライズ対象プロパティのコレクション初期化子は変更禁止（デシリアライズ時の互換性リスク）。
+- Shell API (SHGetFileInfo) は高並行度で不安定になる。AsyncIconLoaderのワーカー数は8本固定とし、ProcessorCount等の動的な値を使わない。変更時はAsyncIconLoaderTestsの全件イベント発火テストで回帰を検証すること。

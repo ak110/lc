@@ -15,7 +15,7 @@ public partial class MainForm : Form
     bool recurseGuard; //再帰防止
 
     // ボタン型ランチャーのアイコン読み込みを優先するため低優先度で動作
-    AsyncIconLoader iconLoader = new() { ThreadPriority = ThreadPriority.BelowNormal };
+    AsyncIconLoader iconLoader = new(threadPriority: ThreadPriority.BelowNormal);
 
     public MainForm(DummyForm dummyForm, ContextMenuStrip mainMenu)
     {

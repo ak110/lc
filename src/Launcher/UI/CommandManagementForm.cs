@@ -165,7 +165,7 @@ public partial class CommandManagementForm : Form
     {
         if (disposing)
         {
-            iconLoader.Clear();
+            iconLoader.Dispose();
             imageList?.Dispose();
             components?.Dispose();
         }
