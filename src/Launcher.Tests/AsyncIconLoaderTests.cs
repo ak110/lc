@@ -7,7 +7,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// AsyncIconLoaderのスレッド管理・リトライ機構テスト
 /// </summary>
-public class AsyncIconLoaderTests
+public sealed class AsyncIconLoaderTests
 {
     [Fact]
     public void Clear後にLoad可能()

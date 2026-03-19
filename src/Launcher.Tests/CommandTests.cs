@@ -7,7 +7,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// Commandクラスのテスト
 /// </summary>
-public class CommandTests
+public sealed class CommandTests
 {
     // --- Clone ---
 

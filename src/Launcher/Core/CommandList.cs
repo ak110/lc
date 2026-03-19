@@ -5,7 +5,7 @@ using Launcher.Infrastructure;
 namespace Launcher.Core;
 
 [System.Diagnostics.DebuggerDisplay("Count = {Count}")]
-public class CommandList : ConfigStore, ICloneable
+public sealed class CommandList : ConfigStore, ICloneable
 {
     public List<Command> Commands { get; set; } = new List<Command>();
 

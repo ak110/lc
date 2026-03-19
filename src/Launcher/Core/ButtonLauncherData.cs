@@ -9,7 +9,7 @@ namespace Launcher.Core;
 /// <summary>
 /// ボタン型ランチャーのデータ
 /// </summary>
-public class ButtonLauncherData : ConfigStore
+public sealed class ButtonLauncherData : ConfigStore
 {
     public List<ButtonTab> Tabs { get; set; } = new List<ButtonTab>();
     public int DefaultTabIndex { get; set; }
@@ -54,7 +54,7 @@ public class ButtonLauncherData : ConfigStore
 /// <summary>
 /// ボタンランチャーのタブ
 /// </summary>
-public class ButtonTab
+public sealed class ButtonTab
 {
     public string Name { get; set; } = "";
     public List<ButtonEntry> Buttons { get; set; } = new List<ButtonEntry>();
@@ -85,7 +85,7 @@ public class ButtonTab
 /// <summary>
 /// ボタンランチャーの個別ボタン。Commandを継承しRow/Colを追加。
 /// </summary>
-public class ButtonEntry : Command
+public sealed class ButtonEntry : Command
 {
     public int Row { get; set; }
     public int Col { get; set; }

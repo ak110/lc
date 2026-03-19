@@ -7,7 +7,7 @@ namespace Launcher.Infrastructure;
 /// <summary>
 /// エラー報告処理
 /// </summary>
-public class ErrorReporter
+public sealed class ErrorReporter
 {
     static readonly ErrorReporter instance = new();
 

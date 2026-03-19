@@ -12,7 +12,7 @@ public enum ShellProcessWindowStyle
     Hidden,
 }
 
-public class ShellProcessStartInfo
+public sealed class ShellProcessStartInfo
 {
     public string? Arguments { get; set; }
     public string? FileName { get; set; }

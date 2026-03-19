@@ -6,7 +6,7 @@ namespace Launcher.Infrastructure;
 /// <summary>
 /// Themis::CConfig的なcfgファイルを読み込む
 /// </summary>
-public class LegacyConfigReader
+public sealed class LegacyConfigReader
 {
     Dictionary<string, string> data = new Dictionary<string, string>();
 

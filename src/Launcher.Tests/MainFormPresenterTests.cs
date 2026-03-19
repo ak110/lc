@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-public class MainFormPresenterTests
+public sealed class MainFormPresenterTests
 {
     private readonly Config _config = new Config { CommandIgnoreCase = true };
 

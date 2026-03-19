@@ -8,7 +8,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// ConfigStoreのシリアライズ/デシリアライズ ラウンドトリップテスト
 /// </summary>
-public class ConfigStoreTests
+public sealed class ConfigStoreTests
 {
     // --- CommandList を使ったラウンドトリップ ---
 

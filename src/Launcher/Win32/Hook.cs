@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Launcher.Win32;
 
-public class KeyHookEventArgs : EventArgs
+public sealed class KeyHookEventArgs : EventArgs
 {
     int nCode;
     IntPtr wParam;
@@ -34,7 +34,7 @@ public class KeyHookEventArgs : EventArgs
     }
 }
 
-public class MouseHookEventArgs : EventArgs
+public sealed class MouseHookEventArgs : EventArgs
 {
     int nCode;
     IntPtr wParam;

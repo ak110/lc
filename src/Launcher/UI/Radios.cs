@@ -3,7 +3,7 @@ namespace Launcher.UI;
 /// <summary>
 /// 複数のラジオボタンをまとめて扱うためのクラス。
 /// </summary>
-public class Radios
+public sealed class Radios
 {
     RadioButton[] radios;
 

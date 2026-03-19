@@ -9,7 +9,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// Configのデフォルト値・シリアライズテスト
 /// </summary>
-public class ConfigTests
+public sealed class ConfigTests
 {
     // --- デフォルト値の検証 ---
 

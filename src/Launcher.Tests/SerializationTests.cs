@@ -8,7 +8,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// enum化・property化後もXMLシリアライズ互換性が保たれることを検証
 /// </summary>
-public class SerializationTests
+public sealed class SerializationTests
 {
     // --- Config ラウンドトリップ ---
 

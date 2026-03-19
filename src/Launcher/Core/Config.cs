@@ -8,7 +8,7 @@ using Launcher.Infrastructure;
 
 namespace Launcher.Core;
 
-public class Config : ConfigStore, ICloneable
+public sealed class Config : ConfigStore, ICloneable
 {
     public bool Debug { get; set; }
 

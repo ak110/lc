@@ -5,7 +5,7 @@ namespace Launcher.Updater;
 /// <summary>
 /// GitHub Releases APIのレスポンスモデル (最小限)
 /// </summary>
-public class GitHubRelease
+public sealed class GitHubRelease
 {
     [JsonPropertyName("tag_name")]
     public string TagName { get; set; } = string.Empty;
@@ -26,7 +26,7 @@ public class GitHubRelease
     public List<GitHubReleaseAsset> Assets { get; set; } = new();
 }
 
-public class GitHubReleaseAsset
+public sealed class GitHubReleaseAsset
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;

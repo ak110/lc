@@ -69,7 +69,7 @@ public static class ButtonLauncherPresenter
 /// D&D操作の状態を管理するクラス。
 /// 4つの個別フィールドを1つのクラスに凝集する。
 /// </summary>
-public class DragDropState
+public sealed class DragDropState
 {
     /// <summary>ドラッグ中のButtonEntry</summary>
     public ButtonEntry? DragEntry { get; private set; }

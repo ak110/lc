@@ -7,7 +7,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// SubStream ユーティリティのテスト
 /// </summary>
-public class UtilityTests
+public sealed class UtilityTests
 {
     // --- SubStream ---
 

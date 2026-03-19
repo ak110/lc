@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-public class AppVersionTests
+public sealed class AppVersionTests
 {
     [Fact]
     public void VersionString_ShouldNotBeNullOrEmpty()

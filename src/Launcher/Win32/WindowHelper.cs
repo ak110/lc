@@ -252,7 +252,7 @@ public static class WM
 /// <summary>
 /// HWNDのラッパー。
 /// </summary>
-public class WindowHelper
+public sealed class WindowHelper
 {
     IntPtr hwnd;
 

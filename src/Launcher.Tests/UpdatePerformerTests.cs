@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-public class UpdatePerformerTests
+public sealed class UpdatePerformerTests
 {
     [Fact]
     public void GenerateBatchScript_親プロセス待機コードが含まれる()

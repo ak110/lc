@@ -8,7 +8,7 @@ namespace Launcher.Win32;
 /// アイコン読み込んだぞイベントの引数。
 /// 失敗時は Icon == null
 /// </summary>
-public class IconLoadedEventArgs : EventArgs
+public sealed class IconLoadedEventArgs : EventArgs
 {
     public System.Drawing.Icon? Icon { get; }
     public string FileName { get; set; }

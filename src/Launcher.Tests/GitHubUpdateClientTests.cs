@@ -7,7 +7,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// GitHubUpdateClient.IsUpdateAvailable のテスト
 /// </summary>
-public class GitHubUpdateClientTests
+public sealed class GitHubUpdateClientTests
 {
     private static readonly string CurrentVersion = Infrastructure.AppVersion.TagName;
 

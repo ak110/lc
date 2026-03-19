@@ -7,7 +7,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// CommandList.FindMatchのテスト
 /// </summary>
-public class CommandListTests
+public sealed class CommandListTests
 {
     private readonly Config _config = new Config { CommandIgnoreCase = true };
 

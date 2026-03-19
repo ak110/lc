@@ -9,7 +9,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// ButtonLauncherDataのシリアライズ・ロジックテスト
 /// </summary>
-public class ButtonLauncherDataTests
+public sealed class ButtonLauncherDataTests
 {
     [Fact]
     public void ButtonLauncherData_ラウンドトリップでデフォルト値が保持される()

@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-public class LegacyConfigReaderTests
+public sealed class LegacyConfigReaderTests
 {
     private static LegacyConfigReader CreateReader(string content)
     {

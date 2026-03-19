@@ -7,7 +7,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// ErrorReporterクラスのテスト
 /// </summary>
-public class ErrorReporterTests
+public sealed class ErrorReporterTests
 {
     [Fact]
     public void GetDetailMessage_単一例外の情報を含む()

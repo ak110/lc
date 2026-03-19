@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-public class ButtonLauncherPresenterTests
+public sealed class ButtonLauncherPresenterTests
 {
     #region CalculateGridSize
 

@@ -5,7 +5,7 @@ using Launcher.Updater;
 
 namespace Launcher.Core;
 
-public class Data : ConfigStore
+public sealed class Data : ConfigStore
 {
     public long WindowHandle { get; set; }
 

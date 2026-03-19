@@ -6,7 +6,7 @@ namespace Launcher.Infrastructure;
 /// Streamの一部分なStream。
 /// 排他処理とか全く考えてないので注意。
 /// </summary>
-public class SubStream : Stream
+public sealed class SubStream : Stream
 {
     readonly Stream parent;
     readonly long offset;

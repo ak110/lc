@@ -9,7 +9,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// Data のシリアライズ/デシリアライズ ラウンドトリップテスト
 /// </summary>
-public class DataTests
+public sealed class DataTests
 {
     [Fact]
     public void ラウンドトリップ_デフォルト値が保持される()

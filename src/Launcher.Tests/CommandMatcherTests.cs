@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-public class CommandMatcherTests
+public sealed class CommandMatcherTests
 {
     private readonly Config _config = new Config { CommandIgnoreCase = true };
     private readonly Config _caseSensitiveConfig = new Config { CommandIgnoreCase = false };

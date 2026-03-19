@@ -311,7 +311,7 @@ sealed class StreamRandAccessor
 /// <summary>
 /// ZIP書庫内のファイルやディレクトリ１個を表すオブジェクト
 /// </summary>
-public class ZipEntry : ICloneable
+public sealed class ZipEntry : ICloneable
 {
     string name;
     uint size, compressedSize;

@@ -8,7 +8,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// ZipReader / ZipEntry のテスト
 /// </summary>
-public class ZipTests
+public sealed class ZipTests
 {
     /// <summary>
     /// テスト用ZIPバイト列を作成するヘルパー

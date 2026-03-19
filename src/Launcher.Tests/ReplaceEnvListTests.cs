@@ -10,7 +10,7 @@ namespace Launcher.Tests;
 /// ただしInnerReplaceがFile.Exists/Directory.Existsチェックを行うため、
 /// 実在しないパスは置換されない。実在パスを使ったテストも含む。
 /// </summary>
-public class ReplaceEnvListTests
+public sealed class ReplaceEnvListTests
 {
     // --- コンストラクタ: 環境変数が正しく収集される ---
 

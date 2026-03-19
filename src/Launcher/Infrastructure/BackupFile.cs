@@ -8,7 +8,7 @@ namespace Launcher.Infrastructure;
 /// コピーの最中に変更されたぞ例外
 /// </summary>
 [Serializable]
-public class FileChangedOnCopyException : IOException
+public sealed class FileChangedOnCopyException : IOException
 {
     public FileChangedOnCopyException()
         : base() { }

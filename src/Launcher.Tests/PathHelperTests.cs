@@ -7,7 +7,7 @@ namespace Launcher.Tests;
 /// <summary>
 /// PathHelperのテスト
 /// </summary>
-public class PathHelperTests
+public sealed class PathHelperTests
 {
     // --- PathNormalize ---
 
