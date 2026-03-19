@@ -76,9 +76,9 @@ static class Program
                         new WindowHelper(checked((IntPtr)data.WindowHandle));
                     window.PostMessage(WM.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // とりあえずエラーは無視。
+                    System.Diagnostics.Debug.WriteLine($"IPC送信失敗 (/close): {ex.Message}");
                 }
 #pragma warning restore CA1031
                 return;
@@ -93,9 +93,9 @@ static class Program
                         new WindowHelper(checked((IntPtr)data.WindowHandle));
                     window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RESTART);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // とりあえずエラーは無視。
+                    System.Diagnostics.Debug.WriteLine($"IPC送信失敗 (/restart): {ex.Message}");
                 }
 #pragma warning restore CA1031
                 return;
@@ -120,9 +120,9 @@ static class Program
                             new WindowHelper(checked((IntPtr)data.WindowHandle));
                         window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RELOAD);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        // とりあえずエラーは無視。
+                        System.Diagnostics.Debug.WriteLine($"IPC送信失敗 (reload): {ex.Message}");
                     }
 #pragma warning restore CA1031
                 }
