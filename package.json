@@ -12,7 +12,7 @@
     "lint:fix": "npm run textlint:fix && npm run markdownlint:fix && npm run prettier:fix"
   },
   "devDependencies": {
-    "markdownlint-cli2": "^0.17.2",
+    "markdownlint-cli2": "^0.21.0",
     "prettier": "^3.8.1",
     "textlint": "^14.8.4",
     "textlint-rule-preset-ja-spacing": "^2.4.3",
