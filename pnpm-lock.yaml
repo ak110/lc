@@ -21,8 +21,8 @@ importers:
         specifier: ^2.4.3
         version: 2.4.3
       textlint-rule-preset-ja-technical-writing:
-        specifier: ^10.0.2
-        version: 10.0.2
+        specifier: ^12.0.2
+        version: 12.0.2
 
 packages:
 
@@ -1808,8 +1808,8 @@ packages:
   textlint-rule-preset-ja-spacing@2.4.3:
     resolution: {integrity: sha512-WAiWY9TOE8/bRdl14XJdjkPQcV0hLS4O+PCUYU1yxXmJhZ8V3ciw2GYqpA9GL73qAxL25UD6mkf1yfz6aJ4qSA==}
 
-  textlint-rule-preset-ja-technical-writing@10.0.2:
-    resolution: {integrity: sha512-FjhJiwdcww8MqtuwSitvDshqVw47Yd6AnYj/mcosBjGY26InbAt7ay4EURt2LHF3cBpuWOFesvaVZKisWc1ZIA==}
+  textlint-rule-preset-ja-technical-writing@12.0.2:
+    resolution: {integrity: sha512-BBVY6oA5V799k5wRfP+gCpDHsp6vWjWX2UT+/KLlAFFsNdmRB8Z6qyOnqiOjfzmLGIRgoMcPI1dXj5upOqnD6Q==}
 
   textlint-rule-preset-jtf-style@3.0.3:
     resolution: {integrity: sha512-NTvqjg3oMTGjSDoH6MnYu+DDWW6cEghA66Lb8N0bheTphAj99aaG10HGhwTfDbaH2P6NfPQvRP5ISxiXCT9zdg==}
@@ -4327,7 +4327,7 @@ snapshots:
       textlint-rule-ja-space-around-link: 2.4.2
       textlint-rule-ja-space-between-half-and-full-width: 2.4.2
 
-  textlint-rule-preset-ja-technical-writing@10.0.2:
+  textlint-rule-preset-ja-technical-writing@12.0.2:
     dependencies:
       '@textlint-rule/textlint-rule-no-invalid-control-character': 3.0.0
       '@textlint-rule/textlint-rule-no-unmatched-pair': 2.0.4
