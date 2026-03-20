@@ -111,7 +111,7 @@ Program.Main()
 基底クラス`ConfigStore`がシリアライズ/デシリアライズを提供。
 
 | ファイル | 内容 |
-|---------|------|
+| ------- | ---- |
 | `らんちゃ.cfg` | アプリケーション設定（Config） |
 | `らんちゃ.cmd.cfg` | コマンド一覧（CommandList） |
 | `らんちゃ.btns.cfg` | ボタン型ランチャーのデータ（ButtonLauncherData） |
@@ -122,7 +122,7 @@ Program.Main()
 <!-- textlint-disable -->
 
 | スレッド | 用途 | 備考 |
-|---------|------|------|
+| ------- | ---- | ---- |
 | UIスレッド (STA) | WinFormsメッセージループ、全UI操作 | `Application.Run(DummyForm)` |
 | コマンド実行スレッド (STA) | `Command.Execute()`の実行 | `MainForm.ExecuteCommand`で生成 |
 | ディレクトリ展開スレッド (STA) | `Command.OpenDirectory()`の実行 | `MainForm.OpenDirectory`で生成 |

@@ -29,14 +29,14 @@ mise install && mise run setup
 普段使うのはこの2つだけ。
 
 | コマンド | 内容 |
-|---------|------|
+| ------- | ---- |
 | `mise run format` | format + build + lint |
 | `mise run test` | format + build + lint + test |
 
 その他。
 
 | コマンド | 説明 |
-|---------|------|
+| ------- | ---- |
 | `mise run run` | アプリケーション実行 |
 | `mise run watch` | テスト自動実行（ファイル変更監視） |
 | `mise run coverage` | テストカバレッジ計測 |
