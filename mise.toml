@@ -28,8 +28,16 @@ run = [
 
 # === 個別タスク ===
 
+[tasks.update]
+description = "依存パッケージの最新化"
+run = [
+    "dotnet tool restore",
+    "dotnet outdated -u Launcher.sln",
+    "pnpm update",
+]
+
 [tasks.setup]
-run = "pnpm install"
+run = ["dotnet tool restore", "pnpm install"]
 
 [tasks.run]
 run = "dotnet run --project src/Launcher/Launcher.csproj"
