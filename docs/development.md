@@ -15,15 +15,6 @@ mise install && mise run setup
 これだけで .NET SDK、Node.js、pnpmのインストールと依存パッケージのセットアップが完了する。
 バージョンは `mise.toml` で一元管理される。
 
-## 推奨VSCode拡張機能
-
-プロジェクトを開くと`.vscode/extensions.json`により自動で推奨される。
-
-- **C#** (`ms-dotnettools.csharp`) — IntelliSense、デバッグ等
-- **C# Dev Kit** (`ms-dotnettools.csdevkit`) — ソリューションエクスプローラー等
-- **markdownlint** (`DavidAnson.vscode-markdownlint`) — Markdownリンター
-- **Prettier** (`esbenp.prettier-vscode`) — YAML/JSONフォーマッター
-
 ## miseタスク
 
 普段使うのはこの2つだけ。
@@ -41,6 +32,7 @@ mise install && mise run setup
 | `mise run watch` | テスト自動実行（ファイル変更監視） |
 | `mise run coverage` | テストカバレッジ計測 |
 | `mise run publish` | Release ビルド + 成果物出力 |
+| `mise run update` | 依存パッケージの最新化 |
 | `mise run setup` | 初期セットアップ |
 | `mise run clean` | ビルド成果物のクリーン |
 
@@ -76,29 +68,5 @@ for /f "usebackq" %i in (`gh run list --workflow=release.yaml -L1 --json databas
 <!-- textlint-disable -->
 
 結果の確認: <https://github.com/ak110/lc/actions>
-
-<!-- textlint-enable -->
-
-## プロジェクト構成
-
-<!-- textlint-disable -->
-
-```text
-Launcher.sln                ソリューションファイル
-├── src/
-│   ├── Launcher/           メインプロジェクト (WinForms)
-│   │   ├── Core/           コアロジック (Command, Config等)
-│   │   ├── Win32/          Win32 API連携
-│   │   ├── UI/             フォーム群
-│   │   ├── Infrastructure/ 基盤 (シリアライズ、設定読込等)
-│   │   ├── Updater/        更新機能 (GitHub Releases連携)
-│   │   └── Launcher.csproj
-│   └── Launcher.Tests/     テストプロジェクト (xUnit)
-├── .github/workflows/      CI設定
-├── .vscode/                 VSCode設定
-├── docs/                    ドキュメント
-├── Directory.Build.props    共通ビルド設定
-└── package.json             Node.js依存 (ドキュメントlint用)
-```
 
 <!-- textlint-enable -->

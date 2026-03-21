@@ -22,88 +22,29 @@ src/Launcher/
 
 <!-- textlint-enable -->
 
-### Core
+### モジュール分割の設計意図
 
-アプリケーションの中心となるデータ構造とロジック。
+- **Core** — UIフレームワーク（WinForms）に依存しない純粋なドメインモデルとロジック。テスト容易性と関心の分離が目的
+- **Infrastructure** — アプリケーション基盤。シリアライズ・パス操作・ファイル操作など、ドメインやUIに属さない横断的関心事を集約
+- **UI** — WinFormsに依存するフォーム群。ロジックはPresenterに委譲し、フォーム自体は表示と入力の橋渡しに徹する
+- **Win32** — P/Invoke呼び出しを隔離するモジュール。Win32 APIの複雑さ（マーシャリング、リソース管理）をアプリケーション本体から遮断する
+- **Updater** — 自動更新機能。GitHub Releases APIとの通信、ZIPの展開、バッチスクリプトによる自己置換など、更新特有の処理を分離
 
-- **Command** — コマンド（名前、実行パス、引数、優先度等）のモデル。実行やディレクトリ展開の処理も持つ
-- **CommandList** — コマンドの一覧。XMLシリアライズで永続化
-- **CommandMatcher** — 入力文字列とコマンド名の前方一致・部分一致マッチング
-- **Config** — アプリケーション設定。ホットキー、ウィンドウ設定、ファイラ設定、ボタンランチャー起動方法等
-- **ButtonLauncherData** — ボタン型ランチャーのデータ。タブ・ボタン配置・グリッドサイズ等を管理
-- **ButtonTab** / **ButtonEntry** — ボタンランチャーのタブとボタンのモデル
-- **MainFormPresenter** — MainFormのUIロジック。コマンド検索・選択・実行の制御
-- **ButtonLauncherPresenter** — ButtonLauncherFormのUIロジック。ボタン操作・D&D・タブ管理の制御
+## 主要な設計パターン
 
-### Infrastructure
+### Presenterパターン
 
-アプリケーション基盤となるユーティリティ群。
+MainFormPresenter / ButtonLauncherPresenterがUIロジックを担当する。WinFormsのフォームクラスはイベントハンドラとコントロール操作のみを持ち、判断ロジックはPresenterに委譲する。これにより、UIロジックをWinFormsから分離してテスト可能にしている。
 
-- **ConfigStore** — XMLシリアライズの基底クラス。Config、CommandList、Dataが継承
-- **PathHelper** — パス文字列操作（正規化、比較、相対パス取得）
-- **FileHelper** — ファイル・ディレクトリ操作（コピー、移動、削除、バックアップ等）
-- **AppBase** — アプリケーションの初期化・終了・再起動処理とグローバル例外ハンドリング
-- **AppVersion** — アプリケーションバージョン情報とタイトル文字列の提供
-- **SingleInstance** — 多重起動防止
-- **ErrorReporter** — 未処理例外のダイアログ表示と再起動/終了/続行の選択
+### ConfigStore継承による永続化
 
-### UI
+Config、CommandList、ButtonLauncherData（Data）はすべてConfigStoreを継承し、XMLシリアライズで永続化される。ConfigStoreは原子的なファイル保存（一時ファイルに書き込み後File.Moveで置換）を提供し、保存中のクラッシュによるデータ破損を防止する。
 
-WinFormsのフォーム群。
+**制約**: XMLシリアライズ対象プロパティのコレクション初期化子は変更禁止。XmlSerializerはデシリアライズ時に既存インスタンスへAddするため、初期化子で値を入れるとデシリアライズ結果と重複する。
 
-- **DummyForm** — 常駐用の不可視フォーム。ホットキーフック、トレイアイコン、設定管理、ボタンランチャー管理を担当
-- **MainForm** — コマンド型ランチャー。テキストボックスによるコマンド検索、リストビューによるコマンド一覧表示、コマンド実行
-- **ButtonLauncherForm** — ボタン型ランチャー。タブ付きグリッドにコマンドをボタンとして配置。D&D対応
-- **HookManager** — グローバルキーボード・マウスフックの管理。ホットキーやマウス操作のイベント通知
-- **CommandManagementForm** — コマンド管理画面。コマンド一覧の表示・編集・削除
-- **ConfigForm** — 設定ダイアログ
-- **EditCommandForm** — コマンド編集ダイアログ
+### DummyFormによるIPCハブ
 
-### Win32
-
-Windows APIのP/Invoke連携。
-
-- **Hook** — グローバルキーボードフック・マウスフック（`SetWindowsHookEx`）
-- **AsyncIconLoader** — 実行ファイルからアイコンを非同期読み込み
-- **ProcessLauncher** — `ShellExecuteEx`によるプロセス起動（管理者権限での昇格に対応）
-- **ShellLink** — ショートカット(.lnk)ファイルの読み書き
-- **FormsHelper** — ウィンドウの強制アクティブ化、閉じるボタンの無効化等
-
-### Updater
-
-GitHub Releases APIを使った自動更新機能。
-
-- **GitHubUpdateClient** — GitHub APIからの最新リリース取得、更新チェック判定
-- **UpdatePerformer** — ZIPダウンロード、展開、バッチスクリプト生成による自動更新実行
-- **UpdateForm** — 更新通知ダイアログ
-- **UpdateConfig** — 更新設定（リポジトリ情報、チェック間隔）
-- **UpdateRecord** — 更新チェック記録（最終チェック日時、スキップバージョン等）
-
-## アプリケーションフロー
-
-```text
-Program.Main()
-  ├── .oldファイルのクリーンアップ（前回更新の残り）
-  ├── AppBase.Initialize()（グローバル例外ハンドリング登録）
-  ├── SingleInstance チェック
-  ├── コマンドライン引数の処理
-  │   ├── /close  → 常駐プロセスへWM_CLOSE送信
-  │   ├── /restart → 常駐プロセスへ再起動メッセージ送信
-  │   └── ファイルパス → コマンド登録ダイアログ表示
-  └── Application.Run(DummyForm)
-        ├── 設定・コマンド一覧・ボタンランチャーデータの読み込み
-        ├── MainForm の生成・事前初期化・表示
-        ├── ButtonLauncherForm の生成（設定で有効時）
-        ├── キーボード/マウスフックの登録
-        └── メッセージループ
-              ├── ホットキー → MainFormの表示/非表示切り替え
-              ├── MainFormでのコマンド実行
-              │     ├── テキスト入力 → CommandMatcherで絞り込み
-              │     ├── Enter → Command.Execute()（別スレッド）
-              │     └── Shift+Enter → Command.OpenDirectory()
-              └── ボタンランチャーでのコマンド実行
-                    └── ボタンクリック → Command.Execute()（別スレッド）
-```
+DummyFormは不可視の常駐フォームで、アプリケーション全体のハブとして機能する。WM_APPMSGによるプロセス間通信（/close、/restart等のコマンドライン引数の処理）を受け付け、子フォーム（MainForm、ButtonLauncherForm）のライフサイクルを管理する。WinFormsのメッセージループを維持するために常駐フォームが必要であり、メインウィンドウ（MainForm）は表示/非表示を繰り返すため、この役割を分離している。
 
 ## 設定ファイル
 
@@ -132,8 +73,13 @@ Program.Main()
 
 <!-- textlint-enable -->
 
-コマンド実行とディレクトリ展開はSTAスレッドで行う（ShellExecuteExがSTA前提のため）。
-アイコン読込もShell APIのSTA制約があるため、`Task.Run`（ThreadPool/MTA）は使用不可。
+### STA制約
+
+コマンド実行・ディレクトリ展開・アイコン読込はすべてSTAスレッドで行う。ShellExecuteExやSHGetFileInfo等のShell APIはCOMのSTA（Single-Threaded Apartment）を前提としており、`Task.Run`（ThreadPool/MTA）では正常に動作しない。そのため専用のSTAスレッドを生成して実行する。
+
+### アイコンローダーの並行度制限
+
+AsyncIconLoaderのワーカー数は8本固定。SHGetFileInfo（Shell API）は高並行度で不安定になるため、ProcessorCount等の動的な値は使用せず固定値とする。ButtonLauncherFormのHandle作成は、アイコン非同期読み込み（BuildTabs→iconLoader.Load）より前に行うこと。Handle未作成時にIconLoadedイベントが到着すると、BeginInvokeの失敗によりアイコンは破棄される。
 
 ## フック管理
 
@@ -141,4 +87,4 @@ Program.Main()
 
 - **ホットキー検知**: `SetWindowsHookEx`で登録したキーボードフックのコールバックで、KEYDOWN時に仮想キーコードと修飾キーを照合。一致したらKEYUPを抑制しつつ、`BeginInvoke`でUIスレッドへShowHideメッセージを送信
 - **ボタンランチャー起動**: マウスフックでボタン押下状態（`lbuttonDown`/`rbuttonDown`）を追跡し、設定されたトリガー（左右同時押し等）を検知。トリガー発動時はUPイベントを抑制して誤操作を防止
-- **UP抑制フラグ**: `suppressNextLButtonUp`/`suppressNextRButtonUp`/`suppressKeyUpVK`で、トリガー発動後の不要なUPイベントをフック内で消費する
+- **UP抑制フラグ**: `suppressNextLButtonUp`/`suppressNextRButtonUp`/`suppressKeyUpVK`で、トリガー発動後の不要なUPイベントをフック内で消費する。フックコールバック内でUPを消費しないと、トリガー操作の直後にボタンクリックやキー入力として誤検知される
