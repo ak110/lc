@@ -107,8 +107,18 @@ public sealed class AsyncIconLoader : IDisposable
 
     static System.Drawing.Icon? DefaultExtractIcon(string fileName, bool small)
     {
-        return IconExtractor.ExtractAssociatedIcon(
-            PathHelper.PathNormalize(fileName), small);
+        string normalized = PathHelper.PathNormalize(fileName);
+
+        // シェル名前空間パス（"::{CLSID}"や"shell:xxx"形式）はPIDL経由で取得
+        if (normalized.StartsWith("::", StringComparison.Ordinal)
+            || normalized.StartsWith("shell:", StringComparison.OrdinalIgnoreCase))
+        {
+            return IconExtractor.ExtractIconByShellNamespace(normalized, small);
+        }
+
+        // bare name（"control"等）をパス解決してからアイコンを取得する
+        string resolved = FileHelper.ResolveExecutable(normalized);
+        return IconExtractor.ExtractAssociatedIcon(resolved, small);
     }
 
     /// <summary>

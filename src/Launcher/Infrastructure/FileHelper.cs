@@ -1,4 +1,6 @@
 using System.Security.AccessControl;
+using System.Text;
+using Microsoft.Win32;
 
 namespace Launcher.Infrastructure;
 
@@ -7,6 +9,144 @@ namespace Launcher.Infrastructure;
 /// </summary>
 public static class FileHelper
 {
+    /// <summary>
+    /// bare name（パス区切りを含まない名前）をアイコン取得用にパス解決する。
+    /// ShellExecuteExの解決順（App Paths → PATH検索）に合わせる。
+    /// </summary>
+    /// <param name="path">ファイル名またはパス</param>
+    /// <returns>解決されたフルパス、または元のpath</returns>
+    public static string ResolveExecutable(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return path ?? string.Empty;
+        }
+
+        // パス区切りを含む場合、またはシェル特殊パス（"::{CLSID}"や"shell:xxx"）は解決不要
+        if (path.Contains('\\') || path.Contains('/')
+            || path.StartsWith("::", StringComparison.Ordinal)
+            || path.StartsWith("shell:", StringComparison.OrdinalIgnoreCase))
+        {
+            return path;
+        }
+
+        // App Paths レジストリ検索（ShellExecuteExと同じく最優先）
+        string? resolved = SearchAppPaths(path);
+        if (resolved != null)
+        {
+            return resolved;
+        }
+
+        // SearchPath APIによるPATH検索
+        resolved = SearchPathApi(path);
+        if (resolved != null)
+        {
+            return resolved;
+        }
+
+        return path;
+    }
+
+    /// <summary>
+    /// App Pathsレジストリからbare nameを検索する。HKCU → HKLMの順。
+    /// </summary>
+    static string? SearchAppPaths(string name)
+    {
+        // 名前そのもの + PATHEXTの各拡張子を付けた名前を試す
+        var namesToTry = new List<string> { name };
+        if (!Path.HasExtension(name))
+        {
+            foreach (string ext in GetPathExtExtensions())
+            {
+                namesToTry.Add(name + ext);
+            }
+        }
+
+        RegistryKey[] roots = [Registry.CurrentUser, Registry.LocalMachine];
+        foreach (string keyName in namesToTry)
+        {
+            foreach (var root in roots)
+            {
+                string subKeyPath = $@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\{keyName}";
+                using var key = root.OpenSubKey(subKeyPath);
+                if (key?.GetValue(null) is string value && !string.IsNullOrEmpty(value))
+                {
+                    // 引用符を除去し、環境変数を展開
+                    string expanded = Environment.ExpandEnvironmentVariables(
+                        value.Trim('"'));
+                    if (File.Exists(expanded))
+                    {
+                        return expanded;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// SearchPath APIでPATH上のファイルを検索する。
+    /// </summary>
+    static string? SearchPathApi(string name)
+    {
+        if (Path.HasExtension(name))
+        {
+            return SearchPathSingle(name, null);
+        }
+
+        // 拡張子なしの場合、PATHEXTの各拡張子で試す
+        foreach (string ext in GetPathExtExtensions())
+        {
+            string? found = SearchPathSingle(name, ext);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// SearchPath API単発呼び出し
+    /// </summary>
+    static string? SearchPathSingle(string fileName, string? extension)
+    {
+        var buffer = new StringBuilder(260);
+        int result = Win32.NativeMethods.SearchPath(
+            null, fileName, extension, buffer.Capacity, buffer, out _);
+        if (result > 0 && result <= buffer.Capacity)
+        {
+            return buffer.ToString();
+        }
+        // バッファ不足の場合はリトライ
+        if (result > buffer.Capacity)
+        {
+            buffer.EnsureCapacity(result);
+            result = Win32.NativeMethods.SearchPath(
+                null, fileName, extension, buffer.Capacity, buffer, out _);
+            if (result > 0 && result <= buffer.Capacity)
+            {
+                return buffer.ToString();
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// PATHEXT環境変数から拡張子リストを取得する
+    /// </summary>
+    static string[] GetPathExtExtensions()
+    {
+        string? pathExt = Environment.GetEnvironmentVariable("PATHEXT");
+        if (string.IsNullOrEmpty(pathExt))
+        {
+            return [".COM", ".EXE", ".BAT", ".CMD"];
+        }
+        return pathExt.Split(';', StringSplitOptions.RemoveEmptyEntries);
+    }
+
     /// <summary>
     /// 空なディレクトリならtrueを返す
     /// </summary>
