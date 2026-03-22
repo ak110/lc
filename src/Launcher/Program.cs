@@ -61,6 +61,10 @@ static class Program
         using var app = new AppBase.Initializer();
         using var singleInstance = new SingleInstance();
 
+        // WinExeでもコマンドプロンプトからの実行時に結果を表示するため、親コンソールにアタッチ
+        if (args.Length > 0)
+            NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
+
         bool exit = false;
         // 引数の処理
         for (int i = 0; i < args.Length; i++)
@@ -74,11 +78,14 @@ static class Program
                     Data data = Data.Deserialize();
                     WindowHelper window =
                         new WindowHelper(checked((IntPtr)data.WindowHandle));
-                    window.PostMessage(WM.WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+                    if (window.PostMessage(WM.WM_CLOSE, IntPtr.Zero, IntPtr.Zero))
+                        Console.WriteLine("/close: 終了メッセージを送信しました。");
+                    else
+                        Console.Error.WriteLine("/close: メッセージ送信に失敗しました。");
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"IPC送信失敗 (/close): {ex.Message}");
+                    Console.Error.WriteLine($"/close: {ex.Message}");
                 }
 #pragma warning restore CA1031
                 return;
@@ -91,11 +98,14 @@ static class Program
                     Data data = Data.Deserialize();
                     WindowHelper window =
                         new WindowHelper(checked((IntPtr)data.WindowHandle));
-                    window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RESTART);
+                    if (window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RESTART))
+                        Console.WriteLine("/restart: 再起動メッセージを送信しました。");
+                    else
+                        Console.Error.WriteLine("/restart: メッセージ送信に失敗しました。");
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"IPC送信失敗 (/restart): {ex.Message}");
+                    Console.Error.WriteLine($"/restart: {ex.Message}");
                 }
 #pragma warning restore CA1031
                 return;
@@ -117,11 +127,14 @@ static class Program
                         Data data = Data.Deserialize();
                         WindowHelper window =
                             new WindowHelper(checked((IntPtr)data.WindowHandle));
-                        window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RELOAD);
+                        if (window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RELOAD))
+                            Console.WriteLine("コマンド登録: リロードメッセージを送信しました。");
+                        else
+                            Console.Error.WriteLine("コマンド登録: リロードメッセージの送信に失敗しました。");
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"IPC送信失敗 (reload): {ex.Message}");
+                        Console.Error.WriteLine($"コマンド登録: リロード通知失敗: {ex.Message}");
                     }
 #pragma warning restore CA1031
                 }

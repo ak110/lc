@@ -35,6 +35,15 @@ internal static class NativeMethods
     public static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
 
     /// <summary>
+    /// 親プロセスのコンソールにアタッチする（WinExeアプリからの標準出力に必要）
+    /// </summary>
+    [DllImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool AttachConsole(int dwProcessId);
+
+    public const int ATTACH_PARENT_PROCESS = -1;
+
+    /// <summary>
     /// PATH環境変数に沿ってファイルを検索する
     /// </summary>
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
