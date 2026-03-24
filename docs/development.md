@@ -14,6 +14,7 @@ mise install && mise run setup
 
 これだけで .NET SDK、Node.js、pnpmのインストールと依存パッケージのセットアップが完了する。
 バージョンは `mise.toml` で一元管理される。
+また、gitのpre-commitフックが設定され、コミット時に自動的に `mise run test` が実行される。
 
 ## miseタスク
 

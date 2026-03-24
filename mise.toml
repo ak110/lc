@@ -37,7 +37,7 @@ run = [
 ]
 
 [tasks.setup]
-run = ["dotnet tool restore", "pnpm install"]
+run = ["dotnet tool restore", "pnpm install", "git config core.hooksPath .githooks"]
 
 [tasks.run]
 run = "dotnet run --project src/Launcher/Launcher.csproj"
