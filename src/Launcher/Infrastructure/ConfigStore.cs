@@ -65,8 +65,43 @@ public class ConfigStore
             s.Serialize(stream, this);
         }
         // 同一ボリューム上のMoveは原子的なリネーム(MoveFileEx)になるため、
-        // 書き込み途中のクラッシュでファイルが破損するリスクを回避できる
-        File.Move(tmpFileName, fileName, true);
+        // 書き込み途中のクラッシュでファイルが破損するリスクを回避できる。
+        // 外部プロセス(アンチウイルス等)による一時的なファイルロックに備えてリトライする。
+        MoveFileWithRetry(tmpFileName, fileName);
+    }
+
+    /// <summary>
+    /// リトライ付きファイル移動。最終失敗時はtmpファイルを削除してから例外を伝播する。
+    /// </summary>
+    static void MoveFileWithRetry(string source, string dest)
+    {
+        const int maxRetries = 2;
+        const int retryDelayMs = 50;
+        for (int i = 0; ; i++)
+        {
+            try
+            {
+                File.Move(source, dest, true);
+                return;
+            }
+            catch (Exception ex) when (i < maxRetries && (ex is IOException || ex is UnauthorizedAccessException))
+            {
+                Thread.Sleep(retryDelayMs);
+            }
+            catch
+            {
+                // 最終失敗時はtmpファイルを残さない
+                CleanupTempFile(source);
+                throw;
+            }
+        }
+    }
+
+    static void CleanupTempFile(string path)
+    {
+        try { File.Delete(path); }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     /// <summary>

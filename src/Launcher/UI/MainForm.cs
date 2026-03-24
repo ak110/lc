@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using Launcher.Core;
 using Launcher.Win32;
 
@@ -16,6 +17,9 @@ public partial class MainForm : Form
 
     // ボタン型ランチャーのアイコン読み込みを優先するため低優先度で動作
     AsyncIconLoader iconLoader = new(threadPriority: ThreadPriority.BelowNormal);
+
+    // LocationChanged/SizeChangedの高頻度保存を抑制するデバウンスタイマー
+    System.Windows.Forms.Timer saveConfigTimer;
 
     public MainForm(DummyForm dummyForm, ContextMenuStrip mainMenu)
     {
@@ -37,6 +41,16 @@ public partial class MainForm : Form
         listView1.GetType().GetProperty("DoubleBuffered",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
             ?.SetValue(listView1, true);
+
+        // LocationChanged/SizeChangedのデバウンス保存タイマー
+        saveConfigTimer = new System.Windows.Forms.Timer { Interval = 200 };
+        saveConfigTimer.Tick += (s, e) =>
+        {
+            saveConfigTimer.Stop();
+            ownerForm.Config.Serialize();
+        };
+        components ??= new Container();
+        components.Add(saveConfigTimer);
 
         // ウィンドウスタイルとか
         Location = ownerForm.Config.WindowPos;
@@ -84,8 +98,30 @@ public partial class MainForm : Form
             }
         }
 
+        // 遅延保存が残っていたら即フラッシュ
+        FlushPendingSave();
+
         iconLoader.IconLoaded -= iconLoader_IconLoaded;
         iconLoader.Dispose();
+    }
+
+    /// <summary>
+    /// デバウンスタイマーによる遅延保存が残っていたら即座に保存する。
+    /// </summary>
+    private void FlushPendingSave()
+    {
+        if (saveConfigTimer.Enabled)
+        {
+            saveConfigTimer.Stop();
+            try
+            {
+                ownerForm.Config.Serialize();
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                Debug.WriteLine($"Config保存失敗（終了時）: {ex.Message}");
+            }
+        }
     }
 
     /// <summary>
@@ -170,7 +206,8 @@ public partial class MainForm : Form
         if (Visible && WindowState == FormWindowState.Normal)
         {
             ownerForm.Config.WindowPos = Location;
-            ownerForm.Config.Serialize();
+            saveConfigTimer.Stop();
+            saveConfigTimer.Start();
         }
     }
 
@@ -182,7 +219,8 @@ public partial class MainForm : Form
         if (Visible && WindowState == FormWindowState.Normal)
         {
             ownerForm.Config.WindowSize = Size;
-            ownerForm.Config.Serialize();
+            saveConfigTimer.Stop();
+            saveConfigTimer.Start();
         }
     }
 
