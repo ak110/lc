@@ -7,6 +7,29 @@ namespace Launcher.Tests;
 
 public sealed class ButtonLauncherPresenterTests
 {
+    #region CalculateWindowSize
+
+    [Fact]
+    public void CalculateWindowSize_基本的な計算()
+    {
+        // 7列7行、ボタン64x64、ツールバー25px、タブヘッダー21px
+        var result = ButtonLauncherPresenter.CalculateWindowSize(7, 7, 64, 64, 25, 21);
+
+        result.Width.Should().Be(7 * 64);   // 448
+        result.Height.Should().Be(7 * 64 + 25 + 21); // 494
+    }
+
+    [Fact]
+    public void CalculateWindowSize_1x1の最小構成()
+    {
+        var result = ButtonLauncherPresenter.CalculateWindowSize(1, 1, 64, 64, 25, 21);
+
+        result.Width.Should().Be(64);
+        result.Height.Should().Be(64 + 25 + 21); // 110
+    }
+
+    #endregion
+
     #region CalculateGridSize
 
     [Fact]

@@ -12,11 +12,16 @@ public partial class ConfigForm : Form
         get { return config; }
     }
 
-    public ConfigForm(Config v)
+    public int ButtonColumns { get; private set; }
+    public int ButtonRows { get; private set; }
+
+    public ConfigForm(Config v, ButtonLauncherData btnData)
     {
         InitializeComponent();
 
         config = v.Clone();
+        ButtonColumns = btnData.Columns;
+        ButtonRows = btnData.Rows;
 
         comboBox1.Items.AddRange(
             KeyTable.GetKeyNames(false));
@@ -49,6 +54,8 @@ public partial class ConfigForm : Form
         checkBox11.Checked = config.HideOnRun;
         comboBox2.SelectedIndex = (int)config.CloseButton;
         comboBox3.SelectedIndex = (int)config.ButtonLauncherActivation;
+        numericUpDown1.Value = ButtonColumns;
+        numericUpDown2.Value = ButtonRows;
     }
 
     private void buttonOk_Click(object? sender, EventArgs e)
@@ -70,6 +77,8 @@ public partial class ConfigForm : Form
         config.HideOnRun = checkBox11.Checked;
         config.CloseButton = (CloseButtonBehavior)comboBox2.SelectedIndex;
         config.ButtonLauncherActivation = (ButtonLauncherActivation)comboBox3.SelectedIndex;
+        ButtonColumns = (int)numericUpDown1.Value;
+        ButtonRows = (int)numericUpDown2.Value;
     }
 
     /// <summary>

@@ -230,11 +230,22 @@ public partial class DummyForm : Form
     /// </summary>
     public void ShowConfigDialog()
     {
-        using var form = new ConfigForm(config);
+        using var form = new ConfigForm(config, ButtonLauncherData);
         if (form.ShowDialog(GetVisibleOwner()) == DialogResult.OK)
         {
             config = form.Config;
             config.Serialize();
+
+            // ボタンランチャーのColumns/Rows変更を検出して反映
+            bool gridChanged = form.ButtonColumns != ButtonLauncherData.Columns
+                || form.ButtonRows != ButtonLauncherData.Rows;
+            if (gridChanged)
+            {
+                ButtonLauncherData.Columns = form.ButtonColumns;
+                ButtonLauncherData.Rows = form.ButtonRows;
+                ButtonLauncherData.Serialize();
+                buttonLauncherForm?.ApplyGridSize();
+            }
 
             ApplyConfig();
             if (!mainForm.IsDisposed)

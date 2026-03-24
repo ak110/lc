@@ -55,19 +55,25 @@ namespace Launcher.UI {
             this.groupBox6 = new System.Windows.Forms.GroupBox();
             this.comboBox3 = new System.Windows.Forms.ComboBox();
             this.label5 = new System.Windows.Forms.Label();
+            this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
+            this.label6 = new System.Windows.Forms.Label();
+            this.numericUpDown2 = new System.Windows.Forms.NumericUpDown();
+            this.label7 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.groupBox5.SuspendLayout();
             this.groupBox6.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).BeginInit();
             this.SuspendLayout();
             //
             // buttonOk
             //
             this.buttonOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonOk.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.buttonOk.Location = new System.Drawing.Point(286, 440);
+            this.buttonOk.Location = new System.Drawing.Point(286, 468);
             this.buttonOk.Name = "buttonOk";
             this.buttonOk.Size = new System.Drawing.Size(75, 23);
             this.buttonOk.TabIndex = 0;
@@ -79,7 +85,7 @@ namespace Launcher.UI {
             //
             this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.buttonCancel.Location = new System.Drawing.Point(366, 440);
+            this.buttonCancel.Location = new System.Drawing.Point(366, 468);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 1;
@@ -378,9 +384,13 @@ namespace Launcher.UI {
             //
             this.groupBox6.Controls.Add(this.comboBox3);
             this.groupBox6.Controls.Add(this.label5);
+            this.groupBox6.Controls.Add(this.numericUpDown1);
+            this.groupBox6.Controls.Add(this.label6);
+            this.groupBox6.Controls.Add(this.numericUpDown2);
+            this.groupBox6.Controls.Add(this.label7);
             this.groupBox6.Location = new System.Drawing.Point(8, 384);
             this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Size = new System.Drawing.Size(440, 52);
+            this.groupBox6.Size = new System.Drawing.Size(440, 80);
             this.groupBox6.TabIndex = 8;
             this.groupBox6.TabStop = false;
             this.groupBox6.Text = "ボタンランチャー";
@@ -407,13 +417,51 @@ namespace Launcher.UI {
             this.label5.TabIndex = 0;
             this.label5.Text = "起動方法";
             //
+            // label6
+            //
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(14, 52);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(29, 12);
+            this.label6.TabIndex = 2;
+            this.label6.Text = "列数";
+            //
+            // numericUpDown1
+            //
+            this.numericUpDown1.Location = new System.Drawing.Point(80, 48);
+            this.numericUpDown1.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numericUpDown1.Maximum = new decimal(new int[] { 30, 0, 0, 0 });
+            this.numericUpDown1.Name = "numericUpDown1";
+            this.numericUpDown1.Size = new System.Drawing.Size(60, 19);
+            this.numericUpDown1.TabIndex = 3;
+            this.numericUpDown1.Value = new decimal(new int[] { 7, 0, 0, 0 });
+            //
+            // label7
+            //
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(160, 52);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(29, 12);
+            this.label7.TabIndex = 4;
+            this.label7.Text = "行数";
+            //
+            // numericUpDown2
+            //
+            this.numericUpDown2.Location = new System.Drawing.Point(200, 48);
+            this.numericUpDown2.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            this.numericUpDown2.Maximum = new decimal(new int[] { 30, 0, 0, 0 });
+            this.numericUpDown2.Name = "numericUpDown2";
+            this.numericUpDown2.Size = new System.Drawing.Size(60, 19);
+            this.numericUpDown2.TabIndex = 5;
+            this.numericUpDown2.Value = new decimal(new int[] { 7, 0, 0, 0 });
+            //
             // ConfigForm
             //
             this.AcceptButton = this.buttonOk;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.buttonCancel;
-            this.ClientSize = new System.Drawing.Size(458, 470);
+            this.ClientSize = new System.Drawing.Size(458, 498);
             this.Controls.Add(this.groupBox6);
             this.Controls.Add(this.groupBox5);
             this.Controls.Add(this.groupBox4);
@@ -438,6 +486,8 @@ namespace Launcher.UI {
             this.groupBox5.ResumeLayout(false);
             this.groupBox6.ResumeLayout(false);
             this.groupBox6.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).EndInit();
             this.ResumeLayout(false);
 
 		}
@@ -475,5 +525,9 @@ namespace Launcher.UI {
         private System.Windows.Forms.GroupBox groupBox6;
         private System.Windows.Forms.ComboBox comboBox3;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.NumericUpDown numericUpDown1;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.NumericUpDown numericUpDown2;
+        private System.Windows.Forms.Label label7;
 	}
 }

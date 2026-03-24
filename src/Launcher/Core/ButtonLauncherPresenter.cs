@@ -31,6 +31,19 @@ public static class ButtonLauncherPresenter
     }
 
     /// <summary>
+    /// 列数・行数からウィンドウのクライアントサイズを計算する。
+    /// </summary>
+    public static Size CalculateWindowSize(
+        int columns, int rows,
+        int buttonWidth, int buttonHeight,
+        int toolStripHeight, int tabHeaderHeight)
+    {
+        int width = columns * buttonWidth;
+        int height = rows * buttonHeight + toolStripHeight + tabHeaderHeight;
+        return new Size(width, height);
+    }
+
+    /// <summary>
     /// デフォルトタブを設定する。
     /// </summary>
     public static void SetDefaultTab(ButtonLauncherData data, int tabIndex)

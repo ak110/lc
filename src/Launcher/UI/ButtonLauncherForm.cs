@@ -165,7 +165,7 @@ public partial class ButtonLauncherForm : Form
         // タブがなければデフォルト1つ作る
         if (Data.Tabs.Count == 0)
         {
-            Data.Tabs.Add(new ButtonTab { Name = "Tab1" });
+            Data.Tabs.Add(new ButtonTab { Name = "Default" });
         }
 
         foreach (var tab in Data.Tabs)
@@ -315,11 +315,11 @@ public partial class ButtonLauncherForm : Form
     {
         try
         {
-            // ウィンドウサイズの復元
-            if (Data.WindowSize != Size.Empty)
-            {
-                ClientSize = Data.WindowSize;
-            }
+            // Columns/Rowsからウィンドウサイズを計算
+            ClientSize = ButtonLauncherPresenter.CalculateWindowSize(
+                Data.Columns, Data.Rows,
+                ButtonWidth, ButtonHeight,
+                toolStrip1.Height, tabControl1.ItemSize.Height);
 
             // マウスカーソル中心に配置
             var cursor = Cursor.Position;
@@ -398,47 +398,8 @@ public partial class ButtonLauncherForm : Form
 
     private void ApplyLockState()
     {
-        if (Data.IsLocked)
-        {
-            FormBorderStyle = FormBorderStyle.Sizable;
-            lockButton.Text = "Locked";
-        }
-        else
-        {
-            FormBorderStyle = FormBorderStyle.FixedToolWindow;
-            lockButton.Text = "Lock";
-        }
+        lockButton.Text = Data.IsLocked ? "Locked" : "Lock";
         TopMost = true;
-    }
-
-    protected override void OnResizeEnd(EventArgs e)
-    {
-        base.OnResizeEnd(e);
-        if (!Data.IsLocked) return;
-
-        // リサイズ後にグリッドサイズを再計算
-        var tabPage = tabControl1.SelectedTab;
-        if (tabPage == null) return;
-
-        // 現在のセルサイズからColumns/Rowsを再計算
-        var grid = ButtonLauncherPresenter.CalculateGridSize(
-            ClientSize.Width, ClientSize.Height,
-            toolStrip1.Height, tabControl1.ItemSize.Height,
-            ButtonWidth, ButtonHeight);
-        int newCols = grid.Columns;
-        int newRows = grid.Rows;
-
-        if (newCols != Data.Columns || newRows != Data.Rows)
-        {
-            Data.Columns = newCols;
-            Data.Rows = newRows;
-            RebuildCurrentTab();
-            SaveData();
-        }
-
-        Data.WindowSize = ClientSize;
-        Data.WindowPos = Location;
-        SaveData();
     }
 
     #endregion
@@ -932,6 +893,18 @@ public partial class ButtonLauncherForm : Form
     #endregion
 
     #region ヘルパー
+
+    /// <summary>
+    /// グリッドサイズ変更を適用（ウィンドウサイズ再計算 + タブ再構築）
+    /// </summary>
+    public void ApplyGridSize()
+    {
+        ClientSize = ButtonLauncherPresenter.CalculateWindowSize(
+            Data.Columns, Data.Rows,
+            ButtonWidth, ButtonHeight,
+            toolStrip1.Height, tabControl1.ItemSize.Height);
+        BuildTabs();
+    }
 
     private ButtonTab? GetCurrentTabData()
     {
