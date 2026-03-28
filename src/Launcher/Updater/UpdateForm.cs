@@ -1,10 +1,8 @@
-using System.Windows.Forms;
-
 namespace Launcher.Updater;
 
 /// <summary>
 /// 更新通知ダイアログ。
-/// 「更新する」ボタン押下後はフォームを閉じずに進捗を表示し、更新完了後にApplication.Exit()する。
+/// 「更新する」ボタン押下後はフォームを閉じずに進捗を表示し、バッチ起動後にプロセスを終了する。
 /// </summary>
 public sealed class UpdateForm : Form
 {
@@ -23,7 +21,6 @@ public sealed class UpdateForm : Form
 
     private async void buttonUpdate_Click(object? sender, EventArgs e)
     {
-        // ボタンを無効化してフォームを閉じられないようにする
         buttonUpdate.Enabled = false;
         buttonLater.Enabled = false;
         ControlBox = false;
@@ -38,17 +35,20 @@ public sealed class UpdateForm : Form
                 }
             });
             await UpdatePerformer.PerformUpdateAsync(_release, progress);
-            // バッチが起動された。フォームを閉じてApplication.Exit()を呼び出し側に任せる
-            DialogResult = DialogResult.OK;
+            // バッチが起動された。プロセスを即座に終了してバッチに再起動を任せる。
+            // Application.Exit()ではなくEnvironment.Exit()を使う。
+            // Application.Exit()はモーダルダイアログ内から呼ぶとハングする場合がある。
+            Environment.Exit(0);
         }
-        catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or System.IO.IOException or InvalidOperationException)
+#pragma warning disable CA1031 // 更新処理は様々な例外が発生しうる
+        catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"更新失敗: {ex.Message}");
             MessageBox.Show(this, $"更新に失敗しました: {ex.Message}", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
-            // エラー後はフォームを閉じる
             DialogResult = DialogResult.Cancel;
         }
+#pragma warning restore CA1031
     }
 
     private void InitializeComponents()

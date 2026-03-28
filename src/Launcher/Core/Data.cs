@@ -1,15 +1,12 @@
 using System.IO;
 using System.Xml;
 using Launcher.Infrastructure;
-using Launcher.Updater;
 
 namespace Launcher.Core;
 
 public sealed class Data : ConfigStore
 {
     public long WindowHandle { get; set; }
-
-    public UpdateRecord UpdateRecord { get; set; } = new UpdateRecord();
 
     /// <summary>スケジューラーの最終チェック時刻 (見逃し検出用)</summary>
     public DateTime SchedulerLastCheckTime { get; set; }

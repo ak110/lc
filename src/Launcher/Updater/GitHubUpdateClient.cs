@@ -33,29 +33,9 @@ public static class GitHubUpdateClient
     /// <summary>
     /// 更新が利用可能か判定
     /// </summary>
-    public static bool IsUpdateAvailable(GitHubRelease? release, UpdateRecord record)
+    public static bool IsUpdateAvailable(GitHubRelease? release)
     {
         if (release == null) return false;
-        string currentVersion = Infrastructure.AppVersion.TagName;
-        // スキップ済みバージョンなら無視
-        if (release.TagName == record.SkippedVersion) return false;
-        // 既知のバージョンと同じなら無視
-        if (release.TagName == currentVersion) return false;
-        return release.TagName != record.LastKnownVersion || record.LastKnownVersion != currentVersion;
-    }
-
-    /// <summary>
-    /// ブラウザでリリースページを開く
-    /// </summary>
-    public static void OpenReleasePage(GitHubRelease release)
-    {
-        if (!string.IsNullOrEmpty(release?.HtmlUrl))
-        {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = release.HtmlUrl,
-                UseShellExecute = true,
-            });
-        }
+        return release.TagName != Infrastructure.AppVersion.TagName;
     }
 }

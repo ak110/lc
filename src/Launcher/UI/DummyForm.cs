@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net.Http;
 using Launcher.Core;
 using Launcher.Infrastructure;
 using Launcher.Updater;
@@ -285,59 +284,24 @@ public partial class DummyForm : Form
         try
         {
             var release = await GitHubUpdateClient.GetLatestReleaseAsync();
-            if (release == null)
+            if (!GitHubUpdateClient.IsUpdateAvailable(release))
             {
-                MessageBox.Show("リリース情報を取得できませんでした。", AppVersion.Title,
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("現在のバージョンは最新です。", AppVersion.Title,
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            data.UpdateRecord.LastChecked = DateTime.Now;
-
-            if (GitHubUpdateClient.IsUpdateAvailable(release, data.UpdateRecord))
-            {
-                data.UpdateRecord.LastKnownVersion = release.TagName;
-                data.Serialize();
-                ShowUpdateForm(release);
-            }
-            else
-            {
-                data.Serialize();
-                MessageBox.Show("現在のバージョンは最新です。", AppVersion.Title,
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
+            using var form = new UpdateForm(release!);
+            form.ShowDialog(GetVisibleOwner());
+            // UpdateForm内でバッチ起動+Environment.Exit()が呼ばれるため、ここに到達するのはキャンセル時のみ
         }
-        catch (HttpRequestException ex)
+#pragma warning disable CA1031 // ネットワーク更新は様々な例外が発生しうるため包括的にキャッチ
+        catch (Exception ex)
         {
             MessageBox.Show($"更新チェックに失敗しました。\n{ex.Message}", AppVersion.Title,
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
-        catch (TaskCanceledException ex)
-        {
-            MessageBox.Show($"更新チェックに失敗しました。\n{ex.Message}", AppVersion.Title,
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-        catch (IOException ex)
-        {
-            MessageBox.Show($"更新チェックに失敗しました。\n{ex.Message}", AppVersion.Title,
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-    }
-
-    /// <summary>
-    /// UpdateFormを表示し、更新実行を処理する
-    /// </summary>
-    /// <summary>
-    /// UpdateFormを表示する。更新実行はUpdateForm内で完結する。
-    /// </summary>
-    private void ShowUpdateForm(GitHubRelease release)
-    {
-        using var form = new UpdateForm(release);
-        if (form.ShowDialog(GetVisibleOwner()) == DialogResult.OK)
-        {
-            // バッチスクリプトが起動済み。アプリを終了してバッチに再起動を任せる。
-            Application.Exit();
-        }
+#pragma warning restore CA1031
     }
 
     private void スケジューラー設定SToolStripMenuItem_Click(object sender, EventArgs e)
