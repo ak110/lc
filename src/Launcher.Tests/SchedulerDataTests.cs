@@ -56,7 +56,6 @@ public sealed class SchedulerDataTests
         var deserialized = DeserializeFromString<SchedulerData>(xml);
 
         deserialized.Items.Should().BeEmpty();
-        deserialized.LastCheckTime.Should().Be(DateTime.MinValue);
     }
 
     [Fact]
@@ -64,7 +63,6 @@ public sealed class SchedulerDataTests
     {
         var original = new SchedulerData
         {
-            LastCheckTime = new DateTime(2025, 6, 15, 12, 30, 0),
             Items =
             [
                 new SchedulerItem
@@ -121,7 +119,6 @@ public sealed class SchedulerDataTests
         var xml = SerializeToString(original);
         var deserialized = DeserializeFromString<SchedulerData>(xml);
 
-        deserialized.LastCheckTime.Should().Be(new DateTime(2025, 6, 15, 12, 30, 0));
         deserialized.Items.Should().HaveCount(1);
 
         var item = deserialized.Items[0];

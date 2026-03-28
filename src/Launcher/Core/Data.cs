@@ -11,6 +11,9 @@ public sealed class Data : ConfigStore
 
     public UpdateRecord UpdateRecord { get; set; } = new UpdateRecord();
 
+    /// <summary>スケジューラの最終チェック時刻 (見逃し検出用)</summary>
+    public DateTime SchedulerLastCheckTime { get; set; }
+
     #region Serialize/Deserialize
 
     /// <summary>

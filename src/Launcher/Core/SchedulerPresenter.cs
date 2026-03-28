@@ -11,12 +11,12 @@ public static class SchedulerPresenter
     /// <summary>
     /// 実行対象のアイテムを取得する。
     /// </summary>
-    public static List<SchedulerItem> GetItemsToRun(SchedulerData data, DateTime now)
+    public static List<SchedulerItem> GetItemsToRun(SchedulerData data, DateTime lastCheckTime, DateTime now)
     {
         var result = new List<SchedulerItem>();
         foreach (var item in data.Items)
         {
-            if (ShouldItemRun(item, now, data.LastCheckTime))
+            if (ShouldItemRun(item, now, lastCheckTime))
                 result.Add(item);
         }
         return result;

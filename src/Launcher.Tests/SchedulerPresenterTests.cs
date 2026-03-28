@@ -237,9 +237,9 @@ public sealed class SchedulerPresenterTests
     [Fact]
     public void GetItemsToRun_マッチするアイテムのみ返す()
     {
+        var lastCheckTime = Monday0900;
         var data = new SchedulerData
         {
-            LastCheckTime = Monday0900,
             Items =
             [
                 new SchedulerItem
@@ -264,7 +264,7 @@ public sealed class SchedulerPresenterTests
         };
 
         var now = Monday0900.AddHours(1);
-        var result = SchedulerPresenter.GetItemsToRun(data, now);
+        var result = SchedulerPresenter.GetItemsToRun(data, lastCheckTime, now);
 
         result.Should().HaveCount(1);
         result[0].Name.Should().Be("マッチ");

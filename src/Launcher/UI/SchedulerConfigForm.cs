@@ -20,7 +20,6 @@ public partial class SchedulerConfigForm : Form
         // ディープコピーしてキャンセル対応
         data = new SchedulerData
         {
-            LastCheckTime = original.LastCheckTime,
             Items = original.Items.Select(i => i.Clone()).ToList(),
         };
         FormsHelper.SetArray(listBoxItems, data.Items);

@@ -231,9 +231,6 @@ public sealed class SchedulerData : ConfigStore
 {
     public List<SchedulerItem> Items { get; set; } = [];
 
-    /// <summary>最終チェック時刻 (見逃し検出用)</summary>
-    public DateTime LastCheckTime { get; set; }
-
     public void Serialize()
     {
         Serialize(".sch.cfg");

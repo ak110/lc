@@ -392,12 +392,12 @@ public partial class DummyForm : Form
         if (schedulerRunning) return; // 前回のタスクがまだ実行中
 
         var now = DateTime.Now;
-        var itemsToRun = SchedulerPresenter.GetItemsToRun(schedulerData, now);
+        var itemsToRun = SchedulerPresenter.GetItemsToRun(schedulerData, data.SchedulerLastCheckTime, now);
         if (itemsToRun.Count == 0)
         {
             // 実行対象なしでもLastCheckTimeを前進 (正常動作時の二重実行防止)
-            schedulerData.LastCheckTime = now;
-            schedulerData.Serialize();
+            data.SchedulerLastCheckTime = now;
+            data.Serialize();
             return;
         }
 
@@ -410,8 +410,8 @@ public partial class DummyForm : Form
         // ExecuteItemTasksはバックグラウンドスレッドを起動して即座に返る。
         // 厳密な完了待ちはせず、次のTickでisRunningガードを外す簡易方式。
         // (元のすけじゅらと同等の挙動)
-        schedulerData.LastCheckTime = now;
-        schedulerData.Serialize();
+        data.SchedulerLastCheckTime = now;
+        data.Serialize();
         schedulerRunning = false;
     }
 
