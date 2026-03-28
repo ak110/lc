@@ -298,7 +298,7 @@ public partial class DummyForm : Form
             {
                 data.UpdateRecord.LastKnownVersion = release.TagName;
                 data.Serialize();
-                await ShowUpdateFormAsync(release);
+                ShowUpdateForm(release);
             }
             else
             {
@@ -327,35 +327,13 @@ public partial class DummyForm : Form
     /// <summary>
     /// UpdateFormを表示し、更新実行を処理する
     /// </summary>
-    private async Task ShowUpdateFormAsync(GitHubRelease release)
+    /// <summary>
+    /// UpdateFormを表示する。更新実行はUpdateForm内で完結する。
+    /// </summary>
+    private void ShowUpdateForm(GitHubRelease release)
     {
         using var form = new UpdateForm(release);
-        var result = form.ShowDialog(GetVisibleOwner());
-        if (result == DialogResult.OK)
-        {
-            try
-            {
-                await form.PerformUpdateAsync();
-            }
-            catch (HttpRequestException ex)
-            {
-                Debug.WriteLine($"更新失敗: {ex.Message}");
-                MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            catch (IOException ex)
-            {
-                Debug.WriteLine($"更新失敗: {ex.Message}");
-                MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            catch (InvalidOperationException ex)
-            {
-                Debug.WriteLine($"更新失敗: {ex.Message}");
-                MessageBox.Show($"更新に失敗しました: {ex.Message}", "エラー",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
+        form.ShowDialog(GetVisibleOwner());
     }
 
     private void スケジューラー設定SToolStripMenuItem_Click(object sender, EventArgs e)

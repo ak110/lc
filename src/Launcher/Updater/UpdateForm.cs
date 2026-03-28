@@ -3,9 +3,10 @@ using System.Windows.Forms;
 namespace Launcher.Updater;
 
 /// <summary>
-/// 更新通知ダイアログ
+/// 更新通知ダイアログ。
+/// 「更新する」ボタン押下後はフォームを閉じずに進捗を表示し、更新完了後にApplication.Exit()する。
 /// </summary>
-public class UpdateForm : Form
+public sealed class UpdateForm : Form
 {
     private Label labelMessage = null!;
     private Button buttonUpdate = null!;
@@ -20,19 +21,32 @@ public class UpdateForm : Form
         labelMessage.Text = $"新しいバージョン {release.TagName} が利用可能です。\n\n{release.Name}";
     }
 
-    /// <summary>
-    /// 「更新する」ボタン押下時に更新を実行する
-    /// </summary>
-    public async Task PerformUpdateAsync()
+    private async void buttonUpdate_Click(object? sender, EventArgs e)
     {
-        var progress = new Progress<string>(message =>
+        // ボタンを無効化してフォームを閉じられないようにする
+        buttonUpdate.Enabled = false;
+        buttonLater.Enabled = false;
+        ControlBox = false;
+
+        try
         {
-            if (!IsDisposed)
+            var progress = new Progress<string>(message =>
             {
-                labelMessage.Text = message;
-            }
-        });
-        await UpdatePerformer.PerformUpdateAsync(_release, progress);
+                if (!IsDisposed)
+                {
+                    labelMessage.Text = message;
+                }
+            });
+            await UpdatePerformer.PerformUpdateAsync(_release, progress);
+        }
+        catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or System.IO.IOException or InvalidOperationException)
+        {
+            System.Diagnostics.Debug.WriteLine($"更新失敗: {ex.Message}");
+            MessageBox.Show(this, $"更新に失敗しました: {ex.Message}", "エラー",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            // エラー後はフォームを閉じる
+            DialogResult = DialogResult.Cancel;
+        }
     }
 
     private void InitializeComponents()
@@ -56,8 +70,8 @@ public class UpdateForm : Form
             Text = "更新する",
             Location = new System.Drawing.Point(12, 120),
             Size = new System.Drawing.Size(160, 30),
-            DialogResult = DialogResult.OK,
         };
+        buttonUpdate.Click += buttonUpdate_Click;
 
         buttonLater = new Button
         {
