@@ -33,7 +33,6 @@ namespace Launcher.UI {
 			this.メインウィンドウを表示非表示VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
 			this.実行ファイルのあるフォルダを開くMToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
 			this.ネットワーク更新NToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
 			this.再起動RToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -56,13 +55,12 @@ namespace Launcher.UI {
 			this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.設定CToolStripMenuItem,
             this.コマンドの管理LToolStripMenuItem,
+            this.メインウィンドウを表示非表示VToolStripMenuItem,
             this.toolStripSeparator4,
             this.スケジューラー設定SToolStripMenuItem,
             this.スケジューラー一時停止PToolStripMenuItem,
             this.toolStripSeparator1,
-            this.メインウィンドウを表示非表示VToolStripMenuItem,
             this.実行ファイルのあるフォルダを開くMToolStripMenuItem,
-            this.toolStripSeparator3,
             this.ネットワーク更新NToolStripMenuItem,
             this.toolStripSeparator2,
             this.再起動RToolStripMenuItem,
@@ -127,11 +125,6 @@ namespace Launcher.UI {
 			this.実行ファイルのあるフォルダを開くMToolStripMenuItem.Text = "実行ファイルのあるフォルダを開く(&M)";
 			this.実行ファイルのあるフォルダを開くMToolStripMenuItem.Click += new System.EventHandler(this.実行ファイルのあるフォルダを開くMToolStripMenuItem_Click);
 			//
-			// toolStripSeparator3
-			//
-			this.toolStripSeparator3.Name = "toolStripSeparator3";
-			this.toolStripSeparator3.Size = new System.Drawing.Size(285, 6);
-			//
 			// ネットワーク更新NToolStripMenuItem
 			//
 			this.ネットワーク更新NToolStripMenuItem.Name = "ネットワーク更新NToolStripMenuItem";
@@ -188,8 +181,7 @@ namespace Launcher.UI {
 		private System.Windows.Forms.ToolStripMenuItem コマンドの管理LToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
 		private System.Windows.Forms.ToolStripMenuItem 実行ファイルのあるフォルダを開くMToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
-		private System.Windows.Forms.ToolStripMenuItem ネットワーク更新NToolStripMenuItem;
+			private System.Windows.Forms.ToolStripMenuItem ネットワーク更新NToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
 		private System.Windows.Forms.ToolStripMenuItem 終了XToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem 再起動RToolStripMenuItem;
