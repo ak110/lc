@@ -171,7 +171,7 @@ namespace Launcher.UI {
 			this.groupBoxTasks.Controls.Add(this.buttonTaskTest);
 			this.groupBoxTasks.Location = new System.Drawing.Point(8, 208);
 			this.groupBoxTasks.Name = "groupBoxTasks";
-			this.groupBoxTasks.Size = new System.Drawing.Size(440, 160);
+			this.groupBoxTasks.Size = new System.Drawing.Size(440, 184);
 			this.groupBoxTasks.TabIndex = 7;
 			this.groupBoxTasks.TabStop = false;
 			this.groupBoxTasks.Text = "タスク";
@@ -285,7 +285,7 @@ namespace Launcher.UI {
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.CancelButton = this.buttonCancel;
-			this.ClientSize = new System.Drawing.Size(457, 425);
+			this.ClientSize = new System.Drawing.Size(457, 449);
 			this.Controls.Add(this.buttonCancel);
 			this.Controls.Add(this.buttonOk);
 			this.Controls.Add(this.groupBoxTasks);

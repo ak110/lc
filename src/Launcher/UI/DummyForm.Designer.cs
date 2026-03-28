@@ -39,6 +39,8 @@ namespace Launcher.UI {
 			this.再起動RToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.終了XToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.スケジューラー設定SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.スケジューラー一時停止PToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
 			this.schedulerTimer = new System.Windows.Forms.Timer(this.components);
 			this.contextMenuStrip1.SuspendLayout();
 			this.SuspendLayout();
@@ -54,9 +56,11 @@ namespace Launcher.UI {
 			this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.設定CToolStripMenuItem,
             this.コマンドの管理LToolStripMenuItem,
+            this.toolStripSeparator4,
             this.スケジューラー設定SToolStripMenuItem,
-            this.メインウィンドウを表示非表示VToolStripMenuItem,
+            this.スケジューラー一時停止PToolStripMenuItem,
             this.toolStripSeparator1,
+            this.メインウィンドウを表示非表示VToolStripMenuItem,
             this.実行ファイルのあるフォルダを開くMToolStripMenuItem,
             this.toolStripSeparator3,
             this.ネットワーク更新NToolStripMenuItem,
@@ -86,6 +90,18 @@ namespace Launcher.UI {
 			this.スケジューラー設定SToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.スケジューラー設定SToolStripMenuItem.Text = "スケジューラー設定(&S)";
 			this.スケジューラー設定SToolStripMenuItem.Click += new System.EventHandler(this.スケジューラー設定SToolStripMenuItem_Click);
+			//
+			// スケジューラー一時停止PToolStripMenuItem
+			//
+			this.スケジューラー一時停止PToolStripMenuItem.Name = "スケジューラー一時停止PToolStripMenuItem";
+			this.スケジューラー一時停止PToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
+			this.スケジューラー一時停止PToolStripMenuItem.Text = "スケジューラー一時停止(&P)";
+			this.スケジューラー一時停止PToolStripMenuItem.Click += new System.EventHandler(this.スケジューラー一時停止PToolStripMenuItem_Click);
+			//
+			// toolStripSeparator4
+			//
+			this.toolStripSeparator4.Name = "toolStripSeparator4";
+			this.toolStripSeparator4.Size = new System.Drawing.Size(285, 6);
 			//
 			// schedulerTimer
 			//
@@ -179,6 +195,8 @@ namespace Launcher.UI {
 		private System.Windows.Forms.ToolStripMenuItem 再起動RToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem メインウィンドウを表示非表示VToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem スケジューラー設定SToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem スケジューラー一時停止PToolStripMenuItem;
+		private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
 		private System.Windows.Forms.Timer schedulerTimer;
 	}
 }

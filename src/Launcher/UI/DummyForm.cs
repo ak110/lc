@@ -346,6 +346,14 @@ public partial class DummyForm : Form
         }
     }
 
+    private void スケジューラー一時停止PToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        schedulerTimer.Enabled = !schedulerTimer.Enabled;
+        スケジューラー一時停止PToolStripMenuItem.Text = schedulerTimer.Enabled
+            ? "スケジューラー一時停止(&P)"
+            : "スケジューラー再開(&P)";
+    }
+
     private void 再起動RToolStripMenuItem_Click(object sender, EventArgs e)
     {
         Restart();
