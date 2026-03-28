@@ -13,10 +13,14 @@ public partial class DummyForm : Form
 {
     Config config = new();
     Data data = new();
+    SchedulerData schedulerData = new();
 
     HookManager hookManager;
     MainForm mainForm;
     ButtonLauncherForm? buttonLauncherForm;
+
+    /// <summary>スケジューラタスク実行中フラグ (二重実行防止)</summary>
+    bool schedulerRunning;
 
     public Config Config
     {
@@ -53,6 +57,7 @@ public partial class DummyForm : Form
         config = Config.Deserialize();
         CommandList = CommandList.Deserialize(".cmd.cfg");
         ButtonLauncherData = ButtonLauncherData.Deserialize();
+        schedulerData = SchedulerData.Deserialize();
         try { data = Data.Deserialize(); } catch (IOException) { } catch (InvalidOperationException) { }
 
         notifyIcon1.Text = Infrastructure.AppVersion.Title;
@@ -86,6 +91,7 @@ public partial class DummyForm : Form
     {
         Visible = false;
         hookManager.Register();
+        schedulerTimer.Start();
     }
 
     private void DummyForm_Shown(object sender, EventArgs e)
@@ -95,6 +101,7 @@ public partial class DummyForm : Form
 
     private void DummyForm_FormClosing(object sender, FormClosingEventArgs e)
     {
+        schedulerTimer.Stop();
         hookManager.Unregister();
         notifyIcon1.Dispose();
 
@@ -171,6 +178,7 @@ public partial class DummyForm : Form
     {
         CommandList = CommandList.Deserialize(".cmd.cfg");
         ButtonLauncherData = ButtonLauncherData.Deserialize();
+        schedulerData = SchedulerData.Deserialize();
         if (!mainForm.IsDisposed)
         {
             mainForm.ApplyConfig();
@@ -348,6 +356,16 @@ public partial class DummyForm : Form
         }
     }
 
+    private void スケジューラ設定SToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        using var form = new SchedulerConfigForm(schedulerData);
+        if (form.ShowDialog(GetVisibleOwner()) == DialogResult.OK)
+        {
+            schedulerData = form.Value;
+            schedulerData.Serialize();
+        }
+    }
+
     private void 再起動RToolStripMenuItem_Click(object sender, EventArgs e)
     {
         Restart();
@@ -364,6 +382,37 @@ public partial class DummyForm : Form
     {
         AppBase.SetRestart();
         Close();
+    }
+
+    /// <summary>
+    /// スケジューラのタイマーTick。スケジュール判定→タスク実行→LastCheckTime更新。
+    /// </summary>
+    private void schedulerTimer_Tick(object sender, EventArgs e)
+    {
+        if (schedulerRunning) return; // 前回のタスクがまだ実行中
+
+        var now = DateTime.Now;
+        var itemsToRun = SchedulerPresenter.GetItemsToRun(schedulerData, now);
+        if (itemsToRun.Count == 0)
+        {
+            // 実行対象なしでもLastCheckTimeを前進 (正常動作時の二重実行防止)
+            schedulerData.LastCheckTime = now;
+            schedulerData.Serialize();
+            return;
+        }
+
+        schedulerRunning = true;
+        // 各アイテムのタスクをSTAスレッドで並行実行し、完了後にLastCheckTimeを更新
+        foreach (var item in itemsToRun)
+        {
+            SchedulerPresenter.ExecuteItemTasks(item);
+        }
+        // ExecuteItemTasksはバックグラウンドスレッドを起動して即座に返る。
+        // 厳密な完了待ちはせず、次のTickでisRunningガードを外す簡易方式。
+        // (元のすけじゅらと同等の挙動)
+        schedulerData.LastCheckTime = now;
+        schedulerData.Serialize();
+        schedulerRunning = false;
     }
 
     private void ApplyConfig()

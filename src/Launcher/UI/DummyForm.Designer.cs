@@ -38,6 +38,8 @@ namespace Launcher.UI {
 			this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
 			this.再起動RToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.終了XToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.スケジューラ設定SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.schedulerTimer = new System.Windows.Forms.Timer(this.components);
 			this.contextMenuStrip1.SuspendLayout();
 			this.SuspendLayout();
 			//
@@ -52,6 +54,7 @@ namespace Launcher.UI {
 			this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.設定CToolStripMenuItem,
             this.コマンドの管理LToolStripMenuItem,
+            this.スケジューラ設定SToolStripMenuItem,
             this.メインウィンドウを表示非表示VToolStripMenuItem,
             this.toolStripSeparator1,
             this.実行ファイルのあるフォルダを開くMToolStripMenuItem,
@@ -76,6 +79,18 @@ namespace Launcher.UI {
 			this.コマンドの管理LToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.コマンドの管理LToolStripMenuItem.Text = "コマンドの管理(&L)";
 			this.コマンドの管理LToolStripMenuItem.Click += new System.EventHandler(this.コマンドの管理LToolStripMenuItem_Click);
+			//
+			// スケジューラ設定SToolStripMenuItem
+			//
+			this.スケジューラ設定SToolStripMenuItem.Name = "スケジューラ設定SToolStripMenuItem";
+			this.スケジューラ設定SToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
+			this.スケジューラ設定SToolStripMenuItem.Text = "スケジューラ設定(&S)";
+			this.スケジューラ設定SToolStripMenuItem.Click += new System.EventHandler(this.スケジューラ設定SToolStripMenuItem_Click);
+			//
+			// schedulerTimer
+			//
+			this.schedulerTimer.Interval = 30000;
+			this.schedulerTimer.Tick += new System.EventHandler(this.schedulerTimer_Tick);
 			//
 			// メインウィンドウを表示非表示VToolStripMenuItem
 			//
@@ -163,5 +178,7 @@ namespace Launcher.UI {
 		private System.Windows.Forms.ToolStripMenuItem 終了XToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem 再起動RToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem メインウィンドウを表示非表示VToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem スケジューラ設定SToolStripMenuItem;
+		private System.Windows.Forms.Timer schedulerTimer;
 	}
 }
