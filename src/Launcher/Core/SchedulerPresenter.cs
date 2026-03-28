@@ -4,7 +4,7 @@ using Launcher.Win32;
 namespace Launcher.Core;
 
 /// <summary>
-/// スケジューラのビジネスロジック。純粋関数で構成し、テスト容易性を確保する。
+/// スケジューラーのビジネスロジック。純粋関数で構成し、テスト容易性を確保する。
 /// </summary>
 public static class SchedulerPresenter
 {
@@ -236,10 +236,10 @@ public static class SchedulerPresenter
             {
                 ExecuteTask(task);
             }
-#pragma warning disable CA1031 // スケジューラタスクの例外は握りつぶして次のタスクへ進む
+#pragma warning disable CA1031 // スケジューラータスクの例外は握りつぶして次のタスクへ進む
             catch (Exception ex)
             {
-                Debug.WriteLine($"スケジューラタスク実行エラー: {task.FileName} - {ex.Message}");
+                Debug.WriteLine($"スケジューラータスク実行エラー: {task.FileName} - {ex.Message}");
             }
 #pragma warning restore CA1031
             Thread.Sleep(item.SleepTimeMs);
@@ -247,7 +247,7 @@ public static class SchedulerPresenter
     }
 
     /// <summary>
-    /// 単一タスクを実行する。Command.Execute のスケジューラ版。
+    /// 単一タスクを実行する。Command.Execute のスケジューラー版。
     /// </summary>
     internal static void ExecuteTask(SchedulerTask task)
     {

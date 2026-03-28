@@ -6,7 +6,7 @@ using Xunit;
 namespace Launcher.Tests;
 
 /// <summary>
-/// スケジューラデータモデルのテスト
+/// スケジューラーデータモデルのテスト
 /// </summary>
 public sealed class SchedulerDataTests
 {

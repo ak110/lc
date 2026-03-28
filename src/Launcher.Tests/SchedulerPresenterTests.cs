@@ -5,7 +5,7 @@ using Xunit;
 namespace Launcher.Tests;
 
 /// <summary>
-/// スケジューラロジックのテスト
+/// スケジューラーロジックのテスト
 /// </summary>
 public sealed class SchedulerPresenterTests
 {

@@ -46,6 +46,8 @@ public partial class SchedulerItemForm : Form
     {
         if (listBoxSchedules.SelectedItem is Schedule selected)
         {
+            if (MessageBox.Show(this, "選択中のスケジュールを複製しますか？", Text,
+                MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
             FormsHelper.Insert(listBoxSchedules, selected.Clone());
         }
     }
@@ -57,6 +59,11 @@ public partial class SchedulerItemForm : Form
 
     private void buttonScheduleDelete_Click(object? sender, EventArgs e)
     {
+        if (listBoxSchedules.SelectedItem != null)
+        {
+            if (MessageBox.Show(this, "選択中のスケジュールを削除しますか？", Text,
+                MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) != DialogResult.OK) return;
+        }
         FormsHelper.RemoveSelected(listBoxSchedules);
     }
 
@@ -95,6 +102,8 @@ public partial class SchedulerItemForm : Form
     {
         if (listBoxTasks.SelectedItem is SchedulerTask selected)
         {
+            if (MessageBox.Show(this, "選択中のタスクを複製しますか？", Text,
+                MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
             FormsHelper.Insert(listBoxTasks, selected.Clone());
         }
     }
@@ -116,6 +125,11 @@ public partial class SchedulerItemForm : Form
 
     private void buttonTaskDelete_Click(object? sender, EventArgs e)
     {
+        if (listBoxTasks.SelectedItem != null)
+        {
+            if (MessageBox.Show(this, "選択中のタスクを削除しますか？", Text,
+                MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) != DialogResult.OK) return;
+        }
         FormsHelper.RemoveSelected(listBoxTasks);
     }
 

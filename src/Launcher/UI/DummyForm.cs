@@ -19,7 +19,7 @@ public partial class DummyForm : Form
     MainForm mainForm;
     ButtonLauncherForm? buttonLauncherForm;
 
-    /// <summary>スケジューラタスク実行中フラグ (二重実行防止)</summary>
+    /// <summary>スケジューラータスク実行中フラグ (二重実行防止)</summary>
     bool schedulerRunning;
 
     public Config Config
@@ -58,6 +58,7 @@ public partial class DummyForm : Form
         CommandList = CommandList.Deserialize(".cmd.cfg");
         ButtonLauncherData = ButtonLauncherData.Deserialize();
         schedulerData = SchedulerData.Deserialize();
+        new ReplaceEnvList(config.ReplaceEnv).Replace(schedulerData);
         try { data = Data.Deserialize(); } catch (IOException) { } catch (InvalidOperationException) { }
 
         notifyIcon1.Text = Infrastructure.AppVersion.Title;
@@ -179,6 +180,7 @@ public partial class DummyForm : Form
         CommandList = CommandList.Deserialize(".cmd.cfg");
         ButtonLauncherData = ButtonLauncherData.Deserialize();
         schedulerData = SchedulerData.Deserialize();
+        new ReplaceEnvList(config.ReplaceEnv).Replace(schedulerData);
         if (!mainForm.IsDisposed)
         {
             mainForm.ApplyConfig();
@@ -356,7 +358,7 @@ public partial class DummyForm : Form
         }
     }
 
-    private void スケジューラ設定SToolStripMenuItem_Click(object sender, EventArgs e)
+    private void スケジューラー設定SToolStripMenuItem_Click(object sender, EventArgs e)
     {
         using var form = new SchedulerConfigForm(schedulerData);
         if (form.ShowDialog(GetVisibleOwner()) == DialogResult.OK)
@@ -385,7 +387,7 @@ public partial class DummyForm : Form
     }
 
     /// <summary>
-    /// スケジューラのタイマーTick。スケジュール判定→タスク実行→LastCheckTime更新。
+    /// スケジューラーのタイマーTick。スケジュール判定→タスク実行→LastCheckTime更新。
     /// </summary>
     private void schedulerTimer_Tick(object sender, EventArgs e)
     {

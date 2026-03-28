@@ -166,6 +166,7 @@ namespace Launcher.UI {
 			//
 			this.listBoxTimes.FormattingEnabled = true;
 			this.listBoxTimes.IntegralHeight = false;
+			this.listBoxTimes.Font = new System.Drawing.Font("MS ゴシック", 11F);
 			this.listBoxTimes.ItemHeight = 12;
 			this.listBoxTimes.Location = new System.Drawing.Point(4, 4);
 			this.listBoxTimes.Name = "listBoxTimes";

@@ -3,7 +3,7 @@ using Launcher.Core;
 namespace Launcher.UI;
 
 /// <summary>
-/// スケジューラ設定のトップレベルフォーム。SchedulerItemのリストを編集する。
+/// スケジューラー設定のトップレベルフォーム。SchedulerItemのリストを編集する。
 /// </summary>
 public partial class SchedulerConfigForm : Form
 {
@@ -44,6 +44,8 @@ public partial class SchedulerConfigForm : Form
     {
         if (listBoxItems.SelectedItem is SchedulerItem selected)
         {
+            if (MessageBox.Show(this, $"「{selected.Name}」を複製しますか？", Text,
+                MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
             FormsHelper.Insert(listBoxItems, selected.Clone());
         }
     }
@@ -65,6 +67,11 @@ public partial class SchedulerConfigForm : Form
 
     private void buttonDelete_Click(object? sender, EventArgs e)
     {
+        if (listBoxItems.SelectedItem is SchedulerItem selected)
+        {
+            if (MessageBox.Show(this, $"「{selected.Name}」を削除しますか？", Text,
+                MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) != DialogResult.OK) return;
+        }
         FormsHelper.RemoveSelected(listBoxItems);
     }
 

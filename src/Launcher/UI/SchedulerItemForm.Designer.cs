@@ -111,6 +111,7 @@ namespace Launcher.UI {
 			//
 			// listBoxSchedules
 			//
+			this.listBoxSchedules.Font = new System.Drawing.Font("MS ゴシック", 11F);
 			this.listBoxSchedules.HorizontalScrollbar = true;
 			this.listBoxSchedules.Location = new System.Drawing.Point(8, 18);
 			this.listBoxSchedules.Name = "listBoxSchedules";
@@ -177,6 +178,7 @@ namespace Launcher.UI {
 			//
 			// listBoxTasks
 			//
+			this.listBoxTasks.Font = new System.Drawing.Font("MS ゴシック", 11F);
 			this.listBoxTasks.HorizontalScrollbar = true;
 			this.listBoxTasks.Location = new System.Drawing.Point(8, 18);
 			this.listBoxTasks.Name = "listBoxTasks";

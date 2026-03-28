@@ -94,7 +94,7 @@ public struct MonthDay : IComparable<MonthDay>, IEquatable<MonthDay>
 // --- Domain Models ---
 
 /// <summary>
-/// スケジューラのタスク (実行するプログラムの定義)
+/// スケジューラーのタスク (実行するプログラムの定義)
 /// </summary>
 [Serializable]
 public sealed class SchedulerTask : ICloneable
@@ -110,7 +110,7 @@ public sealed class SchedulerTask : ICloneable
 
     public override string ToString()
     {
-        string status = Enable ? "" : "[無効] ";
+        string status = Enable ? "● " : "× ";
         return $"{status}{FileName}";
     }
 }
@@ -160,7 +160,7 @@ public sealed class Schedule : ICloneable
 
     public override string ToString()
     {
-        string status = Enable ? "" : "[無効] ";
+        string status = Enable ? "● " : "× ";
         string time = TimeType switch
         {
             ScheduleTimeType.SpecificTimes => Times.Count > 0
@@ -194,7 +194,7 @@ public sealed class Schedule : ICloneable
 }
 
 /// <summary>
-/// スケジューラのアイテム (スケジュール条件+タスクのセット)
+/// スケジューラーのアイテム (スケジュール条件+タスクのセット)
 /// </summary>
 [Serializable]
 public sealed class SchedulerItem : ICloneable
@@ -217,7 +217,7 @@ public sealed class SchedulerItem : ICloneable
 
     public override string ToString()
     {
-        string status = Enable ? "" : "[無効] ";
+        string status = Enable ? "● " : "× ";
         return $"{status}{Name}";
     }
 }
@@ -225,7 +225,7 @@ public sealed class SchedulerItem : ICloneable
 // --- Top-level ConfigStore ---
 
 /// <summary>
-/// スケジューラの設定データ。らんちゃ.sch.cfg に永続化される。
+/// スケジューラーの設定データ。らんちゃ.sch.cfg に永続化される。
 /// </summary>
 public sealed class SchedulerData : ConfigStore
 {

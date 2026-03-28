@@ -26,6 +26,7 @@ namespace Launcher.UI {
 			//
 			// listBoxItems
 			//
+			this.listBoxItems.Font = new System.Drawing.Font("MS ゴシック", 11F);
 			this.listBoxItems.HorizontalScrollbar = true;
 			this.listBoxItems.Location = new System.Drawing.Point(8, 8);
 			this.listBoxItems.Name = "listBoxItems";
@@ -136,7 +137,7 @@ namespace Launcher.UI {
 			this.MaximizeBox = false;
 			this.Name = "SchedulerConfigForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-			this.Text = "らんちゃ : スケジューラ設定";
+			this.Text = "らんちゃ : スケジューラー設定";
 			this.ResumeLayout(false);
 		}
 

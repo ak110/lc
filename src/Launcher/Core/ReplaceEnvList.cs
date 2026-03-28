@@ -46,7 +46,42 @@ sealed class ReplaceEnvList
     }
 
     /// <summary>
-    /// 置換処理その2
+    /// スケジューラーデータの置換処理
+    /// </summary>
+    public void Replace(SchedulerData schedulerData)
+    {
+        try
+        {
+            foreach (var item in schedulerData.Items)
+            {
+                foreach (var task in item.Tasks)
+                {
+                    Replace(task);
+                }
+            }
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    /// <summary>
+    /// スケジューラータスクの置換処理
+    /// </summary>
+    public void Replace(SchedulerTask task)
+    {
+        lock (lockObj)
+        {
+            string? rep = InnerReplace(task.FileName);
+            if (!string.IsNullOrEmpty(rep))
+            {
+                task.FileName = rep;
+            }
+        }
+    }
+
+    /// <summary>
+    /// コマンドの置換処理
     /// </summary>
     public void Replace(Command command)
     {
