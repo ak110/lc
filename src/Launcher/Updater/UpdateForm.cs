@@ -38,6 +38,8 @@ public sealed class UpdateForm : Form
                 }
             });
             await UpdatePerformer.PerformUpdateAsync(_release, progress);
+            // バッチが起動された。フォームを閉じてApplication.Exit()を呼び出し側に任せる
+            DialogResult = DialogResult.OK;
         }
         catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or System.IO.IOException or InvalidOperationException)
         {

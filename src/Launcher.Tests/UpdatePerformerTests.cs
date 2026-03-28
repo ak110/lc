@@ -11,7 +11,7 @@ public sealed class UpdatePerformerTests
     {
         List<string> files = ["test.exe", "test.dll"];
         var result = UpdatePerformer.GenerateBatchScript(
-            1234, @"C:\app", @"C:\temp\update", @"C:\app\test.exe", files);
+            1234, @"C:\app", @"C:\temp\update", @"C:\app\test.exe", @"C:\temp\_update.bat", files);
 
         result.Should().Contain("tasklist /FI \"PID eq 1234\"");
         result.Should().Contain("find \"1234\"");
@@ -23,7 +23,7 @@ public sealed class UpdatePerformerTests
     {
         List<string> files = ["app.exe", "lib.dll"];
         var result = UpdatePerformer.GenerateBatchScript(
-            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
+            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", @"C:\temp\_update.bat", files);
 
         // ZIP内のファイルのみが.oldリネーム対象
         result.Should().Contain(@"rename ""C:\app\app.exe"" ""app.exe.old""");
@@ -37,7 +37,7 @@ public sealed class UpdatePerformerTests
     {
         List<string> files = ["app.exe"];
         var result = UpdatePerformer.GenerateBatchScript(
-            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
+            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", @"C:\temp\_update.bat", files);
 
         result.Should().Contain(@"xcopy /E /Y /I ""C:\temp\update\*"" ""C:\app\""");
     }
@@ -47,7 +47,7 @@ public sealed class UpdatePerformerTests
     {
         List<string> files = ["app.exe"];
         var result = UpdatePerformer.GenerateBatchScript(
-            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
+            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", @"C:\temp\_update.bat", files);
 
         result.Should().Contain(@"start """" ""C:\app\app.exe""");
     }
@@ -57,7 +57,7 @@ public sealed class UpdatePerformerTests
     {
         List<string> files = ["app.exe", "sub\\lib.dll"];
         var result = UpdatePerformer.GenerateBatchScript(
-            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
+            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", @"C:\temp\_update.bat", files);
 
         result.Should().Contain(@"del /F /Q ""C:\app\app.exe.old""");
         result.Should().Contain(@"del /F /Q ""C:\app\sub\lib.dll.old""");
@@ -68,21 +68,21 @@ public sealed class UpdatePerformerTests
     {
         List<string> files = ["app.exe"];
         var result = UpdatePerformer.GenerateBatchScript(
-            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
+            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", @"C:\temp\_update.bat", files);
 
         result.Should().Contain(@"rd /S /Q ""C:\temp\update""");
         result.Should().Contain(@"del /F /Q ""C:\temp\update.zip""");
     }
 
     [Fact]
-    public void GenerateBatchScript_appDir側の_update_bat削除が含まれる()
+    public void GenerateBatchScript_バッチ自身の削除が含まれる()
     {
         List<string> files = ["app.exe"];
         var result = UpdatePerformer.GenerateBatchScript(
-            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
+            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", @"C:\temp\_update.bat", files);
 
-        // xcopyでコピーされた_update.batがappDirから削除される
-        result.Should().Contain(@"del /F /Q ""C:\app\_update.bat""");
+        // バッチ自身が最後に自分を削除
+        result.Should().Contain(@"del /F /Q ""C:\temp\_update.bat""");
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public sealed class UpdatePerformerTests
     {
         List<string> files = ["app.exe"];
         var result = UpdatePerformer.GenerateBatchScript(
-            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", files);
+            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", @"C:\temp\_update.bat", files);
 
         result.Should().StartWith("@echo off");
         result.Should().Contain("exit");

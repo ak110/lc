@@ -51,14 +51,15 @@ public static class UpdatePerformer
             // ZIP内のファイル一覧を取得（サブディレクトリも含む相対パス）
             var extractedFiles = GetRelativeFiles(tempDir);
 
-            // バッチスクリプト生成・起動
+            // バッチスクリプトはtempDirの外に作成する (xcopyでアプリディレクトリにコピーされないようにするため)
             progress?.Report("更新を適用しています...");
-            string batchPath = Path.Combine(tempDir, "_update.bat");
+            string batchPath = Path.Combine(Path.GetTempPath(), "_launcher_update_" + Guid.NewGuid().ToString("N")[..8] + ".bat");
             string batchContent = GenerateBatchScript(
                 Environment.ProcessId,
                 appDir,
                 tempDir,
                 Application.ExecutablePath,
+                batchPath,
                 extractedFiles
             );
 
@@ -75,9 +76,6 @@ public static class UpdatePerformer
                 WindowStyle = ProcessWindowStyle.Hidden,
             };
             Process.Start(psi);
-
-            // アプリ終了（AppBase.SetRestart()は使わない。バッチ側が再起動を担当する）
-            Application.Exit();
         }
         catch
         {
@@ -109,7 +107,7 @@ public static class UpdatePerformer
     /// DBCSトレイルバイト問題を避けるため、if()ブロック内に日本語を入れずgotoで制御する。
     /// </summary>
     public static string GenerateBatchScript(
-        int pid, string appDir, string tempDir, string appExe, List<string> files)
+        int pid, string appDir, string tempDir, string appExe, string batchPath, List<string> files)
     {
         var sb = new StringBuilder();
         sb.AppendLine("@echo off");
@@ -154,16 +152,12 @@ public static class UpdatePerformer
         sb.AppendLine($"if exist \"{zipPath}\" del /F /Q \"{zipPath}\"");
         sb.AppendLine();
 
-        // 一時ディレクトリ削除（バッチ自身がこの中にいるので、最後にrd）
+        // 一時ディレクトリ削除
         sb.AppendLine($"rd /S /Q \"{tempDir}\"");
         sb.AppendLine();
 
-        // xcopyでappDirにコピーされた_update.batを削除
-        string copiedBatch = Path.Combine(appDir, "_update.bat");
-        sb.AppendLine($"if exist \"{copiedBatch}\" del /F /Q \"{copiedBatch}\"");
-        sb.AppendLine();
-
-        // 自身を削除して終了（バッチはtempDir内にあるのでrd /S /Qで消えるが、念のため）
+        // バッチ自身を削除して終了
+        sb.AppendLine($"del /F /Q \"{batchPath}\"");
         sb.AppendLine("exit");
 
         return sb.ToString();

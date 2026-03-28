@@ -333,7 +333,11 @@ public partial class DummyForm : Form
     private void ShowUpdateForm(GitHubRelease release)
     {
         using var form = new UpdateForm(release);
-        form.ShowDialog(GetVisibleOwner());
+        if (form.ShowDialog(GetVisibleOwner()) == DialogResult.OK)
+        {
+            // バッチスクリプトが起動済み。アプリを終了してバッチに再起動を任せる。
+            Application.Exit();
+        }
     }
 
     private void スケジューラー設定SToolStripMenuItem_Click(object sender, EventArgs e)
