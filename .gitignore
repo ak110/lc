@@ -21,3 +21,7 @@ publish/
 # Node.js
 node_modules/
 pnpm-debug.log*
+
+# VitePress
+docs/.vitepress/cache/
+docs/.vitepress/dist/

@@ -3,3 +3,4 @@ node_modules/
 bin/
 obj/
 pnpm-lock.yaml
+docs/.vitepress/

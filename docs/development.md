@@ -36,6 +36,7 @@ mise install && mise run setup
 | `mise run update` | 依存パッケージの最新化 |
 | `mise run setup` | 初期セットアップ |
 | `mise run clean` | ビルド成果物のクリーン |
+| `mise run docs` | ドキュメントのローカルプレビュー |
 
 VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスク（build）を実行する。
 
@@ -71,3 +72,11 @@ for /f "usebackq" %i in (`gh run list --workflow=release.yaml -L1 --json databas
 ```
 
 結果の確認: <https://github.com/ak110/lc/actions>
+
+## ドキュメントサイト
+
+ユーザー向けドキュメントは [VitePress](https://vitepress.dev/) で生成し、GitHub Pagesでホストしている。
+
+- **URL:** <https://ak110.github.io/lc/>
+- **ローカルプレビュー:** `mise run docs`
+- **自動デプロイ:** masterブランチへのpush時に`Docs`ワークフローが自動実行される

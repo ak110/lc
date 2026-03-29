@@ -56,3 +56,7 @@ run = [
 
 [tasks.clean]
 run = "dotnet clean Launcher.sln"
+
+[tasks.docs]
+description = "ドキュメントのローカルプレビュー"
+run = "pnpm run docs:dev"
