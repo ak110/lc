@@ -7,14 +7,14 @@
     "textlint-rule-preset-ja-technical-writing": "^12.0.2",
     "vitepress": "^1.6.4"
   },
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "pnpm@10.32.1",
   "private": true,
   "scripts": {
     "docs:build": "vitepress build docs",
     "docs:dev": "vitepress dev docs",
     "docs:preview": "vitepress preview docs",
-    "lint": "npm run textlint && npm run markdownlint && npm run prettier:check",
-    "lint:fix": "npm run textlint:fix && npm run markdownlint:fix && npm run prettier:fix",
+    "lint": "pnpm run textlint && pnpm run markdownlint && pnpm run prettier:check",
+    "lint:fix": "pnpm run textlint:fix && pnpm run markdownlint:fix && pnpm run prettier:fix",
     "markdownlint": "markdownlint-cli2 docs/*.md README.md",
     "markdownlint:fix": "markdownlint-cli2 --fix docs/*.md README.md",
     "prettier:check": "prettier --check \"**/*.{yml,yaml,json}\"",
