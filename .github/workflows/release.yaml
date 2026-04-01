@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: release
@@ -112,9 +113,19 @@ jobs:
           $zipName = "lc-v${{ steps.version.outputs.version }}.zip"
           Compress-Archive -Path publish/* -DestinationPath $zipName
 
+      - name: Update version.json for GitHub Pages
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $json = @{
+            tag_name = "v$version"
+            download_url = "https://github.com/${{ github.repository }}/releases/download/v$version/lc-v$version.zip"
+          } | ConvertTo-Json
+          Set-Content -Path "docs/public/version.json" -Value $json -NoNewline
+
       - name: Commit and tag
         run: |
-          git add Directory.Build.props
+          git add Directory.Build.props docs/public/version.json
           git commit -m "release: v${{ steps.version.outputs.version }}"
           git tag "v${{ steps.version.outputs.version }}"
           git push origin HEAD --tags
@@ -124,3 +135,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "v${{ steps.version.outputs.version }}" "lc-v${{ steps.version.outputs.version }}.zip" --title "v${{ steps.version.outputs.version }}" --generate-notes
+
+      - name: Trigger docs deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run docs.yaml

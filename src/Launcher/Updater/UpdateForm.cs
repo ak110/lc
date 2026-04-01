@@ -16,7 +16,7 @@ public sealed class UpdateForm : Form
     {
         _release = release;
         InitializeComponents();
-        labelMessage.Text = $"新しいバージョン {release.TagName} が利用可能です。\n\n{release.Name}";
+        labelMessage.Text = $"新しいバージョン {release.TagName} が利用可能です。";
     }
 
     private async void buttonUpdate_Click(object? sender, EventArgs e)

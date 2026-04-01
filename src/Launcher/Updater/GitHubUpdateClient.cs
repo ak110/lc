@@ -4,17 +4,16 @@ using System.Text.Json;
 namespace Launcher.Updater;
 
 /// <summary>
-/// GitHub Releases APIを使った更新チェッククライアント
+/// GitHub Pages経由の更新チェッククライアント（APIレートリミット回避）
 /// </summary>
 public static class GitHubUpdateClient
 {
-    private const string ApiUrl = "https://api.github.com/repos/ak110/lc/releases/latest";
+    private const string VersionUrl = "https://ak110.github.io/lc/version.json";
 
     private static readonly HttpClient _httpClient = new()
     {
         DefaultRequestHeaders = {
             { "User-Agent", "Launcher-UpdateClient" },
-            { "Accept", "application/vnd.github.v3+json" },
         },
     };
 
@@ -23,7 +22,7 @@ public static class GitHubUpdateClient
     /// </summary>
     public static async Task<GitHubRelease?> GetLatestReleaseAsync()
     {
-        var response = await _httpClient.GetAsync(ApiUrl);
+        var response = await _httpClient.GetAsync(VersionUrl);
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync();

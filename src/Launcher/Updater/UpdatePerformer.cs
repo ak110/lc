@@ -22,11 +22,9 @@ public static class UpdatePerformer
     /// </summary>
     public static async Task PerformUpdateAsync(GitHubRelease release, IProgress<string>? progress = null)
     {
-        // ZIPアセットを検索
-        var zipAsset = release.Assets?.Find(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
-        if (zipAsset == null)
+        if (string.IsNullOrEmpty(release.DownloadUrl))
         {
-            throw new InvalidOperationException("ZIPアセットが見つかりません。");
+            throw new InvalidOperationException("ダウンロードURLが見つかりません。");
         }
 
         string appDir = Path.GetDirectoryName(Application.ExecutablePath)!;
@@ -37,7 +35,7 @@ public static class UpdatePerformer
         {
             // ZIPダウンロード
             progress?.Report("ダウンロード中...");
-            using (var response = await _httpClient.GetAsync(zipAsset.BrowserDownloadUrl))
+            using (var response = await _httpClient.GetAsync(release.DownloadUrl))
             {
                 response.EnsureSuccessStatusCode();
                 using var fs = new FileStream(zipPath, FileMode.Create);
