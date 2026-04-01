@@ -1,6 +1,6 @@
-.claude/
 node_modules/
+docs/.vitepress/
+.claude/
+pnpm-lock.yaml
 bin/
 obj/
-pnpm-lock.yaml
-docs/.vitepress/

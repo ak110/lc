@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Verify CI passed
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
           $maxAttempts = 30
@@ -54,6 +54,11 @@ jobs:
 
       - name: Setup tools
         uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       # Directory.Build.props から現在のバージョンを取得し、bump種別に応じてインクリメント
       - name: Bump version
@@ -109,10 +114,8 @@ jobs:
 
       - name: Commit and tag
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Directory.Build.props
-          git commit -m "v${{ steps.version.outputs.version }}"
+          git commit -m "release: v${{ steps.version.outputs.version }}"
           git tag "v${{ steps.version.outputs.version }}"
           git push origin HEAD --tags
 

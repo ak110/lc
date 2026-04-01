@@ -4,60 +4,52 @@ node = "lts"
 pnpm = "latest"
 pinact = "latest"
 
-# === 日常ワークフロー ===
-
-[tasks.format]
-description = "format + build + lint"
-run = [
-    "dotnet format Launcher.sln",
-    "pnpm run lint:fix",
-    "dotnet build Launcher.sln --no-incremental",
-    "dotnet format Launcher.sln --verify-no-changes",
-    "pnpm run lint",
-]
-
-[tasks.test]
-description = "format + build + lint + test"
-run = [
-    "dotnet format Launcher.sln",
-    "pnpm run lint:fix",
-    "dotnet build Launcher.sln --no-incremental",
-    "dotnet format Launcher.sln --verify-no-changes",
-    "pnpm run lint",
-    "dotnet test Launcher.sln",
-]
-
-# === 個別タスク ===
-
-[tasks.update]
-description = "依存パッケージの最新化"
-run = [
-    "dotnet tool restore",
-    "dotnet outdated -u Launcher.sln",
-    "pnpm update --latest",
-    "bash -c 'GITHUB_TOKEN=$(gh auth token) pinact run -u --min-age 1'",
-]
-
 [tasks.setup]
-run = ["dotnet tool restore", "pnpm install", "git config core.hooksPath .githooks"]
-
-[tasks.run]
-run = "dotnet run --project src/Launcher/Launcher.csproj"
-
-[tasks.watch]
-run = "dotnet watch test --project src/Launcher.Tests/Launcher.Tests.csproj"
-
-[tasks.coverage]
-run = "dotnet test Launcher.sln --collect:\"XPlat Code Coverage\""
-
-[tasks.publish]
+description = "開発環境のセットアップ"
 run = [
-    "dotnet publish src/Launcher/Launcher.csproj -c Release -o publish",
-    "copy LICENSE publish\\ && copy README.md publish\\",
+  "dotnet tool restore",
+  "pnpm install",
+  "git config core.hooksPath .githooks",
+]
+
+[tasks.build]
+description = "リリースビルド"
+run = [
+  "dotnet publish src/Launcher/Launcher.csproj -c Release -o publish",
+  "copy LICENSE publish\\ && copy README.md publish\\",
 ]
 
 [tasks.clean]
+description = "ビルド成果物の削除"
 run = "dotnet clean Launcher.sln"
+
+[tasks.format]
+description = "コード整形 + lint (testの軽量版)"
+run = [
+  "dotnet format Launcher.sln",
+  "pnpm run lint:fix",
+  "dotnet build Launcher.sln --no-incremental",
+  "dotnet format Launcher.sln --verify-no-changes",
+  "pnpm run lint",
+]
+
+[tasks.test]
+description = "全チェック (format確認 + build + test + lint)"
+run = [
+  "dotnet format Launcher.sln --verify-no-changes",
+  "dotnet build Launcher.sln --no-incremental",
+  "dotnet test Launcher.sln --no-build",
+  "pnpm run lint",
+]
+
+[tasks.update]
+description = "依存パッケージの更新"
+run = [
+  "dotnet tool restore",
+  "dotnet outdated -u Launcher.sln",
+  "pnpm update --latest",
+  "bash -c 'GITHUB_TOKEN=$(gh auth token) pinact run --update --min-age 1'",
+]
 
 [tasks.docs]
 description = "ドキュメントのローカルプレビュー"

@@ -1,25 +1,23 @@
-# らんちゃ
-
-コマンドラインランチャー＆ボタン型ランチャー。
-
-## 主な機能
-
-- [コマンド型ランチャー](./command-launcher.md) — コマンドの一覧表示・絞り込み・補完。常駐してホットキーで起動
-- [ボタン型ランチャー](./button-launcher.md) — よく使うコマンドをボタンとしてグリッド状に配置。複数タブ対応
-- [スケジューラー](./scheduler.md) — 指定した日時条件でタスクを自動実行
-
-## インストール
-
-[Releaseページ](https://github.com/ak110/lc/releases)からダウンロードして、任意のフォルダに展開してください。
-
-## アンインストール
-
-ショートカットを作成した場合は削除し、インストールしたファイルや使用時に作成されたファイルなどを削除してください。
-
-## コマンドライン引数
-
-| 引数 | 動作 |
-| ---- | ---- |
-| `/close` | 既に常駐している場合、終了する |
-| `/restart` | 既に常駐している場合、再起動する |
-| それ以外 | ファイル名と見なし、コマンドを登録する（送るの「らんちゃに登録」の動作） |
+---
+layout: home
+hero:
+  name: らんちゃ
+  text: コマンドラインランチャー＆ボタン型ランチャー
+  actions:
+    - theme: brand
+      text: はじめに
+      link: /getting-started
+    - theme: alt
+      text: ダウンロード
+      link: https://github.com/ak110/lc/releases
+features:
+  - title: コマンド型ランチャー
+    details: コマンドの一覧表示・絞り込み・補完。常駐してホットキーで起動
+    link: /command-launcher
+  - title: ボタン型ランチャー
+    details: よく使うコマンドをボタンとしてグリッド状に配置。複数タブ対応
+    link: /button-launcher
+  - title: スケジューラー
+    details: 指定した日時条件でタスクを自動実行
+    link: /scheduler
+---
