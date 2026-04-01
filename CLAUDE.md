@@ -1,10 +1,8 @@
 # カスタム指示 (プロジェクト固有)
 
-## 関連ドキュメント
+## 開発手順
 
-- @README.md
-- @docs/architecture.md
-- @docs/development.md
+- dotnet, node, pnpmなどはmise経由で実行する
 
 ## リリース
 
@@ -17,3 +15,9 @@
 - `*.cfg` (設定) と `*.dat` (ランタイムデータ) の分離を徹底する。頻繁に更新されるデータは `*.dat` へ
 - WinForms Designer.cs のマルチバイト文字を含むテーブル等は markdownlint (MD060) に注意
 - カタカナ語の長音: 「スケジューラー」「ランチャー」など末尾に長音符を付ける
+
+## 関連ドキュメント
+
+- @README.md
+- @docs/architecture.md
+- @docs/development.md
