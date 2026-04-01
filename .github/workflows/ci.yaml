@@ -18,3 +18,4 @@ jobs:
       - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
       - run: mise run setup
       - run: mise run test
+      - run: pinact run --check
