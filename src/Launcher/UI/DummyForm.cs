@@ -75,6 +75,7 @@ public partial class DummyForm : Form
             mainForm.Show(this);
         }
         ApplyConfig();
+        SetupSchedulerActions();
 
         // 起動時の自動更新チェックは無効化（手動で実行する）
     }
@@ -338,6 +339,48 @@ public partial class DummyForm : Form
     {
         AppBase.SetRestart();
         Close();
+    }
+
+    /// <summary>
+    /// スケジューラーのメッセージ表示アクションを設定する。
+    /// </summary>
+    private void SetupSchedulerActions()
+    {
+        SchedulerPresenter.ShowBalloonTipAction = (title, message) =>
+        {
+            BeginInvoke(() =>
+            {
+                // トレイアイコンが非表示の場合、一時的に表示してバルーンを出す
+                bool wasVisible = notifyIcon1.Visible;
+                if (!wasVisible) notifyIcon1.Visible = true;
+
+                // バルーンが閉じたらトレイアイコンの表示を元に戻す
+                if (!wasVisible)
+                {
+                    notifyIcon1.BalloonTipClosed += RestoreNotifyIconVisibility;
+                    notifyIcon1.BalloonTipClicked += RestoreNotifyIconVisibility;
+                }
+
+                notifyIcon1.ShowBalloonTip(5000, title, message, ToolTipIcon.Info);
+            });
+        };
+
+        // MessageBoxはInvoke（同期）で実行し、ダイアログが閉じるまでスレッドをブロックする
+        SchedulerPresenter.ShowMessageBoxAction = (title, message) =>
+        {
+            Invoke(() => MessageBox.Show(message, title,
+                MessageBoxButtons.OK, MessageBoxIcon.Information));
+        };
+    }
+
+    /// <summary>
+    /// バルーン通知後にトレイアイコンの表示を元の設定に戻す。
+    /// </summary>
+    private void RestoreNotifyIconVisibility(object? sender, EventArgs e)
+    {
+        notifyIcon1.BalloonTipClosed -= RestoreNotifyIconVisibility;
+        notifyIcon1.BalloonTipClicked -= RestoreNotifyIconVisibility;
+        notifyIcon1.Visible = config.TrayIcon;
     }
 
     /// <summary>

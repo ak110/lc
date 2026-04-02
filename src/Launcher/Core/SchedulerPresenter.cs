@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Launcher.Infrastructure;
 using Launcher.Win32;
 
 namespace Launcher.Core;
@@ -8,6 +9,18 @@ namespace Launcher.Core;
 /// </summary>
 public static class SchedulerPresenter
 {
+    /// <summary>
+    /// バルーン通知の表示を委譲するアクション。UI層が設定する。
+    /// 引数: (title, message)
+    /// </summary>
+    public static Action<string, string>? ShowBalloonTipAction { get; set; }
+
+    /// <summary>
+    /// MessageBox表示を委譲するアクション。UI層が設定する。
+    /// 引数: (title, message)。呼び出し元スレッドをブロックする同期実行を想定。
+    /// </summary>
+    public static Action<string, string>? ShowMessageBoxAction { get; set; }
+
     /// <summary>
     /// 実行対象のアイテムを取得する。
     /// </summary>
@@ -247,9 +260,28 @@ public static class SchedulerPresenter
     }
 
     /// <summary>
-    /// 単一タスクを実行する。Command.Execute のスケジューラー版。
+    /// 単一タスクを実行する。タスク種類に応じてファイル実行またはメッセージ表示を行う。
     /// </summary>
     internal static void ExecuteTask(SchedulerTask task)
+    {
+        switch (task.Type)
+        {
+            case SchedulerTaskType.BalloonTip:
+                ExecuteBalloonTipTask(task);
+                break;
+            case SchedulerTaskType.MessageBox:
+                ExecuteMessageBoxTask(task);
+                break;
+            default:
+                ExecuteFileTask(task);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// ファイル実行タスク。ShellExecuteExでプログラムを起動する。
+    /// </summary>
+    private static void ExecuteFileTask(SchedulerTask task)
     {
         string fileName = Environment.ExpandEnvironmentVariables(task.FileName);
         string param = Environment.ExpandEnvironmentVariables(task.Param);
@@ -297,5 +329,24 @@ public static class SchedulerPresenter
         };
 
         ProcessLauncher.Start(info, priorityClass);
+    }
+
+    /// <summary>
+    /// バルーン通知タスク。デリゲート経由でUI層に委譲する。
+    /// </summary>
+    private static void ExecuteBalloonTipTask(SchedulerTask task)
+    {
+        string message = Environment.ExpandEnvironmentVariables(task.Message);
+        ShowBalloonTipAction?.Invoke(AppVersion.Title, message);
+    }
+
+    /// <summary>
+    /// メッセージボックスタスク。デリゲート経由でUI層に委譲する。
+    /// Invoke（同期）で実行されるため、ダイアログが閉じるまでスレッドをブロックする。
+    /// </summary>
+    private static void ExecuteMessageBoxTask(SchedulerTask task)
+    {
+        string message = Environment.ExpandEnvironmentVariables(task.Message);
+        ShowMessageBoxAction?.Invoke(AppVersion.Title, message);
     }
 }

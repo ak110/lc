@@ -42,6 +42,21 @@ Config、CommandList、ButtonLauncherData（Data）はすべてConfigStoreを継
 
 DummyFormは不可視の常駐フォームで、アプリケーション全体のハブとして機能する。WM_APPMSGによるプロセス間通信（/close、/restart等のコマンドライン引数の処理）を受け付ける。加えて、子フォーム（MainForm、ButtonLauncherForm）のライフサイクルを管理する。WinFormsのメッセージループを維持するために常駐フォームが必要であり、メインウィンドウ（MainForm）は表示/非表示を繰り返すため、この役割を分離している。また、スケジューラーのタイマー（30秒間隔）を管理し、スケジュール条件に合致したタスクの自動実行も制御する。
 
+### スケジューラータスクの種類
+
+スケジューラーはファイル実行に加え、メッセージ表示タスクをサポートする。
+
+| 種類       | 説明                                                           |
+| ---------- | -------------------------------------------------------------- |
+| Execute    | ShellExecuteExでプログラムを起動する                           |
+| BalloonTip | タスクトレイのバルーン通知でメッセージを表示する（自動消去）   |
+| MessageBox | メッセージボックスでメッセージを表示する（OKボタンで手動消去） |
+
+Core層（SchedulerPresenter）はUI依存を持たない。
+BalloonTip/MessageBoxの表示はデリゲート経由でUI層（DummyForm）に委譲する。
+MessageBoxはInvoke（同期呼び出し）でダイアログが閉じるまで後続タスクをブロックする。
+BalloonTipはBeginInvoke（非同期）で実行する。
+
 ## 設定ファイル
 
 すべてXMLシリアライズで、アプリケーションと同じディレクトリに保存される。

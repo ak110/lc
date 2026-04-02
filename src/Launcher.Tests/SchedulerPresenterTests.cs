@@ -272,6 +272,85 @@ public sealed class SchedulerPresenterTests
 
     #endregion
 
+    #region ExecuteTask (メッセージ表示)
+
+    [Fact]
+    public void ExecuteTask_BalloonTipタスクでShowBalloonTipActionが呼ばれる()
+    {
+        string? capturedTitle = null;
+        string? capturedMessage = null;
+        SchedulerPresenter.ShowBalloonTipAction = (t, m) => { capturedTitle = t; capturedMessage = m; };
+        try
+        {
+            var task = new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "テスト通知" };
+            SchedulerPresenter.ExecuteTask(task);
+
+            capturedTitle.Should().NotBeNull();
+            capturedMessage.Should().Be("テスト通知");
+        }
+        finally
+        {
+            SchedulerPresenter.ShowBalloonTipAction = null;
+        }
+    }
+
+    [Fact]
+    public void ExecuteTask_MessageBoxタスクでShowMessageBoxActionが呼ばれる()
+    {
+        string? capturedTitle = null;
+        string? capturedMessage = null;
+        SchedulerPresenter.ShowMessageBoxAction = (t, m) => { capturedTitle = t; capturedMessage = m; };
+        try
+        {
+            var task = new SchedulerTask { Type = SchedulerTaskType.MessageBox, Message = "テストメッセージ" };
+            SchedulerPresenter.ExecuteTask(task);
+
+            capturedTitle.Should().NotBeNull();
+            capturedMessage.Should().Be("テストメッセージ");
+        }
+        finally
+        {
+            SchedulerPresenter.ShowMessageBoxAction = null;
+        }
+    }
+
+    [Fact]
+    public void ExecuteTask_メッセージ内の環境変数が展開される()
+    {
+        string? capturedMessage = null;
+        SchedulerPresenter.ShowBalloonTipAction = (_, m) => capturedMessage = m;
+        try
+        {
+            var task = new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "%USERNAME%" };
+            SchedulerPresenter.ExecuteTask(task);
+
+            capturedMessage.Should().NotBe("%USERNAME%");
+            capturedMessage.Should().Be(Environment.GetEnvironmentVariable("USERNAME"));
+        }
+        finally
+        {
+            SchedulerPresenter.ShowBalloonTipAction = null;
+        }
+    }
+
+    [Fact]
+    public void ExecuteTask_デリゲート未設定でも例外が発生しない()
+    {
+        SchedulerPresenter.ShowBalloonTipAction = null;
+        SchedulerPresenter.ShowMessageBoxAction = null;
+
+        var balloonTask = new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "テスト" };
+        var messageBoxTask = new SchedulerTask { Type = SchedulerTaskType.MessageBox, Message = "テスト" };
+
+        var act1 = () => SchedulerPresenter.ExecuteTask(balloonTask);
+        var act2 = () => SchedulerPresenter.ExecuteTask(messageBoxTask);
+
+        act1.Should().NotThrow();
+        act2.Should().NotThrow();
+    }
+
+    #endregion
+
     // --- ヘルパー ---
 
     /// <summary>指定時刻のスケジュール (全曜日有効) を作成</summary>

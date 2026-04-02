@@ -94,16 +94,35 @@ public struct MonthDay : IComparable<MonthDay>, IEquatable<MonthDay>
 // --- Domain Models ---
 
 /// <summary>
-/// スケジューラーのタスク (実行するプログラムの定義)
+/// スケジューラータスクの種類
+/// </summary>
+public enum SchedulerTaskType
+{
+    /// <summary>ファイル実行</summary>
+    [XmlEnum("0")] Execute = 0,
+    /// <summary>バルーン通知 (自動消去)</summary>
+    [XmlEnum("1")] BalloonTip = 1,
+    /// <summary>メッセージボックス (手動消去)</summary>
+    [XmlEnum("2")] MessageBox = 2,
+}
+
+/// <summary>
+/// スケジューラーのタスク
 /// </summary>
 [Serializable]
 public sealed class SchedulerTask : ICloneable
 {
     public bool Enable { get; set; } = true;
+    public SchedulerTaskType Type { get; set; } = SchedulerTaskType.Execute;
+
+    // --- ファイル実行用 ---
     public string FileName { get; set; } = string.Empty;
     public string Param { get; set; } = string.Empty;
     public WindowStyle Show { get; set; } = WindowStyle.Normal;
     public ProcessPriorityLevel Priority { get; set; } = ProcessPriorityLevel.Normal;
+
+    // --- メッセージ表示用 (BalloonTip / MessageBox) ---
+    public string Message { get; set; } = string.Empty;
 
     public SchedulerTask Clone() => (SchedulerTask)MemberwiseClone();
     object ICloneable.Clone() => Clone();
@@ -111,7 +130,12 @@ public sealed class SchedulerTask : ICloneable
     public override string ToString()
     {
         string status = Enable ? "● " : "× ";
-        return $"{status}{FileName}";
+        return Type switch
+        {
+            SchedulerTaskType.BalloonTip => $"{status}[通知] {Message}",
+            SchedulerTaskType.MessageBox => $"{status}[メッセージ] {Message}",
+            _ => $"{status}{FileName}",
+        };
     }
 }
 

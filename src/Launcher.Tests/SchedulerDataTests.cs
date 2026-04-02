@@ -163,6 +163,74 @@ public sealed class SchedulerDataTests
         task2.Show.Should().Be(WindowStyle.Maximized);
     }
 
+    [Fact]
+    public void SchedulerTask_メッセージ表示タスクのラウンドトリップ()
+    {
+        var original = new SchedulerData
+        {
+            Items =
+            [
+                new SchedulerItem
+                {
+                    Name = "時報",
+                    Tasks =
+                    [
+                        new SchedulerTask
+                        {
+                            Type = SchedulerTaskType.BalloonTip,
+                            Message = "正午です",
+                        },
+                        new SchedulerTask
+                        {
+                            Type = SchedulerTaskType.MessageBox,
+                            Message = "作業終了時刻です",
+                        },
+                    ],
+                },
+            ],
+        };
+
+        var xml = SerializeToString(original);
+        var deserialized = DeserializeFromString<SchedulerData>(xml);
+
+        var tasks = deserialized.Items[0].Tasks;
+        tasks.Should().HaveCount(2);
+
+        tasks[0].Type.Should().Be(SchedulerTaskType.BalloonTip);
+        tasks[0].Message.Should().Be("正午です");
+
+        tasks[1].Type.Should().Be(SchedulerTaskType.MessageBox);
+        tasks[1].Message.Should().Be("作業終了時刻です");
+    }
+
+    [Fact]
+    public void SchedulerTask_Type未指定のXMLはExecuteにデシリアライズされる()
+    {
+        // 旧バージョンのXML (Type/Message フィールドなし) との後方互換性テスト
+        const string xml = """
+            <?xml version="1.0" encoding="utf-16"?>
+            <SchedulerData>
+              <Items>
+                <SchedulerItem>
+                  <Tasks>
+                    <SchedulerTask>
+                      <Enable>true</Enable>
+                      <FileName>notepad.exe</FileName>
+                    </SchedulerTask>
+                  </Tasks>
+                </SchedulerItem>
+              </Items>
+            </SchedulerData>
+            """;
+
+        var deserialized = DeserializeFromString<SchedulerData>(xml);
+        var task = deserialized.Items[0].Tasks[0];
+
+        task.Type.Should().Be(SchedulerTaskType.Execute);
+        task.Message.Should().BeEmpty();
+        task.FileName.Should().Be("notepad.exe");
+    }
+
     #endregion
 
     #region Clone
