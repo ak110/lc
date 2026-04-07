@@ -136,7 +136,7 @@ public sealed class ErrorReporter
     private DialogResult ShowReporterForm(Exception ex)
     {
         using var form = new ErrorReporterForm(ex);
-        if (owner != null)
+        if (owner is not null)
         {
             return form.ShowDialog(owner);
         }
@@ -157,32 +157,32 @@ public sealed class ErrorReporter
     {
         builder.Append(e.GetType().ToString());
         builder.AppendLine(":");
-        if (e.Message != null)
+        if (e.Message is not null)
         {
             builder.AppendLine(e.Message.TrimEnd());
             builder.AppendLine();
         }
-        if (e.StackTrace != null)
+        if (e.StackTrace is not null)
         {
             builder.AppendLine("スタックトレース:");
             builder.AppendLine(e.StackTrace.TrimEnd());
             builder.AppendLine();
         }
-        if (e.Source != null)
+        if (e.Source is not null)
         {
             builder.AppendLine("Source:");
             builder.AppendLine(e.Source);
             builder.AppendLine();
         }
         Exception? ie = e.InnerException;
-        if (ie != null)
+        if (ie is not null)
         {
             builder.Append("InnerException -> ");
             AppendExceptionString(builder, ie);
             builder.AppendLine(" <- InnerException");
         }
         Exception? be = e.GetBaseException();
-        if (be != null && be != ie && !object.Equals(be, e))
+        if (be is not null && be != ie && !object.Equals(be, e))
         {
             builder.Append("BaseException -> ");
             AppendExceptionString(builder, be);

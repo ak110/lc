@@ -31,6 +31,13 @@ csharp_style_prefer_pattern_matching = true:suggestion
 csharp_style_prefer_not_pattern = true:suggestion
 csharp_style_prefer_extended_property_pattern = true:suggestion
 dotnet_style_prefer_collection_expression = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:warning
+
+# is null / is not null パターン (== null / != null は禁止)
+# IDE0041 は ReferenceEquals 専用なので、参照型の == null/!= null を捕捉する Roslynator RCS1248 を使う
+dotnet_diagnostic.IDE0041.severity = warning
+dotnet_diagnostic.RCS1248.severity = warning
+roslynator_null_check_style = pattern_matching
 
 # === 有効化する重要なルール ===
 

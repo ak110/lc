@@ -23,14 +23,14 @@ public partial class EnvConfigForm : Form
         {
             string? value = p.Value?.ToString();
             //try { value = FileName.GetFullPath(value); } catch { }
-            if (value != null && (Directory.Exists(value) || File.Exists(value)))
+            if (value is not null && (Directory.Exists(value) || File.Exists(value)))
             {
                 string? name = p.Key?.ToString();
-                if (name != null && this.replaceEnv.Contains(name))
+                if (name is not null && this.replaceEnv.Contains(name))
                 {
                     //listBox2.Items.Add(name);
                 }
-                else if (name != null)
+                else if (name is not null)
                 {
                     listBox1.Items.Add(name);
                 }
@@ -49,7 +49,7 @@ public partial class EnvConfigForm : Form
     private void button1_Click(object? sender, EventArgs e)
     {
         string? item = listBox1.SelectedItem as string;
-        if (item != null)
+        if (item is not null)
         {
             FormsHelper.RemoveSelected(listBox1);
             listBox2.Items.Add(item);
@@ -62,7 +62,7 @@ public partial class EnvConfigForm : Form
     private void button2_Click(object? sender, EventArgs e)
     {
         string? item = listBox2.SelectedItem as string;
-        if (item != null)
+        if (item is not null)
         {
             FormsHelper.RemoveSelected(listBox2);
             listBox1.Items.Add(item);

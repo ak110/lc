@@ -123,7 +123,7 @@ public static class ButtonLauncherPresenter
         destTab.SetButton(destRow, destCol, ButtonEntry.FromCommand(dragEntry, destRow, destCol));
 
         // ドラッグ元にドロップ先の既存エントリを配置（空なら削除）
-        if (destEntry != null && !destEntry.IsEmpty)
+        if (destEntry is not null && !destEntry.IsEmpty)
         {
             sourceTab.SetButton(srcRow, srcCol, ButtonEntry.FromCommand(destEntry, srcRow, srcCol));
         }
@@ -150,7 +150,7 @@ public sealed class DragDropState
     public Point DragStartPoint { get; private set; }
 
     /// <summary>D&D操作がアクティブかどうか</summary>
-    public bool IsActive => DragEntry != null;
+    public bool IsActive => DragEntry is not null;
 
     /// <summary>
     /// D&D操作を開始する。

@@ -278,7 +278,7 @@ public sealed class WindowHelper
     static void FormResize(object? sender, EventArgs e)
     {
         Control? form = sender as Control;
-        if (form != null)
+        if (form is not null)
             EnableMenuItem(GetSystemMenu(form.Handle, false), SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
     }
 

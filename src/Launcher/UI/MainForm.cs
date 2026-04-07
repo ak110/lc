@@ -590,7 +590,7 @@ public partial class MainForm : Form
                     // 世代が古い結果は破棄（Clear()後の古いリクエスト結果を無視）
                     if (e.Generation != iconLoader.Generation) return;
 
-                    if (e.Icon != null)
+                    if (e.Icon is not null)
                     {
                         imageList1.Images.Add(command.FileName, (System.Drawing.Icon)e.Icon.Clone()!);
                     }
@@ -639,7 +639,7 @@ public partial class MainForm : Form
         state = result.State;
 
         // 補完処理（テキストボックスへの反映はUI操作のためForm側で行う）
-        if (result.CompletionText != null)
+        if (result.CompletionText is not null)
         {
             textBox1.Text = result.CompletionText;
             textBox1.Select(result.SelectionStart, result.SelectionLength);

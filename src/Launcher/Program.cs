@@ -23,7 +23,7 @@ static class Program
         try
         {
             string? appDir = Path.GetDirectoryName(Application.ExecutablePath);
-            if (appDir == null) return;
+            if (appDir is null) return;
             foreach (var file in Directory.GetFiles(appDir, "*.old"))
             {
                 try { File.Delete(file); } catch (IOException) { } catch (UnauthorizedAccessException) { }

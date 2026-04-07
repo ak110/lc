@@ -23,7 +23,7 @@ public static class AppVersion
         string? version = assembly?
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion;
-        if (version != null)
+        if (version is not null)
         {
             int plusIndex = version.IndexOf('+');
             if (plusIndex >= 0) version = version[..plusIndex];

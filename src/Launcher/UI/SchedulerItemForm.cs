@@ -59,7 +59,7 @@ public partial class SchedulerItemForm : Form
 
     private void buttonScheduleDelete_Click(object? sender, EventArgs e)
     {
-        if (listBoxSchedules.SelectedItem != null)
+        if (listBoxSchedules.SelectedItem is not null)
         {
             if (MessageBox.Show(this, "選択中のスケジュールを削除しますか？", Text,
                 MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) != DialogResult.OK) return;
@@ -125,7 +125,7 @@ public partial class SchedulerItemForm : Form
 
     private void buttonTaskDelete_Click(object? sender, EventArgs e)
     {
-        if (listBoxTasks.SelectedItem != null)
+        if (listBoxTasks.SelectedItem is not null)
         {
             if (MessageBox.Show(this, "選択中のタスクを削除しますか？", Text,
                 MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) != DialogResult.OK) return;

@@ -32,14 +32,14 @@ public static class FileHelper
 
         // App Paths レジストリ検索（ShellExecuteExと同じく最優先）
         string? resolved = SearchAppPaths(path);
-        if (resolved != null)
+        if (resolved is not null)
         {
             return resolved;
         }
 
         // SearchPath APIによるPATH検索
         resolved = SearchPathApi(path);
-        if (resolved != null)
+        if (resolved is not null)
         {
             return resolved;
         }
@@ -99,7 +99,7 @@ public static class FileHelper
         foreach (string ext in GetPathExtExtensions())
         {
             string? found = SearchPathSingle(name, ext);
-            if (found != null)
+            if (found is not null)
             {
                 return found;
             }
@@ -241,7 +241,7 @@ public static class FileHelper
                 if (lastWriteTime.HasValue) try { dst.LastWriteTime = lastWriteTime.Value; } catch (IOException) { } catch (UnauthorizedAccessException) { }
                 if (lastAccessTime.HasValue) try { dst.LastAccessTime = lastAccessTime.Value; } catch (IOException) { } catch (UnauthorizedAccessException) { }
                 if (creationTime.HasValue) try { dst.CreationTime = creationTime.Value; } catch (IOException) { } catch (UnauthorizedAccessException) { }
-                if (security != null) try { dst.SetAccessControl(security); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+                if (security is not null) try { dst.SetAccessControl(security); } catch (IOException) { } catch (UnauthorizedAccessException) { }
                 if (attributes.HasValue) try { dst.Attributes = attributes.Value; } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
         }

@@ -66,7 +66,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
 
     public int CompareTo(Command? other)
     {
-        if (other == null) return 1;
+        if (other is null) return 1;
         return string.Compare(Name, other.Name, StringComparison.Ordinal);
     }
 
@@ -100,7 +100,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
             while (!string.IsNullOrEmpty(path))
             {
                 path = Path.GetDirectoryName(path);
-                if (path != null && Directory.Exists(path))
+                if (path is not null && Directory.Exists(path))
                 {
                     InnerOpenExistsDirectory(config, path);
                     break;

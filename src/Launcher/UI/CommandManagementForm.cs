@@ -70,10 +70,10 @@ public partial class CommandManagementForm : Form
             if (IsDisposed) return;
             // BeginInvoke待機中にClear()された場合の二重チェック
             if (e.Generation != iconLoader.Generation) return;
-            if (e.Icon == null) return;
+            if (e.Icon is null) return;
 
             var item = (ListViewItem)e.Arg!;
-            if (item.ListView == null) return;
+            if (item.ListView is null) return;
 
             int index = imageList!.Images.Count;
             imageList.Images.Add(e.Icon);

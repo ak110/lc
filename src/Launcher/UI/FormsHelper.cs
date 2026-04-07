@@ -66,7 +66,7 @@ public static class FormsHelper
         foreach (TreeNode node in tree.Nodes)
         {
             TreeNode? ret = Find(node, predict);
-            if (ret != null) return ret;
+            if (ret is not null) return ret;
         }
         return null;
     }
@@ -79,7 +79,7 @@ public static class FormsHelper
         foreach (TreeNode child in node.Nodes)
         {
             TreeNode? posterity = Find(child, predict);
-            if (posterity != null) return posterity;
+            if (posterity is not null) return posterity;
         }
         return null;
     }

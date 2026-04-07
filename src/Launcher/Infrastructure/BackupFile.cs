@@ -67,7 +67,7 @@ public sealed class BackupFile : IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        if (handle != null)
+        if (handle is not null)
         {
             handle.Dispose();
             handle = null;

@@ -240,7 +240,7 @@ public sealed class ShellLink : IDisposable
         }
         disposed = true;
 
-        if (shellLinkW != null)
+        if (shellLinkW is not null)
         {
             Marshal.ReleaseComObject(shellLinkW);
             shellLinkW = null;
@@ -444,7 +444,7 @@ public sealed class ShellLink : IDisposable
         // IPersistFileインターフェイスを取得して保存
         UCOMIPersistFile? persistFile = GetIPersistFile();
 
-        if (persistFile == null) throw new COMException("IPersistFileインターフェイスを取得できませんでした。");
+        if (persistFile is null) throw new COMException("IPersistFileインターフェイスを取得できませんでした。");
 
         persistFile.Save(linkFile, true);
 
@@ -506,7 +506,7 @@ public sealed class ShellLink : IDisposable
         // IPersistFileインターフェイスを取得
         UCOMIPersistFile? persistFile = GetIPersistFile();
 
-        if (persistFile == null) throw new COMException("IPersistFileインターフェイスを取得できませんでした。");
+        if (persistFile is null) throw new COMException("IPersistFileインターフェイスを取得できませんでした。");
 
         // 読み込み
         persistFile.Load(linkFile, 0x00000000);

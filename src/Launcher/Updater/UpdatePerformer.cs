@@ -35,11 +35,11 @@ public static class UpdatePerformer
         {
             // ZIPダウンロード
             progress?.Report("ダウンロード中...");
-            using (var response = await _httpClient.GetAsync(release.DownloadUrl))
+            using (var response = await _httpClient.GetAsync(release.DownloadUrl).ConfigureAwait(false))
             {
                 response.EnsureSuccessStatusCode();
                 using var fs = new FileStream(zipPath, FileMode.Create);
-                await response.Content.CopyToAsync(fs);
+                await response.Content.CopyToAsync(fs).ConfigureAwait(false);
             }
 
             // ZIP展開

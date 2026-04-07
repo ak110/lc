@@ -73,7 +73,7 @@ public sealed class ButtonTab
     public void SetButton(int row, int col, ButtonEntry? entry)
     {
         Buttons.RemoveAll(b => b.Row == row && b.Col == col);
-        if (entry != null)
+        if (entry is not null)
         {
             entry.Row = row;
             entry.Col = col;

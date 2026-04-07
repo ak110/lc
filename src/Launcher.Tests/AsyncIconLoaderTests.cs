@@ -83,14 +83,18 @@ public sealed class AsyncIconLoaderTests
     public void IconLoadedイベントに世代番号が含まれる()
     {
         using var loader = new AsyncIconLoader(workerCount: 1, extractIcon: (_, _) => null);
+        using var done = new ManualResetEventSlim();
         List<IconLoadedEventArgs> events = [];
-        loader.IconLoaded += (s, e) => events.Add(e);
+        loader.IconLoaded += (s, e) =>
+        {
+            events.Add(e);
+            done.Set();
+        };
 
         int gen = loader.Generation;
         loader.Load("test.exe", true, "test");
 
-        // ワーカースレッドがイベントを発火するまで待つ
-        Thread.Sleep(500);
+        done.Wait(TimeSpan.FromSeconds(3)).Should().BeTrue("イベントが発火されるべき");
 
         events.Should().ContainSingle();
         events[0].Generation.Should().Be(gen);
@@ -137,11 +141,16 @@ public sealed class AsyncIconLoaderTests
                 Interlocked.Increment(ref callCount);
                 return null; // nullだがアイコン取得自体は成功扱い
             });
+        using var done = new ManualResetEventSlim();
         List<IconLoadedEventArgs> events = [];
-        loader.IconLoaded += (s, e) => events.Add(e);
+        loader.IconLoaded += (s, e) =>
+        {
+            events.Add(e);
+            done.Set();
+        };
 
         loader.Load("test.exe", true, "arg");
-        Thread.Sleep(500);
+        done.Wait(TimeSpan.FromSeconds(3)).Should().BeTrue("イベントが発火されるべき");
 
         callCount.Should().Be(1);
         events.Should().ContainSingle();

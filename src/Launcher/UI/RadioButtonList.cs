@@ -29,7 +29,7 @@ public partial class RadioButtonList : UserControl
             {
                 selectedIndex = index;
                 // イベントのコールバック
-                if (SelectedIndexChanged != null)
+                if (SelectedIndexChanged is not null)
                 {
                     SelectedIndexChanged(this, EventArgs.Empty);
                 }

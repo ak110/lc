@@ -28,7 +28,7 @@ public sealed class Radios
         foreach (Control c in parent.Controls)
         {
             RadioButton? r = c as RadioButton;
-            if (r != null)
+            if (r is not null)
             {
                 list.Add(r);
             }

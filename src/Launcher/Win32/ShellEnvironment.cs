@@ -26,7 +26,7 @@ public static class ShellEnvironment
     public static string GetFolderPath(SpecialFolder folder)
     {
         int hr = SHGetMalloc(out IMalloc? malloc);
-        if (hr != 0 || malloc == null) throw new IOException("特殊フォルダパスの取得に失敗");
+        if (hr != 0 || malloc is null) throw new IOException("特殊フォルダパスの取得に失敗");
 
         IntPtr idl = IntPtr.Zero;
         switch (folder)

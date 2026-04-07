@@ -133,7 +133,7 @@ public sealed class MainFormPresenter(Func<CommandList> getCommandList, Func<Con
             return new ButtonClickResult(MainAction.ShowConfig, null);
         }
 
-        if (command == null)
+        if (command is null)
         {
             return new ButtonClickResult(MainAction.AddCommand, null);
         }

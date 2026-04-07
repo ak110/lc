@@ -432,11 +432,11 @@ public partial class DummyForm : Form
 
         // ボタンランチャーの生成・破棄
         bool enabled = config.ButtonLauncherActivation != Core.ButtonLauncherActivation.Disabled;
-        if (enabled && buttonLauncherForm == null)
+        if (enabled && buttonLauncherForm is null)
         {
             buttonLauncherForm = new ButtonLauncherForm(this, contextMenuStrip1);
         }
-        else if (!enabled && buttonLauncherForm != null)
+        else if (!enabled && buttonLauncherForm is not null)
         {
             buttonLauncherForm.Close();
             buttonLauncherForm.Dispose();

@@ -159,7 +159,7 @@ public static class Hook
             {
                 EventHandler<KeyHookEventArgs>? KeyHook = Hook.KeyHook;
                 KeyHookEventArgs e = new KeyHookEventArgs(nCode, wParam, lParam);
-                if (KeyHook != null)
+                if (KeyHook is not null)
                 {
                     KeyHook(null, e);
                 }
@@ -196,7 +196,7 @@ public static class Hook
             {
                 EventHandler<MouseHookEventArgs>? MouseHook = Hook.MouseHook;
                 MouseHookEventArgs e = new MouseHookEventArgs(nCode, wParam, lParam);
-                if (MouseHook != null)
+                if (MouseHook is not null)
                 {
                     MouseHook(null, e);
                 }

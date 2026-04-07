@@ -22,10 +22,10 @@ public static class GitHubUpdateClient
     /// </summary>
     public static async Task<GitHubRelease?> GetLatestReleaseAsync()
     {
-        var response = await _httpClient.GetAsync(VersionUrl);
+        var response = await _httpClient.GetAsync(VersionUrl).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
-        var json = await response.Content.ReadAsStringAsync();
+        var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         return JsonSerializer.Deserialize<GitHubRelease>(json);
     }
 
@@ -34,7 +34,7 @@ public static class GitHubUpdateClient
     /// </summary>
     public static bool IsUpdateAvailable(GitHubRelease? release)
     {
-        if (release == null) return false;
+        if (release is null) return false;
         return release.TagName != Infrastructure.AppVersion.TagName;
     }
 }

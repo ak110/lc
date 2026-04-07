@@ -193,7 +193,7 @@ public class ConfigStore
 
         public void Dispose()
         {
-            if (mutex != null)
+            if (mutex is not null)
             {
                 mutex.ReleaseMutex();
                 mutex.Close();
