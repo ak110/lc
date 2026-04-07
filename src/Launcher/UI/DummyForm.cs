@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Launcher.Core;
 using Launcher.Infrastructure;
 using Launcher.Updater;
@@ -20,6 +21,12 @@ public partial class DummyForm : Form
 
     /// <summary>スケジューラータスク実行中フラグ (二重実行防止)</summary>
     bool schedulerRunning;
+
+    /// <summary>環境変数変更の自動取り込み用 (WM_SETTINGCHANGE)</summary>
+    readonly EnvironmentRefresher envRefresher = new();
+
+    /// <summary>WM_SETTINGCHANGE のメッセージ ID</summary>
+    const int WM_SETTINGCHANGE = 0x001A;
 
     public Config Config
     {
@@ -115,6 +122,17 @@ public partial class DummyForm : Form
     /// </summary>
     protected override void WndProc(ref Message m)
     {
+        if (m.Msg == WM_SETTINGCHANGE && m.LParam != IntPtr.Zero)
+        {
+            // 環境変数の変更通知のみを拾う (色・フォント等の変更も同じメッセージで来る)
+            string? area = Marshal.PtrToStringAuto(m.LParam);
+            if (string.Equals(area, "Environment", StringComparison.Ordinal))
+            {
+                // 短時間に複数回飛んでくるのでデバウンスして集約する
+                envChangeDebounceTimer.Stop();
+                envChangeDebounceTimer.Start();
+            }
+        }
         if (m.Msg == Program.WM_APPMSG)
         {
             if (m.WParam == Program.WM_APPMSG_WPARAM)
@@ -412,6 +430,58 @@ public partial class DummyForm : Form
         data.SchedulerLastCheckTime = now;
         data.Serialize();
         schedulerRunning = false;
+    }
+
+    /// <summary>
+    /// 環境変数変更通知 (WM_SETTINGCHANGE) を集約して処理するデバウンス Tick。
+    /// レジストリからの再読込 → プロセス環境ブロック更新 → ReplaceEnvList 再適用 の順で走る。
+    /// </summary>
+    private void envChangeDebounceTimer_Tick(object? sender, EventArgs e)
+    {
+        envChangeDebounceTimer.Stop();
+
+        bool changed;
+        try
+        {
+            changed = envRefresher.Refresh();
+        }
+        catch (Exception ex) when (ex is IOException
+                                || ex is System.Security.SecurityException
+                                || ex is UnauthorizedAccessException)
+        {
+            // レジストリ読み込みに失敗してもアプリ本体は動作継続させる
+            Debug.WriteLine($"環境変数リロード失敗: {ex}");
+            return;
+        }
+        if (!changed) return;
+
+        // ReplaceEnvList の再適用は MainForm.ApplyConfig と同じく背景スレッドで行う。
+        // ReplaceEnvList 側は static ロックで直列化される。
+        var thread = new Thread(() =>
+        {
+            var rep = new ReplaceEnvList(config.ReplaceEnv);
+            rep.Replace(CommandList);
+            rep.Replace(schedulerData);
+            try
+            {
+                BeginInvoke(() =>
+                {
+                    if (!mainForm.IsDisposed)
+                    {
+                        mainForm.RefreshCommandList();
+                    }
+                });
+            }
+            catch (InvalidOperationException)
+            {
+                // フォーム破棄済み (ObjectDisposedException を含む)
+            }
+        })
+        {
+            IsBackground = true,
+            Priority = ThreadPriority.Lowest,
+        };
+        thread.Start();
     }
 
     private void ApplyConfig()

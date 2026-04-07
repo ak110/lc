@@ -41,6 +41,7 @@ namespace Launcher.UI {
 			this.スケジューラー一時停止PToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
 			this.schedulerTimer = new System.Windows.Forms.Timer(this.components);
+			this.envChangeDebounceTimer = new System.Windows.Forms.Timer(this.components);
 			this.contextMenuStrip1.SuspendLayout();
 			this.SuspendLayout();
 			//
@@ -105,6 +106,11 @@ namespace Launcher.UI {
 			//
 			this.schedulerTimer.Interval = 30000;
 			this.schedulerTimer.Tick += new System.EventHandler(this.schedulerTimer_Tick);
+			//
+			// envChangeDebounceTimer
+			//
+			this.envChangeDebounceTimer.Interval = 500;
+			this.envChangeDebounceTimer.Tick += new System.EventHandler(this.envChangeDebounceTimer_Tick);
 			//
 			// メインウィンドウを表示非表示VToolStripMenuItem
 			//
@@ -190,5 +196,6 @@ namespace Launcher.UI {
 		private System.Windows.Forms.ToolStripMenuItem スケジューラー一時停止PToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
 		private System.Windows.Forms.Timer schedulerTimer;
+		private System.Windows.Forms.Timer envChangeDebounceTimer;
 	}
 }

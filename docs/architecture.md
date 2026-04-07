@@ -100,8 +100,48 @@ AsyncIconLoaderのワーカー数は8本固定。SHGetFileInfo（Shell API）は
 - **ボタンランチャー起動**: マウスフックでボタン押下状態（`lbuttonDown`/`rbuttonDown`）を追跡し、設定されたトリガー（左右同時押し等）を検知。トリガー発動時はUPイベントを抑制して誤操作を防止
 - **UP抑制フラグ**: `suppressNextLButtonUp`/`suppressNextRButtonUp`/`suppressKeyUpVK`で、トリガー発動後の不要なUPイベントをフック内で消費する。フックコールバック内でUPを消費しないと、トリガー操作の直後にボタンクリックやキー入力として誤検知される
 
+## 環境変数の自動リロード
+
+`EnvironmentRefresher` (`Win32/`) がレジストリから環境変数を再読込し、
+現プロセスの環境ブロックを差分更新する。
+
+`DummyForm.WndProc` が `WM_SETTINGCHANGE` (`lParam == "Environment"`) を受ける。
+
+500ms のデバウンスを経て `EnvironmentRefresher.Refresh()` を呼ぶ。
+その後、`ReplaceEnvList` を `CommandList` と `SchedulerData` に背景スレッドで再適用する。
+
+マージ規則は Explorer 互換。
+
+`HKLM\Session Manager\Environment` と `HKCU\Environment` を統合する。
+`Path` / `PATHEXT` / `LIBPATH` / `OS2LIBPATH` のみシステム + ユーザーを `;` で連結する。
+それ以外はユーザー変数がシステム変数を上書きする。
+`REG_EXPAND_SZ` は現プロセス環境ベースで展開する。
+
+子プロセスへの伝搬は追加実装不要。
+
+`ShellExecuteEx` は呼び出し元プロセスの環境ブロックを継承する。
+`Environment.SetEnvironmentVariable` で更新すれば、以降の起動プロセスへ新値が反映される。
+
+### ReplaceEnvListの挙動に由来する制約
+
+`ReplaceEnvList` は値→`%VAR%` 形式への片方向圧縮で、元の生文字列を保持しない。
+そのため以下の非対称性がある。
+
+- 値変更 (`JAVA_HOME` のパス差し替え等): 表示は変わらない。ただし `Command.Execute` 内の
+  `Environment.ExpandEnvironmentVariables` が新値を使うため、子プロセスは新値で起動する
+- 変数追加: 新規に置換可能となったコマンドは `%VAR%` 形式に圧縮される
+- 変数削除: 一度 `%VAR%` 形式で保存されたコマンドは復元不能 (再起動しても同じ)
+
+### ReplaceEnvListの排他は静的
+
+`ReplaceEnvList` は呼び出しごとに新規インスタンスが作られるため、ロックは
+`static` で保持している。
+これにより `MainForm.ApplyConfig` の背景スレッドと環境変数変更の背景スレッドが、
+同じ `Command` や `SchedulerTask` を同時に書き換える事故を防いでいる。
+
 ## 設計上の制約・選択
 
 - **cfg/dat分離の徹底**: `*.cfg`は設定変更時のみ、`*.dat`は頻繁に書き換わるデータ。混在させない
 - **STAスレッド必須**: Shell API呼び出しはすべてSTAスレッドから。ThreadPool/MTAからの呼び出しは禁止
 - **アイコンローダー8本固定**: SHGetFileInfoの安定性のため動的調整しない
+- **ReplaceEnvListの排他はstatic**: 異なるインスタンス間でも`Command`/`SchedulerTask`への書き込みが並行しないように直列化するため
