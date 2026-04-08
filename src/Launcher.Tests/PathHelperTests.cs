@@ -75,7 +75,7 @@ public sealed class PathHelperTests
     [Fact]
     public void GetRelativeSubPath_サブパスを返す()
     {
-        // 実在するパスを使用（GetFullPathで正規化されるため）
+        // 実在するパスを使用 (GetFullPathで正規化されるため)
         var baseDir = Path.GetTempPath().TrimEnd('\\');
         var subPath = Path.Combine(baseDir, "sub", "file.txt");
         var result = PathHelper.GetRelativeSubPath(subPath, baseDir);

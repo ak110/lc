@@ -24,16 +24,16 @@ public static class IconExtractor
             Marshal.SizeOf(shinfo), uFlags);
         if (hSuccess == IntPtr.Zero)
         {
-            throw new FileLoadException(path + " のアイコンの取得に失敗しました");
+            throw new FileLoadException(path + " のアイコンの取得に失敗した");
         }
         return IconFromShFileInfo(shinfo);
     }
 
     /// <summary>
-    /// シェル名前空間パス（"::{CLSID}"形式）からアイコンを取得する。
-    /// SHParseDisplayNameでPIDLに変換し、SHGFI_PIDLフラグでSHGetFileInfoを呼び出す。
+    /// シェル名前空間パス ("::{CLSID}" 形式) からアイコンを取得する。
+    /// SHParseDisplayName で PIDL に変換し、SHGFI_PIDL フラグで SHGetFileInfo を呼び出す。
     /// </summary>
-    /// <param name="displayName">シェル名前空間パス（例: "::{450D8FBA-AD25-11D0-98A8-0800361B1103}"）</param>
+    /// <param name="displayName">シェル名前空間パス (例: "::{450D8FBA-AD25-11D0-98A8-0800361B1103}")</param>
     /// <param name="small">小さいアイコンかどうか。</param>
     /// <returns>失敗時null</returns>
     /// <exception cref="FileLoadException">読み込み失敗</exception>
@@ -42,7 +42,7 @@ public static class IconExtractor
         int hr = SHParseDisplayName(displayName, IntPtr.Zero, out IntPtr pidl, 0, out _);
         if (hr != 0 || pidl == IntPtr.Zero)
         {
-            throw new FileLoadException(displayName + " のPIDL取得に失敗しました");
+            throw new FileLoadException(displayName + " の PIDL 取得に失敗した");
         }
         try
         {
@@ -53,7 +53,7 @@ public static class IconExtractor
                 Marshal.SizeOf(shinfo), uFlags);
             if (hSuccess == IntPtr.Zero)
             {
-                throw new FileLoadException(displayName + " のアイコンの取得に失敗しました");
+                throw new FileLoadException(displayName + " のアイコンの取得に失敗した");
             }
             return IconFromShFileInfo(shinfo);
         }
@@ -121,7 +121,7 @@ public static class IconExtractor
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     static extern IntPtr SHGetFileInfo(string pszPath, int dwFileAttributes, ref SHFILEINFO psfi, int cbSizeFileInfo, int uFlags);
 
-    // SHGFI_PIDL使用時はpszPathにPIDLを渡す（IntPtrオーバーロード）
+    // SHGFI_PIDL使用時はpszPathにPIDLを渡す (IntPtrオーバーロード)
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, EntryPoint = "SHGetFileInfo")]
     static extern IntPtr SHGetFileInfoPidl(IntPtr pszPath, int dwFileAttributes, ref SHFILEINFO psfi, int cbSizeFileInfo, int uFlags);
 

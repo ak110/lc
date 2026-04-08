@@ -5,7 +5,7 @@ using Microsoft.Win32.SafeHandles;
 namespace Launcher.Infrastructure;
 
 /// <summary>
-/// コピーの最中に変更されたぞ例外
+/// コピー処理の最中にファイルが変更された場合に送出する例外。
 /// </summary>
 [Serializable]
 public sealed class FileChangedOnCopyException : IOException
@@ -14,14 +14,14 @@ public sealed class FileChangedOnCopyException : IOException
         : base() { }
 
     public FileChangedOnCopyException(string fileName)
-        : base($"ファイル '{fileName}' がコピーの最中に変更されました") { }
+        : base($"ファイル '{fileName}' がコピーの最中に変更された") { }
 
     public FileChangedOnCopyException(string message, Exception innerException)
         : base(message, innerException) { }
 }
 
 /// <summary>
-/// BackupReadとかのらっぱー。
+/// BackupRead 等のラッパー。
 /// </summary>
 public sealed class BackupFile : IDisposable
 {
@@ -29,10 +29,10 @@ public sealed class BackupFile : IDisposable
     bool processSecurity;
 
     /// <summary>
-    /// ファイルを開く
+    /// ファイルを開く。
     /// </summary>
     /// <param name="path">ファイルのパス</param>
-    /// <param name="write">書き込みを行うのかどうか</param>
+    /// <param name="write">書き込みを行うかどうか</param>
     /// <exception cref="IOException">エラー</exception>
     public BackupFile(string path, bool write)
     {
@@ -62,7 +62,7 @@ public sealed class BackupFile : IDisposable
     }
 
     /// <summary>
-    /// 後始末。
+    /// 後始末を行う。
     /// </summary>
     public void Dispose()
     {
@@ -75,7 +75,7 @@ public sealed class BackupFile : IDisposable
     }
 
     /// <summary>
-    /// Securityなフラグとかを処理るかどうか。
+    /// セキュリティ関連のフラグを処理するかどうか。
     /// </summary>
     public bool ProcessSecurity
     {
@@ -84,7 +84,7 @@ public sealed class BackupFile : IDisposable
     }
 
     /// <summary>
-    /// 読み込み
+    /// 読み込みを行う。
     /// </summary>
     /// <exception cref="IOException">エラー</exception>
     public void ReadTo(Stream destination)
@@ -118,7 +118,7 @@ public sealed class BackupFile : IDisposable
     }
 
     /// <summary>
-    /// 書き込み
+    /// 書き込みを行う。
     /// </summary>
     /// <exception cref="IOException">エラー</exception>
     public void WriteFrom(Stream source)
@@ -154,7 +154,7 @@ public sealed class BackupFile : IDisposable
     }
 
     /// <summary>
-    /// コピー。
+    /// コピーを行う。
     /// </summary>
     /// <param name="destination">コピー先</param>
     /// <exception cref="IOException">エラー</exception>
@@ -203,7 +203,7 @@ public sealed class BackupFile : IDisposable
     }
 
     /// <summary>
-    /// ファイルのコピー。
+    /// ファイルのコピーを行う。
     /// </summary>
     /// <param name="sourceName">コピー元</param>
     /// <param name="destFileName">コピー先</param>
@@ -226,13 +226,13 @@ public sealed class BackupFile : IDisposable
         if (srcInfo.LastWriteTime != srcLastWrite ||
             srcInfo.Length != srcLength)
         {
-            // ↑どーも頼りない検出方法だが。。
+            // 更新日時とサイズの比較による簡易的な変更検出。完全ではないが現状はこれで運用する。
             dstInfo.Delete();
             throw new FileChangedOnCopyException(srcInfo.FullName);
         }
     }
 
-    #region APIとか。
+    #region API 定義
 
     const uint GENERIC_READ = 0x80000000;
     const uint GENERIC_WRITE = 0x40000000;

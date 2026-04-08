@@ -307,7 +307,7 @@ public static class FormsHelper
     }
 
     /// <summary>
-    /// 選択してる次の位置に追加
+    /// 選択中のアイテムの次の位置に追加する。
     /// </summary>
     public static void Insert(ListBox listBox, object item)
     {
@@ -326,7 +326,7 @@ public static class FormsHelper
     }
 
     /// <summary>
-    /// 選択してるアイテムを上に移動
+    /// 選択中のアイテムを上に移動する。
     /// </summary>
     public static void UpSelected(ListBox listBox)
     {
@@ -342,7 +342,7 @@ public static class FormsHelper
     }
 
     /// <summary>
-    /// 選択してるアイテムを下に移動
+    /// 選択中のアイテムを下に移動する。
     /// </summary>
     public static void DownSelected(ListBox listBox)
     {
@@ -358,7 +358,7 @@ public static class FormsHelper
     }
 
     /// <summary>
-    /// 選択してるアイテムを削除
+    /// 選択中のアイテムを削除する。
     /// </summary>
     public static void RemoveSelected(ListBox listBox)
     {

@@ -5,7 +5,7 @@ using Xunit;
 namespace Launcher.Tests;
 
 /// <summary>
-/// FormsHelperのテスト（Win32 API非依存の関数のみ）
+/// FormsHelperのテスト (Win32 API非依存の関数のみ)
 /// </summary>
 public sealed class FormsHelperTests
 {

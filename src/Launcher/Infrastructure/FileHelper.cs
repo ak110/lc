@@ -5,16 +5,16 @@ using Microsoft.Win32;
 namespace Launcher.Infrastructure;
 
 /// <summary>
-/// ファイル・ディレクトリ操作のユーティリティ
+/// ファイル・ディレクトリ操作のユーティリティ。
 /// </summary>
 public static class FileHelper
 {
     /// <summary>
-    /// bare name（パス区切りを含まない名前）をアイコン取得用にパス解決する。
-    /// ShellExecuteExの解決順（App Paths → PATH検索）に合わせる。
+    /// bare name (パス区切りを含まない名前) をアイコン取得用にパス解決する。
+    /// ShellExecuteEx の解決順 (App Paths → PATH 検索) に合わせる。
     /// </summary>
     /// <param name="path">ファイル名またはパス</param>
-    /// <returns>解決されたフルパス、または元のpath</returns>
+    /// <returns>解決されたフルパス、または元の path</returns>
     public static string ResolveExecutable(string path)
     {
         if (string.IsNullOrEmpty(path))
@@ -22,7 +22,7 @@ public static class FileHelper
             return path ?? string.Empty;
         }
 
-        // パス区切りを含む場合、またはシェル特殊パス（"::{CLSID}"や"shell:xxx"）は解決不要
+        // パス区切りを含む場合、またはシェル特殊パス ("::{CLSID}" や "shell:xxx") は解決不要。
         if (path.Contains('\\') || path.Contains('/')
             || path.StartsWith("::", StringComparison.Ordinal)
             || path.StartsWith("shell:", StringComparison.OrdinalIgnoreCase))
@@ -30,14 +30,14 @@ public static class FileHelper
             return path;
         }
 
-        // App Paths レジストリ検索（ShellExecuteExと同じく最優先）
+        // App Paths レジストリ検索 (ShellExecuteEx と同じく最優先)。
         string? resolved = SearchAppPaths(path);
         if (resolved is not null)
         {
             return resolved;
         }
 
-        // SearchPath APIによるPATH検索
+        // SearchPath API による PATH 検索。
         resolved = SearchPathApi(path);
         if (resolved is not null)
         {
@@ -48,11 +48,11 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// App Pathsレジストリからbare nameを検索する。HKCU → HKLMの順。
+    /// App Paths レジストリから bare name を検索する。HKCU → HKLM の順。
     /// </summary>
     static string? SearchAppPaths(string name)
     {
-        // 名前そのもの + PATHEXTの各拡張子を付けた名前を試す
+        // 名前そのものと、PATHEXT の各拡張子を付けた名前を試す。
         var namesToTry = new List<string> { name };
         if (!Path.HasExtension(name))
         {
@@ -71,7 +71,7 @@ public static class FileHelper
                 using var key = root.OpenSubKey(subKeyPath);
                 if (key?.GetValue(null) is string value && !string.IsNullOrEmpty(value))
                 {
-                    // 引用符を除去し、環境変数を展開
+                    // 引用符を除去し、環境変数を展開する。
                     string expanded = Environment.ExpandEnvironmentVariables(
                         value.Trim('"'));
                     if (File.Exists(expanded))
@@ -86,7 +86,7 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// SearchPath APIでPATH上のファイルを検索する。
+    /// SearchPath API で PATH 上のファイルを検索する。
     /// </summary>
     static string? SearchPathApi(string name)
     {
@@ -95,7 +95,7 @@ public static class FileHelper
             return SearchPathSingle(name, null);
         }
 
-        // 拡張子なしの場合、PATHEXTの各拡張子で試す
+        // 拡張子なしの場合は PATHEXT の各拡張子で試す。
         foreach (string ext in GetPathExtExtensions())
         {
             string? found = SearchPathSingle(name, ext);
@@ -109,7 +109,7 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// SearchPath API単発呼び出し
+    /// SearchPath API を1回呼び出す。
     /// </summary>
     static string? SearchPathSingle(string fileName, string? extension)
     {
@@ -120,7 +120,7 @@ public static class FileHelper
         {
             return buffer.ToString();
         }
-        // バッファ不足の場合はリトライ
+        // バッファ不足の場合は再試行する。
         if (result > buffer.Capacity)
         {
             buffer.EnsureCapacity(result);
@@ -135,7 +135,7 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// PATHEXT環境変数から拡張子リストを取得する
+    /// PATHEXT 環境変数から拡張子リストを取得する。
     /// </summary>
     static string[] GetPathExtExtensions()
     {
@@ -148,23 +148,23 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// 空なディレクトリならtrueを返す
+    /// ディレクトリが空の場合に true を返す。
     /// </summary>
     /// <param name="path">調べるディレクトリへのパス</param>
     /// <returns>空かどうか</returns>
-    /// <exception cref="DirectoryNotFoundException">ディレクトリ見つからなかった例外</exception>
+    /// <exception cref="DirectoryNotFoundException">ディレクトリが見つからなかった場合の例外</exception>
     public static bool IsDirectoryEmpty(string path)
     {
         if (!Directory.Exists(path))
         {
-            throw new DirectoryNotFoundException($"ディレクトリ '{path}' が存在しません");
+            throw new DirectoryNotFoundException($"ディレクトリ '{path}' が存在しない");
         }
-        // 全件取得を避け、1件でもあればfalseを返す
+        // 全件取得を避け、1件でもあれば false を返す。
         return !Directory.EnumerateFileSystemEntries(path).Any();
     }
 
     /// <summary>
-    /// ファイルとディレクトリを再帰的に列挙
+    /// ファイルとディレクトリを再帰的に列挙する。
     /// </summary>
     public static string[] GetFileSystemEntries(string path)
     {
@@ -172,8 +172,8 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// ファイルの移動。
-    /// どうも読み取り専用属性付いてたりすると移動出来ないぽいので…。
+    /// ファイルを移動する。
+    /// 読み取り専用属性が付いていると移動できないため、属性を一時的に解除する。
     /// </summary>
     /// <param name="sourceName">移動するファイルの名前。</param>
     /// <param name="destName">ファイルの新しいパス。</param>
@@ -207,14 +207,14 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// 出来るだけ安全になコピー。属性とかも出来るだけコピる。
+    /// できる限り安全にコピーする。属性も可能な範囲で複製する。
     /// </summary>
     /// <param name="sourceName">コピー元</param>
     /// <param name="destName">コピー先</param>
     /// <exception cref="FileChangedOnCopyException"></exception>
     public static void CopyFileSafeWithAttributes(string sourceName, string destName)
     {
-        // 属性とかを適当に取得(コピーに時間かかるかもしれないので先に取っておく)
+        // 属性類を取得する。コピー処理が長時間化する可能性があるため、事前に取得する。
         var src = new FileInfo(sourceName);
         FileAttributes? attributes = null;
         FileSecurity? security = null;
@@ -229,12 +229,12 @@ public static class FileHelper
 
         try
         {
-            // コピー
+            // コピーを実行する。
             CopyFileSafe(sourceName, destName);
         }
         finally
         {
-            // 属性とかを適当に設定
+            // 取得しておいた属性類を反映する。
             var dst = new FileInfo(destName);
             if (dst.Exists)
             {
@@ -248,7 +248,7 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// 出来るだけ安全になコピー。
+    /// できる限り安全にコピーする。
     /// </summary>
     /// <param name="sourceName">コピー元</param>
     /// <param name="destName">コピー先</param>
@@ -259,19 +259,19 @@ public static class FileHelper
 
         try
         {
-            // とりあえずテンポラリなファイル名でコピー。
+            // 一時ファイル名でコピーする。
             //File.Copy(sourceName, destFileName, true); // overwrite = true
             CopyFileWithoutLock(sourceName, destTmpName1, true); // overwrite = true
-            // コピー先が存在してたらリネーム
+            // コピー先が既存の場合はリネームして退避する。
             try { MoveFileForce(destName, destTmpName2); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             try
             {
-                // コピー先へリネーム
+                // 一時ファイルをコピー先へリネームする。
                 MoveFileForce(destTmpName1, destName);
             }
             finally
             {
-                // 元コピー先を削除
+                // 退避していた元のコピー先を削除する。
                 try { DeleteFileForce(destTmpName2); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
         }
@@ -294,16 +294,16 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// コピー元/先をロックせずにファイルをコピーします
+    /// コピー元・コピー先をロックせずにファイルをコピーする。
     /// </summary>
     /// <param name="sourceName">コピーするファイル。</param>
-    /// <param name="destFileName">コピー先ファイルの名前。このパラメータには、ディレクトリは指定できません。</param>
-    /// <param name="overwrite">コピー先ファイルが上書きできる場合は true。それ以外の場合は false。</param>
-    /// <exception cref="IOException">コピー失敗時の例外とか</exception>
+    /// <param name="destFileName">コピー先ファイルの名前。このパラメータにディレクトリは指定できない。</param>
+    /// <param name="overwrite">コピー先ファイルを上書きする場合は true、それ以外は false。</param>
+    /// <exception cref="IOException">コピー失敗時の例外。</exception>
     /// <exception cref="FileChangedOnCopyException"></exception>
     public static void CopyFileWithoutLock(string sourceName, string destFileName, bool overwrite)
     {
-        // BackupAPIによるコピーを試してみる
+        // まず BackupAPI によるコピーを試行する。
         try
         {
             BackupFile.CopyFile(sourceName, destFileName);
@@ -316,7 +316,7 @@ public static class FileHelper
         catch (IOException e)
         {
             System.Diagnostics.Debug.Fail(e.ToString());
-            // エラーったらそのまま続行
+            // 失敗した場合は通常コピーへフォールバックする。
         }
 
         var srcInfo = new FileInfo(sourceName);
@@ -326,12 +326,13 @@ public static class FileHelper
             DateTime srcLastWrite = srcInfo.LastWriteTime;
             long srcLength = srcInfo.Length;
 
-            FileShare fs = FileShare.ReadWrite | FileShare.Delete; // ここがキモ
+            // ロック回避のため共有モードを ReadWrite | Delete とする点が要点。
+            FileShare fs = FileShare.ReadWrite | FileShare.Delete;
             FileMode dstFM = overwrite ? FileMode.Create : FileMode.CreateNew;
             using (FileStream src = srcInfo.Open(FileMode.Open, FileAccess.Read, fs))
             using (FileStream dst = dstInfo.Open(dstFM, FileAccess.Write, fs))
             {
-                byte[] buffer = new byte[65536]; // 最大64kbずつコピる
+                byte[] buffer = new byte[65536]; // 最大 64KB ずつコピーする。
                 while (true)
                 {
                     int n = src.Read(buffer, 0, buffer.Length);
@@ -368,7 +369,7 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// 強制的に削除。
+    /// 強制的に削除する。
     /// ファイルが存在しなくてもエラーにはならない。
     /// </summary>
     /// <param name="path">削除するファイル</param>
@@ -378,7 +379,7 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// 強制的に削除。
+    /// 強制的に削除する。
     /// ファイルが存在しなくてもエラーにはならない。
     /// </summary>
     /// <param name="info">削除するファイル</param>
@@ -388,8 +389,9 @@ public static class FileHelper
         {
             try
             {
+                // 削除を妨げる可能性のある属性を解除する。
                 info.Attributes &= ~(FileAttributes.ReadOnly |
-                    FileAttributes.System | FileAttributes.Hidden); // 削除の邪魔になりそうなのは解除しといてみる
+                    FileAttributes.System | FileAttributes.Hidden);
             }
             catch (IOException e)
             {
@@ -404,7 +406,7 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// 強制的に削除。
+    /// 強制的に削除する。
     /// 存在しなくてもエラーにはならない。
     /// </summary>
     /// <param name="path">削除するパス</param>
@@ -422,7 +424,7 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// 強制的に削除。
+    /// 強制的に削除する。
     /// ディレクトリが存在しなくてもエラーにはならない。
     /// </summary>
     /// <param name="path">削除するディレクトリ</param>
@@ -433,7 +435,7 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// 強制的に削除。
+    /// 強制的に削除する。
     /// ディレクトリが存在しなくてもエラーにはならない。
     /// </summary>
     /// <param name="info">削除するディレクトリ</param>
@@ -449,14 +451,15 @@ public static class FileHelper
                     DeleteForce(fsi, recursive);
                 }
             }
+            // 削除を妨げる可能性のある属性を解除する。
             info.Attributes &= ~(FileAttributes.ReadOnly |
-                FileAttributes.System | FileAttributes.Hidden); // 削除の邪魔になりそうなのは解除しといてみる
+                FileAttributes.System | FileAttributes.Hidden);
             info.Delete(false);
         }
     }
 
     /// <summary>
-    /// 強制的に削除。
+    /// 強制的に削除する。
     /// </summary>
     /// <param name="fsi">削除するファイルまたはディレクトリ</param>
     /// <param name="recursive">再帰的に削除するかどうか</param>
@@ -473,10 +476,10 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// 短いファイル名から長いファイル名を取得する
+    /// 短いファイル名から長いファイル名を取得する。
     /// </summary>
-    /// <param name="path">大文字小文字が変なファイル名とか短いファイル名とか相対パスとか。</param>
-    /// <returns>ちゃんとしたファイル名</returns>
+    /// <param name="path">大文字小文字の不正確なファイル名、短いファイル名、または相対パス。</param>
+    /// <returns>正規化されたファイル名</returns>
     public static string GetCorrectPath(string path)
     {
         string fullPath = Path.GetFullPath(path);
@@ -520,7 +523,7 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// ハードリンクの作成
+    /// ハードリンクを作成する。
     /// </summary>
     /// <param name="fileName"></param>
     /// <param name="existingFileName"></param>
@@ -531,17 +534,17 @@ public static class FileHelper
         {
             if (!Win32.NativeMethods.CreateHardLink(fileName, existingFileName, IntPtr.Zero))
             {
-                throw new IOException("ハードリンクの作成に失敗しました");
+                throw new IOException("ハードリンクの作成に失敗した");
             }
         }
         catch (EntryPointNotFoundException e)
         {
-            throw new IOException("ハードリンクの作成が未対応です。", e);
+            throw new IOException("ハードリンクの作成は未対応である", e);
         }
     }
 
     /// <summary>
-    /// PHPのis_writable()的な。
+    /// パスへの書き込み可否を判定する (PHP の is_writable() に相当する)。
     /// </summary>
     public static bool IsWritable(string path)
     {
@@ -549,7 +552,7 @@ public static class FileHelper
         {
             try
             {
-                // テンポラリファイル作って試す。_no
+                // 一時ファイルを作成して書き込み可否を判定する。
                 string tmp = Path.Combine(path, "{6F5EC475-CA08-485c-B782-AEC4466FE3E1}.tmp");
                 if (!File.Exists(tmp))
                 {
@@ -574,7 +577,7 @@ public static class FileHelper
         {
             try
             {
-                // 実際に開いてしまってみる
+                // 実際に書き込み用に開いて確認する。
                 using FileStream s = File.OpenWrite(path);
                 return s.CanWrite;
             }

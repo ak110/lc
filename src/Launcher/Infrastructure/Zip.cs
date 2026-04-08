@@ -5,7 +5,7 @@ using System.Text;
 namespace Launcher.Infrastructure;
 
 /// <summary>
-/// ZIPファイルの読み込み
+/// ZIPファイルを読み込む。
 /// </summary>
 public sealed class ZipReader : IDisposable
 {
@@ -14,29 +14,29 @@ public sealed class ZipReader : IDisposable
     readonly List<ZipEntry> entries = [];
 
     /// <summary>
-    /// 初期化。
+    /// 初期化する。
     /// </summary>
     /// <param name="fileName">読み込み元ファイル名</param>
     public ZipReader(string fileName) : this(File.Open(fileName, FileMode.Open), false) { }
 
     /// <summary>
-    /// 初期化。
+    /// 初期化する。
     /// </summary>
     /// <param name="data">読み込み元データ</param>
     public ZipReader(byte[] data) : this(new MemoryStream(data), false) { }
 
     /// <summary>
-    /// 初期化。
+    /// 初期化する。
     /// </summary>
     /// <param name="stream">読み込み元ファイル</param>
     public ZipReader(Stream stream) : this(stream, false) { }
 
     /// <summary>
-    /// 初期化。
+    /// 初期化する。
     /// </summary>
     /// <param name="stream">読み込み元ファイル</param>
-    /// <param name="leaveOpen">streamを開いたままにするのかどうか。</param>
-    /// <exception cref="IOException">ZIP書庫として上手く読み込めなかった場合の例外</exception>
+    /// <param name="leaveOpen">streamを開いたままにするかどうか。</param>
+    /// <exception cref="IOException">ZIP書庫として読み込めなかった場合の例外</exception>
     public ZipReader(Stream stream, bool leaveOpen)
     {
         this.stream = stream;
@@ -52,7 +52,7 @@ public sealed class ZipReader : IDisposable
         {
             if (acc.GetUint(pos) != 0x02014b50)
             { // "PK\x1\x2"
-                throw new IOException("ZIPファイルの展開に失敗しました");
+                throw new IOException("ZIPファイルの展開に失敗した");
             }
             //ushort generalFlags = acc.GetUshort(pos + 8);
             //ushort compressionMethod = acc.GetUshort(pos + 10);
@@ -86,12 +86,12 @@ public sealed class ZipReader : IDisposable
     }
 
     /// <summary>
-    /// エンドレコードを検索
+    /// エンドレコードを検索する。
     /// </summary>
     private static long FindEndRec(StreamRandAccessor acc)
     {
         long stoppos;
-        //	ulongって引き算とか比較が面倒くさいですなぁ．．（´Д｀）
+        // ulong は引き算や比較の取り回しが煩雑なため、long に揃えて扱う。
         if (acc.Length < 66000)
         {
             stoppos = 0;
@@ -110,11 +110,11 @@ public sealed class ZipReader : IDisposable
                 return i;
             }
         }
-        throw new IOException("ZIPファイルの展開に失敗しました");
+        throw new IOException("ZIPファイルの展開に失敗した");
     }
 
     /// <summary>
-    /// 後始末
+    /// 後始末を行う。
     /// </summary>
     public void Close()
     {
@@ -122,7 +122,7 @@ public sealed class ZipReader : IDisposable
     }
 
     /// <summary>
-    /// 後始末
+    /// 後始末を行う。
     /// </summary>
     public void Dispose()
     {
@@ -134,14 +134,14 @@ public sealed class ZipReader : IDisposable
     }
 
     /// <summary>
-    /// ファイルの個数を取得
+    /// ファイルの個数を取得する。
     /// </summary>
     public int Count
     {
         get { return entries.Count; }
     }
     /// <summary>
-    /// ファイルのリストを取得
+    /// ファイルのリストを取得する。
     /// </summary>
     public ZipEntry[] Entries
     {
@@ -149,7 +149,7 @@ public sealed class ZipReader : IDisposable
     }
 
     /// <summary>
-    /// ファイルを読み込み
+    /// ファイルを読み込む。
     /// </summary>
     public Stream Open(int i)
     {
@@ -157,7 +157,7 @@ public sealed class ZipReader : IDisposable
     }
 
     /// <summary>
-    /// ファイルを読み込み
+    /// ファイルを読み込む。
     /// </summary>
     public Stream Open(ZipEntry e)
     {
@@ -179,19 +179,19 @@ public sealed class ZipReader : IDisposable
                     new SubStream(stream, startpos, e.CompressedSize),
                     CompressionMode.Decompress, false);
             default:
-                throw new IOException("ZIPファイルにサポートしていない圧縮形式のデータが含まれていました");
+                throw new IOException("ZIPファイルにサポートしていない圧縮形式のデータが含まれていた");
         }
     }
 
     /// <summary>
-    /// ファイルを読み込み
+    /// ファイルを読み込む。
     /// </summary>
     public byte[] ReadAllBytes(int i)
     {
         return ReadAllBytes(entries[i]);
     }
     /// <summary>
-    /// ファイルを読み込み
+    /// ファイルを読み込む。
     /// </summary>
     public byte[] ReadAllBytes(ZipEntry e)
     {
@@ -202,7 +202,7 @@ public sealed class ZipReader : IDisposable
     }
 
     /// <summary>
-    /// ファイルを解凍
+    /// ファイルを解凍する。
     /// </summary>
     public void Extract(string fileName, int i)
     {
@@ -210,7 +210,7 @@ public sealed class ZipReader : IDisposable
     }
 
     /// <summary>
-    /// ファイルを解凍
+    /// ファイルを解凍する。
     /// </summary>
     public void Extract(string fileName, ZipEntry e)
     {
@@ -224,7 +224,7 @@ public sealed class ZipReader : IDisposable
             if (len == 0) break;
             file.Write(buffer, 0, len);
         }
-        // 一応最終更新日時もセットしてみる。
+        // 最終更新日時も復元する。
         new FileInfo(fileName).LastWriteTime = e.DateTime;
     }
 }
@@ -235,13 +235,13 @@ sealed class StreamRandAccessor
 {
     readonly Stream _stream;
     readonly byte[] _buffer = new byte[256]; // 読み込みバッファ
-    int _readsize;   // バッファに読み込めたサイズ。
+    int _readsize;   // バッファに読み込めたサイズ
     long _pos;       // 現在読み込んでいるバッファのストリーム上の位置
 
     public StreamRandAccessor(Stream f)
     {
         _stream = f;
-        // 読み込んでいないので。
+        // 未読み込み状態で初期化する。
         _pos = 0;
         _readsize = 0;
     }
@@ -309,7 +309,7 @@ sealed class StreamRandAccessor
 #endregion
 
 /// <summary>
-/// ZIP書庫内のファイルやディレクトリ１個を表すオブジェクト
+/// ZIP書庫内のファイルやディレクトリ1個を表すオブジェクト。
 /// </summary>
 public sealed class ZipEntry : ICloneable
 {
@@ -323,12 +323,12 @@ public sealed class ZipEntry : ICloneable
     }
 
     /// <summary>
-    /// 複製の作成
+    /// 複製を作成する。
     /// </summary>
     public ZipEntry Clone()
     {
         ZipEntry copy = (ZipEntry)MemberwiseClone();
-        // string以外の参照型なメンバがあればここでコピー
+        // string以外の参照型のメンバがあればここでコピーする。
         return copy;
     }
 
@@ -342,7 +342,7 @@ public sealed class ZipEntry : ICloneable
     #endregion
 
     /// <summary>
-    /// ファイル名
+    /// ファイル名。
     /// </summary>
     public string Name
     {
@@ -351,7 +351,7 @@ public sealed class ZipEntry : ICloneable
     }
 
     /// <summary>
-    /// ファイルサイズ
+    /// ファイルサイズ。
     /// </summary>
     public long Size
     {
@@ -360,7 +360,7 @@ public sealed class ZipEntry : ICloneable
     }
 
     /// <summary>
-    /// 圧縮時のサイズ
+    /// 圧縮時のサイズ。
     /// </summary>
     public long CompressedSize
     {
@@ -369,7 +369,7 @@ public sealed class ZipEntry : ICloneable
     }
 
     /// <summary>
-    /// 最終更新日時
+    /// 最終更新日時。
     /// </summary>
     public long DosTime
     {
@@ -378,14 +378,14 @@ public sealed class ZipEntry : ICloneable
     }
 
     /// <summary>
-    /// ファイル先頭からローカルヘッダまでのオフセット
+    /// ファイル先頭からローカルヘッダまでのオフセット。
     /// </summary>
     public long HeaderOffset { get; set; }
 
     /// <summary>
-	/// 最終更新日時
-	/// </summary>
-	public DateTime DateTime
+    /// 最終更新日時。
+    /// </summary>
+    public DateTime DateTime
     {
         get
         {
@@ -417,7 +417,7 @@ public sealed class ZipEntry : ICloneable
     }
 
     /// <summary>
-    /// ディレクトリならtrue
+    /// ディレクトリの場合に true となる。
     /// </summary>
     public bool IsDirectory
     {
@@ -429,7 +429,7 @@ public sealed class ZipEntry : ICloneable
     }
 
     /// <summary>
-    /// ファイルならtrue
+    /// ファイルの場合に true となる。
     /// </summary>
     public bool IsFile
     {
@@ -437,7 +437,7 @@ public sealed class ZipEntry : ICloneable
     }
 
     /// <summary>
-    /// 適当文字列化
+    /// デバッグ用に文字列化する。
     /// </summary>
     public override string ToString()
     {

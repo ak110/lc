@@ -5,8 +5,8 @@
 
 コマンドラインランチャー＆ボタン型ランチャー。
 
-**ドキュメント:** <https://ak110.github.io/lc/>
+ドキュメント: <https://ak110.github.io/lc/>
 
 ## インストール
 
-[Releaseページ](https://github.com/ak110/lc/releases)からダウンロードして、任意のフォルダに展開してください。
+[Releaseページ](https://github.com/ak110/lc/releases)からダウンロードし、任意のフォルダに展開する。

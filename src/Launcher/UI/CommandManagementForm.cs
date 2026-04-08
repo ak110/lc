@@ -139,7 +139,7 @@ public partial class CommandManagementForm : Form
             return;
         }
 
-        // 選択されたコマンドを削除（全件リロードせずListViewItemを直接削除）
+        // 選択されたコマンドを削除 (全件リロードせずListViewItemを直接削除)
         List<ListViewItem> toRemove = [];
         foreach (ListViewItem item in listView1.SelectedItems)
         {
@@ -159,7 +159,7 @@ public partial class CommandManagementForm : Form
     private void SaveAndApply()
     {
         owner.CommandList.Serialize(".cmd.cfg");
-        // MainFormのコマンド一覧だけ更新（アイコン再読込は不要）
+        // MainFormのコマンド一覧だけ更新 (アイコン再読込は不要)
         owner.RefreshMainFormCommandList();
     }
 

@@ -9,14 +9,14 @@ namespace Launcher;
 static class Program
 {
     public const int WM_APPMSG = WM.WM_APP + 0;
-    public static readonly IntPtr WM_APPMSG_WPARAM = (IntPtr)0x11747b79; // ←誤爆防止用ダミー。
+    public static readonly IntPtr WM_APPMSG_WPARAM = (IntPtr)0x11747b79; // 誤検出を防ぐためのダミー値。
     public static readonly IntPtr WM_APPMSG_SHOWHIDE = (IntPtr)0x14d94a96;
     public static readonly IntPtr WM_APPMSG_RELOAD = (IntPtr)0x338ca4c1;
     public static readonly IntPtr WM_APPMSG_RESTART = (IntPtr)0x6b60850f;
     public static readonly IntPtr WM_APPMSG_SHOWBUTTONLAUNCHER = (IntPtr)0x2a3f7c01;
 
     /// <summary>
-    /// 更新後に残った.oldファイルを削除する
+    /// 更新後に残った.oldファイルを削除する。
     /// </summary>
     static void CleanupOldFiles()
     {
@@ -40,12 +40,12 @@ static class Program
     }
 
     /// <summary>
-    /// アプリケーションのメイン エントリ ポイントです。
+    /// アプリケーションのメインエントリポイント。
     /// </summary>
     [STAThread]
     static void Main(string[] args)
     {
-        // 未処理例外のキャッチ（UIスレッド以外で発生した例外用）
+        // UIスレッド以外で発生した未処理例外を捕捉する。
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
             var message = e.ExceptionObject is Exception ex
@@ -55,13 +55,13 @@ static class Program
             MessageBox.Show(message, "致命的なエラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
         };
 
-        // 更新後の.oldファイルをクリーンアップ
+        // 更新後に残った .old ファイルを削除する。
         CleanupOldFiles();
 
         using var app = new AppBase.Initializer();
         using var singleInstance = new SingleInstance();
 
-        // WinExeでもコマンドプロンプトからの実行時に結果を表示するため、親コンソールにアタッチ
+        // WinExe でもコマンドプロンプトから実行した際に結果を表示するため、親コンソールへアタッチする。
         if (args.Length > 0)
             NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
 
@@ -81,7 +81,7 @@ static class Program
                     if (window.PostMessage(WM.WM_CLOSE, IntPtr.Zero, IntPtr.Zero))
                         Console.WriteLine("/close: 終了メッセージを送信しました。");
                     else
-                        Console.Error.WriteLine("/close: メッセージ送信に失敗しました。");
+                        Console.Error.WriteLine("/close: メッセージの送信に失敗しました。");
                 }
                 catch (Exception ex)
                 {
@@ -101,7 +101,7 @@ static class Program
                     if (window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RESTART))
                         Console.WriteLine("/restart: 再起動メッセージを送信しました。");
                     else
-                        Console.Error.WriteLine("/restart: メッセージ送信に失敗しました。");
+                        Console.Error.WriteLine("/restart: メッセージの送信に失敗しました。");
                 }
                 catch (Exception ex)
                 {
@@ -142,7 +142,7 @@ static class Program
             }
             else
             {
-                // とりあえず無視
+                // 認識できない引数は無視する。
             }
         }
 

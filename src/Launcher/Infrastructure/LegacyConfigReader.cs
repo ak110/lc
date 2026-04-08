@@ -4,23 +4,23 @@ using System.Text;
 namespace Launcher.Infrastructure;
 
 /// <summary>
-/// Themis::CConfig的なcfgファイルを読み込む
+/// Themis::CConfig 形式の cfg ファイルを読み込む。
 /// </summary>
 public sealed class LegacyConfigReader
 {
     Dictionary<string, string> data = new Dictionary<string, string>();
 
     /// <summary>
-    /// ファイル名を指定して読み込む
+    /// ファイル名を指定して読み込む。
     /// </summary>
     public LegacyConfigReader(string fileName)
         : this(File.Open(fileName, FileMode.Open, FileAccess.Read), true)
     {
     }
     /// <summary>
-    /// streamから読み込む
+    /// stream から読み込む。
     /// </summary>
-#pragma warning disable CA2000 // StreamReaderの所有権はthis()に移譲される
+#pragma warning disable CA2000 // StreamReader の所有権は this() に委譲される。
     public LegacyConfigReader(Stream stream, bool toBeClose)
         : this(new StreamReader(stream, Encoding.Default), true)
 #pragma warning restore CA2000
@@ -28,7 +28,7 @@ public sealed class LegacyConfigReader
         if (toBeClose) stream.Dispose();
     }
     /// <summary>
-    /// TextReaderから読み込む
+    /// TextReader から読み込む。
     /// </summary>
     public LegacyConfigReader(TextReader reader, bool toBeClose)
     {
@@ -45,7 +45,7 @@ public sealed class LegacyConfigReader
         if (toBeClose) reader.Dispose();
     }
 
-    #region Dictionary系は適当に。
+    #region Dictionary 互換のメンバ
 
     public bool ContainsKey(string key)
     {
@@ -65,7 +65,7 @@ public sealed class LegacyConfigReader
     #endregion
 
     /// <summary>
-    /// 一応Dictionaryの直接取得も、開きにしておきます。
+    /// Dictionary を直接取得できるようにする。
     /// </summary>
     public Dictionary<string, string> Data
     {
@@ -73,28 +73,28 @@ public sealed class LegacyConfigReader
     }
 
     /// <summary>
-    /// bool値として取得
+    /// bool 値として取得する。
     /// </summary>
     public bool Bool(string n)
     {
         return bool.Parse(data[n]);
     }
     /// <summary>
-    /// 整数として取得
+    /// 整数として取得する。
     /// </summary>
     public int Num(string n)
     {
         return int.Parse(data[n]);
     }
     /// <summary>
-    /// 倍精度浮動小数点として取得
+    /// 倍精度浮動小数点数として取得する。
     /// </summary>
     public double Float(string n)
     {
         return double.Parse(data[n]);
     }
     /// <summary>
-    /// エスケープシーケンスを含む文字列
+    /// エスケープシーケンスを展開した文字列として取得する。
     /// </summary>
     public string EscapedString(string n)
     {
@@ -129,37 +129,37 @@ public sealed class LegacyConfigReader
         return builder.ToString();
     }
     /// <summary>
-    /// 改行を含まない文字列として取得
+    /// 改行を含まない文字列として取得する。
     /// </summary>
     public string Indirect(string n)
     {
         return data[n];
     }
     /// <summary>
-    /// Pointとして取得
+    /// Point として取得する。
     /// </summary>
     public static Point Point(string n)
     {
         string[] s = n.Split(',');
-        if (s.Length != 2) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗しました");
+        if (s.Length != 2) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗した");
         return new Point(int.Parse(s[0].Trim()), int.Parse(s[1].Trim()));
     }
     /// <summary>
-    /// Sizeとして取得
+    /// Size として取得する。
     /// </summary>
     public static Size Size(string n)
     {
         string[] s = n.Split(',');
-        if (s.Length != 2) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗しました");
+        if (s.Length != 2) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗した");
         return new Size(int.Parse(s[0].Trim()), int.Parse(s[1].Trim()));
     }
     /// <summary>
-    /// Rectangleとして取得
+    /// Rectangle として取得する。
     /// </summary>
     public static Rectangle Rect(string n)
     {
         string[] s = n.Split(',');
-        if (s.Length != 4) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗しました");
+        if (s.Length != 4) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗した");
         return new Rectangle(
             int.Parse(s[0].Trim()),
             int.Parse(s[1].Trim()),

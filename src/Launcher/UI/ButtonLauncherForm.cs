@@ -92,14 +92,14 @@ public partial class ButtonLauncherForm : Form
         lockButton.Checked = Data.IsLocked;
         ApplyLockState();
 
-        // オーナー設定（Show→Hideだと一瞬表示されるのでプロパティで設定）
+        // オーナー設定 (Show→Hideだと一瞬表示されるのでプロパティで設定)
         Owner = owner;
         // BuildTabs()内のiconLoader.Load()より先にハンドルを作成する
         // Handle未作成時にIconLoadedイベントが到着するとアイコンが破棄されるため
         _ = Handle;
         WindowHelper.DisableCloseButton(this);
 
-        // タブを構築（アイコン非同期読み込みを開始するためHandle作成後に実行）
+        // タブを構築 (アイコン非同期読み込みを開始するためHandle作成後に実行)
         BuildTabs();
     }
 
@@ -270,7 +270,7 @@ public partial class ButtonLauncherForm : Form
     }
 
     /// <summary>
-    /// 指定位置のボタンの表示を更新（D&Dスワップ時の部分更新用）
+    /// 指定位置のボタンの表示を更新 (D&Dスワップ時の部分更新用)
     /// </summary>
     private void UpdateButton(TabPage? tabPage, ButtonTab tabData, int row, int col)
     {
@@ -309,7 +309,7 @@ public partial class ButtonLauncherForm : Form
     #region 表示・非表示
 
     /// <summary>
-    /// ランチャーを表示（マウスカーソル中心に配置）
+    /// ランチャーを表示 (マウスカーソル中心に配置)
     /// </summary>
     public void ShowLauncher()
     {
@@ -468,7 +468,7 @@ public partial class ButtonLauncherForm : Form
 
         bool hasCommand = entry is not null && !entry.IsEmpty;
         buttonContextMenu.Items[0].Enabled = hasCommand; // 実行
-        buttonContextMenu.Items[1].Enabled = true; // 編集（未割当でも可）
+        buttonContextMenu.Items[1].Enabled = true; // 編集 (未割当でも可)
         buttonContextMenu.Items[2].Enabled = hasCommand; // フォルダを開く
         buttonContextMenu.Items[6].Enabled = hasCommand; // 削除
     }
@@ -477,7 +477,7 @@ public partial class ButtonLauncherForm : Form
     {
         if (e.Button == MouseButtons.Left && Data.IsLocked)
         {
-            // ロック時のD&D開始準備（実際のDoDragDropはMouseMoveで閾値超過時に呼ぶ）
+            // ロック時のD&D開始準備 (実際のDoDragDropはMouseMoveで閾値超過時に呼ぶ)
             var btn = (Button)sender!;
             var pos = (ButtonPosition)btn.Tag!;
             var tabData = GetCurrentTabData();
@@ -594,7 +594,7 @@ public partial class ButtonLauncherForm : Form
 
     private void GridButton_MouseUp(object? sender, MouseEventArgs e)
     {
-        // ドラッグ閾値未到達でリリースした場合のクリア（通常クリック動作を壊さない）
+        // ドラッグ閾値未到達でリリースした場合のクリア (通常クリック動作を壊さない)
         if (e.Button == MouseButtons.Left)
         {
             dragSource = null;
@@ -641,7 +641,7 @@ public partial class ButtonLauncherForm : Form
         }
         else if (dragSource is not null && dragState.IsActive && dragState.SourceTab is not null)
         {
-            // ボタン間D&D（クロスタブ対応）
+            // ボタン間D&D (クロスタブ対応)
             var srcPos = (ButtonPosition)dragSource.Tag!;
             var srcTabData = dragState.SourceTab;
 
@@ -692,7 +692,7 @@ public partial class ButtonLauncherForm : Form
     /// </summary>
     private void TabControl1_DragDrop(object? sender, DragEventArgs e)
     {
-        // タブヘッダー上にドロップされた場合は何もしない（ボタン上へのドロップで処理される）
+        // タブヘッダー上にドロップされた場合は何もしない (ボタン上へのドロップで処理される)
     }
 
     #endregion
@@ -840,7 +840,7 @@ public partial class ButtonLauncherForm : Form
         if (!menuShownFromFilter) return;
         menuShownFromFilter = false;
         if (e.CloseReason != ToolStripDropDownCloseReason.AppClicked) return;
-        // 左クリックで閉じた場合は再配信不要（通常のクリック処理に任せる）
+        // 左クリックで閉じた場合は再配信不要 (通常のクリック処理に任せる)
         if (!Control.MouseButtons.HasFlag(MouseButtons.Right)) return;
 
         BeginInvoke(() =>
@@ -895,7 +895,7 @@ public partial class ButtonLauncherForm : Form
     #region ヘルパー
 
     /// <summary>
-    /// グリッドサイズ変更を適用（ウィンドウサイズ再計算 + タブ再構築）
+    /// グリッドサイズ変更を適用 (ウィンドウサイズ再計算 + タブ再構築)
     /// </summary>
     public void ApplyGridSize()
     {

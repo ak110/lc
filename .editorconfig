@@ -41,7 +41,7 @@ roslynator_null_check_style = pattern_matching
 
 # === 有効化する重要なルール ===
 
-# Dispose関連（リソースリーク防止）
+# Dispose関連 (リソースリーク防止)
 dotnet_diagnostic.CA1816.severity = warning
 dotnet_diagnostic.CA2000.severity = warning
 
@@ -54,7 +54,7 @@ dotnet_diagnostic.CA2100.severity = warning
 # 明示的なデフォルト値初期化の除去
 dotnet_diagnostic.CA1805.severity = warning
 
-# sealed推奨（内部クラスのパフォーマンス）
+# sealed推奨 (内部クラスのパフォーマンス)
 dotnet_diagnostic.CA1852.severity = warning
 
 # string.Equalsの使用
@@ -65,52 +65,52 @@ dotnet_diagnostic.CA1031.severity = warning
 
 # === 段階的に対応するため一時的に抑制するルール ===
 
-# 命名規則（WinFormsデザイナー生成コードが大量にヒット）
+# 命名規則 (WinFormsデザイナー生成コードが大量にヒット)
 dotnet_diagnostic.CA1707.severity = suggestion
 dotnet_diagnostic.CA1725.severity = none
 dotnet_diagnostic.CA1715.severity = none
 dotnet_diagnostic.CA1720.severity = none
 dotnet_diagnostic.CA1711.severity = none
 
-# カルチャ指定（デスクトップアプリで内部的な文字列操作のため低リスク）
+# カルチャ指定 (デスクトップアプリで内部的な文字列操作のため低リスク)
 dotnet_diagnostic.CA1305.severity = suggestion
 dotnet_diagnostic.CA1304.severity = suggestion
 dotnet_diagnostic.CA1311.severity = suggestion
 dotnet_diagnostic.CA1310.severity = suggestion
 dotnet_diagnostic.CA1309.severity = suggestion
 
-# ConfigureAwait（WinFormsではSynchronizationContextが必要）
+# ConfigureAwait (WinFormsではSynchronizationContextが必要)
 dotnet_diagnostic.CA2007.severity = none
 
 # 公開インスタンスフィールド
 dotnet_diagnostic.CA1051.severity = warning
 
-# XmlSerializerセキュリティ（デスクトップアプリが自身の設定ファイルを読む用途）
+# XmlSerializerセキュリティ (デスクトップアプリが自身の設定ファイルを読む用途)
 dotnet_diagnostic.CA5369.severity = none
 
-# 暗号アルゴリズム（用途を確認してから対応）
+# 暗号アルゴリズム (用途を確認してから対応)
 dotnet_diagnostic.CA5351.severity = suggestion
 dotnet_diagnostic.CA5350.severity = suggestion
 
-# 予約済み例外型（COM相互運用コード）
+# 予約済み例外型 (COM相互運用コード)
 dotnet_diagnostic.CA2201.severity = suggestion
 
-# StringBuilder P/Invoke（低優先度）
+# StringBuilder P/Invoke (低優先度)
 dotnet_diagnostic.CA1838.severity = none
 
-# IComparable実装（CommandクラスでのEquals/演算子オーバーロード）
+# IComparable実装 (CommandクラスでのEquals/演算子オーバーロード)
 dotnet_diagnostic.CA1036.severity = suggestion
 
 # コレクションのジェネリックインターフェース実装
 dotnet_diagnostic.CA1010.severity = none
 
-# Roslynator: 空catch句（CA1031のpragma抑制と同様のパターン）
+# Roslynator: 空catch句 (CA1031のpragma抑制と同様のパターン)
 dotnet_diagnostic.RCS1075.severity = none
 
-# Roslynator: 例外コンストラクタ（内部使用のみの例外クラスは標準パターンを強制しない）
+# Roslynator: 例外コンストラクタ (内部使用のみの例外クラスは標準パターンを強制しない)
 dotnet_diagnostic.RCS1194.severity = none
 
-# Roslynator: ドキュメントコメントのsummary不足（既存コードに大量にあるため段階的に対応）
+# Roslynator: ドキュメントコメントのsummary不足 (既存コードに大量にあるため段階的に対応)
 dotnet_diagnostic.RCS1138.severity = none
 dotnet_diagnostic.RCS1139.severity = none
 
@@ -118,4 +118,4 @@ dotnet_diagnostic.RCS1139.severity = none
 dotnet_diagnostic.RCS1197.severity = warning  # string.Format → 文字列補間
 dotnet_diagnostic.RCS1072.severity = warning  # 冗長なデリゲート生成
 dotnet_diagnostic.RCS1220.severity = warning  # パターンマッチング推奨
-dotnet_diagnostic.RCS1036.severity = warning   # using宣言文の利用推奨（修正完了済み）
+dotnet_diagnostic.RCS1036.severity = warning   # using宣言文の利用推奨 (修正完了済み)

@@ -8,7 +8,7 @@ namespace Launcher.Core;
 /// </summary>
 public static class ButtonLauncherPresenter
 {
-    /// <summary>グリッドサイズ（列数・行数）</summary>
+    /// <summary>グリッドサイズ (列数・行数)</summary>
     public record GridSize(int Columns, int Rows);
 
     /// <summary>
@@ -55,7 +55,7 @@ public static class ButtonLauncherPresenter
     /// タブ削除の結果
     /// </summary>
     /// <param name="Success">削除が成功したか</param>
-    /// <param name="NewSelectedIndex">削除後に選択すべきタブインデックス（失敗時は-1）</param>
+    /// <param name="NewSelectedIndex">削除後に選択すべきタブインデックス (失敗時は-1)</param>
     public record DeleteTabResult(bool Success, int NewSelectedIndex);
 
     /// <summary>
@@ -84,7 +84,7 @@ public static class ButtonLauncherPresenter
     }
 
     /// <summary>
-    /// タブを移動する（隣接スワップ）。DefaultTabIndexも追従する。
+    /// タブを移動する (隣接スワップ)。DefaultTabIndexも追従する。
     /// </summary>
     public static void MoveTab(ButtonLauncherData data, int fromIndex, int toIndex)
     {
@@ -92,7 +92,7 @@ public static class ButtonLauncherPresenter
         data.Tabs.RemoveAt(fromIndex);
         data.Tabs.Insert(toIndex, tab);
 
-        // DefaultTabIndexの調整（隣接スワップ）
+        // DefaultTabIndexの調整 (隣接スワップ)
         if (data.DefaultTabIndex == fromIndex)
             data.DefaultTabIndex = toIndex;
         else if (data.DefaultTabIndex == toIndex)
@@ -122,7 +122,7 @@ public static class ButtonLauncherPresenter
         // ドロップ先にドラッグ中のエントリを配置
         destTab.SetButton(destRow, destCol, ButtonEntry.FromCommand(dragEntry, destRow, destCol));
 
-        // ドラッグ元にドロップ先の既存エントリを配置（空なら削除）
+        // ドラッグ元にドロップ先の既存エントリを配置 (空なら削除)
         if (destEntry is not null && !destEntry.IsEmpty)
         {
             sourceTab.SetButton(srcRow, srcCol, ButtonEntry.FromCommand(destEntry, srcRow, srcCol));

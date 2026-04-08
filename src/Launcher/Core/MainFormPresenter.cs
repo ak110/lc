@@ -117,8 +117,8 @@ public sealed class MainFormPresenter(Func<CommandList> getCommandList, Func<Con
     /// </summary>
     /// <param name="state">現在の入力状態</param>
     /// <param name="lastFocus">0=エディットボックス, 1=リストビュー</param>
-    /// <param name="firstCommand">リストビュー先頭のコマンド（存在する場合）</param>
-    /// <param name="selectedCommand">リストビューで選択中のコマンド（存在する場合）</param>
+    /// <param name="firstCommand">リストビュー先頭のコマンド (存在する場合)</param>
+    /// <param name="selectedCommand">リストビューで選択中のコマンド (存在する場合)</param>
     /// <param name="modifierKeys">現在の修飾キー状態</param>
     public static ButtonClickResult DetermineAction(
         InputState state, int lastFocus,

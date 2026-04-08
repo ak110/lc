@@ -71,7 +71,7 @@ public sealed class AsyncIconLoader : IDisposable
     public int Generation => generation;
 
     /// <summary>
-    /// ワーカースレッドの優先度（読み取り専用）。コンストラクタで設定。
+    /// ワーカースレッドの優先度 (読み取り専用)。コンストラクタで設定。
     /// </summary>
     public ThreadPriority ThreadPriority { get; }
 
@@ -83,9 +83,9 @@ public sealed class AsyncIconLoader : IDisposable
     /// <summary>
     /// コンストラクタ。固定数のSTAワーカースレッドを一括起動する。
     /// </summary>
-    /// <param name="workerCount">ワーカースレッド数（デフォルト8）</param>
+    /// <param name="workerCount">ワーカースレッド数 (デフォルト8)</param>
     /// <param name="threadPriority">ワーカースレッドの優先度</param>
-    /// <param name="extractIcon">アイコン抽出関数（テスト時にモック差し替え可能）</param>
+    /// <param name="extractIcon">アイコン抽出関数 (テスト時にモック差し替え可能)</param>
     public AsyncIconLoader(
         int workerCount = DefaultWorkerCount,
         ThreadPriority threadPriority = ThreadPriority.Normal,
@@ -109,14 +109,14 @@ public sealed class AsyncIconLoader : IDisposable
     {
         string normalized = PathHelper.PathNormalize(fileName);
 
-        // シェル名前空間パス（"::{CLSID}"や"shell:xxx"形式）はPIDL経由で取得
+        // シェル名前空間パス ("::{CLSID}"や"shell:xxx"形式) はPIDL経由で取得
         if (normalized.StartsWith("::", StringComparison.Ordinal)
             || normalized.StartsWith("shell:", StringComparison.OrdinalIgnoreCase))
         {
             return IconExtractor.ExtractIconByShellNamespace(normalized, small);
         }
 
-        // bare name（"control"等）をパス解決してからアイコンを取得する
+        // bare name ("control"等) をパス解決してからアイコンを取得する
         string resolved = FileHelper.ResolveExecutable(normalized);
         return IconExtractor.ExtractAssociatedIcon(resolved, small);
     }
@@ -193,7 +193,7 @@ public sealed class AsyncIconLoader : IDisposable
             icon = null;
         }
 
-        // CallEventは別のtry-catchで保護（フォームDispose済み等のrace conditionに対応）
+        // CallEventは別のtry-catchで保護 (フォームDispose済み等のrace conditionに対応)
         try
         {
             CallEvent(r, icon);

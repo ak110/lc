@@ -37,9 +37,9 @@ public partial class DummyForm : Form
     public ButtonLauncherData ButtonLauncherData { get; private set; }
 
     /// <summary>
-    /// ダイアログのオーナーとして使える表示中のフォームを返す。
-    /// 不可視のDummyFormをownerにすると別モニターに表示されるため、表示中のフォームを優先する。
-    /// ownerがnullの場合、CenterParentが効かないためCenterScreenにフォールバックする。
+    /// ダイアログのオーナーとして利用できる表示中のフォームを返す。
+    /// 不可視の DummyForm を owner にすると別モニターに表示されるため、表示中のフォームを優先する。
+    /// owner が null の場合は CenterParent が機能しないため CenterScreen にフォールバックする。
     /// </summary>
     private IWin32Window? GetVisibleOwner()
     {
@@ -84,7 +84,7 @@ public partial class DummyForm : Form
         ApplyConfig();
         SetupSchedulerActions();
 
-        // 起動時の自動更新チェックは無効化（手動で実行する）
+        // 起動時の自動更新チェックは無効化 (手動で実行する)
     }
 
     /// <summary>
@@ -124,11 +124,11 @@ public partial class DummyForm : Form
     {
         if (m.Msg == WM_SETTINGCHANGE && m.LParam != IntPtr.Zero)
         {
-            // 環境変数の変更通知のみを拾う (色・フォント等の変更も同じメッセージで来る)
+            // 環境変数の変更通知のみを取得する (色・フォント等の変更も同じメッセージで通知される)。
             string? area = Marshal.PtrToStringAuto(m.LParam);
             if (string.Equals(area, "Environment", StringComparison.Ordinal))
             {
-                // 短時間に複数回飛んでくるのでデバウンスして集約する
+                // 短時間に複数回通知されるためデバウンスで集約する。
                 envChangeDebounceTimer.Stop();
                 envChangeDebounceTimer.Start();
             }
@@ -171,7 +171,7 @@ public partial class DummyForm : Form
     }
 
     /// <summary>
-    /// メインウィンドウを表示したり隠したり
+    /// メインウィンドウの表示と非表示を切り替える。
     /// </summary>
     public void ShowHide()
     {
@@ -243,7 +243,7 @@ public partial class DummyForm : Form
     }
 
     /// <summary>
-    /// MainFormのコマンド一覧表示だけを更新（アイコン再読込なし）
+    /// MainFormのコマンド一覧表示だけを更新 (アイコン再読込なし)
     /// </summary>
     public void RefreshMainFormCommandList()
     {
@@ -312,7 +312,7 @@ public partial class DummyForm : Form
 
             using var form = new UpdateForm(release!);
             form.ShowDialog(GetVisibleOwner());
-            // UpdateForm内でバッチ起動+Environment.Exit()が呼ばれるため、ここに到達するのはキャンセル時のみ
+            // UpdateForm 内でバッチ起動と Environment.Exit() を実行するため、ここに到達するのはキャンセル時のみ。
         }
 #pragma warning disable CA1031 // ネットワーク更新は様々な例外が発生しうるため包括的にキャッチ
         catch (Exception ex)
@@ -383,7 +383,7 @@ public partial class DummyForm : Form
             });
         };
 
-        // MessageBoxはInvoke（同期）で実行し、ダイアログが閉じるまでスレッドをブロックする
+        // MessageBoxはInvoke (同期) で実行し、ダイアログが閉じるまでスレッドをブロックする
         SchedulerPresenter.ShowMessageBoxAction = (title, message) =>
         {
             Invoke(() => MessageBox.Show(message, title,
@@ -424,9 +424,9 @@ public partial class DummyForm : Form
         {
             SchedulerPresenter.ExecuteItemTasks(item);
         }
-        // ExecuteItemTasksはバックグラウンドスレッドを起動して即座に返る。
-        // 厳密な完了待ちはせず、次のTickでisRunningガードを外す簡易方式。
-        // (元のすけじゅらと同等の挙動)
+        // ExecuteItemTasks はバックグラウンドスレッドを起動して即座に返る。
+        // 厳密な完了待ちは行わず、次の Tick で isRunning ガードを解除する簡易方式とする。
+        // (元のスケジューラと同等の挙動)
         data.SchedulerLastCheckTime = now;
         data.Serialize();
         schedulerRunning = false;
@@ -434,7 +434,7 @@ public partial class DummyForm : Form
 
     /// <summary>
     /// 環境変数変更通知 (WM_SETTINGCHANGE) を集約して処理するデバウンス Tick。
-    /// レジストリからの再読込 → プロセス環境ブロック更新 → ReplaceEnvList 再適用 の順で走る。
+    /// レジストリからの再読み込み、プロセス環境ブロックの更新、ReplaceEnvList の再適用の順に実行する。
     /// </summary>
     private void envChangeDebounceTimer_Tick(object? sender, EventArgs e)
     {
@@ -449,7 +449,7 @@ public partial class DummyForm : Form
                                 || ex is System.Security.SecurityException
                                 || ex is UnauthorizedAccessException)
         {
-            // レジストリ読み込みに失敗してもアプリ本体は動作継続させる
+            // レジストリの読み込みに失敗してもアプリ本体の動作は継続する。
             Debug.WriteLine($"環境変数リロード失敗: {ex}");
             return;
         }

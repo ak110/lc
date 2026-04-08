@@ -63,7 +63,7 @@ public sealed class SubStream : Stream
         {
             if (value < 0 || size <= value)
             {
-                throw new ArgumentOutOfRangeException("Position", value, "ファイル位置の設定に失敗しました");
+                throw new ArgumentOutOfRangeException("Position", value, "ファイル位置の設定に失敗した");
             }
 
             parent.Position = value + offset;

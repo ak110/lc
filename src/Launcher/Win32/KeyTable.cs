@@ -246,7 +246,7 @@ public static class KeyTable
         }
         else
         {
-            System.Diagnostics.Debug.Fail("未定義のキーっぽい：" + str);
+            System.Diagnostics.Debug.Fail("未定義のキーである可能性がある: " + str);
             return null;
         }
     }

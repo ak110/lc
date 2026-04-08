@@ -107,17 +107,17 @@ struct WIN32_FIND_DATAW
 #endregion
 
 /// <summary>
-/// ショートカットに関する処理を行うためのクラスです。
+/// ショートカットに関する処理を行うクラス。
 /// </summary>
 public sealed class ShellLink : IDisposable
 {
-    // IShellLinkインターフェイス
+    // IShellLink インターフェイス
     private IShellLinkW? shellLinkW;
 
     // カレントファイル
     private string currentFile;
 
-    // double-dispose防止フラグ
+    // 二重 dispose を防止するフラグ
     private bool disposed;
 
     // 各種定数
@@ -130,17 +130,17 @@ public sealed class ShellLink : IDisposable
     #region "[型] ShellLinkDisplayMode列挙型"
 
     /// <summary>
-    /// 実行時のウィンドウの表示方法を表す列挙型です。
+    /// 実行時のウィンドウの表示方法を表す列挙型。
     /// </summary>
     public enum ShellLinkDisplayMode : int
     {
-        /// <summary>通常の大きさのウィンドウで起動します。</summary>
+        /// <summary>通常サイズのウィンドウで起動する。</summary>
         Normal = 1,
 
-        /// <summary>最大化された状態で起動します。</summary>
+        /// <summary>最大化された状態で起動する。</summary>
         Maximized = 3,
 
-        /// <summary>最小化された状態で起動します。</summary>
+        /// <summary>最小化された状態で起動する。</summary>
         Minimized = 7,
     }
 
@@ -185,9 +185,9 @@ public sealed class ShellLink : IDisposable
     #region "コンストラクション・デストラクション"
 
     /// <summary>
-    /// コンストラクタ
+    /// コンストラクタ。
     /// </summary>
-    /// <exception cref="COMException">IShellLinkインターフェイスを取得できませんでした。</exception>
+    /// <exception cref="COMException">IShellLink インターフェイスを取得できなかった場合の例外。</exception>
     public ShellLink()
     {
         currentFile = "";
@@ -198,7 +198,7 @@ public sealed class ShellLink : IDisposable
         }
         catch
         {
-            throw new COMException("IShellLinkインターフェイスを取得できませんでした。");
+            throw new COMException("IShellLink インターフェイスを取得できなかった");
         }
     }
 
@@ -221,7 +221,7 @@ public sealed class ShellLink : IDisposable
     }
 
     /// <summary>
-    /// このインスタンスが使用しているリソースを解放します。
+    /// このインスタンスが使用しているリソースを解放する。
     /// </summary>
     public void Dispose()
     {
@@ -417,101 +417,101 @@ public sealed class ShellLink : IDisposable
     #region "保存と読み込み"
 
     /// <summary>
-    /// IShellLinkインターフェイスからキャストされたIPersistFileインターフェイスを取得します。
+    /// IShellLink インターフェイスからキャストされた IPersistFile インターフェイスを取得する。
     /// </summary>
-    /// <returns>IPersistFileインターフェイス。取得できなかった場合はnull。</returns>
+    /// <returns>IPersistFile インターフェイス。取得できなかった場合は null。</returns>
     private UCOMIPersistFile? GetIPersistFile()
     {
         return shellLinkW as UCOMIPersistFile;
     }
 
     /// <summary>
-    /// カレントファイルにショートカットを保存します。
+    /// カレントファイルにショートカットを保存する。
     /// </summary>
-    /// <exception cref="COMException">IPersistFileインターフェイスを取得できませんでした。</exception>
+    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
     public void Save()
     {
         Save(currentFile);
     }
 
     /// <summary>
-    /// 指定したファイルにショートカットを保存します。
+    /// 指定したファイルにショートカットを保存する。
     /// </summary>
     /// <param name="linkFile">ショートカットを保存するファイル</param>
-    /// <exception cref="COMException">IPersistFileインターフェイスを取得できませんでした。</exception>
+    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
     public void Save(string linkFile)
     {
-        // IPersistFileインターフェイスを取得して保存
+        // IPersistFile インターフェイスを取得して保存する。
         UCOMIPersistFile? persistFile = GetIPersistFile();
 
-        if (persistFile is null) throw new COMException("IPersistFileインターフェイスを取得できませんでした。");
+        if (persistFile is null) throw new COMException("IPersistFile インターフェイスを取得できなかった");
 
         persistFile.Save(linkFile, true);
 
-        // カレントファイルを保存
+        // カレントファイルを保存する。
         currentFile = linkFile;
     }
 
     /// <summary>
-    /// 指定したファイルからショートカットを読み込みます。
+    /// 指定したファイルからショートカットを読み込む。
     /// </summary>
     /// <param name="linkFile">ショートカットを読み込むファイル</param>
-    /// <exception cref="FileNotFoundException">ファイルが見つかりません。</exception>
-    /// <exception cref="COMException">IPersistFileインターフェイスを取得できませんでした。</exception>
+    /// <exception cref="FileNotFoundException">ファイルが見つからなかった場合の例外。</exception>
+    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
     public void Load(string linkFile)
     {
         Load(linkFile, IntPtr.Zero, ShellLinkResolveFlags.SLR_ANY_MATCH | ShellLinkResolveFlags.SLR_NO_UI, 1);
     }
 
     /// <summary>
-    /// 指定したファイルからショートカットを読み込みます。
+    /// 指定したファイルからショートカットを読み込む。
     /// </summary>
     /// <param name="linkFile">ショートカットを読み込むファイル</param>
     /// <param name="hWnd">このコードを呼び出したオーナーのウィンドウハンドル</param>
     /// <param name="resolveFlags">ショートカット情報の解決に関する動作を表すフラグ</param>
-    /// <exception cref="FileNotFoundException">ファイルが見つかりません。</exception>
-    /// <exception cref="COMException">IPersistFileインターフェイスを取得できませんでした。</exception>
+    /// <exception cref="FileNotFoundException">ファイルが見つからなかった場合の例外。</exception>
+    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
     public void Load(string linkFile, IntPtr hWnd, ShellLinkResolveFlags resolveFlags)
     {
         Load(linkFile, hWnd, resolveFlags, 1);
     }
 
     /// <summary>
-    /// 指定したファイルからショートカットを読み込みます。
+    /// 指定したファイルからショートカットを読み込む。
     /// </summary>
     /// <param name="linkFile">ショートカットを読み込むファイル</param>
     /// <param name="hWnd">このコードを呼び出したオーナーのウィンドウハンドル</param>
     /// <param name="resolveFlags">ショートカット情報の解決に関する動作を表すフラグ</param>
-    /// <param name="timeOut">SLR_NO_UIを指定したときのタイムアウト値(ミリ秒)</param>
-    /// <exception cref="FileNotFoundException">ファイルが見つかりません。</exception>
-    /// <exception cref="COMException">IPersistFileインターフェイスを取得できませんでした。</exception>
+    /// <param name="timeOut">SLR_NO_UI を指定したときのタイムアウト値 (ミリ秒)</param>
+    /// <exception cref="FileNotFoundException">ファイルが見つからなかった場合の例外。</exception>
+    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
     public void Load(string linkFile, IntPtr hWnd, ShellLinkResolveFlags resolveFlags, TimeSpan timeOut)
     {
         Load(linkFile, hWnd, resolveFlags, (int)timeOut.TotalMilliseconds);
     }
 
     /// <summary>
-    /// 指定したファイルからショートカットを読み込みます。
+    /// 指定したファイルからショートカットを読み込む。
     /// </summary>
     /// <param name="linkFile">ショートカットを読み込むファイル</param>
     /// <param name="hWnd">このコードを呼び出したオーナーのウィンドウハンドル</param>
     /// <param name="resolveFlags">ショートカット情報の解決に関する動作を表すフラグ</param>
-    /// <param name="timeOutMilliseconds">SLR_NO_UIを指定したときのタイムアウト値(ミリ秒)</param>
-    /// <exception cref="FileNotFoundException">ファイルが見つかりません。</exception>
-    /// <exception cref="COMException">IPersistFileインターフェイスを取得できませんでした。</exception>
+    /// <param name="timeOutMilliseconds">SLR_NO_UI を指定したときのタイムアウト値 (ミリ秒)</param>
+    /// <exception cref="FileNotFoundException">ファイルが見つからなかった場合の例外。</exception>
+    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
     public void Load(string linkFile, IntPtr hWnd, ShellLinkResolveFlags resolveFlags, int timeOutMilliseconds)
     {
-        if (!File.Exists(linkFile)) throw new FileNotFoundException("ファイルが見つかりません。", linkFile);
+        if (!File.Exists(linkFile)) throw new FileNotFoundException("ファイルが見つからなかった", linkFile);
 
-        // IPersistFileインターフェイスを取得
+        // IPersistFile インターフェイスを取得する。
         UCOMIPersistFile? persistFile = GetIPersistFile();
 
-        if (persistFile is null) throw new COMException("IPersistFileインターフェイスを取得できませんでした。");
+        if (persistFile is null) throw new COMException("IPersistFile インターフェイスを取得できなかった");
 
-        // 読み込み
+        // 読み込みを実行する。
         persistFile.Load(linkFile, 0x00000000);
 
-        // フラグ設定
+        // フラグを設定する。
         uint flags = (uint)resolveFlags;
 
         if ((resolveFlags & ShellLinkResolveFlags.SLR_NO_UI) == ShellLinkResolveFlags.SLR_NO_UI)
@@ -519,10 +519,10 @@ public sealed class ShellLink : IDisposable
             flags |= (uint)(timeOutMilliseconds << 16);
         }
 
-        // ショートカットに関する情報を読み込み
+        // ショートカットに関する情報を読み込む。
         shellLinkW!.Resolve(hWnd, flags);
 
-        // カレントファイルを指定
+        // カレントファイルを指定する。
         currentFile = linkFile;
     }
 

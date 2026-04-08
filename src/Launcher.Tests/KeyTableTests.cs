@@ -116,7 +116,7 @@ public sealed class KeyTableTests
         KeyTable.GetKey(name).Should().Be(expected);
     }
 
-    // GetKey_未定義名のテストは省略（Debug.Failがテストホストで例外になるため）
+    // GetKey_未定義名のテストは省略 (Debug.Failがテストホストで例外になるため)
 
     // --- GetKeyWithModifiers ---
 
@@ -147,7 +147,7 @@ public sealed class KeyTableTests
         mods.Should().Be(KeyTable.Modifiers.Ctrl | KeyTable.Modifiers.Alt | KeyTable.Modifiers.Shift);
     }
 
-    // GetKeyWithModifiers_不正なキー名のテストは省略（Debug.Failがテストホストで例外になるため）
+    // GetKeyWithModifiers_不正なキー名のテストは省略 (Debug.Failがテストホストで例外になるため)
 
     // --- GetVKey ---
 
@@ -194,7 +194,7 @@ public sealed class KeyTableTests
         {
             var key = (KeyTable.Keys)i;
             string? name = KeyTable.GetKeyName(key);
-            name.Should().NotBeNullOrEmpty($"キー {key} にキー名が登録されていません");
+            name.Should().NotBeNullOrEmpty($"キー {key} にキー名が登録されていない");
         }
     }
 
@@ -207,7 +207,7 @@ public sealed class KeyTableTests
         for (int i = 0; i < allNames.Length; i++)
         {
             var key = KeyTable.GetKey(allNames[i]);
-            key.Should().Be((KeyTable.Keys)i, $"キー名 '{allNames[i]}' の逆変換が一致しません");
+            key.Should().Be((KeyTable.Keys)i, $"キー名 '{allNames[i]}' の逆変換が一致しない");
         }
     }
 
@@ -224,7 +224,7 @@ public sealed class KeyTableTests
             vkey.Should().NotBe(SystemKeys.None, $"キー {key} の仮想キーコード変換が失敗");
 
             var roundTrip = KeyTable.VKeyToKeys(vkey);
-            roundTrip.Should().Be(key, $"キー {key} の往復変換が一致しません");
+            roundTrip.Should().Be(key, $"キー {key} の往復変換が一致しない");
         }
     }
 }

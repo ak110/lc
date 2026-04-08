@@ -6,7 +6,7 @@
 
 ## リリース
 
-- リリースは GitHub Actions の Release ワークフローで行う（詳細は docs/development.md）
+- リリースは GitHub Actions の Release ワークフローで行う (詳細は docs/development.md)
 - バグフィックス/小規模改善 → 「バグフィックス」、新機能追加 → 「マイナーバージョンアップ」を選択する
 - `git commit --amend` はリリースのバージョンバンプコミットと混ざるリスクがあるため、push済みコミットには使わない
 

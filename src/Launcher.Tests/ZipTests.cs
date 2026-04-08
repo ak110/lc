@@ -231,7 +231,7 @@ public sealed class ZipTests
             reader.Count.Should().Be(1);
         }
 
-        // leaveOpen=trueなのでストリームはまだ使える
+        // leaveOpen=true のためストリームはまだ利用可能である。
         ms.CanRead.Should().BeTrue();
         ms.Dispose();
     }

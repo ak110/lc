@@ -3,7 +3,7 @@
 ## 必要環境
 
 - Windows 10/11
-- [mise](https://mise.jdx.dev/)（タスクランナー・ツールバージョン管理）
+- [mise](https://mise.jdx.dev/) (タスクランナー・ツールバージョン管理)
 - [Visual Studio Code](https://code.visualstudio.com/)
 
 ## 初回セットアップ
@@ -17,7 +17,7 @@ mise install && mise run setup
 
 ## miseタスク
 
-普段使うのはこの2つ。
+普段使用するのは以下の2つである。
 
 | コマンド          | 内容                                          |
 | ----------------- | --------------------------------------------- |
@@ -26,7 +26,7 @@ mise install && mise run setup
 
 `git commit`時にはpre-commitフックが`mise run test`を自動実行する。
 
-その他のタスク。
+その他のタスクは以下のとおりである。
 
 | コマンド          | 説明                             |
 | ----------------- | -------------------------------- |
@@ -36,16 +36,16 @@ mise install && mise run setup
 | `mise run update` | 依存パッケージの更新             |
 | `mise run docs`   | ドキュメントのローカルプレビュー |
 
-VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスク（build）を実行できる。
+VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスク (build) を実行できる。
 
 ## デバッグ
 
-1. VSCodeで`F5`を押すとデバッグ起動
-2. `.vscode/launch.json`に起動設定を定義済み
+1. VSCodeで`F5`を押すとデバッグ起動する
+2. `.vscode/launch.json`に起動設定を定義している
 
 ## Analyzerルールの導入
 
-新しいAnalyzerルールを導入する際は、まず`.editorconfig`で`none`に抑制し、修正完了後に`warning`へ昇格するアプローチが安全。
+新しいAnalyzerルールを導入する際は、まず`.editorconfig`で`none`に抑制し、修正完了後に`warning`へ昇格するアプローチが安全である。
 `TreatWarningsAsErrors=true`環境では`suggestion`もビルドに表れないため、`dotnet format --diagnostics`で対象箇所を列挙する。
 
 ## .NET SDKの更新
@@ -60,14 +60,14 @@ mise upgrade dotnet
 
 - URL: <https://ak110.github.io/lc/>
 - ローカルプレビュー: `mise run docs`
-- 自動デプロイ: masterブランチへのpush時に`Docs`ワークフローが自動実行される（`docs/`以下または`package.json`の変更時のみ）
+- 自動デプロイ: masterブランチへのpush時に`Docs`ワークフローが自動実行される (`docs/`以下または`package.json`の変更時のみ)
 
 ## リリース手順
 
 GitHub Actionsの`Release`ワークフローを手動実行してリリースする。
 
 ```cmd
-rem リリース実行（いずれか1つ）
+rem リリース実行 (いずれか1つ)
 gh workflow run release.yaml --field "bump=バグフィックス"
 gh workflow run release.yaml --field "bump=マイナーバージョンアップ"
 gh workflow run release.yaml --field "bump=メジャーバージョンアップ"

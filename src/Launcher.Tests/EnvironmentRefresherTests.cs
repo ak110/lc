@@ -5,9 +5,9 @@ using Xunit;
 namespace Launcher.Tests;
 
 /// <summary>
-/// EnvironmentRefresherのテスト。
-/// Refresh()自体はレジストリと現プロセス環境を触るためテスト対象外。
-/// Explorer互換のマージ規則を実装するBuildExpectedEnv (純粋関数) のみ検証する。
+/// EnvironmentRefresher のテスト。
+/// Refresh() 自体はレジストリと現プロセス環境を変更するためテスト対象外とする。
+/// Explorer 互換のマージ規則を実装する BuildExpectedEnv (純粋関数) のみを検証する。
 /// </summary>
 public sealed class EnvironmentRefresherTests
 {
@@ -76,19 +76,19 @@ public sealed class EnvironmentRefresherTests
     [Fact]
     public void PATH連結は大文字小文字を無視する()
     {
-        // システム側は "path"、ユーザー側は "PATH" という想定
+        // システム側は "path"、ユーザー側は "PATH" という想定。
         var result = EnvironmentRefresher.BuildExpectedEnv(
             [Kv("path", @"C:\sys")],
             [Kv("PATH", @"C:\user")]);
 
-        // 結合が成立する
+        // 結合が成立する。
         result["Path"].Should().Be(@"C:\sys;C:\user");
     }
 
     [Fact]
     public void REG_EXPAND_SZの埋め込み変数が展開される()
     {
-        // %SystemRoot% は通常 C:\Windows を指す
+        // %SystemRoot% は通常 C:\Windows を指す。
         string systemRoot = Environment.GetEnvironmentVariable("SystemRoot")!;
         var result = EnvironmentRefresher.BuildExpectedEnv(
             [],

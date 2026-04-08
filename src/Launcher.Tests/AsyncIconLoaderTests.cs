@@ -22,7 +22,7 @@ public sealed class AsyncIconLoaderTests
         loader.Load("dummy2.exe", false, "arg2");
         loader.Clear();
 
-        // 例外が発生しなければOK（アイコン取得自体はファイルが存在しないため失敗する可能性あり）
+        // 例外が発生しなければOK (アイコン取得自体はファイルが存在しないため失敗する可能性あり)
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public sealed class AsyncIconLoaderTests
         var loader = new AsyncIconLoader(workerCount: 1);
         loader.Dispose();
 
-        // Dispose後のLoadは例外を投げずに無視されること
+        // Dispose 後の Load は例外を送出せずに無視されること。
         loader.Load("test.exe", true, null);
     }
 
@@ -166,7 +166,7 @@ public sealed class AsyncIconLoaderTests
             {
                 int count = Interlocked.Increment(ref callCount);
                 if (count == 1) throw new FileLoadException("1回目失敗");
-                return null; // 2回目は成功（nullアイコン = 成功扱い）
+                return null; // 2回目は成功 (nullアイコン = 成功扱い)
             });
         using var done = new ManualResetEventSlim();
         List<IconLoadedEventArgs> events = [];
@@ -205,7 +205,7 @@ public sealed class AsyncIconLoaderTests
         loader.Load("test.exe", true, "arg");
         done.Wait(TimeSpan.FromSeconds(3)).Should().BeTrue("リトライ上限後にイベントが発火されるべき");
 
-        // 合計3回試行（初回 + リトライ2回）
+        // 合計3回試行 (初回 + リトライ2回)
         callCount.Should().Be(3);
         events.Should().ContainSingle();
         events[0].Icon.Should().BeNull();

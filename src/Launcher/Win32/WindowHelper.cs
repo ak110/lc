@@ -359,27 +359,27 @@ public sealed class WindowHelper
     }
 
     /// <summary>
-    /// PostMessage。
+    /// PostMessage を呼び出す。
     /// </summary>
-    /// <exception cref="NullReferenceException">hwndがIntPtr.Zeroなら例外</exception>
+    /// <exception cref="NullReferenceException">hwnd が IntPtr.Zero の場合の例外</exception>
     public bool PostMessage(int Msg, IntPtr wParam, IntPtr lParam)
     {
         if (hwnd == IntPtr.Zero)
         {
-            throw new NullReferenceException("送信先ウィンドウが存在しません");
+            throw new NullReferenceException("送信先ウィンドウが存在しない");
         }
         return PostMessage(hwnd, Msg, wParam, lParam);
     }
 
     /// <summary>
-    /// SendMessage。
+    /// SendMessage を呼び出す。
     /// </summary>
-    /// <exception cref="NullReferenceException">hwndがIntPtr.Zeroなら例外</exception>
+    /// <exception cref="NullReferenceException">hwnd が IntPtr.Zero の場合の例外</exception>
     public int SendMessage(int Msg, IntPtr wParam, IntPtr lParam)
     {
         if (hwnd == IntPtr.Zero)
         {
-            throw new NullReferenceException("送信先ウィンドウが存在しません");
+            throw new NullReferenceException("送信先ウィンドウが存在しない");
         }
         return SendMessage(hwnd, Msg, wParam, lParam);
     }

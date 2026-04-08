@@ -53,7 +53,7 @@ public sealed class ErrorReporterTests
         result.Should().Contain("IOException");
         result.Should().Contain("中間エラー");
 
-        // BaseExceptionセクション（修正前はここがInnerExceptionの情報になっていた）
+        // BaseExceptionセクション (修正前はここがInnerExceptionの情報になっていた)
         result.Should().Contain("BaseException ->");
         result.Should().Contain("ArgumentException");
         result.Should().Contain("根本原因");

@@ -280,14 +280,14 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// <summary>
     /// 入力文字列を、コマンド名と引数に分ける。
     /// </summary>
-    /// <returns>コマンド名が一致した場合はtrue。falseだと割と適当な結果が返る。</returns>
+    /// <returns>コマンド名が一致した場合は true。false の場合の戻り値は信頼できない。</returns>
     public bool ParseInput(string input, Config config, out string commandName, out string? arguments)
     {
         return CommandMatcher.ParseInput(Name, input, config, out commandName, out arguments);
     }
 
     /// <summary>
-    /// コマンド名と比較し、一致した長さに応じた点数を返す
+    /// コマンド名と比較し、一致した長さに応じた点数を返す。
     /// </summary>
     public int GetMatchScore(string input, Config config)
     {
@@ -295,7 +295,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     }
 
     /// <summary>
-    /// 指定されたファイルからコマンドのデフォルトを適当に作成。
+    /// 指定されたファイルからコマンドの初期値を生成する。
     /// </summary>
     public static Command FromFile(string file)
     {

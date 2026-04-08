@@ -342,7 +342,7 @@ public static class SchedulerPresenter
 
     /// <summary>
     /// メッセージボックスタスク。デリゲート経由でUI層に委譲する。
-    /// Invoke（同期）で実行されるため、ダイアログが閉じるまでスレッドをブロックする。
+    /// Invoke (同期) で実行されるため、ダイアログが閉じるまでスレッドをブロックする。
     /// </summary>
     private static void ExecuteMessageBoxTask(SchedulerTask task)
     {

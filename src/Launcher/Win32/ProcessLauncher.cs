@@ -38,8 +38,8 @@ public sealed class ShellProcessStartInfo
 }
 
 /// <summary>
-/// .NETのShellExecuteEx()のラッパーはWindowStyleの辺りがビミョーなので自前用に実装。
-/// 基本的に.NETのインターフェースに大体準拠したが、拡張機能はとりあえず省略。
+/// .NET の ShellExecuteEx() ラッパーは WindowStyle 周辺の挙動が要件に合わないため、独自に実装する。
+/// .NET のインターフェースにおおむね準拠するが、拡張機能は省略している。
 /// </summary>
 public static class ProcessLauncher
 {
@@ -110,12 +110,12 @@ public static class ProcessLauncher
 
         if (!ShellExecuteEx(ref shinfo))
         {
-            throw new System.ComponentModel.Win32Exception("ファイルの実行に失敗しました。");
+            throw new System.ComponentModel.Win32Exception("ファイルの実行に失敗した");
         }
         return shinfo.hProcess;
     }
 
-    #region ShellExecuteExとか
+    #region ShellExecuteEx 関連の P/Invoke 定義
 
     const int SW_HIDE = 0;
     const int SW_SHOWNORMAL = 1;

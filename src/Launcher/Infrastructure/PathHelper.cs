@@ -1,19 +1,19 @@
 namespace Launcher.Infrastructure;
 
 /// <summary>
-/// パス文字列操作のユーティリティ
+/// パス文字列操作のユーティリティ。
 /// </summary>
 public static class PathHelper
 {
     /// <summary>
-    /// 駆け上がりを行わない相対パスの取得。
+    /// 親ディレクトリへ遡らない相対パスを取得する。
     /// </summary>
     /// <remarks>
-    /// pathとbaseDirが同じディレクトリを指していた場合は "." が返る。
+    /// path と baseDir が同じディレクトリを指す場合は "." を返す。
     /// </remarks>
-    /// <param name="path">求めるパス。baseDir以下へのパスである必要がある</param>
+    /// <param name="path">求めるパス。baseDir 以下のパスである必要がある。</param>
     /// <param name="baseDir">基準ディレクトリ</param>
-    /// <exception cref="IOException">pathがbaseDir以下へのパスではない場合</exception>
+    /// <exception cref="IOException">path が baseDir 以下のパスではない場合</exception>
     public static string GetRelativeSubPath(string path, string baseDir)
     {
         if (string.IsNullOrEmpty(path))
@@ -24,35 +24,35 @@ public static class PathHelper
         {
             throw new ArgumentNullException(nameof(baseDir));
         }
-        // 念のため正規化
+        // 安全のため正規化する。
         path = PathHelper.PathNormalizeWithFullPath(path);
         baseDir = PathHelper.PathNormalizeWithFullPath(baseDir);
-        // 同一ディレクトリ判定（baseDirに\を付加する前に行う）
+        // 同一ディレクトリ判定 (baseDir に \ を付加する前に行う)。
         if (string.Equals(path, baseDir, StringComparison.OrdinalIgnoreCase))
         {
             return ".";
         }
-        // baseDirの終端を \\ に統一（startsWith判定用）
+        // StartsWith 判定のため baseDir の終端を \ に統一する。
         if (baseDir[baseDir.Length - 1] != Path.DirectorySeparatorChar)
         {
             baseDir += Path.DirectorySeparatorChar.ToString();
         }
-        // pathがbaseDirの下位ではない場合
+        // path が baseDir の下位ではない場合。
         if (!path.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
         {
-            throw new IOException($"{path} の相対パスの生成に失敗しました。");
+            throw new IOException($"{path} の相対パスの生成に失敗した");
         }
         return path[baseDir.Length..];
     }
 
     /// <summary>
-    /// パスの正規化を行う。
+    /// パスを正規化する。
     /// </summary>
     /// <remarks>
-    /// 環境変数の展開、/ -> \\の置換、末尾に\\があれば削除(C:\ とか以外)。
-    /// 必要があれば、FileHelper.GetCorrectPath()やPath.GetFullPath()も通すべし。
+    /// 環境変数の展開、/ から \ への置換、末尾の \ の削除 (C:\ などは除く) を行う。
+    /// 必要に応じて FileHelper.GetCorrectPath() や Path.GetFullPath() も併用する。
     /// </remarks>
-    /// <param name="path">パスな文字列</param>
+    /// <param name="path">パス文字列</param>
     /// <returns>正規化されたパス</returns>
     public static string PathNormalize(string path)
     {
@@ -69,7 +69,7 @@ public static class PathHelper
     /// <summary>
     /// パスの正規化とフルパス化を行う。
     /// </summary>
-    /// <param name="path">パスな文字列</param>
+    /// <param name="path">パス文字列</param>
     /// <returns>正規化されたパス</returns>
     public static string PathNormalizeWithFullPath(string path)
     {
@@ -81,7 +81,7 @@ public static class PathHelper
     }
 
     /// <summary>
-    /// 二つのパスが等しいっぽければtrue
+    /// 2つのパスが等価とみなせる場合に true を返す。
     /// </summary>
     public static bool EqualsPath(string path1, string path2)
     {

@@ -150,7 +150,7 @@ public sealed class MainFormPresenterTests
         var texts = MainFormPresenter.GetButtonTexts(InputState.Empty, lastFocus: 1, Keys.None);
 
         texts.Button1Text.Should().Be("実行");
-        // button2はstateに依存（Emptyなので「隠す」）
+        // button2はstateに依存 (Emptyなので「隠す」)
         texts.Button2Text.Should().Be("隠す");
     }
 

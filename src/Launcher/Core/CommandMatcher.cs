@@ -91,11 +91,11 @@ public static class CommandMatcher
     /// <summary>
     /// 入力文字列を、コマンド名と引数に分ける。
     /// </summary>
-    /// <returns>コマンド名が一致した場合はtrue。falseだと割と適当な結果が返る。</returns>
+    /// <returns>コマンド名が一致した場合は true。false の場合の戻り値は信頼できない。</returns>
     public static bool ParseInput(string name, string input, Config config, out string commandName, out string? arguments)
     {
         int n = GetMatchLength(name, input, config);
-        // コマンド名と完全一致
+        // コマンド名と完全一致する場合。
         if (name.Length == n &&
             (input.Length <= n || input[n] == ' '))
         {
@@ -111,7 +111,7 @@ public static class CommandMatcher
     }
 
     /// <summary>
-    /// 入力文字列をコマンド名と引数に分ける（マッチしない場合用）
+    /// 入力文字列をコマンド名と引数に分ける (マッチしない場合用)
     /// </summary>
     public static void ParseInputNotMatch(string input, out string commandName, out string? arguments)
     {

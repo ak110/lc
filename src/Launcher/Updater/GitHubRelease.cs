@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Launcher.Updater;
 
 /// <summary>
-/// リリース情報モデル（GitHub Pages上のversion.jsonから取得）
+/// リリース情報モデル (GitHub Pages上のversion.jsonから取得)
 /// </summary>
 public sealed class GitHubRelease
 {

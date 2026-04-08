@@ -58,16 +58,16 @@ public partial class MainForm : Form
     }
 
     /// <summary>
-    /// リストビューとアイコンの事前初期化（初回Show前に呼ぶ）
+    /// リストビューとアイコンの事前初期化 (初回Show前に呼ぶ)
     /// </summary>
     public void PreInitialize()
     {
-        // ハンドル作成（アイコン非同期読み込みのInvokeに必要）
+        // ハンドル作成 (アイコン非同期読み込みのInvokeに必要)
         _ = Handle;
         // リストビューの構築とアイコン読み込みを事前実行
         textBox1_TextChanged(this, EventArgs.Empty);
         ApplyConfig();
-        // 初回表示時にtextBox1へフォーカスを設定（Alt+Spaceでシステムメニューが出る問題の対策）
+        // 初回表示時にtextBox1へフォーカスを設定 (Alt+Spaceでシステムメニューが出る問題の対策)
         ActiveControl = textBox1;
         initialized = true;
     }
@@ -119,7 +119,7 @@ public partial class MainForm : Form
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {
-                Debug.WriteLine($"Config保存失敗（終了時）: {ex.Message}");
+                Debug.WriteLine($"Config保存失敗 (終了時): {ex.Message}");
             }
         }
     }
@@ -157,7 +157,7 @@ public partial class MainForm : Form
     }
 
     /// <summary>
-    /// コマンド一覧の表示だけを更新（アイコン再読込なし）
+    /// コマンド一覧の表示だけを更新 (アイコン再読込なし)
     /// </summary>
     public void RefreshCommandList()
     {
@@ -523,7 +523,7 @@ public partial class MainForm : Form
             {
                 ownerForm.CommandList.Serialize(".cmd.cfg");
                 ApplyConfig();
-                textBox1.Clear(); // 消しちゃう
+                textBox1.Clear(); // 入力欄をクリアする。
             }
         }
     }
@@ -574,7 +574,7 @@ public partial class MainForm : Form
     /// </summary>
     void iconLoader_IconLoaded(object? sender, IconLoadedEventArgs e)
     {
-        // Invoke()にはハンドルが必要（CreatedはShow()まで立たないのでIsHandleCreatedで判定）
+        // Invoke()にはハンドルが必要 (CreatedはShow()まで立たないのでIsHandleCreatedで判定)
         if (!IsHandleCreated || IsDisposed)
         {
             e.Icon?.Dispose();
@@ -587,7 +587,7 @@ public partial class MainForm : Form
             {
                 try
                 {
-                    // 世代が古い結果は破棄（Clear()後の古いリクエスト結果を無視）
+                    // 世代が古い結果は破棄 (Clear()後の古いリクエスト結果を無視)
                     if (e.Generation != iconLoader.Generation) return;
 
                     if (e.Icon is not null)
@@ -622,7 +622,7 @@ public partial class MainForm : Form
         }
         catch (InvalidOperationException ex)
         {
-            // Invoke失敗（フォームが破棄済み等。ObjectDisposedExceptionも含む）
+            // Invoke失敗 (フォームが破棄済み等。ObjectDisposedExceptionも含む)
             e.Icon?.Dispose();
             System.Diagnostics.Debug.WriteLine(ex.ToString());
         }
@@ -638,14 +638,14 @@ public partial class MainForm : Form
         var result = presenter.ProcessTextChange(GetInputText());
         state = result.State;
 
-        // 補完処理（テキストボックスへの反映はUI操作のためForm側で行う）
+        // 補完処理 (テキストボックスへの反映はUI操作のためForm側で行う)
         if (result.CompletionText is not null)
         {
             textBox1.Text = result.CompletionText;
             textBox1.Select(result.SelectionStart, result.SelectionLength);
         }
 
-        // コマンドをリストビューへ（AddRangeでまとめて追加して描画コストを削減）
+        // コマンドをリストビューへ (AddRangeでまとめて追加して描画コストを削減)
         listView1.Items.Clear();
         var items = new ListViewItem[result.MatchedCommands.Count];
         int idx = 0;
@@ -771,7 +771,7 @@ public partial class MainForm : Form
         }
     }
     /// <summary>
-    /// コマンドの実行を行う
+    /// コマンドを実行する。
     /// </summary>
     private void ExecuteCommand(Command command, string input)
     {
@@ -828,13 +828,13 @@ public partial class MainForm : Form
                 }
                 catch (InvalidOperationException)
                 {
-                    // フォーム破棄済み等で表示不可（ObjectDisposedExceptionも含む）
+                    // フォーム破棄済み等で表示不可 (ObjectDisposedExceptionも含む)
                 }
             }));
         }
         catch (InvalidOperationException)
         {
-            // Invoke失敗（ObjectDisposedExceptionも含む）
+            // Invoke失敗 (ObjectDisposedExceptionも含む)
         }
     }
 

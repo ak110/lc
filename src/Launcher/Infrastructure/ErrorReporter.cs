@@ -5,14 +5,14 @@ using Launcher.UI;
 namespace Launcher.Infrastructure;
 
 /// <summary>
-/// エラー報告処理
+/// エラー報告処理。
 /// </summary>
 public sealed class ErrorReporter
 {
     static readonly ErrorReporter instance = new();
 
     /// <summary>
-    /// Singletonなインスタンスの取得
+    /// シングルトンインスタンスを取得する。
     /// </summary>
     public static ErrorReporter Instance => instance;
 
@@ -26,7 +26,7 @@ public sealed class ErrorReporter
     }
 
     /// <summary>
-    /// オーナーウィンドウ
+    /// オーナーウィンドウ。
     /// </summary>
     public Control? Owner
     {
@@ -35,7 +35,7 @@ public sealed class ErrorReporter
     }
 
     /// <summary>
-    /// formをOwnerに登録。
+    /// form を Owner に登録する。
     /// </summary>
     public void SetOwner(Control form)
     {
@@ -44,17 +44,15 @@ public sealed class ErrorReporter
     }
 
     /// <summary>
-    /// アプリケーションの再起動を行う。
-    /// 必ず実装すべし。
+    /// アプリケーションの再起動を行う。必ず実装すること。
     /// </summary>
     public event EventHandler? RestartApplication;
 
     /// <summary>
-    /// アプリケーションの終了を行う。
-    /// 必ず実装すべし。
+    /// アプリケーションの終了を行う。必ず実装すること。
     /// </summary>
     /// <remarks>
-    /// Application.Exit()するだけでいい気がする…。
+    /// 通常は Application.Exit() を呼び出す実装で足りる。
     /// </remarks>
     public event EventHandler? ExitApplication;
 
@@ -88,7 +86,7 @@ public sealed class ErrorReporter
     }
 
     /// <summary>
-    /// 例外に対する処理
+    /// 例外を処理する。
     /// </summary>
     /// <param name="e">例外オブジェクト</param>
     public void OnException(Exception e)
@@ -116,12 +114,12 @@ public sealed class ErrorReporter
                     break;
             }
         }
-        // エラーレポーター自体の例外ハンドリング（最終防御ライン）
+        // エラーレポーター自体の例外ハンドリング (最終防御ライン)
 #pragma warning disable CA1031 // エラーレポーターは最終防御ラインのため全例外をキャッチする
         catch (Exception ex)
         {
             System.Diagnostics.Debug.Fail(ex.ToString());
-            // ここに再帰すると面倒なので。。
+            // 再帰的に呼び出されることを防ぐため、ここでは例外を握りつぶす。
         }
 #pragma warning restore CA1031
         finally
@@ -131,7 +129,7 @@ public sealed class ErrorReporter
     }
 
     /// <summary>
-    /// ErrorReporterFormを表示
+    /// ErrorReporterForm を表示する。
     /// </summary>
     private DialogResult ShowReporterForm(Exception ex)
     {
@@ -144,7 +142,7 @@ public sealed class ErrorReporter
     }
 
     /// <summary>
-    /// 例外の詳細メッセージを組み立てて返す
+    /// 例外の詳細メッセージを組み立てて返す。
     /// </summary>
     public static string GetDetailMessage(Exception e)
     {

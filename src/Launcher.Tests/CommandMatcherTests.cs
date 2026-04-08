@@ -182,7 +182,7 @@ public sealed class CommandMatcherTests
         arguments.Should().BeNull();
     }
 
-    // --- 部分一致の回帰テスト（旧Command静的コンストラクタの検証を置換） ---
+    // --- 部分一致の回帰テスト (旧Command静的コンストラクタの検証を置換) ---
 
     [Fact]
     public void GetMatchScore_htdocsにdocsで部分一致する()

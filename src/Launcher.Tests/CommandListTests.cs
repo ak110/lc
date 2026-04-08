@@ -108,7 +108,7 @@ public sealed class CommandListTests
         var result = list.FindMatch("abc", _config).ToList();
 
         result.Should().HaveCount(2);
-        // 短い名前（完全一致に近い）のabcが先に来る
+        // 短い名前 (完全一致に近い) のabcが先に来る
         result[0].Name.Should().Be("abc");
         result[1].Name.Should().Be("abcdef");
     }

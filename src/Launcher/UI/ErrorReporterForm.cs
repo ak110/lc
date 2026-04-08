@@ -56,7 +56,7 @@ public partial class ErrorReporterForm : Form
     }
 
     /// <summary>
-    /// 畳むサイズを適当に算出
+    /// 折り畳み時のサイズを算出する。
     /// </summary>
     private int GetFoldingSize()
     {

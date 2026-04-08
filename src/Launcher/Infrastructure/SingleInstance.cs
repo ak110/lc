@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace Launcher.Infrastructure;
 
 /// <summary>
-/// 多重起動対策などを行う
+/// 多重起動対策などを行う。
 /// </summary>
 /// <example>
 /// using (SingleInstance singleInstance = new SingleInstance()) {
@@ -22,12 +22,12 @@ public sealed class SingleInstance : IDisposable
 
     /// <summary>
     /// コンストラクタ。
-    /// mutex名は自身へのパスを元に作成。
+    /// mutex 名は自身へのパスを元に作成する。
     /// </summary>
     public SingleInstance() : this(GetMutexName()) { }
 
     /// <summary>
-    /// 自身へのパスを元にmutex名を作成
+    /// 自身へのパスを元に mutex 名を作成する。
     /// </summary>
     private static string GetMutexName()
     {
@@ -40,9 +40,9 @@ public sealed class SingleInstance : IDisposable
 
     /// <summary>
     /// コンストラクタ。
-    /// ここで多重起動の排他処理や初回起動なのかの判定が行われる。
+    /// 多重起動の排他処理と初回起動かどうかの判定をここで行う。
     /// </summary>
-    /// <param name="mutexName">mutex名</param>
+    /// <param name="mutexName">mutex 名</param>
     public SingleInstance(string mutexName)
     {
         try
@@ -52,23 +52,23 @@ public sealed class SingleInstance : IDisposable
         }
         catch (IOException)
         {
-            // 多重起動な事にしてしまう。
+            // 多重起動として扱う。
             firstRun = false;
         }
         catch (UnauthorizedAccessException)
         {
-            // 多重起動な事にしてしまう。
+            // 多重起動として扱う。
             firstRun = false;
         }
         catch (AbandonedMutexException)
         {
-            // 前回のプロセスが異常終了した場合。Mutexは取得済みなので初回起動扱い。
+            // 前回のプロセスが異常終了した場合。Mutex は取得済みのため初回起動として扱う。
             firstRun = true;
         }
     }
 
     /// <summary>
-    /// あとしまつ。
+    /// 後始末を行う。
     /// </summary>
     public void Dispose()
     {
@@ -85,7 +85,7 @@ public sealed class SingleInstance : IDisposable
     }
 
     /// <summary>
-    /// 既に起動済みなウィンドウをアクティブにする
+    /// 既に起動済みのウィンドウをアクティブにする。
     /// </summary>
     public static void SetActive()
     {
@@ -119,7 +119,7 @@ public sealed class SingleInstance : IDisposable
     #endregion
 
     /// <summary>
-    /// 自分のモジュールファイル名と同じファイル名なプロセスを列挙（多分０～１個のはず）
+    /// 自身と同じモジュールファイル名のプロセスを列挙する (通常は 0〜1 個となる)。
     /// </summary>
     public static List<Process> GetProcesses()
     {
@@ -128,20 +128,20 @@ public sealed class SingleInstance : IDisposable
         Process[] processes = Process.GetProcessesByName(current.ProcessName);
         foreach (Process p in processes)
         {
-            // 自分なら無視
+            // 自分自身は無視する。
             if (p.Id == current.Id)
             {
                 p.Dispose();
                 continue;
             }
-            // ファイル名違うなら無視
+            // ファイル名が異なる場合は無視する。
             if (!string.Equals(p.MainModule?.FileName,
                 current.MainModule?.FileName, StringComparison.OrdinalIgnoreCase))
             {
                 p.Dispose();
                 continue;
             }
-            // 追加（呼び出し元でDisposeする責務）
+            // 追加 (呼び出し元でDisposeする責務)
             list.Add(p);
         }
         return list;

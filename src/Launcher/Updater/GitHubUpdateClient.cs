@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Launcher.Updater;
 
 /// <summary>
-/// GitHub Pages経由の更新チェッククライアント（APIレートリミット回避）
+/// GitHub Pages経由の更新チェッククライアント (APIレートリミット回避)
 /// </summary>
 public static class GitHubUpdateClient
 {
