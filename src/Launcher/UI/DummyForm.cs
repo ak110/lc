@@ -228,7 +228,7 @@ public partial class DummyForm : Form
     private void コマンドの管理LToolStripMenuItem_Click(object sender, EventArgs e)
     {
         using var form = new CommandManagementForm(this);
-        form.ShowDialog(GetVisibleOwner());
+        form.ShowDialogOver(GetVisibleOwner());
     }
 
     /// <summary>
@@ -259,7 +259,7 @@ public partial class DummyForm : Form
     public void ShowConfigDialog()
     {
         using var form = new ConfigForm(config, ButtonLauncherData);
-        if (form.ShowDialog(GetVisibleOwner()) == DialogResult.OK)
+        if (form.ShowDialogOver(GetVisibleOwner()) == DialogResult.OK)
         {
             config = form.Config;
             config.Serialize();
@@ -311,7 +311,7 @@ public partial class DummyForm : Form
             }
 
             using var form = new UpdateForm(release!);
-            form.ShowDialog(GetVisibleOwner());
+            form.ShowDialogOver(GetVisibleOwner());
             // UpdateForm 内でバッチ起動と Environment.Exit() を実行するため、ここに到達するのはキャンセル時のみ。
         }
 #pragma warning disable CA1031 // ネットワーク更新は様々な例外が発生しうるため包括的にキャッチ
@@ -326,7 +326,7 @@ public partial class DummyForm : Form
     private void スケジューラー設定SToolStripMenuItem_Click(object sender, EventArgs e)
     {
         using var form = new SchedulerConfigForm(schedulerData);
-        if (form.ShowDialog(GetVisibleOwner()) == DialogResult.OK)
+        if (form.ShowDialogOver(GetVisibleOwner()) == DialogResult.OK)
         {
             schedulerData = form.Value;
             schedulerData.Serialize();

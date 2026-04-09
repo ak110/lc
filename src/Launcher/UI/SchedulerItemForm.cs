@@ -36,7 +36,7 @@ public partial class SchedulerItemForm : Form
     {
         var schedule = new Schedule();
         using var form = new ScheduleEditForm(schedule);
-        if (form.ShowDialog(this) == DialogResult.OK)
+        if (form.ShowDialogOver(this) == DialogResult.OK)
         {
             FormsHelper.Insert(listBoxSchedules, schedule);
         }
@@ -77,7 +77,7 @@ public partial class SchedulerItemForm : Form
         if (listBoxSchedules.SelectedItem is Schedule selected)
         {
             using var form = new ScheduleEditForm(selected);
-            if (form.ShowDialog(this) == DialogResult.OK)
+            if (form.ShowDialogOver(this) == DialogResult.OK)
             {
                 // selectedは直接編集済み。表示を更新。
                 int index = listBoxSchedules.SelectedIndex;
@@ -92,7 +92,7 @@ public partial class SchedulerItemForm : Form
     {
         var task = new SchedulerTask();
         using var form = new SchedulerTaskForm(task);
-        if (form.ShowDialog(this) == DialogResult.OK)
+        if (form.ShowDialogOver(this) == DialogResult.OK)
         {
             FormsHelper.Insert(listBoxTasks, task);
         }
@@ -155,7 +155,7 @@ public partial class SchedulerItemForm : Form
         if (listBoxTasks.SelectedItem is SchedulerTask selected)
         {
             using var form = new SchedulerTaskForm(selected);
-            if (form.ShowDialog(this) == DialogResult.OK)
+            if (form.ShowDialogOver(this) == DialogResult.OK)
             {
                 int index = listBoxTasks.SelectedIndex;
                 listBoxTasks.Items[index] = selected;

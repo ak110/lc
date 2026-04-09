@@ -513,7 +513,7 @@ public partial class ButtonLauncherForm : Form
         }
 
         using var form = new EditCommandForm(entry!);
-        if (form.ShowDialog(this) == DialogResult.OK)
+        if (form.ShowDialogOver(this) == DialogResult.OK)
         {
             if (isNew)
             {
@@ -549,7 +549,7 @@ public partial class ButtonLauncherForm : Form
 
         // コマンド選択ダイアログ
         using var dlg = new CommandSelectDialog(owner.CommandList);
-        if (dlg.ShowDialog(this) == DialogResult.OK && dlg.SelectedCommand is not null)
+        if (dlg.ShowDialogOver(this) == DialogResult.OK && dlg.SelectedCommand is not null)
         {
             var newEntry = ButtonEntry.FromCommand(dlg.SelectedCommand, pos.Row, pos.Col);
             tabData.SetButton(pos.Row, pos.Col, newEntry);
@@ -966,7 +966,7 @@ public partial class ButtonLauncherForm : Form
         form.AcceptButton = ok;
         form.CancelButton = cancel;
 
-        return form.ShowDialog(this) == DialogResult.OK ? textBox.Text : null;
+        return form.ShowDialogOver(this) == DialogResult.OK ? textBox.Text : null;
     }
 
     protected override void Dispose(bool disposing)

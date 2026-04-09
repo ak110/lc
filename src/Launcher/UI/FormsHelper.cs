@@ -6,6 +6,21 @@ namespace Launcher.UI;
 public static class FormsHelper
 {
     /// <summary>
+    /// owner が TopMost の Form の場合、子ダイアログも TopMost に揃えてから
+    /// ShowDialog する。
+    /// WinForms では親が TopMost、子が非 TopMost のとき、z-order の再評価時に
+    /// 子が親の裏に回ることがあるため、その対処として使用する。
+    /// </summary>
+    public static DialogResult ShowDialogOver(this Form dialog, IWin32Window? owner)
+    {
+        if (owner is Form { TopMost: true })
+        {
+            dialog.TopMost = true;
+        }
+        return dialog.ShowDialog(owner);
+    }
+
+    /// <summary>
     /// クリッピングしてフォームの位置をセット
     /// </summary>
     public static void SetLocationWithClip(Control form, Point pos)

@@ -114,7 +114,7 @@ public partial class CommandManagementForm : Form
         var cmd = (Command)item.Tag!;
 
         using var form = new EditCommandForm(cmd);
-        if (form.ShowDialog(this) == DialogResult.OK)
+        if (form.ShowDialogOver(this) == DialogResult.OK)
         {
             // EditCommandFormが直接cmdを更新するので、表示を更新
             item.Text = cmd.Name ?? "";

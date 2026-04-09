@@ -34,7 +34,7 @@ public partial class SchedulerConfigForm : Form
     {
         var item = new SchedulerItem { Name = "新規アイテム" };
         using var form = new SchedulerItemForm(item);
-        if (form.ShowDialog(this) == DialogResult.OK)
+        if (form.ShowDialogOver(this) == DialogResult.OK)
         {
             FormsHelper.Insert(listBoxItems, item);
         }
@@ -85,7 +85,7 @@ public partial class SchedulerConfigForm : Form
         if (listBoxItems.SelectedItem is SchedulerItem selected)
         {
             using var form = new SchedulerItemForm(selected);
-            if (form.ShowDialog(this) == DialogResult.OK)
+            if (form.ShowDialogOver(this) == DialogResult.OK)
             {
                 int index = listBoxItems.SelectedIndex;
                 listBoxItems.Items[index] = selected;

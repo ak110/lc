@@ -87,7 +87,7 @@ public partial class ConfigForm : Form
     private void button1_Click(object? sender, EventArgs e)
     {
         using var form = new EnvConfigForm(config.ReplaceEnv);
-        if (form.ShowDialog(this) == DialogResult.OK)
+        if (form.ShowDialogOver(this) == DialogResult.OK)
         {
             config.ReplaceEnv = form.ReplaceEnv;
         }
