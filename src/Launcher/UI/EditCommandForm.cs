@@ -41,4 +41,20 @@ public partial class EditCommandForm : Form
         v.Priority = (ProcessPriorityLevel)new Radios(groupBox2, 6).Value;
         v.RunAsAdmin = checkBox1.Checked;
     }
+
+    private void button1_Click(object? sender, EventArgs e)
+    {
+        if (openFileDialog1.ShowDialog(this) == DialogResult.OK)
+        {
+            textBox2.Text = openFileDialog1.FileName;
+        }
+    }
+
+    private void button2_Click(object? sender, EventArgs e)
+    {
+        if (folderBrowserDialog1.ShowDialog(this) == DialogResult.OK)
+        {
+            textBox4.Text = folderBrowserDialog1.SelectedPath;
+        }
+    }
 }
