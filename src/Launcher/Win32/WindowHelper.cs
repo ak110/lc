@@ -338,6 +338,30 @@ public sealed class WindowHelper
         }
     }
 
+    /// <summary>
+    /// 現在の前景ウィンドウのハンドルを返す。
+    /// 通知表示前の前景を記録し、通知を閉じたときに復元する用途で使う。
+    /// </summary>
+    public static IntPtr GetForegroundWindowHandle() => GetForegroundWindow();
+
+    /// <summary>
+    /// 指定ハンドルを前景ウィンドウに戻す。
+    /// 呼び出し元プロセスがまだ foreground 権を持っているタイミングで呼ぶこと。
+    /// 無効なハンドル、および自プロセス所有のウィンドウに対しては何もしない。
+    /// </summary>
+    public static void RestoreForegroundWindow(IntPtr hWnd)
+    {
+        if (hWnd == IntPtr.Zero) return;
+        if (!IsWindow(hWnd)) return;
+
+        // 自プロセス所有のウィンドウには復元しない。
+        // launcher 内のフォームへのフォーカス切替は WinForms の標準挙動に任せる。
+        _ = GetWindowThreadProcessId(hWnd, out uint pid);
+        if (pid == (uint)Environment.ProcessId) return;
+
+        _ = SetForegroundWindow(hWnd);
+    }
+
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool SystemParametersInfo(int uiAction, int uiParam, IntPtr pvParam, int fWinIni);
@@ -345,6 +369,20 @@ public sealed class WindowHelper
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool SystemParametersInfo(int uiAction, int uiParam, ref int pvParam, int fWinIni);
+
+    [DllImport("user32.dll")]
+    static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool IsWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
     const int SPI_GETFOREGROUNDLOCKTIMEOUT = 0x2000;
     const int SPI_SETFOREGROUNDLOCKTIMEOUT = 0x2001;

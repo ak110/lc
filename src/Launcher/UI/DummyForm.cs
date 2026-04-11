@@ -56,6 +56,13 @@ public partial class DummyForm : Form
             return buttonLauncherForm;
         if (!mainForm.IsDisposed && mainForm.Visible)
             return mainForm;
+
+        // ConfigForm など launcher 内のモーダル表示中フォームを owner に使う。
+        // Form.ActiveForm は現在アクティブな自プロセスのフォームを返す。
+        // DummyForm 自身は Visible=false のため候補から除外される。
+        if (Form.ActiveForm is { IsDisposed: false, Visible: true } active && active != this)
+            return active;
+
         return null;
     }
 
@@ -410,10 +417,16 @@ public partial class DummyForm : Form
         // MessageBoxタスクはNotificationFormをモーダル表示する。
         // Invokeでスケジューラー STAスレッドをブロックし、ShowDialog のネストメッセージループ中も
         // DummyForm.WndProcは動作するため、表示中でもホットキー (WM_APPMSG_SHOWHIDE) を受け付けられる。
+        //
+        // owner が null のとき (launcher 内に表示フォームが無いとき) は、通知表示前の前景ウィンドウを記録し、
+        // 閉じたときに SetForegroundWindow で戻す。そうしないと owner 無しダイアログの終了時に
+        // Windowsが z-order 上の任意ウィンドウを前面化し、ユーザーの作業コンテキストが失われる。
         SchedulerPresenter.ShowMessageBoxAction = (title, message) =>
         {
             Invoke(() =>
             {
+                IntPtr prevForeground = WindowHelper.GetForegroundWindowHandle();
+
                 var form = new NotificationForm(title, message);
                 activeNotifications.Add(form);
                 try
@@ -424,6 +437,14 @@ public partial class DummyForm : Form
                 {
                     activeNotifications.Remove(form);
                     form.Dispose();
+                }
+
+                // launcher 内に表示フォームが無いままなら、通知表示前の前景ウィンドウへ戻す。
+                // 閉じた時点で owner 候補が出現している場合 (ホットキーで MainForm を開いた等) は、
+                // WinForms の標準挙動に任せてスキップする。
+                if (GetVisibleOwner() is null)
+                {
+                    WindowHelper.RestoreForegroundWindow(prevForeground);
                 }
             });
         };

@@ -87,6 +87,23 @@ BalloonTipはBeginInvoke（非同期）で実行する。
 
 BalloonTip は OS のトレイ通知であり自動消去されるため、この追跡対象には含めない。
 
+#### owner 選定と前景ウィンドウの復元
+
+`DummyForm.GetVisibleOwner()` は owner 候補として MainForm / ButtonLauncherForm / `Form.ActiveForm` の順で返す。
+`Form.ActiveForm` フォールバックは、MainForm が非表示で ConfigForm 等のモーダルダイアログが開いている最中に
+スケジューラーが発火したケースをカバーする。この場合、NotificationForm はモーダルダイアログを owner として
+`ShowDialog` するため、閉じたときは WinForms の標準挙動でモーダルダイアログへフォーカスが戻る。
+
+一方、launcher 内に表示フォームが一切無い状態 (`HideFirst=true` での起動直後や MainForm hide 後) で
+発火したときは owner が `null` になる。`Form.ShowDialog(null)` は閉じるときのフォーカス復元先を持たないため、
+Windows が z-order 上の任意ウィンドウを前面化してしまう。これを避けるため、MessageBox ハンドラでは
+`NotificationForm` を表示する直前に `WindowHelper.GetForegroundWindowHandle()` で前景 HWND を記録し、
+`ShowDialog` 終了後に `GetVisibleOwner()` が依然として `null` のときだけ
+`WindowHelper.RestoreForegroundWindow()` で記録した HWND に前景を戻す。
+
+`RestoreForegroundWindow` は自プロセス所有の HWND には何もしない。launcher 内へのフォーカス復帰は
+WinForms の標準挙動に任せる責務分担にしている。
+
 ## 設定ファイル
 
 すべてXMLシリアライズで、アプリケーションと同じディレクトリに保存される。
