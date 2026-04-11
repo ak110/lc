@@ -3,7 +3,7 @@
 ## 必要環境
 
 - Windows 10/11
-- [mise](https://mise.jdx.dev/) (タスクランナー・ツールバージョン管理)
+- [mise](https://mise.jdx.dev/)（タスクランナー・ツールバージョン管理）
 - [Visual Studio Code](https://code.visualstudio.com/)
 
 ## 初回セットアップ
@@ -60,7 +60,7 @@ mise upgrade dotnet
 
 - URL: <https://ak110.github.io/lc/>
 - ローカルプレビュー: `mise run docs`
-- 自動デプロイ: masterブランチへのpush時に`Docs`ワークフローが自動実行される (`docs/`以下または`package.json`の変更時のみ)
+- 自動デプロイ: masterブランチへのpush時に`Docs`ワークフローが自動実行される（`docs/`以下または`package.json`の変更時のみ）
 
 ## リリース手順
 
