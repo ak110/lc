@@ -79,13 +79,13 @@ BalloonTipはBeginInvoke（非同期）で実行する。
 `ShowDialog` のネストメッセージループ内でも `DummyForm.WndProc` は動作するため、
 表示中でも `WM_APPMSG_SHOWHIDE` を受信しホットキー操作を処理できる。
 
-ホットキー押下で呼び出される `DummyForm.ShowHide()` は、通知が追跡中のときは MainForm を
+ホットキー押下で呼び出される `DummyForm.ShowHide()` は、通知が追跡中のときはMainFormを
 非表示化せず、通知Formを `Activate()` + `BringToFront()` で最前面化する。
-また MainForm の `WindowHideNoActive` による auto-hide (`MainForm_Deactivate` / `MainForm_Leave`)
-は、`DummyForm.HasActiveNotifications` が真のときはスキップする。
-通知を Activate した直後の `MainForm_Deactivate` で MainForm が再び隠れる事故を防ぐためである。
+またMainFormの `WindowHideNoActive` によるauto-hideも同じ条件でスキップする。
+具体的には `MainForm_Deactivate` / `MainForm_Leave` で `DummyForm.HasActiveNotifications` が真のとき、処理を中止する。
+通知をActivateした直後の `MainForm_Deactivate` でMainFormが再び隠れる事故を防ぐためである。
 
-BalloonTip は OS のトレイ通知であり自動消去されるため、この追跡対象には含めない。
+BalloonTipはOSのトレイ通知であり自動消去されるため、この追跡対象には含めない。
 
 #### owner 選定と前景ウィンドウの復元
 
