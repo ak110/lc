@@ -9,24 +9,24 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'ホーム', link: '/' },
-      { text: 'はじめに', link: '/getting-started' },
+      { text: 'はじめに', link: '/guide/getting-started' },
     ],
 
     sidebar: [
       {
         text: 'ユーザーガイド',
         items: [
-          { text: 'はじめに', link: '/getting-started' },
-          { text: 'コマンド型ランチャー', link: '/command-launcher' },
-          { text: 'ボタン型ランチャー', link: '/button-launcher' },
-          { text: 'スケジューラー', link: '/scheduler' },
+          { text: 'はじめに', link: '/guide/getting-started' },
+          { text: 'コマンド型ランチャー', link: '/guide/command-launcher' },
+          { text: 'ボタン型ランチャー', link: '/guide/button-launcher' },
+          { text: 'スケジューラー', link: '/guide/scheduler' },
         ],
       },
       {
         text: '開発者向け',
         items: [
-          { text: 'アーキテクチャ', link: '/architecture' },
-          { text: '開発ガイド', link: '/development' },
+          { text: 'アーキテクチャ', link: '/development/architecture' },
+          { text: '開発ガイド', link: '/development/development' },
         ],
       },
     ],

@@ -1,12 +1,12 @@
 ---
 name: winforms-sta-reviewer
-description: src/Launcher 配下の C# 差分を、docs/architecture.md で定義された STA スレッド / Shell API / Win32 フックコールバック / cfg-dat 分離 / アイコンローダー制約の観点でレビューする。スレッド・Shell API・Win32 フック・ConfigStore 派生クラスを変更したときに使用する。呼び出し時にレビュー対象のファイルパス、または `git diff` 範囲を必ず渡すこと。
+description: src/Launcher 配下の C# 差分を、docs/development/architecture.md で定義された STA スレッド / Shell API / Win32 フックコールバック / cfg-dat 分離 / アイコンローダー制約の観点でレビューする。スレッド・Shell API・Win32 フック・ConfigStore 派生クラスを変更したときに使用する。呼び出し時にレビュー対象のファイルパス、または `git diff` 範囲を必ず渡すこと。
 tools: Read, Grep, Glob, Bash
 ---
 
 # winforms-sta-reviewer
 
-`docs/architecture.md` に定義された本プロジェクト固有の不変条件を、変更差分に対して機械的にチェックする専用レビュアー。一般的な C# のコーディングスタイルや命名はレビュー対象外。設計不変条件のみに集中する。
+`docs/development/architecture.md` に定義された本プロジェクト固有の不変条件を、変更差分に対して機械的にチェックする専用レビュアー。一般的な C# のコーディングスタイルや命名はレビュー対象外。設計不変条件のみに集中する。
 
 ## 入力前提
 
@@ -19,7 +19,7 @@ tools: Read, Grep, Glob, Bash
 
 1. 入力で指定された範囲を Read する。`git diff` 範囲なら `git diff <範囲> --name-only` と `git diff <範囲> -- <file>` を Bash で取得
 2. 必要に応じて以下の参照ファイルを読む
-   - `docs/architecture.md` (不変条件の根拠)
+   - `docs/development/architecture.md` (不変条件の根拠)
    - `src/Launcher/Core/` (Presenter / ConfigStore 派生)
    - `src/Launcher/UI/DummyForm.cs`, `src/Launcher/UI/HookManager.cs`
    - `src/Launcher/Infrastructure/AsyncIconLoader.cs`
