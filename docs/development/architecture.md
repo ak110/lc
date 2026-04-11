@@ -60,16 +60,32 @@ WinFormsのメッセージループを維持するために常駐フォームが
 
 スケジューラーはファイル実行に加え、メッセージ表示タスクをサポートする。
 
-| 種類       | 説明                                                          |
-| ---------- | ------------------------------------------------------------- |
-| Execute    | ShellExecuteExでプログラムを起動する                          |
-| BalloonTip | タスクトレイのバルーン通知でメッセージを表示する (自動消去)   |
-| MessageBox | メッセージボックスでメッセージを表示する (OKボタンで手動消去) |
+| 種類       | 説明                                                        |
+| ---------- | ----------------------------------------------------------- |
+| Execute    | ShellExecuteExでプログラムを起動する                        |
+| BalloonTip | タスクトレイのバルーン通知でメッセージを表示する (自動消去) |
+| MessageBox | `NotificationForm`をモーダル表示する (OKボタンで手動消去)   |
 
 Core層 (SchedulerPresenter) はUI依存を持たない。
 BalloonTip/MessageBoxの表示はデリゲート経由でUI層 (DummyForm) に委譲する。
-MessageBoxはInvoke（同期呼び出し）でダイアログが閉じるまで後続タスクをブロックする。
+MessageBoxは`Invoke`（同期呼び出し）でダイアログが閉じるまで後続タスクをブロックする。
 BalloonTipはBeginInvoke（非同期）で実行する。
+
+### 非同期通知ダイアログの追跡
+
+`DummyForm` は現在表示中の非同期通知 (`NotificationForm`) を `activeNotifications` リストで追跡する。
+スケジューラーのMessageBoxタスクは `Invoke` 経由で `NotificationForm.ShowDialog` を呼び出し、
+スケジューラー STAスレッドは `ShowDialog` が戻るまで自然にブロックされる。
+`ShowDialog` のネストメッセージループ内でも `DummyForm.WndProc` は動作するため、
+表示中でも `WM_APPMSG_SHOWHIDE` を受信しホットキー操作を処理できる。
+
+ホットキー押下で呼び出される `DummyForm.ShowHide()` は、通知が追跡中のときは MainForm を
+非表示化せず、通知Formを `Activate()` + `BringToFront()` で最前面化する。
+また MainForm の `WindowHideNoActive` による auto-hide (`MainForm_Deactivate` / `MainForm_Leave`)
+は、`DummyForm.HasActiveNotifications` が真のときはスキップする。
+通知を Activate した直後の `MainForm_Deactivate` で MainForm が再び隠れる事故を防ぐためである。
+
+BalloonTip は OS のトレイ通知であり自動消去されるため、この追跡対象には含めない。
 
 ## 設定ファイル
 

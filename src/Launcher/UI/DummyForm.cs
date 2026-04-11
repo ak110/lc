@@ -22,6 +22,15 @@ public partial class DummyForm : Form
     /// <summary>スケジューラータスク実行中フラグ (二重実行防止)</summary>
     bool schedulerRunning;
 
+    /// <summary>現在表示中の非同期通知ダイアログの追跡リスト (全てUIスレッドから操作する)</summary>
+    readonly List<Form> activeNotifications = [];
+
+    /// <summary>
+    /// 非同期通知ダイアログが1つ以上表示中か。
+    /// MainFormの auto-hide 抑制判定 (MainForm_Deactivate/Leave) で参照する。
+    /// </summary>
+    public bool HasActiveNotifications => activeNotifications.Exists(f => !f.IsDisposed);
+
     /// <summary>環境変数変更の自動取り込み用 (WM_SETTINGCHANGE)</summary>
     readonly EnvironmentRefresher envRefresher = new();
 
@@ -172,9 +181,12 @@ public partial class DummyForm : Form
 
     /// <summary>
     /// メインウィンドウの表示と非表示を切り替える。
+    /// 非同期通知ダイアログが表示中のときは、MainFormをHideせず、通知Formを最前面化する。
     /// </summary>
     public void ShowHide()
     {
+        bool hasNotifications = HasActiveNotifications;
+
         if (mainForm.IsDisposed)
         {
             mainForm = new MainForm(this, contextMenuStrip1);
@@ -184,9 +196,21 @@ public partial class DummyForm : Form
         {
             mainForm.ShowWindow();
         }
-        else
+        else if (!hasNotifications)
         {
+            // 通常のトグル: 表示中→非表示
             mainForm.HideWindow();
+        }
+        // 通知がある場合はHideせず、表示を維持する
+
+        // 追跡中の通知ダイアログを最前面にアクティブ化する (DoEventsを伴わない軽量版)
+        foreach (var form in activeNotifications)
+        {
+            if (!form.IsDisposed)
+            {
+                form.Activate();
+                form.BringToFront();
+            }
         }
     }
 
@@ -383,11 +407,25 @@ public partial class DummyForm : Form
             });
         };
 
-        // MessageBoxはInvoke (同期) で実行し、ダイアログが閉じるまでスレッドをブロックする
+        // MessageBoxタスクはNotificationFormをモーダル表示する。
+        // Invokeでスケジューラー STAスレッドをブロックし、ShowDialog のネストメッセージループ中も
+        // DummyForm.WndProcは動作するため、表示中でもホットキー (WM_APPMSG_SHOWHIDE) を受け付けられる。
         SchedulerPresenter.ShowMessageBoxAction = (title, message) =>
         {
-            Invoke(() => MessageBox.Show(message, title,
-                MessageBoxButtons.OK, MessageBoxIcon.Information));
+            Invoke(() =>
+            {
+                var form = new NotificationForm(title, message);
+                activeNotifications.Add(form);
+                try
+                {
+                    form.ShowDialogOver(GetVisibleOwner());
+                }
+                finally
+                {
+                    activeNotifications.Remove(form);
+                    form.Dispose();
+                }
+            });
         };
     }
 

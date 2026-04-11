@@ -241,8 +241,10 @@ public partial class MainForm : Form
     {
         if (ownerForm.Config.WindowHideNoActive)
         {
-            if (OwnedForms.Length <= 0)
-            { // 子も無い場合。
+            // 子フォームも追跡中の非同期通知も無い場合のみ隠す。
+            // 通知表示中に隠すと、ShowHideで表示→通知をActivate→Deactivateで即再度隠れる問題を防ぐ。
+            if (OwnedForms.Length <= 0 && !ownerForm.HasActiveNotifications)
+            {
                 HideWindow();
             }
         }
@@ -255,8 +257,8 @@ public partial class MainForm : Form
     {
         if (ownerForm.Config.WindowHideNoActive)
         {
-            if (OwnedForms.Length <= 0)
-            { // 子も無い場合。
+            if (OwnedForms.Length <= 0 && !ownerForm.HasActiveNotifications)
+            {
                 HideWindow();
             }
         }
