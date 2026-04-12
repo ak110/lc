@@ -35,6 +35,7 @@ run = [
 
 [tasks.test]
 description = "全チェック (pre-commit + pyfltr run)"
+env = { SKIP = "pyfltr" }
 run = [
   "uvx pre-commit run --all-files",
   "uvx pyfltr run",
@@ -42,6 +43,7 @@ run = [
 
 [tasks.ci]
 description = "CI向け全チェック (差分検知で失敗)"
+env = { SKIP = "pyfltr" }
 run = [
   "uvx pre-commit run --all-files",
   "uvx pyfltr ci",
