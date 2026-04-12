@@ -1,0 +1,20 @@
+[tool.uv]
+exclude-newer = "1 day"
+
+[tool.pyfltr]
+python = false
+js-runner = "pnpm"
+bin-runner = "mise"
+dotnet-format = true
+dotnet-build = true
+dotnet-test = true
+markdownlint = true
+textlint = true
+prettier = true
+
+extend-exclude = [
+    "bin",
+    "obj",
+    "publish",
+    "node_modules",
+]
