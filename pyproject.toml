@@ -2,14 +2,12 @@
 exclude-newer = "1 day"
 
 [tool.pyfltr]
+preset = "latest"
 python = false
 js-runner = "pnpm"
-bin-runner = "mise"
 dotnet-format = true
 dotnet-build = true
 dotnet-test = true
-markdownlint = true
-textlint = true
 prettier = true
 
 extend-exclude = [

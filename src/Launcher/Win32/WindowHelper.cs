@@ -58,7 +58,7 @@ public static class WM
     public const int WM_COMPAREITEM = 0x0039;
     public const int WM_GETOBJECT = 0x003D;
     public const int WM_COMPACTING = 0x0041;
-    public const int WM_COMMNOTIFY = 0x0044;  /* no longer suported */
+    public const int WM_COMMNOTIFY = 0x0044;  /* no longer supported */
     public const int WM_WINDOWPOSCHANGING = 0x0046;
     public const int WM_WINDOWPOSCHANGED = 0x0047;
     public const int WM_POWER = 0x0048;
