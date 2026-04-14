@@ -68,6 +68,14 @@ sealed class HookManager
     {
         Hook.KeyHook -= OnKeyHook;
         Hook.MouseHook -= OnMouseHook;
+        Hook.UnsetKeyHook();
+        Hook.UnsetMouseHook();
+        // 解除後に残留するフラグをリセットする
+        lbuttonDown = false;
+        rbuttonDown = false;
+        suppressNextLButtonUp = false;
+        suppressNextRButtonUp = false;
+        suppressKeyUpVK = 0;
     }
 
     void OnKeyHook(object? sender, KeyHookEventArgs e)
@@ -81,8 +89,10 @@ sealed class HookManager
                     if (e.HookStruct.vkCode == (int)hotkeyVK &&
                         KeyTable.GetModifiers() == modifiers)
                     {
-                        WindowHelper window = new WindowHelper(getHandle());
-                        window.SendMessage(WM.WM_APP,
+                        // フック内から SendMessage を呼ぶと WndProc → ActivateForce → DoEvents の連鎖で
+                        // フックコールバックが再入するため、マウスフックと同様に PostMessage を使う
+                        new WindowHelper(getHandle()).PostMessage(
+                            Program.WM_APPMSG,
                             Program.WM_APPMSG_WPARAM,
                             Program.WM_APPMSG_SHOWHIDE);
                         e.Handled = true;
