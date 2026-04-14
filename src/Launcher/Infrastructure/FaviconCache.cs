@@ -1,7 +1,8 @@
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Net.Http;
-using System.Runtime.InteropServices;
 
 namespace Launcher.Infrastructure;
 
@@ -91,42 +92,63 @@ public sealed class FaviconCache
 
     /// <summary>
     /// PNGバイト列をIconに変換する。
-    /// GetHicon()で取得したGDIハンドルはClone()後にDestroyIcon()で明示解放する。
+    /// GetHicon()はαチャネルを失うため、ICO形式でラップして<see cref="System.Drawing.Icon"/>で読み込む。
     /// </summary>
     static System.Drawing.Icon? BitmapToIcon(byte[] pngBytes, bool small)
     {
-        using var ms = new MemoryStream(pngBytes);
-        using var src = new Bitmap(ms);
-
         int size = small ? 16 : 32;
+
+        using var srcMs = new MemoryStream(pngBytes);
+        using var src = new Bitmap(srcMs);
+
         // srcが既に目的サイズであれば再割り当てを避ける
         if (src.Width == size && src.Height == size)
         {
-            return BitmapHandleToIcon(src);
+            return WrapPngInIco(pngBytes, size, size);
         }
-        using var resized = new Bitmap(src, new Size(size, size));
-        return BitmapHandleToIcon(resized);
+
+        // Format32bppArgbを明示してリサイズし、αチャネルを保持する
+        using var resized = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(resized))
+        {
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.DrawImage(src, 0, 0, size, size);
+        }
+        using var resizedMs = new MemoryStream();
+        resized.Save(resizedMs, ImageFormat.Png);
+        return WrapPngInIco(resizedMs.ToArray(), size, size);
     }
 
     /// <summary>
-    /// BitmapのGDIハンドルからIconを生成する。
-    /// GetHicon()で取得したハンドルはClone()後にDestroyIcon()で明示解放する。
+    /// PNGバイト列をICOファイル形式でラップして<see cref="System.Drawing.Icon"/>を生成する。
+    /// PNG圧縮ICOはWindows Vista以降でサポートされており、αチャネルが正しく保持される。
     /// </summary>
-    static System.Drawing.Icon BitmapHandleToIcon(Bitmap bitmap)
+    static System.Drawing.Icon WrapPngInIco(byte[] pngBytes, int width, int height)
     {
-        var hIcon = bitmap.GetHicon();
-        try
-        {
-            using var tempIcon = System.Drawing.Icon.FromHandle(hIcon);
-            return (System.Drawing.Icon)tempIcon.Clone();
-        }
-        finally
-        {
-            DestroyIcon(hIcon);
-        }
-    }
+        // ICOファイル形式: ICONDIR(6バイト) + ICONDIRENTRY(16バイト) + 画像データ
+        using var icoStream = new MemoryStream();
+        using var writer = new BinaryWriter(icoStream, System.Text.Encoding.UTF8, leaveOpen: true);
 
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    static extern bool DestroyIcon(IntPtr handle);
+        // ICONDIR
+        writer.Write((short)0);    // reserved
+        writer.Write((short)1);    // type = icon
+        writer.Write((short)1);    // count = 1
+
+        // ICONDIRENTRY
+        writer.Write((byte)(width >= 256 ? 0 : width));
+        writer.Write((byte)(height >= 256 ? 0 : height));
+        writer.Write((byte)0);     // color count
+        writer.Write((byte)0);     // reserved
+        writer.Write((short)1);    // planes
+        writer.Write((short)32);   // bit count
+        writer.Write((int)pngBytes.Length);
+        writer.Write((int)22);     // image offset = 6(ICONDIR) + 16(ICONDIRENTRY)
+
+        // 画像データ(PNG形式のまま埋め込む)
+        writer.Write(pngBytes);
+        writer.Flush();
+
+        icoStream.Seek(0, SeekOrigin.Begin);
+        return new System.Drawing.Icon(icoStream);
+    }
 }
