@@ -22,6 +22,9 @@ public partial class DummyForm : Form
     /// <summary>スケジューラータスク実行中フラグ (二重実行防止)</summary>
     bool schedulerRunning;
 
+    /// <summary>ShowHide 再入防止フラグ (DoEvents 経由の多重呼び出しを防ぐ)</summary>
+    bool showHideInProgress;
+
     /// <summary>現在表示中の非同期通知ダイアログの追跡リスト (全てUIスレッドから操作する)</summary>
     readonly List<Form> activeNotifications = [];
 
@@ -192,32 +195,41 @@ public partial class DummyForm : Form
     /// </summary>
     public void ShowHide()
     {
-        bool hasNotifications = HasActiveNotifications;
+        if (showHideInProgress) return;
+        showHideInProgress = true;
+        try
+        {
+            bool hasNotifications = HasActiveNotifications;
 
-        if (mainForm.IsDisposed)
-        {
-            mainForm = new MainForm(this, contextMenuStrip1);
-            mainForm.Show(this);
-        }
-        else if (!mainForm.Visible)
-        {
-            mainForm.ShowWindow();
-        }
-        else if (!hasNotifications)
-        {
-            // 通常のトグル: 表示中→非表示
-            mainForm.HideWindow();
-        }
-        // 通知がある場合はHideせず、表示を維持する
-
-        // 追跡中の通知ダイアログを最前面にアクティブ化する (DoEventsを伴わない軽量版)
-        foreach (var form in activeNotifications)
-        {
-            if (!form.IsDisposed)
+            if (mainForm.IsDisposed)
             {
-                form.Activate();
-                form.BringToFront();
+                mainForm = new MainForm(this, contextMenuStrip1);
+                mainForm.Show(this);
             }
+            else if (!mainForm.Visible)
+            {
+                mainForm.ShowWindow();
+            }
+            else if (!hasNotifications)
+            {
+                // 通常のトグル: 表示中→非表示
+                mainForm.HideWindow();
+            }
+            // 通知がある場合はHideせず、表示を維持する
+
+            // 追跡中の通知ダイアログを最前面にアクティブ化する (DoEventsを伴わない軽量版)
+            foreach (var form in activeNotifications)
+            {
+                if (!form.IsDisposed)
+                {
+                    form.Activate();
+                    form.BringToFront();
+                }
+            }
+        }
+        finally
+        {
+            showHideInProgress = false;
         }
     }
 

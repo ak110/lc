@@ -16,6 +16,9 @@ public partial class ButtonLauncherForm : Form
     readonly ContextMenuStrip mainMenu;
     readonly TabEmptyAreaRightClickFilter tabEmptyAreaFilter;
 
+    /// <summary>ShowLauncher 再入防止フラグ (DoEvents 経由の多重呼び出しを防ぐ)</summary>
+    bool showLauncherInProgress;
+
     // IMessageFilter経由でmainMenuを表示した場合のクリック再配信用フラグ。
     // ネイティブTabControlは空白部分でWM_CONTEXTMENUを生成しないため
     // IMessageFilterで補完しているが、Show()で手動表示したメニューは
@@ -313,6 +316,8 @@ public partial class ButtonLauncherForm : Form
     /// </summary>
     public void ShowLauncher()
     {
+        if (showLauncherInProgress) return;
+        showLauncherInProgress = true;
         try
         {
             // Columns/Rowsからウィンドウサイズを計算
@@ -362,6 +367,10 @@ public partial class ButtonLauncherForm : Form
             System.Diagnostics.Debug.WriteLine($"ShowLauncher失敗: {ex}");
             MessageBox.Show($"ボタンランチャーの表示に失敗しました:\n{ex.Message}", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            showLauncherInProgress = false;
         }
     }
 

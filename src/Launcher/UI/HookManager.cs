@@ -89,20 +89,28 @@ sealed class HookManager
                     if (e.HookStruct.vkCode == (int)hotkeyVK &&
                         KeyTable.GetModifiers() == modifiers)
                     {
-                        // フック内から SendMessage を呼ぶと WndProc → ActivateForce → DoEvents の連鎖で
-                        // フックコールバックが再入するため、マウスフックと同様に PostMessage を使う
-                        new WindowHelper(getHandle()).PostMessage(
-                            Program.WM_APPMSG,
-                            Program.WM_APPMSG_WPARAM,
-                            Program.WM_APPMSG_SHOWHIDE);
                         e.Handled = true;
-                        // 対応するKEYUPを1回だけ抑制
-                        suppressKeyUpVK = e.HookStruct.vkCode;
-                        // Alt修飾時はダミーキー入力を注入して
-                        // Alt単独リリースによるシステムメニュー表示を防止
-                        if ((modifiers & KeyTable.Modifiers.Alt) != 0)
+                        // キーリピート時は初回押下のみ処理する (多重発火防止)
+                        if (suppressKeyUpVK == 0)
                         {
-                            BreakAltSequence();
+                            // 対応するKEYUPを1回だけ抑制
+                            suppressKeyUpVK = e.HookStruct.vkCode;
+                            // Alt修飾時はダミーキー入力を注入してAlt単独リリースによる
+                            // システムメニュー表示を防止。KEYUP注入より前にF24を挿入することで
+                            // 「Alt→F24→Alt解放」の順序を保証する
+                            if ((modifiers & KeyTable.Modifiers.Alt) != 0)
+                            {
+                                BreakAltSequence();
+                            }
+                            // ホットキー修飾キーを前景アプリ向けに解放する
+                            // (フォーカス移行前に注入することで前景アプリにKEYUPが届く)
+                            InjectHotkeyModifierKeyUps();
+                            // フック内からSendMessageを呼ぶとWndProc→ActivateForce→DoEventsの連鎖で
+                            // フックコールバックが再入するため、マウスフックと同様にPostMessageを使う
+                            new WindowHelper(getHandle()).PostMessage(
+                                Program.WM_APPMSG,
+                                Program.WM_APPMSG_WPARAM,
+                                Program.WM_APPMSG_SHOWHIDE);
                         }
                     }
                 }
@@ -196,6 +204,44 @@ sealed class HookManager
     }
 
     /// <summary>
+    /// ホットキーを構成する修飾キーのうち現在押下中のものに対してKEYUPを注入する。
+    /// ランチャーのフォーカス取得前に前景アプリへ修飾キー解放を通知するために使う。
+    /// </summary>
+    void InjectHotkeyModifierKeyUps()
+    {
+        const uint KEYEVENTF_KEYUP = 0x0002;
+        const byte VK_LSHIFT = 0xA0;
+        const byte VK_RSHIFT = 0xA1;
+        const byte VK_LCONTROL = 0xA2;
+        const byte VK_RCONTROL = 0xA3;
+        const byte VK_LMENU = 0xA4;
+        const byte VK_RMENU = 0xA5;
+        const byte VK_LWIN = 0x5B;
+        const byte VK_RWIN = 0x5C;
+
+        if ((modifiers & KeyTable.Modifiers.Ctrl) != 0)
+        {
+            if (GetAsyncKeyState(VK_LCONTROL) < 0) keybd_event(VK_LCONTROL, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
+            if (GetAsyncKeyState(VK_RCONTROL) < 0) keybd_event(VK_RCONTROL, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
+        }
+        if ((modifiers & KeyTable.Modifiers.Alt) != 0)
+        {
+            if (GetAsyncKeyState(VK_LMENU) < 0) keybd_event(VK_LMENU, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
+            if (GetAsyncKeyState(VK_RMENU) < 0) keybd_event(VK_RMENU, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
+        }
+        if ((modifiers & KeyTable.Modifiers.Shift) != 0)
+        {
+            if (GetAsyncKeyState(VK_LSHIFT) < 0) keybd_event(VK_LSHIFT, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
+            if (GetAsyncKeyState(VK_RSHIFT) < 0) keybd_event(VK_RSHIFT, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
+        }
+        if ((modifiers & KeyTable.Modifiers.Win) != 0)
+        {
+            if (GetAsyncKeyState(VK_LWIN) < 0) keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
+            if (GetAsyncKeyState(VK_RWIN) < 0) keybd_event(VK_RWIN, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
+        }
+    }
+
+    /// <summary>
     /// ダミーキーイベントを注入してWindowsのAltメニュー起動シーケンスを中断する。
     /// Alt KEYUPを抑制するとAltが押しっぱなしになるため、代わりにこの手法を使う。
     /// </summary>
@@ -207,6 +253,9 @@ sealed class HookManager
         keybd_event(VK_F24, 0, 0, IntPtr.Zero);
         keybd_event(VK_F24, 0, KEYEVENTF_KEYUP, IntPtr.Zero);
     }
+
+    [DllImport("user32.dll")]
+    static extern short GetAsyncKeyState(int vKey);
 
     [DllImport("user32.dll")]
     static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, IntPtr dwExtraInfo);

@@ -304,6 +304,11 @@ public sealed class WindowHelper
     public static void ActivateForce(Form form)
     {
         using var ati = new AttachThreadInput();
+        // AttachThreadInput 後にキャプチャを解放する。
+        // アクティブ化時に前景スレッドがマウスキャプチャを保持していると、
+        // SetForegroundWindow によって WM_CAPTURECHANGED のみ届き WM_LBUTTONUP が届かず、
+        // 他アプリのボタンが押しっぱなしになるため。
+        ReleaseCapture();
         int time = 0;
         try
         {
@@ -324,6 +329,8 @@ public sealed class WindowHelper
         form.Focus();
         form.Activate();
         Application.DoEvents();
+        // アクティブ化のために一時的に TopMost=true にしたので元の値に戻す
+        form.TopMost = topMost;
 
         if (time != 0)
         {
@@ -361,6 +368,10 @@ public sealed class WindowHelper
 
         _ = SetForegroundWindow(hWnd);
     }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool ReleaseCapture();
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
