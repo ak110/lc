@@ -45,6 +45,7 @@ public sealed class AsyncIconLoader : IDisposable
     readonly BlockingCollection<Request> queue = new();
     readonly CancellationTokenSource cts = new();
     readonly Func<string, bool, System.Drawing.Icon?> extractIcon;
+    readonly FaviconCache _faviconCache;
     volatile int generation;
     bool disposed;
 
@@ -92,6 +93,7 @@ public sealed class AsyncIconLoader : IDisposable
         Func<string, bool, System.Drawing.Icon?>? extractIcon = null)
     {
         ThreadPriority = threadPriority;
+        _faviconCache = new FaviconCache(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "favicons"));
         this.extractIcon = extractIcon ?? DefaultExtractIcon;
         // Dispose()とのレース回避: スレッド開始前にトークンを取得しておく
         var token = cts.Token;
@@ -105,8 +107,15 @@ public sealed class AsyncIconLoader : IDisposable
         }
     }
 
-    static System.Drawing.Icon? DefaultExtractIcon(string fileName, bool small)
+    System.Drawing.Icon? DefaultExtractIcon(string fileName, bool small)
     {
+        // PathNormalize はURLのスキーム区切り文字を変形するため、URL判定は先に行う
+        if (fileName.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || fileName.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return _faviconCache.Get(fileName, small);
+        }
+
         string normalized = PathHelper.PathNormalize(fileName);
 
         // シェル名前空間パス ("::{CLSID}"や"shell:xxx"形式) はPIDL経由で取得
