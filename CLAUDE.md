@@ -10,9 +10,3 @@
 
 - `*.cfg`（設定）と`*.dat`（ランタイムデータ）の分離を徹底する。頻繁に更新されるデータは`*.dat`へ
 - WinForms Designer.csのマルチバイト文字を含むテーブル等はmarkdownlint (MD060) に注意
-
-## 関連ドキュメント
-
-- @README.md
-- @docs/development/architecture.md
-- @docs/development/development.md
