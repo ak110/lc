@@ -81,7 +81,7 @@ public partial class ButtonLauncherForm : Form
             bool onTab = hitIndex >= 0;
             renameItem.Enabled = onTab;
             defaultItem.Enabled = onTab;
-            deleteItem.Enabled = onTab;
+            deleteItem.Enabled = onTab && tabControl1.TabCount > 1;
             moveLeftItem.Enabled = onTab && hitIndex > 0;
             moveRightItem.Enabled = onTab && hitIndex < tabControl1.TabCount - 1;
         };
