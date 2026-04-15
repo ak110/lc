@@ -16,6 +16,12 @@ run = [
   "git config --unset core.hooksPath || true",
   "uvx pre-commit install",
 ]
+run_windows = [
+  "dotnet tool restore",
+  "pnpm install",
+  "git config --unset core.hooksPath & exit /b 0",
+  "uvx pre-commit install",
+]
 
 [tasks.build]
 description = "リリースビルド"
