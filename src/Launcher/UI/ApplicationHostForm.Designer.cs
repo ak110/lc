@@ -1,6 +1,6 @@
 #nullable disable
 namespace Launcher.UI {
-	partial class DummyForm {
+	partial class ApplicationHostForm {
 		/// <summary>
 		/// 必要なデザイナ変数です。
 		/// </summary>
@@ -25,7 +25,7 @@ namespace Launcher.UI {
 		/// </summary>
 		private void InitializeComponent() {
 			this.components = new System.ComponentModel.Container();
-			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DummyForm));
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ApplicationHostForm));
 			this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
 			this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.設定CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -166,7 +166,7 @@ namespace Launcher.UI {
 			this.終了XToolStripMenuItem.Text = "終了(&X)";
 			this.終了XToolStripMenuItem.Click += new System.EventHandler(this.終了XToolStripMenuItem_Click);
 			//
-			// DummyForm
+			// ApplicationHostForm
 			//
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -176,13 +176,13 @@ namespace Launcher.UI {
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.MaximizeBox = false;
 			this.MinimizeBox = false;
-			this.Name = "DummyForm";
+			this.Name = "ApplicationHostForm";
 			this.ShowIcon = false;
 			this.ShowInTaskbar = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-			this.Shown += new System.EventHandler(this.DummyForm_Shown);
-			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.DummyForm_FormClosing);
-			this.Load += new System.EventHandler(this.DummyForm_Load);
+			this.Shown += new System.EventHandler(this.ApplicationHostForm_Shown);
+			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ApplicationHostForm_FormClosing);
+			this.Load += new System.EventHandler(this.ApplicationHostForm_Load);
 			this.contextMenuStrip1.ResumeLayout(false);
 			this.ResumeLayout(false);
 

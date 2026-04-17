@@ -156,7 +156,7 @@ static class Program
 
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
-        using var dummyForm = new DummyForm();
-        Application.Run(dummyForm);
+        using var applicationHostForm = new ApplicationHostForm();
+        Application.Run(applicationHostForm);
     }
 }

@@ -9,7 +9,7 @@ using Process = System.Diagnostics.Process;
 
 namespace Launcher.UI;
 
-public partial class DummyForm : Form
+public partial class ApplicationHostForm : Form
 {
     Config config = new();
     Data data = new();
@@ -50,7 +50,7 @@ public partial class DummyForm : Form
 
     /// <summary>
     /// ダイアログのオーナーとして利用できる表示中のフォームを返す。
-    /// 不可視の DummyForm を owner にすると別モニターに表示されるため、表示中のフォームを優先する。
+    /// 不可視の ApplicationHostForm を owner にすると別モニターに表示されるため、表示中のフォームを優先する。
     /// owner が null の場合は CenterParent が機能しないため CenterScreen にフォールバックする。
     /// </summary>
     private IWin32Window? GetVisibleOwner()
@@ -62,14 +62,14 @@ public partial class DummyForm : Form
 
         // ConfigForm など launcher 内のモーダル表示中フォームを owner に使う。
         // Form.ActiveForm は現在アクティブな自プロセスのフォームを返す。
-        // DummyForm 自身は Visible=false のため候補から除外される。
+        // ApplicationHostForm 自身は Visible=false のため候補から除外される。
         if (Form.ActiveForm is { IsDisposed: false, Visible: true } active && active != this)
             return active;
 
         return null;
     }
 
-    public DummyForm()
+    public ApplicationHostForm()
     {
         InitializeComponent();
         Visible = false;
@@ -114,19 +114,19 @@ public partial class DummyForm : Form
         get { return true; }
     }
 
-    private void DummyForm_Load(object sender, EventArgs e)
+    private void ApplicationHostForm_Load(object sender, EventArgs e)
     {
         Visible = false;
         hookManager.Register();
         schedulerTimer.Start();
     }
 
-    private void DummyForm_Shown(object sender, EventArgs e)
+    private void ApplicationHostForm_Shown(object sender, EventArgs e)
     {
         Visible = false;
     }
 
-    private void DummyForm_FormClosing(object sender, FormClosingEventArgs e)
+    private void ApplicationHostForm_FormClosing(object sender, FormClosingEventArgs e)
     {
         schedulerTimer.Stop();
         hookManager.Unregister();
@@ -449,7 +449,7 @@ public partial class DummyForm : Form
 
         // MessageBoxタスクはNotificationFormをモーダル表示する。
         // Invokeでスケジューラー STAスレッドをブロックし、ShowDialog のネストメッセージループ中も
-        // DummyForm.WndProcは動作するため、表示中でもホットキー (WM_APPMSG_SHOWHIDE) を受け付けられる。
+        // ApplicationHostForm.WndProcは動作するため、表示中でもホットキー (WM_APPMSG_SHOWHIDE) を受け付けられる。
         //
         // owner が null のとき (launcher 内に表示フォームが無いとき) は、通知表示前の前景ウィンドウを記録し、
         // 閉じたときに SetForegroundWindow で戻す。そうしないと owner 無しダイアログの終了時に

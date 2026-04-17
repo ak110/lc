@@ -5,7 +5,7 @@ namespace Launcher.UI;
 
 /// <summary>
 /// スケジューラーの通知ダイアログ。MessageBoxタスクの表示に使う。
-/// DummyFormが追跡中の間はCommandLauncherFormのauto-hideを抑制することで、
+/// ApplicationHostFormが追跡中の間はCommandLauncherFormのauto-hideを抑制することで、
 /// 通知表示中にユーザーがホットキーで主ウィンドウを開いてもレイアウトが維持される。
 /// </summary>
 public partial class NotificationForm : Form

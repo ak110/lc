@@ -8,7 +8,7 @@ namespace Launcher.UI;
 /// </summary>
 public partial class ButtonLauncherForm : Form
 {
-    readonly DummyForm owner;
+    readonly ApplicationHostForm owner;
     readonly AsyncIconLoader iconLoader = new();
     readonly ContextMenuStrip buttonContextMenu;
     readonly ContextMenuStrip tabContextMenu;
@@ -27,7 +27,7 @@ public partial class ButtonLauncherForm : Form
 
     ButtonLauncherData Data => owner.ButtonLauncherData;
 
-    public ButtonLauncherForm(DummyForm owner, ContextMenuStrip mainMenu)
+    public ButtonLauncherForm(ApplicationHostForm owner, ContextMenuStrip mainMenu)
     {
         InitializeComponent();
         this.owner = owner;
@@ -114,7 +114,7 @@ public partial class ButtonLauncherForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        // オーナー(DummyForm)からの閉じる操作以外は非表示にするだけ
+        // オーナー(ApplicationHostForm)からの閉じる操作以外は非表示にするだけ
         if (e.CloseReason != CloseReason.FormOwnerClosing)
         {
             e.Cancel = true;

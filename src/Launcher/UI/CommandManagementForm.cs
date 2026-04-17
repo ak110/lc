@@ -8,11 +8,11 @@ namespace Launcher.UI;
 /// </summary>
 public partial class CommandManagementForm : Form
 {
-    readonly DummyForm owner;
+    readonly ApplicationHostForm owner;
     readonly AsyncIconLoader iconLoader = new();
     ImageList? imageList;
 
-    public CommandManagementForm(DummyForm owner)
+    public CommandManagementForm(ApplicationHostForm owner)
     {
         InitializeComponent();
         this.owner = owner;

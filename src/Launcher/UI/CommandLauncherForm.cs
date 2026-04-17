@@ -7,7 +7,7 @@ namespace Launcher.UI;
 
 public partial class CommandLauncherForm : Form
 {
-    DummyForm ownerForm;
+    ApplicationHostForm ownerForm;
     CommandLauncherPresenter presenter;
 
     InputState state;
@@ -21,7 +21,7 @@ public partial class CommandLauncherForm : Form
     // LocationChanged/SizeChangedの高頻度保存を抑制するデバウンスタイマー
     System.Windows.Forms.Timer saveConfigTimer;
 
-    public CommandLauncherForm(DummyForm dummyForm, ContextMenuStrip mainMenu)
+    public CommandLauncherForm(ApplicationHostForm applicationHostForm, ContextMenuStrip mainMenu)
     {
         InitializeComponent();
         ContextMenuStrip = mainMenu;
@@ -29,7 +29,7 @@ public partial class CommandLauncherForm : Form
 
         Text = Infrastructure.AppVersion.Title;
 
-        ownerForm = dummyForm;
+        ownerForm = applicationHostForm;
         Owner = ownerForm;
         presenter = new CommandLauncherPresenter(
             () => ownerForm.CommandList,
