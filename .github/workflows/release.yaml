@@ -85,8 +85,12 @@ jobs:
         shell: pwsh
         run: |
           $propsPath = "Directory.Build.props"
-          [xml]$xml = Get-Content $propsPath
-          $currentVersion = $xml.Project.PropertyGroup.Version
+          # XmlDocument.Saveは末尾改行を除去するため、ファイル原形を保つ正規表現置換で書き換える
+          $content = [IO.File]::ReadAllText($propsPath)
+          if ($content -notmatch '<Version>([^<]+)</Version>') {
+            throw "Version要素が見つからない: $propsPath"
+          }
+          $currentVersion = $Matches[1]
           $parts = $currentVersion.Split('.')
           $major = [int]$parts[0]
           $minor = [int]$parts[1]
@@ -110,9 +114,10 @@ jobs:
           $newVersion = "$major.$minor.$patch"
           Write-Host "Version: $currentVersion -> $newVersion"
 
-          # Directory.Build.props を更新
-          $xml.Project.PropertyGroup.Version = $newVersion
-          $xml.Save((Resolve-Path $propsPath))
+          # Directory.Build.props を更新（最初の<Version>要素のみ差し替え）
+          $regex = [regex]'<Version>[^<]+</Version>'
+          $newContent = $regex.Replace($content, "<Version>$newVersion</Version>", 1)
+          [IO.File]::WriteAllText($propsPath, $newContent)
 
           echo "version=$newVersion" >> $env:GITHUB_OUTPUT
 
