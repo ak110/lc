@@ -21,7 +21,7 @@ tools: Read, Grep, Glob, Bash
 2. 必要に応じて以下の参照ファイルを読む
    - `docs/development/architecture.md`（不変条件の根拠）
    - `src/Launcher/Core/`（Presenter/ConfigStore派生）
-   - `src/Launcher/UI/DummyForm.cs`, `src/Launcher/UI/HookManager.cs`
+   - `src/Launcher/UI/ApplicationHostForm.cs`, `src/Launcher/UI/HookManager.cs`
    - `src/Launcher/Infrastructure/AsyncIconLoader.cs`
 3. 下記チェックリストを順に適用する
 4. 違反候補はGrepで他所にも同じパターンがないか横展開で確認（SSOT原則）
@@ -38,7 +38,9 @@ Shell API呼び出しは必ずSTAスレッドから行う。違反するとShell
   - `ShellExecuteEx`、`SHGetFileInfo`、`SHFileOperation`、`SHBrowseForFolder`、`IShellLink`関連。これらは`src/Launcher/Win32/`配下のP/Invokeラッパー経由でも該当する
 - 新規に `Thread` を生成している場合、`SetApartmentState(ApartmentState.STA)` を生成直後に必ず呼んでいるか
 - `async/await` をWin32周辺で使う場合、`ConfigureAwait(false)` の有無によってUIスレッドへ戻れずShell APIがMTAで走るリスクが無いか
-- アイコン読み込み・コマンド実行・ディレクトリ展開・スケジューラータスク実行は専用STAスレッド経由になっているか。既存の経路（`MainForm.ExecuteCommand`/`MainForm.OpenDirectory`/`AsyncIconLoader`/`SchedulerPresenter.ExecuteItemTasks`）を踏襲しているか
+- アイコン読み込み・コマンド実行・ディレクトリ展開・スケジューラータスク実行は専用STAスレッド経由になっているか
+  - 既存の経路を踏襲しているか（`CommandLauncherForm.ExecuteCommand` / `CommandLauncherForm.OpenDirectory`）
+  - アイコンは `AsyncIconLoader`、スケジューラータスクは `SchedulerPresenter.ExecuteItemTasks` を使っているか
 
 ### B. Win32 フックコールバック
 
@@ -84,7 +86,7 @@ Shell API呼び出しは必ずSTAスレッドから行う。違反するとShell
 ## winforms-sta-reviewer レビュー結果
 
 ### 致命的
-- src/Launcher/UI/MainForm.cs:142
+- src/Launcher/UI/CommandLauncherForm.cs:142
   Task.Run 内で ShellExecuteEx を呼び出している。MTA からの Shell API 呼び出しは
   禁止 (architecture.md「STA制約」)。専用 STA スレッドへ移すこと。
 
