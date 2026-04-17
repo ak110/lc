@@ -34,6 +34,7 @@ namespace Launcher.UI {
 			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
 			this.実行ファイルのあるフォルダを開くMToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.ネットワーク更新NToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.ホームページを開くHToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
 			this.再起動RToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.終了XToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -63,6 +64,7 @@ namespace Launcher.UI {
             this.toolStripSeparator1,
             this.実行ファイルのあるフォルダを開くMToolStripMenuItem,
             this.ネットワーク更新NToolStripMenuItem,
+            this.ホームページを開くHToolStripMenuItem,
             this.toolStripSeparator2,
             this.再起動RToolStripMenuItem,
             this.終了XToolStripMenuItem});
@@ -138,6 +140,13 @@ namespace Launcher.UI {
 			this.ネットワーク更新NToolStripMenuItem.Text = "ネットワーク更新(&N)";
 			this.ネットワーク更新NToolStripMenuItem.Click += new System.EventHandler(this.ネットワーク更新NToolStripMenuItem_Click);
 			//
+			// ホームページを開くHToolStripMenuItem
+			//
+			this.ホームページを開くHToolStripMenuItem.Name = "ホームページを開くHToolStripMenuItem";
+			this.ホームページを開くHToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
+			this.ホームページを開くHToolStripMenuItem.Text = "ホームページを開く(&H)";
+			this.ホームページを開くHToolStripMenuItem.Click += new System.EventHandler(this.ホームページを開くHToolStripMenuItem_Click);
+			//
 			// toolStripSeparator2
 			//
 			this.toolStripSeparator2.Name = "toolStripSeparator2";
@@ -188,6 +197,7 @@ namespace Launcher.UI {
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
 		private System.Windows.Forms.ToolStripMenuItem 実行ファイルのあるフォルダを開くMToolStripMenuItem;
 			private System.Windows.Forms.ToolStripMenuItem ネットワーク更新NToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem ホームページを開くHToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
 		private System.Windows.Forms.ToolStripMenuItem 終了XToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem 再起動RToolStripMenuItem;

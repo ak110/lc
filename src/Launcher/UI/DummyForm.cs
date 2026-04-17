@@ -366,6 +366,27 @@ public partial class DummyForm : Form
 #pragma warning restore CA1031
     }
 
+    private void ホームページを開くHToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        const string url = "https://github.com/ak110/lc";
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true,
+            };
+            Process.Start(psi);
+        }
+#pragma warning disable CA1031 // ブラウザ起動は様々な例外が発生しうるため包括的にキャッチ
+        catch (Exception ex)
+        {
+            MessageBox.Show($"ブラウザの起動に失敗しました。\n{ex.Message}", AppVersion.Title,
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+#pragma warning restore CA1031
+    }
+
     private void スケジューラー設定SToolStripMenuItem_Click(object sender, EventArgs e)
     {
         using var form = new SchedulerConfigForm(schedulerData);
