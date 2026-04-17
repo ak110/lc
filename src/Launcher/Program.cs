@@ -16,6 +16,38 @@ static class Program
     public static readonly IntPtr WM_APPMSG_SHOWBUTTONLAUNCHER = (IntPtr)0x2a3f7c01;
 
     /// <summary>
+    /// 常駐プロセスへウィンドウメッセージを送信する。
+    /// 失敗（常駐プロセスなし、ハンドル無効、ファイル不在など）はstderrへ出力するだけで握りつぶす。
+    /// </summary>
+    /// <param name="message">送信メッセージID</param>
+    /// <param name="wParam">wParam値</param>
+    /// <param name="lParam">lParam値</param>
+    /// <param name="label">ログ先頭に付けるラベル（例: "/close", "/restart", "コマンド登録"）</param>
+    /// <param name="successDescription">成功時に続けて出力する説明（例: "終了メッセージを送信しました。"）</param>
+    /// <param name="failureDescription">PostMessage失敗時に続けて出力する説明</param>
+#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
+    static void TryPostMessageToResident(
+        int message, IntPtr wParam, IntPtr lParam,
+        string label, string successDescription, string failureDescription)
+    {
+        try
+        {
+            Data data = Data.Deserialize();
+            WindowHelper window =
+                new WindowHelper(checked((IntPtr)data.WindowHandle));
+            if (window.PostMessage(message, wParam, lParam))
+                Console.WriteLine($"{label}: {successDescription}");
+            else
+                Console.Error.WriteLine($"{label}: {failureDescription}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"{label}: {ex.Message}");
+        }
+    }
+#pragma warning restore CA1031
+
+    /// <summary>
     /// 更新後に残った.oldファイルを削除する。
     /// </summary>
     static void CleanupOldFiles()
@@ -71,43 +103,20 @@ static class Program
         {
             if (args[i] == "/close")
             {
-                // エントリポイントでのIPC送信: 常駐プロセスが存在しない場合など多様な失敗がありうる
-#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
-                try
-                {
-                    Data data = Data.Deserialize();
-                    WindowHelper window =
-                        new WindowHelper(checked((IntPtr)data.WindowHandle));
-                    if (window.PostMessage(WM.WM_CLOSE, IntPtr.Zero, IntPtr.Zero))
-                        Console.WriteLine("/close: 終了メッセージを送信しました。");
-                    else
-                        Console.Error.WriteLine("/close: メッセージの送信に失敗しました。");
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"/close: {ex.Message}");
-                }
-#pragma warning restore CA1031
+                TryPostMessageToResident(
+                    WM.WM_CLOSE, IntPtr.Zero, IntPtr.Zero,
+                    "/close",
+                    "終了メッセージを送信しました。",
+                    "メッセージの送信に失敗しました。");
                 return;
             }
             else if (args[i] == "/restart")
             {
-#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
-                try
-                {
-                    Data data = Data.Deserialize();
-                    WindowHelper window =
-                        new WindowHelper(checked((IntPtr)data.WindowHandle));
-                    if (window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RESTART))
-                        Console.WriteLine("/restart: 再起動メッセージを送信しました。");
-                    else
-                        Console.Error.WriteLine("/restart: メッセージの送信に失敗しました。");
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"/restart: {ex.Message}");
-                }
-#pragma warning restore CA1031
+                TryPostMessageToResident(
+                    WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RESTART,
+                    "/restart",
+                    "再起動メッセージを送信しました。",
+                    "メッセージの送信に失敗しました。");
                 return;
             }
             else if (File.Exists(args[i]) || Directory.Exists(args[i]))
@@ -121,22 +130,11 @@ static class Program
                     commandList.Add(command);
                     commandList.Serialize(".cmd.cfg");
 
-#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
-                    try
-                    {
-                        Data data = Data.Deserialize();
-                        WindowHelper window =
-                            new WindowHelper(checked((IntPtr)data.WindowHandle));
-                        if (window.PostMessage(WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RELOAD))
-                            Console.WriteLine("コマンド登録: リロードメッセージを送信しました。");
-                        else
-                            Console.Error.WriteLine("コマンド登録: リロードメッセージの送信に失敗しました。");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.Error.WriteLine($"コマンド登録: リロード通知失敗: {ex.Message}");
-                    }
-#pragma warning restore CA1031
+                    TryPostMessageToResident(
+                        WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RELOAD,
+                        "コマンド登録",
+                        "リロードメッセージを送信しました。",
+                        "リロードメッセージの送信に失敗しました。");
                 }
                 exit = true;
             }
