@@ -5,10 +5,10 @@ using Launcher.Win32;
 
 namespace Launcher.UI;
 
-public partial class MainForm : Form
+public partial class CommandLauncherForm : Form
 {
     DummyForm ownerForm;
-    MainFormPresenter presenter;
+    CommandLauncherPresenter presenter;
 
     InputState state;
     int lastFocus;   // エディットボックスにフォーカスがあった場合0, リストな場合1
@@ -21,7 +21,7 @@ public partial class MainForm : Form
     // LocationChanged/SizeChangedの高頻度保存を抑制するデバウンスタイマー
     System.Windows.Forms.Timer saveConfigTimer;
 
-    public MainForm(DummyForm dummyForm, ContextMenuStrip mainMenu)
+    public CommandLauncherForm(DummyForm dummyForm, ContextMenuStrip mainMenu)
     {
         InitializeComponent();
         ContextMenuStrip = mainMenu;
@@ -31,7 +31,7 @@ public partial class MainForm : Form
 
         ownerForm = dummyForm;
         Owner = ownerForm;
-        presenter = new MainFormPresenter(
+        presenter = new CommandLauncherPresenter(
             () => ownerForm.CommandList,
             () => ownerForm.Config);
 
@@ -74,7 +74,7 @@ public partial class MainForm : Form
 
     private bool initialized;
 
-    private void MainForm_Load(object sender, EventArgs e)
+    private void CommandLauncherForm_Load(object sender, EventArgs e)
     {
         if (initialized) return;
         // PreInitialize未実行時のフォールバック
@@ -82,7 +82,7 @@ public partial class MainForm : Form
         ApplyConfig();
     }
 
-    private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+    private void CommandLauncherForm_FormClosing(object sender, FormClosingEventArgs e)
     {
         if (e.CloseReason != CloseReason.FormOwnerClosing)
         {
@@ -196,12 +196,12 @@ public partial class MainForm : Form
 
     #endregion
 
-    #region MainForm
+    #region CommandLauncherForm
 
     /// <summary>
     /// Locationが変わった
     /// </summary>
-    private void MainForm_LocationChanged(object sender, EventArgs e)
+    private void CommandLauncherForm_LocationChanged(object sender, EventArgs e)
     {
         if (Visible && WindowState == FormWindowState.Normal)
         {
@@ -214,7 +214,7 @@ public partial class MainForm : Form
     /// <summary>
     /// Sizeが変わった
     /// </summary>
-    private void MainForm_SizeChanged(object sender, EventArgs e)
+    private void CommandLauncherForm_SizeChanged(object sender, EventArgs e)
     {
         if (Visible && WindowState == FormWindowState.Normal)
         {
@@ -227,7 +227,7 @@ public partial class MainForm : Form
     /// <summary>
     /// アクティブになった
     /// </summary>
-    private void MainForm_Activated(object sender, EventArgs e)
+    private void CommandLauncherForm_Activated(object sender, EventArgs e)
     {
         BringToFront();
         Activate();
@@ -237,7 +237,7 @@ public partial class MainForm : Form
     /// <summary>
     /// 非アクティブになった
     /// </summary>
-    private void MainForm_Deactivate(object sender, EventArgs e)
+    private void CommandLauncherForm_Deactivate(object sender, EventArgs e)
     {
         if (ownerForm.Config.WindowHideNoActive)
         {
@@ -253,7 +253,7 @@ public partial class MainForm : Form
     /// <summary>
     /// 非アクティブになった
     /// </summary>
-    private void MainForm_Leave(object sender, EventArgs e)
+    private void CommandLauncherForm_Leave(object sender, EventArgs e)
     {
         if (ownerForm.Config.WindowHideNoActive)
         {
@@ -672,7 +672,7 @@ public partial class MainForm : Form
     /// </summary>
     private void UpdateButtonText()
     {
-        var texts = MainFormPresenter.GetButtonTexts(state, lastFocus, ModifierKeys);
+        var texts = CommandLauncherPresenter.GetButtonTexts(state, lastFocus, ModifierKeys);
         button1.Text = texts.Button1Text;
         button2.Text = texts.Button2Text;
     }
@@ -688,7 +688,7 @@ public partial class MainForm : Form
         Command? selectedCommand = listView1.SelectedItems.Count > 0
             ? (Command)listView1.SelectedItems[0].Tag! : null;
 
-        var result = MainFormPresenter.DetermineAction(
+        var result = CommandLauncherPresenter.DetermineAction(
             state, lastFocus, firstCommand, selectedCommand, ModifierKeys);
 
         switch (result.Action)

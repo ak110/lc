@@ -16,7 +16,7 @@ public partial class DummyForm : Form
     SchedulerData schedulerData = new();
 
     HookManager hookManager;
-    MainForm mainForm;
+    CommandLauncherForm commandLauncherForm;
     ButtonLauncherForm? buttonLauncherForm;
 
     /// <summary>スケジューラータスク実行中フラグ (二重実行防止)</summary>
@@ -30,7 +30,7 @@ public partial class DummyForm : Form
 
     /// <summary>
     /// 非同期通知ダイアログが1つ以上表示中か。
-    /// MainFormの auto-hide 抑制判定 (MainForm_Deactivate/Leave) で参照する。
+    /// CommandLauncherFormの auto-hide 抑制判定 (CommandLauncherForm_Deactivate/Leave) で参照する。
     /// </summary>
     public bool HasActiveNotifications => activeNotifications.Exists(f => !f.IsDisposed);
 
@@ -57,8 +57,8 @@ public partial class DummyForm : Form
     {
         if (buttonLauncherForm is { IsDisposed: false, Visible: true })
             return buttonLauncherForm;
-        if (!mainForm.IsDisposed && mainForm.Visible)
-            return mainForm;
+        if (!commandLauncherForm.IsDisposed && commandLauncherForm.Visible)
+            return commandLauncherForm;
 
         // ConfigForm など launcher 内のモーダル表示中フォームを owner に使う。
         // Form.ActiveForm は現在アクティブな自プロセスのフォームを返す。
@@ -94,11 +94,11 @@ public partial class DummyForm : Form
 
         hookManager = new HookManager(() => config, () => Handle, a => BeginInvoke(a));
 
-        mainForm = new MainForm(this, contextMenuStrip1);
-        mainForm.PreInitialize();
+        commandLauncherForm = new CommandLauncherForm(this, contextMenuStrip1);
+        commandLauncherForm.PreInitialize();
         if (!config.HideFirst)
         {
-            mainForm.Show(this);
+            commandLauncherForm.Show(this);
         }
         ApplyConfig();
         SetupSchedulerActions();
@@ -191,7 +191,7 @@ public partial class DummyForm : Form
 
     /// <summary>
     /// メインウィンドウの表示と非表示を切り替える。
-    /// 非同期通知ダイアログが表示中のときは、MainFormをHideせず、通知Formを最前面化する。
+    /// 非同期通知ダイアログが表示中のときは、CommandLauncherFormをHideせず、通知Formを最前面化する。
     /// </summary>
     public void ShowHide()
     {
@@ -201,19 +201,19 @@ public partial class DummyForm : Form
         {
             bool hasNotifications = HasActiveNotifications;
 
-            if (mainForm.IsDisposed)
+            if (commandLauncherForm.IsDisposed)
             {
-                mainForm = new MainForm(this, contextMenuStrip1);
-                mainForm.Show(this);
+                commandLauncherForm = new CommandLauncherForm(this, contextMenuStrip1);
+                commandLauncherForm.Show(this);
             }
-            else if (!mainForm.Visible)
+            else if (!commandLauncherForm.Visible)
             {
-                mainForm.ShowWindow();
+                commandLauncherForm.ShowWindow();
             }
             else if (!hasNotifications)
             {
                 // 通常のトグル: 表示中→非表示
-                mainForm.HideWindow();
+                commandLauncherForm.HideWindow();
             }
             // 通知がある場合はHideせず、表示を維持する
 
@@ -242,9 +242,9 @@ public partial class DummyForm : Form
         ButtonLauncherData = ButtonLauncherData.Deserialize();
         schedulerData = SchedulerData.Deserialize();
         new ReplaceEnvList(config.ReplaceEnv).Replace(schedulerData);
-        if (!mainForm.IsDisposed)
+        if (!commandLauncherForm.IsDisposed)
         {
-            mainForm.ApplyConfig();
+            commandLauncherForm.ApplyConfig();
         }
     }
 
@@ -275,24 +275,24 @@ public partial class DummyForm : Form
     }
 
     /// <summary>
-    /// MainFormの表示を更新
+    /// CommandLauncherFormの表示を更新
     /// </summary>
-    public void RefreshMainForm()
+    public void RefreshCommandLauncherForm()
     {
-        if (!mainForm.IsDisposed)
+        if (!commandLauncherForm.IsDisposed)
         {
-            mainForm.ApplyConfig();
+            commandLauncherForm.ApplyConfig();
         }
     }
 
     /// <summary>
-    /// MainFormのコマンド一覧表示だけを更新 (アイコン再読込なし)
+    /// CommandLauncherFormのコマンド一覧表示だけを更新 (アイコン再読込なし)
     /// </summary>
-    public void RefreshMainFormCommandList()
+    public void RefreshCommandLauncherFormCommandList()
     {
-        if (!mainForm.IsDisposed)
+        if (!commandLauncherForm.IsDisposed)
         {
-            mainForm.RefreshCommandList();
+            commandLauncherForm.RefreshCommandList();
         }
     }
 
@@ -319,9 +319,9 @@ public partial class DummyForm : Form
             }
 
             ApplyConfig();
-            if (!mainForm.IsDisposed)
+            if (!commandLauncherForm.IsDisposed)
             {
-                mainForm.ApplyConfig();
+                commandLauncherForm.ApplyConfig();
             }
         }
     }
@@ -473,7 +473,7 @@ public partial class DummyForm : Form
                 }
 
                 // launcher 内に表示フォームが無いままなら、通知表示前の前景ウィンドウへ戻す。
-                // 閉じた時点で owner 候補が出現している場合 (ホットキーで MainForm を開いた等) は、
+                // 閉じた時点で owner 候補が出現している場合 (ホットキーで CommandLauncherForm を開いた等) は、
                 // WinForms の標準挙動に任せてスキップする。
                 if (GetVisibleOwner() is null)
                 {
@@ -547,7 +547,7 @@ public partial class DummyForm : Form
         }
         if (!changed) return;
 
-        // ReplaceEnvList の再適用は MainForm.ApplyConfig と同じく背景スレッドで行う。
+        // ReplaceEnvList の再適用は CommandLauncherForm.ApplyConfig と同じく背景スレッドで行う。
         // ReplaceEnvList 側は static ロックで直列化される。
         var thread = new Thread(() =>
         {
@@ -558,9 +558,9 @@ public partial class DummyForm : Form
             {
                 BeginInvoke(() =>
                 {
-                    if (!mainForm.IsDisposed)
+                    if (!commandLauncherForm.IsDisposed)
                     {
-                        mainForm.RefreshCommandList();
+                        commandLauncherForm.RefreshCommandList();
                     }
                 });
             }

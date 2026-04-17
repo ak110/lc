@@ -8,7 +8,7 @@ namespace Launcher.Core;
 sealed class ReplaceEnvList
 {
     // 置換時のスレッドセーフ用ロック。
-    // 複数スレッド (MainForm.ApplyConfig の背景スレッド、環境変数変更時の Refresh 等)
+    // 複数スレッド (CommandLauncherForm.ApplyConfig の背景スレッド、環境変数変更時の Refresh 等)
     // から同じ Command / SchedulerTask インスタンスを並行更新する可能性があるため、
     // ReplaceEnvList インスタンス間でも排他する必要があり static にしている。
     static readonly object lockObj = new();

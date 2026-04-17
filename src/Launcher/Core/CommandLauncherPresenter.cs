@@ -30,10 +30,10 @@ public enum MainAction { ShowConfig, AddCommand, Execute, EditCommand, OpenDirec
 public record ButtonClickResult(MainAction Action, Command? TargetCommand);
 
 /// <summary>
-/// MainFormのビジネスロジックを担当するPresenter。
+/// CommandLauncherFormのビジネスロジックを担当するPresenter。
 /// UI操作を伴わない判定・計算ロジックを集約する。
 /// </summary>
-public sealed class MainFormPresenter(Func<CommandList> getCommandList, Func<Config> getConfig)
+public sealed class CommandLauncherPresenter(Func<CommandList> getCommandList, Func<Config> getConfig)
 {
     /// <summary>
     /// テキスト入力変更時のロジック。

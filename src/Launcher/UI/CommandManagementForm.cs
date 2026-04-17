@@ -159,8 +159,8 @@ public partial class CommandManagementForm : Form
     private void SaveAndApply()
     {
         owner.CommandList.Serialize(".cmd.cfg");
-        // MainFormのコマンド一覧だけ更新 (アイコン再読込は不要)
-        owner.RefreshMainFormCommandList();
+        // CommandLauncherFormのコマンド一覧だけ更新 (アイコン再読込は不要)
+        owner.RefreshCommandLauncherFormCommandList();
     }
 
     protected override void Dispose(bool disposing)

@@ -1,6 +1,6 @@
 #nullable disable
 namespace Launcher.UI {
-	partial class MainForm {
+	partial class CommandLauncherForm {
 		/// <summary>
 		/// 必要なデザイナ変数です。
 		/// </summary>
@@ -25,7 +25,7 @@ namespace Launcher.UI {
 		/// </summary>
 		private void InitializeComponent() {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CommandLauncherForm));
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.button1 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
@@ -166,7 +166,7 @@ namespace Launcher.UI {
             this.複製の作成LToolStripMenuItem.Text = "複製の作成(&L)";
             this.複製の作成LToolStripMenuItem.Click += new System.EventHandler(this.複製の作成LToolStripMenuItem_Click);
             //
-            // MainForm
+            // CommandLauncherForm
             //
             this.AcceptButton = this.button1;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -179,16 +179,16 @@ namespace Launcher.UI {
             this.Controls.Add(this.textBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.Name = "MainForm";
+            this.Name = "CommandLauncherForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "らんちゃ";
-            this.Activated += new System.EventHandler(this.MainForm_Activated);
-            this.Deactivate += new System.EventHandler(this.MainForm_Deactivate);
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
-            this.Load += new System.EventHandler(this.MainForm_Load);
-            this.LocationChanged += new System.EventHandler(this.MainForm_LocationChanged);
-            this.SizeChanged += new System.EventHandler(this.MainForm_SizeChanged);
-            this.Leave += new System.EventHandler(this.MainForm_Leave);
+            this.Activated += new System.EventHandler(this.CommandLauncherForm_Activated);
+            this.Deactivate += new System.EventHandler(this.CommandLauncherForm_Deactivate);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.CommandLauncherForm_FormClosing);
+            this.Load += new System.EventHandler(this.CommandLauncherForm_Load);
+            this.LocationChanged += new System.EventHandler(this.CommandLauncherForm_LocationChanged);
+            this.SizeChanged += new System.EventHandler(this.CommandLauncherForm_SizeChanged);
+            this.Leave += new System.EventHandler(this.CommandLauncherForm_Leave);
             this.contextMenuStrip2.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
