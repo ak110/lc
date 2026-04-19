@@ -1,12 +1,18 @@
 ---
 name: winforms-sta-reviewer
-description: src/Launcher 配下の C# 差分を、docs/development/architecture.md で定義された STA スレッド / Shell API / Win32 フックコールバック / cfg-dat 分離 / アイコンローダー制約の観点でレビューする。スレッド・Shell API・Win32 フック・ConfigStore 派生クラスを変更したときに使用する。呼び出し時にレビュー対象のファイルパス、または `git diff` 範囲を必ず渡すこと。
+description: >
+  src/Launcher 配下の C# 差分を、docs/development/architecture.md で定義された
+  STA スレッド / Shell API / Win32 フックコールバック / cfg-dat 分離 / アイコンローダー制約の観点でレビューする。
+  スレッド・Shell API・Win32 フック・ConfigStore 派生クラスを変更したときに使用する。
+  呼び出し時にレビュー対象のファイルパス、または `git diff` 範囲を必ず渡すこと。
 tools: Read, Grep, Glob, Bash
 ---
 
 # winforms-sta-reviewer
 
-`docs/development/architecture.md` に定義された本プロジェクト固有の不変条件を、変更差分に対して機械的にチェックする専用レビュアー。一般的なC# のコーディングスタイルや命名はレビュー対象外。設計不変条件のみに集中する。
+`docs/development/architecture.md` に定義された本プロジェクト固有の不変条件を、
+変更差分に対して機械的にチェックする専用レビュアー。
+一般的なC# のコーディングスタイルや命名はレビュー対象外。設計不変条件のみに集中する。
 
 ## 入力前提
 
@@ -17,7 +23,8 @@ tools: Read, Grep, Glob, Bash
 
 ## 調査手順
 
-1. 入力で指定された範囲をReadする。`git diff` 範囲なら `git diff <範囲> --name-only` と `git diff <範囲> -- <file>` をBashで取得
+1. 入力で指定された範囲をReadする。`git diff` 範囲なら `git diff <範囲> --name-only` と
+   `git diff <範囲> -- <file>` をBashで取得
 2. 必要に応じて以下の参照ファイルを読む
    - `docs/development/architecture.md`（不変条件の根拠）
    - `src/Launcher/Core/`（Presenter/ConfigStore派生）
@@ -34,10 +41,13 @@ tools: Read, Grep, Glob, Bash
 
 Shell API呼び出しは必ずSTAスレッドから行う。違反するとShell APIが無音で失敗または不安定動作する。
 
-- `Task.Run` / `Task.Factory.StartNew` / `ThreadPool.QueueUserWorkItem` から、以下のShell APIが直接または間接的に呼び出されていないか
-  - `ShellExecuteEx`、`SHGetFileInfo`、`SHFileOperation`、`SHBrowseForFolder`、`IShellLink`関連。これらは`src/Launcher/Win32/`配下のP/Invokeラッパー経由でも該当する
+- `Task.Run` / `Task.Factory.StartNew` / `ThreadPool.QueueUserWorkItem` から、
+  以下のShell APIが直接または間接的に呼び出されていないか
+  - `ShellExecuteEx`、`SHGetFileInfo`、`SHFileOperation`、`SHBrowseForFolder`、`IShellLink`関連。
+    これらは`src/Launcher/Win32/`配下のP/Invokeラッパー経由でも該当する
 - 新規に `Thread` を生成している場合、`SetApartmentState(ApartmentState.STA)` を生成直後に必ず呼んでいるか
-- `async/await` をWin32周辺で使う場合、`ConfigureAwait(false)` の有無によってUIスレッドへ戻れずShell APIがMTAで走るリスクが無いか
+- `async/await` をWin32周辺で使う場合、`ConfigureAwait(false)` の有無によって
+  UIスレッドへ戻れずShell APIがMTAで走るリスクが無いか
 - アイコン読み込み・コマンド実行・ディレクトリ展開・スケジューラータスク実行は専用STAスレッド経由になっているか
   - 既存の経路を踏襲しているか（`CommandLauncherForm.ExecuteCommand` / `CommandLauncherForm.OpenDirectory`）
   - アイコンは `AsyncIconLoader`、スケジューラータスクは `SchedulerPresenter.ExecuteItemTasks` を使っているか
@@ -48,7 +58,8 @@ Shell API呼び出しは必ずSTAスレッドから行う。違反するとShell
 
 - フックコールバック内で `MessageBox.Show` / `Thread.Sleep` / 同期I/O / 長時間ループを行っていないか
 - UI操作は必ず`BeginInvoke`（非同期）でUIスレッドへディスパッチしているか。`Invoke`（同期）を使うとデッドロックの恐れあり
-- ホットキー / マウストリガー検知時のUPイベント抑制フラグ (`suppressNextLButtonUp` / `suppressNextRButtonUp` / `suppressKeyUpVK`) の更新が漏れていないか
+- ホットキー / マウストリガー検知時のUPイベント抑制フラグ
+  (`suppressNextLButtonUp` / `suppressNextRButtonUp` / `suppressKeyUpVK`) の更新が漏れていないか
 - フック解除のタイミング (`UnhookWindowsHookEx`) と、解除後にコールバックが残存しないこと
 
 ### C. アイコンローダー (AsyncIconLoader)
@@ -62,7 +73,8 @@ Shell API呼び出しは必ずSTAスレッドから行う。違反するとShell
 ### D. ConfigStore (cfg/dat 分離)
 
 - 新規プロパティが正しいクラスに属しているか
-  - 静的設定（ユーザーが明示的に変更するもの）→ `Config`/`CommandList`/`ButtonLauncherData`/`SchedulerData`のいずれか（`*.cfg`）
+  - 静的設定（ユーザーが明示的に変更するもの）→
+    `Config`/`CommandList`/`ButtonLauncherData`/`SchedulerData`のいずれか（`*.cfg`）
   - 頻繁に更新されるランタイムデータ（ウィンドウハンドル、最終チェック時刻など）→ `Data`（`*.dat`）
 - XMLシリアライズ対象のコレクションプロパティに初期化子 (`= new List<...> { ... }`) が付いていないか
   - `XmlSerializer` は既存インスタンスへAddするため、初期化子の値とデシリアライズ結果が重複する
@@ -72,7 +84,8 @@ Shell API呼び出しは必ずSTAスレッドから行う。違反するとShell
 
 - WinFormsフォームクラスに判断ロジックが直接書かれていないか（Presenterへ委譲）
 - Core層（`src/Launcher/Core/`）にWinForms依存（`System.Windows.Forms`）が混入していないか
-- スケジューラーのUI連携で、`MessageBox`系は`Invoke`（同期、後続タスクをブロック）、`BalloonTip`系は`BeginInvoke`（非同期）になっているか
+- スケジューラーのUI連携で、`MessageBox`系は`Invoke`（同期、後続タスクをブロック）、
+  `BalloonTip`系は`BeginInvoke`（非同期）になっているか
 
 ### F. その他の地雷
 

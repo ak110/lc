@@ -1,7 +1,10 @@
 # らんちゃ
 
 [![CI](https://github.com/ak110/lc/actions/workflows/ci.yaml/badge.svg)](https://github.com/ak110/lc/actions/workflows/ci.yaml)
-[![Release](https://github.com/ak110/lc/actions/workflows/release.yaml/badge.svg)](https://github.com/ak110/lc/actions/workflows/release.yaml)
+[![Release][release-badge]][release-url]
+
+[release-badge]: https://github.com/ak110/lc/actions/workflows/release.yaml/badge.svg
+[release-url]: https://github.com/ak110/lc/actions/workflows/release.yaml
 
 Windows用アプリケーションランチャー（コマンド型＆ボタン型＆スケジューラー）
 
