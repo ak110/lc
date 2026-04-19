@@ -8,15 +8,22 @@ namespace Launcher.UI;
 public partial class SchedulerConfigForm : Form
 {
     SchedulerData data;
+    readonly Action<string, string>? showBalloonTip;
+    readonly Action<string, string>? showMessageBox;
 
     /// <summary>
     /// 編集結果
     /// </summary>
     public SchedulerData Value => data;
 
-    public SchedulerConfigForm(SchedulerData original)
+    public SchedulerConfigForm(
+        SchedulerData original,
+        Action<string, string>? showBalloonTip = null,
+        Action<string, string>? showMessageBox = null)
     {
         InitializeComponent();
+        this.showBalloonTip = showBalloonTip;
+        this.showMessageBox = showMessageBox;
         // ディープコピーしてキャンセル対応
         data = new SchedulerData
         {
@@ -33,7 +40,7 @@ public partial class SchedulerConfigForm : Form
     private void buttonAdd_Click(object? sender, EventArgs e)
     {
         var item = new SchedulerItem { Name = "新規アイテム" };
-        using var form = new SchedulerItemForm(item);
+        using var form = new SchedulerItemForm(item, showBalloonTip, showMessageBox);
         if (form.ShowDialogOver(this) == DialogResult.OK)
         {
             FormsHelper.Insert(listBoxItems, item);
@@ -84,7 +91,7 @@ public partial class SchedulerConfigForm : Form
     {
         if (listBoxItems.SelectedItem is SchedulerItem selected)
         {
-            using var form = new SchedulerItemForm(selected);
+            using var form = new SchedulerItemForm(selected, showBalloonTip, showMessageBox);
             if (form.ShowDialogOver(this) == DialogResult.OK)
             {
                 int index = listBoxItems.SelectedIndex;

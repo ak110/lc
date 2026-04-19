@@ -37,8 +37,8 @@ public partial class ApplicationHostForm : Form
     /// <summary>環境変数変更の自動取り込み用 (WM_SETTINGCHANGE)</summary>
     readonly EnvironmentRefresher envRefresher = new();
 
-    /// <summary>WM_SETTINGCHANGE のメッセージ ID</summary>
-    const int WM_SETTINGCHANGE = 0x001A;
+    Action<string, string>? schedulerShowBalloonTip;
+    Action<string, string>? schedulerShowMessageBox;
 
     public Config Config
     {
@@ -141,7 +141,7 @@ public partial class ApplicationHostForm : Form
     /// </summary>
     protected override void WndProc(ref Message m)
     {
-        if (m.Msg == WM_SETTINGCHANGE && m.LParam != IntPtr.Zero)
+        if (m.Msg == WM.WM_SETTINGCHANGE && m.LParam != IntPtr.Zero)
         {
             // 環境変数の変更通知のみを取得する (色・フォント等の変更も同じメッセージで通知される)。
             string? area = Marshal.PtrToStringAuto(m.LParam);
@@ -389,7 +389,7 @@ public partial class ApplicationHostForm : Form
 
     private void スケジューラー設定SToolStripMenuItem_Click(object sender, EventArgs e)
     {
-        using var form = new SchedulerConfigForm(schedulerData);
+        using var form = new SchedulerConfigForm(schedulerData, schedulerShowBalloonTip, schedulerShowMessageBox);
         if (form.ShowDialogOver(GetVisibleOwner()) == DialogResult.OK)
         {
             schedulerData = form.Value;
@@ -424,11 +424,11 @@ public partial class ApplicationHostForm : Form
     }
 
     /// <summary>
-    /// スケジューラーのメッセージ表示アクションを設定する。
+    /// スケジューラーのメッセージ表示アクションをフィールドに設定する。
     /// </summary>
     private void SetupSchedulerActions()
     {
-        SchedulerPresenter.ShowBalloonTipAction = (title, message) =>
+        schedulerShowBalloonTip = (title, message) =>
         {
             BeginInvoke(() =>
             {
@@ -454,7 +454,7 @@ public partial class ApplicationHostForm : Form
         // owner が null のとき (launcher 内に表示フォームが無いとき) は、通知表示前の前景ウィンドウを記録し、
         // 閉じたときに SetForegroundWindow で戻す。そうしないと owner 無しダイアログの終了時に
         // Windowsが z-order 上の任意ウィンドウを前面化し、ユーザーの作業コンテキストが失われる。
-        SchedulerPresenter.ShowMessageBoxAction = (title, message) =>
+        schedulerShowMessageBox = (title, message) =>
         {
             Invoke(() =>
             {
@@ -514,7 +514,7 @@ public partial class ApplicationHostForm : Form
         // 各アイテムのタスクをSTAスレッドで並行実行し、完了後にLastCheckTimeを更新
         foreach (var item in itemsToRun)
         {
-            SchedulerPresenter.ExecuteItemTasks(item);
+            SchedulerPresenter.ExecuteItemTasks(item, schedulerShowBalloonTip, schedulerShowMessageBox);
         }
         // ExecuteItemTasks はバックグラウンドスレッドを起動して即座に返る。
         // 厳密な完了待ちは行わず、次の Tick で isRunning ガードを解除する簡易方式とする。

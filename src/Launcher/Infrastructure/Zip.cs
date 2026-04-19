@@ -54,8 +54,6 @@ public sealed class ZipReader : IDisposable
             { // "PK\x1\x2"
                 throw new IOException("ZIPファイルの展開に失敗した");
             }
-            //ushort generalFlags = acc.GetUshort(pos + 8);
-            //ushort compressionMethod = acc.GetUshort(pos + 10);
             ulong dosTime = acc.GetUint(pos + 12);
             uint compressedSize = acc.GetUint(pos + 20);
             uint size = acc.GetUint(pos + 24);

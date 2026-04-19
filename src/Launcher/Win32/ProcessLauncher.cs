@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Launcher.Core;
 
 namespace Launcher.Win32;
 
@@ -43,6 +44,28 @@ public sealed class ShellProcessStartInfo
 /// </summary>
 public static class ProcessLauncher
 {
+    internal static ShellProcessWindowStyle ToWindowStyle(WindowStyle style) => style switch
+    {
+        WindowStyle.Normal => ShellProcessWindowStyle.Normal,
+        WindowStyle.Minimized => ShellProcessWindowStyle.Minimized,
+        WindowStyle.Maximized => ShellProcessWindowStyle.Maximized,
+        WindowStyle.NoActivate => ShellProcessWindowStyle.NoActivate,
+        WindowStyle.MinimizedNoActivate => ShellProcessWindowStyle.MinimizedNoActivate,
+        WindowStyle.Hidden => ShellProcessWindowStyle.Hidden,
+        _ => ShellProcessWindowStyle.Normal,
+    };
+
+    internal static System.Diagnostics.ProcessPriorityClass ToPriorityClass(ProcessPriorityLevel level) => level switch
+    {
+        ProcessPriorityLevel.RealTime => System.Diagnostics.ProcessPriorityClass.RealTime,
+        ProcessPriorityLevel.High => System.Diagnostics.ProcessPriorityClass.High,
+        ProcessPriorityLevel.AboveNormal => System.Diagnostics.ProcessPriorityClass.AboveNormal,
+        ProcessPriorityLevel.Normal => System.Diagnostics.ProcessPriorityClass.Normal,
+        ProcessPriorityLevel.BelowNormal => System.Diagnostics.ProcessPriorityClass.BelowNormal,
+        ProcessPriorityLevel.Idle => System.Diagnostics.ProcessPriorityClass.Idle,
+        _ => System.Diagnostics.ProcessPriorityClass.Normal,
+    };
+
     public static void Start(ShellProcessStartInfo info)
     {
         IntPtr hProcess = InnerStart(info);
@@ -110,7 +133,7 @@ public static class ProcessLauncher
 
         if (!ShellExecuteEx(ref shinfo))
         {
-            throw new System.ComponentModel.Win32Exception("ファイルの実行に失敗した");
+            throw new System.ComponentModel.Win32Exception();
         }
         return shinfo.hProcess;
     }
@@ -166,7 +189,7 @@ public static class ProcessLauncher
         public IntPtr hProcess;
     }
 
-    [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+    [DllImport("shell32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool ShellExecuteEx(ref SHELLEXECUTEINFO shinfo);
 

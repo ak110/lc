@@ -236,38 +236,18 @@ public sealed class BackupFile : IDisposable
 
     const uint GENERIC_READ = 0x80000000;
     const uint GENERIC_WRITE = 0x40000000;
-    const uint GENERIC_EXECUTE = 0x20000000;
-    const uint GENERIC_ALL = 0x10000000;
 
-    const uint DELETE = 0x00010000;
-    const uint READ_CONTROL = 0x00020000;
     const uint WRITE_DAC = 0x00040000;
     const uint WRITE_OWNER = 0x00080000;
-    const uint SYNCHRONIZE = 0x00100000;
 
     const int FILE_SHARE_READ = 0x00000001;
     const int FILE_SHARE_WRITE = 0x00000002;
     const int FILE_SHARE_DELETE = 0x00000004;
 
-    const uint CREATE_NEW = 1;
     const uint CREATE_ALWAYS = 2;
     const uint OPEN_EXISTING = 3;
-    const uint OPEN_ALWAYS = 4;
-    const uint TRUNCATE_EXISTING = 5;
 
-    const uint ACCESS_SYSTEM_SECURITY = 0x01000000;
-
-    const uint FILE_FLAG_WRITE_THROUGH = 0x80000000;
-    const uint FILE_FLAG_OVERLAPPED = 0x40000000;
-    const uint FILE_FLAG_NO_BUFFERING = 0x20000000;
-    const uint FILE_FLAG_RANDOM_ACCESS = 0x10000000;
-    const uint FILE_FLAG_SEQUENTIAL_SCAN = 0x08000000;
-    const uint FILE_FLAG_DELETE_ON_CLOSE = 0x04000000;
     const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
-    const uint FILE_FLAG_POSIX_SEMANTICS = 0x01000000;
-    const uint FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000;
-    const uint FILE_FLAG_OPEN_NO_RECALL = 0x00100000;
-    const uint FILE_FLAG_FIRST_PIPE_INSTANCE = 0x00080000;
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern SafeFileHandle CreateFile(string lpFileName,

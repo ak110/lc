@@ -18,15 +18,7 @@ public class ConfigStore
     {
         get
         {
-            string path = Path.ChangeExtension(
-                Environment.ProcessPath, null)!;
-#if DEBUG
-            if (path.EndsWith(".vshost"))
-            {
-                path = path.Substring(0, path.Length - 7);
-            }
-#endif
-            return path;
+            return Path.ChangeExtension(Environment.ProcessPath, null)!;
         }
     }
 

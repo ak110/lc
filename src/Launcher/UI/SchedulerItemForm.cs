@@ -8,11 +8,18 @@ namespace Launcher.UI;
 public partial class SchedulerItemForm : Form
 {
     SchedulerItem v;
+    readonly Action<string, string>? showBalloonTip;
+    readonly Action<string, string>? showMessageBox;
 
-    public SchedulerItemForm(SchedulerItem item)
+    public SchedulerItemForm(
+        SchedulerItem item,
+        Action<string, string>? showBalloonTip = null,
+        Action<string, string>? showMessageBox = null)
     {
         InitializeComponent();
         v = item;
+        this.showBalloonTip = showBalloonTip;
+        this.showMessageBox = showMessageBox;
 
         checkBoxEnable.Checked = v.Enable;
         textBoxName.Text = v.Name;
@@ -142,7 +149,7 @@ public partial class SchedulerItemForm : Form
             SleepTimeMs = (int)numSleepTime.Value,
             Tasks = FormsHelper.GetArray<SchedulerTask>(listBoxTasks),
         };
-        SchedulerPresenter.ExecuteItemTasks(item);
+        SchedulerPresenter.ExecuteItemTasks(item, showBalloonTip, showMessageBox);
     }
 
     private void listBoxTasks_DoubleClick(object? sender, EventArgs e)

@@ -6,21 +6,11 @@ public partial class EditCommandForm : Form
 {
     Command v;
 
-#if CLONE
-    public Command Value {
-        get { return v; }
-    }
-#endif
-
     public EditCommandForm(Command vv)
     {
         InitializeComponent();
 
-#if CLONE
-        v = vv.Clone();
-#else
         v = vv;
-#endif
 
         textBox1.Text = v.Name;
         textBox2.Text = v.FileName;

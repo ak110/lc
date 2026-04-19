@@ -10,18 +10,6 @@ namespace Launcher.Core;
 public static class SchedulerPresenter
 {
     /// <summary>
-    /// バルーン通知の表示を委譲するアクション。UI層が設定する。
-    /// 引数: (title, message)
-    /// </summary>
-    public static Action<string, string>? ShowBalloonTipAction { get; set; }
-
-    /// <summary>
-    /// MessageBox表示を委譲するアクション。UI層が設定する。
-    /// 引数: (title, message)。呼び出し元スレッドをブロックする同期実行を想定。
-    /// </summary>
-    public static Action<string, string>? ShowMessageBoxAction { get; set; }
-
-    /// <summary>
     /// 実行対象のアイテムを取得する。
     /// </summary>
     public static List<SchedulerItem> GetItemsToRun(SchedulerData data, DateTime lastCheckTime, DateTime now)
@@ -232,22 +220,28 @@ public static class SchedulerPresenter
     /// <summary>
     /// アイテムのタスクを逐次実行する。STAスレッドで実行される。
     /// </summary>
-    public static void ExecuteItemTasks(SchedulerItem item)
+    public static void ExecuteItemTasks(
+        SchedulerItem item,
+        Action<string, string>? showBalloonTip,
+        Action<string, string>? showMessageBox)
     {
-        var thread = new Thread(() => InnerExecuteTasks(item));
+        var thread = new Thread(() => InnerExecuteTasks(item, showBalloonTip, showMessageBox));
         thread.SetApartmentState(ApartmentState.STA);
         thread.IsBackground = true;
         thread.Start();
     }
 
-    private static void InnerExecuteTasks(SchedulerItem item)
+    private static void InnerExecuteTasks(
+        SchedulerItem item,
+        Action<string, string>? showBalloonTip,
+        Action<string, string>? showMessageBox)
     {
         foreach (var task in item.Tasks)
         {
             if (!task.Enable) continue;
             try
             {
-                ExecuteTask(task);
+                ExecuteTask(task, showBalloonTip, showMessageBox);
             }
 #pragma warning disable CA1031 // スケジューラータスクの例外は握りつぶして次のタスクへ進む
             catch (Exception ex)
@@ -262,15 +256,18 @@ public static class SchedulerPresenter
     /// <summary>
     /// 単一タスクを実行する。タスク種類に応じてファイル実行またはメッセージ表示を行う。
     /// </summary>
-    internal static void ExecuteTask(SchedulerTask task)
+    internal static void ExecuteTask(
+        SchedulerTask task,
+        Action<string, string>? showBalloonTip,
+        Action<string, string>? showMessageBox)
     {
         switch (task.Type)
         {
             case SchedulerTaskType.BalloonTip:
-                ExecuteBalloonTipTask(task);
+                ExecuteBalloonTipTask(task, showBalloonTip);
                 break;
             case SchedulerTaskType.MessageBox:
-                ExecuteMessageBoxTask(task);
+                ExecuteMessageBoxTask(task, showMessageBox);
                 break;
             default:
                 ExecuteFileTask(task);
@@ -305,48 +302,28 @@ public static class SchedulerPresenter
             WorkingDirectory = workDir,
             CreateNoWindow = false,
             ErrorDialog = true,
-            WindowStyle = task.Show switch
-            {
-                WindowStyle.Normal => ShellProcessWindowStyle.Normal,
-                WindowStyle.Minimized => ShellProcessWindowStyle.Minimized,
-                WindowStyle.Maximized => ShellProcessWindowStyle.Maximized,
-                WindowStyle.NoActivate => ShellProcessWindowStyle.NoActivate,
-                WindowStyle.MinimizedNoActivate => ShellProcessWindowStyle.MinimizedNoActivate,
-                WindowStyle.Hidden => ShellProcessWindowStyle.Hidden,
-                _ => ShellProcessWindowStyle.Normal,
-            },
+            WindowStyle = ProcessLauncher.ToWindowStyle(task.Show),
         };
 
-        var priorityClass = task.Priority switch
-        {
-            ProcessPriorityLevel.RealTime => System.Diagnostics.ProcessPriorityClass.RealTime,
-            ProcessPriorityLevel.High => System.Diagnostics.ProcessPriorityClass.High,
-            ProcessPriorityLevel.AboveNormal => System.Diagnostics.ProcessPriorityClass.AboveNormal,
-            ProcessPriorityLevel.Normal => System.Diagnostics.ProcessPriorityClass.Normal,
-            ProcessPriorityLevel.BelowNormal => System.Diagnostics.ProcessPriorityClass.BelowNormal,
-            ProcessPriorityLevel.Idle => System.Diagnostics.ProcessPriorityClass.Idle,
-            _ => System.Diagnostics.ProcessPriorityClass.Normal,
-        };
-
-        ProcessLauncher.Start(info, priorityClass);
+        ProcessLauncher.Start(info, ProcessLauncher.ToPriorityClass(task.Priority));
     }
 
     /// <summary>
     /// バルーン通知タスク。デリゲート経由でUI層に委譲する。
     /// </summary>
-    private static void ExecuteBalloonTipTask(SchedulerTask task)
+    private static void ExecuteBalloonTipTask(SchedulerTask task, Action<string, string>? showBalloonTip)
     {
         string message = Environment.ExpandEnvironmentVariables(task.Message);
-        ShowBalloonTipAction?.Invoke(AppVersion.Title, message);
+        showBalloonTip?.Invoke(AppVersion.Title, message);
     }
 
     /// <summary>
     /// メッセージボックスタスク。デリゲート経由でUI層に委譲する。
     /// Invoke (同期) で実行されるため、ダイアログが閉じるまでスレッドをブロックする。
     /// </summary>
-    private static void ExecuteMessageBoxTask(SchedulerTask task)
+    private static void ExecuteMessageBoxTask(SchedulerTask task, Action<string, string>? showMessageBox)
     {
         string message = Environment.ExpandEnvironmentVariables(task.Message);
-        ShowMessageBoxAction?.Invoke(AppVersion.Title, message);
+        showMessageBox?.Invoke(AppVersion.Title, message);
     }
 }

@@ -798,9 +798,13 @@ public partial class CommandLauncherForm : Form
             ep.Command.Execute(ep.Input,
                 ownerForm.Config, ep.Handle);
         }
+        catch (Win32Exception e) when (e.NativeErrorCode == 1223)
+        {
+            // ERROR_CANCELLED: ユーザーが UAC ダイアログ等をキャンセルした場合は無視する
+        }
         catch (Win32Exception e)
         {
-            System.Diagnostics.Debug.Fail(e.ToString()); // 邪魔なので黙殺。オプションで普通にMessageBoxの方がいいかも？
+            ErrorMessageBox(e);
         }
         catch (IOException e)
         {

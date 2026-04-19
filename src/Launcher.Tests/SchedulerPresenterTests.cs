@@ -279,19 +279,11 @@ public sealed class SchedulerPresenterTests
     {
         string? capturedTitle = null;
         string? capturedMessage = null;
-        SchedulerPresenter.ShowBalloonTipAction = (t, m) => { capturedTitle = t; capturedMessage = m; };
-        try
-        {
-            var task = new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "テスト通知" };
-            SchedulerPresenter.ExecuteTask(task);
+        var task = new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "テスト通知" };
+        SchedulerPresenter.ExecuteTask(task, (t, m) => { capturedTitle = t; capturedMessage = m; }, null);
 
-            capturedTitle.Should().NotBeNull();
-            capturedMessage.Should().Be("テスト通知");
-        }
-        finally
-        {
-            SchedulerPresenter.ShowBalloonTipAction = null;
-        }
+        capturedTitle.Should().NotBeNull();
+        capturedMessage.Should().Be("テスト通知");
     }
 
     [Fact]
@@ -299,51 +291,32 @@ public sealed class SchedulerPresenterTests
     {
         string? capturedTitle = null;
         string? capturedMessage = null;
-        SchedulerPresenter.ShowMessageBoxAction = (t, m) => { capturedTitle = t; capturedMessage = m; };
-        try
-        {
-            var task = new SchedulerTask { Type = SchedulerTaskType.MessageBox, Message = "テストメッセージ" };
-            SchedulerPresenter.ExecuteTask(task);
+        var task = new SchedulerTask { Type = SchedulerTaskType.MessageBox, Message = "テストメッセージ" };
+        SchedulerPresenter.ExecuteTask(task, null, (t, m) => { capturedTitle = t; capturedMessage = m; });
 
-            capturedTitle.Should().NotBeNull();
-            capturedMessage.Should().Be("テストメッセージ");
-        }
-        finally
-        {
-            SchedulerPresenter.ShowMessageBoxAction = null;
-        }
+        capturedTitle.Should().NotBeNull();
+        capturedMessage.Should().Be("テストメッセージ");
     }
 
     [Fact]
     public void ExecuteTask_メッセージ内の環境変数が展開される()
     {
         string? capturedMessage = null;
-        SchedulerPresenter.ShowBalloonTipAction = (_, m) => capturedMessage = m;
-        try
-        {
-            var task = new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "%USERNAME%" };
-            SchedulerPresenter.ExecuteTask(task);
+        var task = new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "%USERNAME%" };
+        SchedulerPresenter.ExecuteTask(task, (_, m) => capturedMessage = m, null);
 
-            capturedMessage.Should().NotBe("%USERNAME%");
-            capturedMessage.Should().Be(Environment.GetEnvironmentVariable("USERNAME"));
-        }
-        finally
-        {
-            SchedulerPresenter.ShowBalloonTipAction = null;
-        }
+        capturedMessage.Should().NotBe("%USERNAME%");
+        capturedMessage.Should().Be(Environment.GetEnvironmentVariable("USERNAME"));
     }
 
     [Fact]
     public void ExecuteTask_デリゲート未設定でも例外が発生しない()
     {
-        SchedulerPresenter.ShowBalloonTipAction = null;
-        SchedulerPresenter.ShowMessageBoxAction = null;
-
         var balloonTask = new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "テスト" };
         var messageBoxTask = new SchedulerTask { Type = SchedulerTaskType.MessageBox, Message = "テスト" };
 
-        var act1 = () => SchedulerPresenter.ExecuteTask(balloonTask);
-        var act2 = () => SchedulerPresenter.ExecuteTask(messageBoxTask);
+        var act1 = () => SchedulerPresenter.ExecuteTask(balloonTask, null, null);
+        var act2 = () => SchedulerPresenter.ExecuteTask(messageBoxTask, null, null);
 
         act1.Should().NotThrow();
         act2.Should().NotThrow();

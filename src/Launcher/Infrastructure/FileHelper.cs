@@ -260,7 +260,6 @@ public static class FileHelper
         try
         {
             // 一時ファイル名でコピーする。
-            //File.Copy(sourceName, destFileName, true); // overwrite = true
             CopyFileWithoutLock(sourceName, destTmpName1, true); // overwrite = true
             // コピー先が既存の場合はリネームして退避する。
             try { MoveFileForce(destName, destTmpName2); } catch (IOException) { } catch (UnauthorizedAccessException) { }

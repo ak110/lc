@@ -214,30 +214,8 @@ public class Command : ICloneable, IComparable<Command>, IComparable
             }
         }
 
-        // WindowStyle列挙型からShellProcessWindowStyleへの変換
-        info.WindowStyle = Show switch
-        {
-            WindowStyle.Normal => ShellProcessWindowStyle.Normal,
-            WindowStyle.Minimized => ShellProcessWindowStyle.Minimized,
-            WindowStyle.Maximized => ShellProcessWindowStyle.Maximized,
-            WindowStyle.NoActivate => ShellProcessWindowStyle.NoActivate,
-            WindowStyle.MinimizedNoActivate => ShellProcessWindowStyle.MinimizedNoActivate,
-            WindowStyle.Hidden => ShellProcessWindowStyle.Hidden,
-            _ => ShellProcessWindowStyle.Normal,
-        };
-
-        // ProcessPriorityLevel列挙型からProcessPriorityClassへの変換
-        ProcessPriorityClass priorityClass = Priority switch
-        {
-            ProcessPriorityLevel.RealTime => ProcessPriorityClass.RealTime,
-            ProcessPriorityLevel.High => ProcessPriorityClass.High,
-            ProcessPriorityLevel.AboveNormal => ProcessPriorityClass.AboveNormal,
-            ProcessPriorityLevel.Normal => ProcessPriorityClass.Normal,
-            ProcessPriorityLevel.BelowNormal => ProcessPriorityClass.BelowNormal,
-            ProcessPriorityLevel.Idle => ProcessPriorityClass.Idle,
-            _ => ProcessPriorityClass.Normal,
-        };
-        ProcessLauncher.Start(info, priorityClass);
+        info.WindowStyle = ProcessLauncher.ToWindowStyle(Show);
+        ProcessLauncher.Start(info, ProcessLauncher.ToPriorityClass(Priority));
     }
 
     /// <summary>
