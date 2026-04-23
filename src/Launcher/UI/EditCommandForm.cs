@@ -1,4 +1,5 @@
 using Launcher.Core;
+using Launcher.Infrastructure;
 
 namespace Launcher.UI;
 
@@ -34,6 +35,18 @@ public partial class EditCommandForm : Form
 
     private void button1_Click(object? sender, EventArgs e)
     {
+        // PATH解決済みパスをダイアログの起点に設定する。
+        // bare name (例: "notepad.exe") をアイコン表示と同じ解決順で扱い、操作時の挙動を揃える。
+        string resolved = FileHelper.ResolveCommandPath(textBox2.Text);
+        if (File.Exists(resolved))
+        {
+            openFileDialog1.FileName = resolved;
+            string? dir = Path.GetDirectoryName(resolved);
+            if (!string.IsNullOrEmpty(dir))
+            {
+                openFileDialog1.InitialDirectory = dir;
+            }
+        }
         if (openFileDialog1.ShowDialog(this) == DialogResult.OK)
         {
             textBox2.Text = openFileDialog1.FileName;
@@ -42,6 +55,11 @@ public partial class EditCommandForm : Form
 
     private void button2_Click(object? sender, EventArgs e)
     {
+        string resolved = FileHelper.ResolveCommandPath(textBox4.Text);
+        if (Directory.Exists(resolved))
+        {
+            folderBrowserDialog1.SelectedPath = resolved;
+        }
         if (folderBrowserDialog1.ShowDialog(this) == DialogResult.OK)
         {
             textBox4.Text = folderBrowserDialog1.SelectedPath;

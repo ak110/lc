@@ -86,7 +86,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// </summary>
     public void OpenDirectory(Config config)
     {
-        string? path = PathHelper.PathNormalize(FileName);
+        string? path = FileHelper.ResolveCommandPath(FileName);
         if (File.Exists(path) || Directory.Exists(path))
         {
             var info = new ProcessStartInfo();

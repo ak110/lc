@@ -10,6 +10,25 @@ namespace Launcher.Infrastructure;
 public static class FileHelper
 {
     /// <summary>
+    /// コマンド登録パスを正規化し、bare name の場合は PATH 解決する。
+    /// <see cref="PathHelper.PathNormalize"/> と <see cref="ResolveExecutable"/> を順に適用する薄いラッパー。
+    /// </summary>
+    /// <remarks>
+    /// アイコン読み込み用の <see cref="ResolveExecutable"/> と同じ解決順を操作系 (「フォルダを開く」や
+    /// 参照ダイアログの起点設定など) にも適用し、パス解釈を揃えるために使う。
+    /// </remarks>
+    /// <param name="path">ファイル名またはパス</param>
+    /// <returns>正規化・解決されたパス。null または空文字入力時は空文字を返す</returns>
+    public static string ResolveCommandPath(string? path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return string.Empty;
+        }
+        return ResolveExecutable(PathHelper.PathNormalize(path));
+    }
+
+    /// <summary>
     /// bare name (パス区切りを含まない名前) をアイコン取得用にパス解決する。
     /// ShellExecuteEx の解決順 (App Paths → PATH 検索) に合わせる。
     /// </summary>
