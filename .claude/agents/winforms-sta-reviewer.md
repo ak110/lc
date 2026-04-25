@@ -6,6 +6,7 @@ description: >
   スレッド・Shell API・Win32 フック・ConfigStore 派生クラスを変更したときに使用する。
   呼び出し時にレビュー対象のファイルパス、または `git diff` 範囲を必ず渡すこと。
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 # winforms-sta-reviewer
