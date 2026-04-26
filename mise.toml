@@ -8,16 +8,22 @@ git-cliff = "latest"
 actionlint = "latest"
 typos = "latest"
 
+# システム側の `C:\Program Files\dotnet\` がPATH先頭に固定されておりSDK 8.0が拾われる。
+# `mise run` 配下では `mise exec` のtools解決もスキップされるため、mise が管理する
+# dotnet host を絶対パスで呼ぶ（Windows前提）
+[vars]
+dotnet = "{{ env.LOCALAPPDATA }}/mise/dotnet-root/dotnet"
+
 [tasks.setup]
 description = "開発環境のセットアップ"
 run = [
-  "dotnet tool restore",
+  "{{ vars.dotnet }} tool restore",
   "pnpm install",
   "git config --unset core.hooksPath || true",
   "uvx pre-commit install",
 ]
 run_windows = [
-  "dotnet tool restore",
+  "{{ vars.dotnet }} tool restore",
   "pnpm install",
   "git config --unset core.hooksPath & exit /b 0",
   "uvx pre-commit install",
@@ -26,13 +32,13 @@ run_windows = [
 [tasks.build]
 description = "リリースビルド"
 run = [
-  "dotnet publish src/Launcher/Launcher.csproj -c Release -o publish",
+  "{{ vars.dotnet }} publish src/Launcher/Launcher.csproj -c Release -o publish",
   "copy LICENSE publish\\ && copy README.md publish\\",
 ]
 
 [tasks.clean]
 description = "ビルド成果物の削除"
-run = "dotnet clean Launcher.sln"
+run = "{{ vars.dotnet }} clean Launcher.sln"
 
 [tasks.format]
 description = "フォーマット + 軽量lint（開発時の手動実行用。自動修正あり）"
@@ -55,8 +61,8 @@ run = [
 [tasks.update]
 description = "依存パッケージの更新"
 run = [
-  "dotnet tool restore",
-  "dotnet outdated -u Launcher.sln",
+  "{{ vars.dotnet }} tool restore",
+  "{{ vars.dotnet }} outdated -u Launcher.sln",
   "pnpm update --latest",
   "bash -c 'GITHUB_TOKEN=$(gh auth token) pinact run --update --min-age 1'",
 ]
