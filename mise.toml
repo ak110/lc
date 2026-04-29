@@ -2,7 +2,10 @@
 uv = "latest"
 dotnet = "10"
 node = "lts"
-pnpm = "latest"
+# pnpm は corepack 経由で `package.json` の `packageManager` フィールドに従って解決する。
+# mise registry 既定 (`aqua:pnpm/pnpm`) は aqua-registry の Windows アセット命名
+# (`pnpm-win-x64`) と上流リリース (`pnpm-win32-x64.zip`) の齟齬で pnpm 11.x の
+# Windows runner インストールが失敗するため、ツール定義からは外す。
 pinact = "latest"
 git-cliff = "latest"
 actionlint = "latest"
@@ -16,14 +19,19 @@ dotnet = "{{ env.LOCALAPPDATA }}/mise/dotnet-root/dotnet"
 
 [tasks.setup]
 description = "開発環境のセットアップ"
+# `corepack enable pnpm` は Node.js 同梱の corepack に pnpm のシムを配置させ、
+# `package.json` の `packageManager` で固定したバージョンを以降の pnpm 呼び出しで
+# 使えるようにする。CI/ローカルともに最初の `pnpm install` の前に必要。
 run = [
   "{{ vars.dotnet }} tool restore",
+  "corepack enable pnpm",
   "pnpm install",
   "git config --unset core.hooksPath || true",
   "uvx pre-commit install",
 ]
 run_windows = [
   "{{ vars.dotnet }} tool restore",
+  "corepack enable pnpm",
   "pnpm install",
   "git config --unset core.hooksPath & exit /b 0",
   "uvx pre-commit install",
