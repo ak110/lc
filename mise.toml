@@ -60,10 +60,14 @@ run = [
 
 [tasks.update]
 description = "依存パッケージの更新"
+# `corepack use pnpm@latest` は package.json の `packageManager` フィールドを
+# 最新 pnpm のバージョン+ハッシュに書き換える。`pnpm update --latest` は依存のみで
+# pnpm 本体のバージョンは更新しないため、両者を組にして依存とランナーを揃える。
 run = [
   "{{ vars.dotnet }} tool restore",
   "{{ vars.dotnet }} outdated -u Launcher.sln",
   "pnpm update --latest",
+  "corepack use pnpm@latest",
   "bash -c 'GITHUB_TOKEN=$(gh auth token) pinact run --update --min-age 1'",
 ]
 
