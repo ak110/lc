@@ -50,7 +50,7 @@ public static class PathHelper
     /// </summary>
     /// <remarks>
     /// 環境変数の展開、/ から \ への置換、末尾の \ の削除 (C:\ などは除く) を行う。
-    /// 必要に応じて FileHelper.GetCorrectPath() や Path.GetFullPath() も併用する。
+    /// 必要に応じて Path.GetFullPath() も併用する。
     /// </remarks>
     /// <param name="path">パス文字列</param>
     /// <returns>正規化されたパス</returns>

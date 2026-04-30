@@ -28,13 +28,6 @@ internal static class NativeMethods
     private static extern bool IsUserAnAdminNative();
 
     /// <summary>
-    /// ハードリンクの作成
-    /// </summary>
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
-
-    /// <summary>
     /// 親プロセスのコンソールにアタッチする (WinExeアプリからの標準出力に必要)
     /// </summary>
     [DllImport("kernel32.dll")]

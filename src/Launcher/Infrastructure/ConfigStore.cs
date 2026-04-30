@@ -83,17 +83,10 @@ public class ConfigStore
             catch
             {
                 // 最終失敗時はtmpファイルを残さない
-                CleanupTempFile(source);
+                IoFailureHandler.IgnoreIoErrors(() => File.Delete(source));
                 throw;
             }
         }
-    }
-
-    static void CleanupTempFile(string path)
-    {
-        try { File.Delete(path); }
-        catch (IOException) { }
-        catch (UnauthorizedAccessException) { }
     }
 
     /// <summary>

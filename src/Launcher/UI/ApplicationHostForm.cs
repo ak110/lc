@@ -49,6 +49,18 @@ public partial class ApplicationHostForm : Form
     public ButtonLauncherData ButtonLauncherData { get; private set; }
 
     /// <summary>
+    /// commandLauncherForm が破棄されていなければ <paramref name="action"/> を実行する。
+    /// IsDisposed ガードと操作呼び出しの繰り返しを集約する。
+    /// </summary>
+    private void IfCommandLauncherFormAlive(Action<CommandLauncherForm> action)
+    {
+        if (!commandLauncherForm.IsDisposed)
+        {
+            action(commandLauncherForm);
+        }
+    }
+
+    /// <summary>
     /// ダイアログのオーナーとして利用できる表示中のフォームを返す。
     /// 不可視の ApplicationHostForm を owner にすると別モニターに表示されるため、表示中のフォームを優先する。
     /// owner が null の場合は CenterParent が機能しないため CenterScreen にフォールバックする。
@@ -242,10 +254,7 @@ public partial class ApplicationHostForm : Form
         ButtonLauncherData = ButtonLauncherData.Deserialize();
         schedulerData = SchedulerData.Deserialize();
         new ReplaceEnvList(config.ReplaceEnv).Replace(schedulerData);
-        if (!commandLauncherForm.IsDisposed)
-        {
-            commandLauncherForm.ApplyConfig();
-        }
+        IfCommandLauncherFormAlive(form => form.ApplyConfig());
     }
 
     #region メニューなど
@@ -279,10 +288,7 @@ public partial class ApplicationHostForm : Form
     /// </summary>
     public void RefreshCommandLauncherForm()
     {
-        if (!commandLauncherForm.IsDisposed)
-        {
-            commandLauncherForm.ApplyConfig();
-        }
+        IfCommandLauncherFormAlive(form => form.ApplyConfig());
     }
 
     /// <summary>
@@ -290,10 +296,7 @@ public partial class ApplicationHostForm : Form
     /// </summary>
     public void RefreshCommandLauncherFormCommandList()
     {
-        if (!commandLauncherForm.IsDisposed)
-        {
-            commandLauncherForm.RefreshCommandList();
-        }
+        IfCommandLauncherFormAlive(form => form.RefreshCommandList());
     }
 
     /// <summary>
@@ -319,10 +322,7 @@ public partial class ApplicationHostForm : Form
             }
 
             ApplyConfig();
-            if (!commandLauncherForm.IsDisposed)
-            {
-                commandLauncherForm.ApplyConfig();
-            }
+            IfCommandLauncherFormAlive(form => form.ApplyConfig());
         }
     }
 
@@ -558,10 +558,7 @@ public partial class ApplicationHostForm : Form
             {
                 BeginInvoke(() =>
                 {
-                    if (!commandLauncherForm.IsDisposed)
-                    {
-                        commandLauncherForm.RefreshCommandList();
-                    }
+                    IfCommandLauncherFormAlive(form => form.RefreshCommandList());
                 });
             }
             catch (InvalidOperationException)
