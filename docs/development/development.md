@@ -1,12 +1,14 @@
 # 開発ガイド
 
-## 必要環境
+## 開発環境の構築手順
+
+### 必要環境
 
 - Windows 10/11
 - [mise](https://mise.jdx.dev/)（タスクランナー・ツールバージョン管理）
 - [Visual Studio Code](https://code.visualstudio.com/)
 
-## 初回セットアップ
+### 初回セットアップ
 
 ```cmd
 mise install && mise run setup
@@ -15,7 +17,7 @@ mise install && mise run setup
 `dotnet`や`node`、`pnpm`などのコマンドはシステムにインストールされたものではなく、必ずmise経由で実行すること。
 具体的には`mise run`タスク経由、またはmiseが管理するPATH上のバイナリを使用する。
 
-## miseタスク
+## 開発コマンド
 
 普段使うのは`mise run format`（フォーマット+軽量lint・自動修正あり）と`mise run test`（全チェック）の2つで、
 `git commit`時にはpre-commitフックが`mise run test`を自動実行する。
@@ -50,7 +52,7 @@ VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスク（`mise run bu
 mise upgrade dotnet
 ```
 
-## ドキュメントサイト
+## ドキュメントサイト運用
 
 ドキュメントは [VitePress](https://vitepress.dev/) で構築し、GitHub Pagesでホストしている。
 
