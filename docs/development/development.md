@@ -17,26 +17,21 @@ mise install && mise run setup
 
 ## miseタスク
 
-普段使用するのは以下の2つである。
-
-| コマンド          | 内容                                                        |
-| ----------------- | ----------------------------------------------------------- |
-| `mise run format` | フォーマット + 軽量lint（開発時の手動実行用。自動修正あり） |
-| `mise run test`   | 全チェック実行（これを通過すればコミット可能）              |
-
+普段使うのは`mise run format`（フォーマット+軽量lint・自動修正あり）と`mise run test`（全チェック）の2つで、
 `git commit`時にはpre-commitフックが`mise run test`を自動実行する。
+全タスクは以下のとおりである。
 
-その他のタスクは以下のとおりである。
+| コマンド          | 説明                                                         |
+| ----------------- | ------------------------------------------------------------ |
+| `mise run setup`  | 開発環境のセットアップ（dotnet tool restore / pnpm install） |
+| `mise run format` | フォーマット + 軽量lint（開発時の手動実行用。自動修正あり）  |
+| `mise run test`   | 全チェック実行（これを通過すればコミット可能）               |
+| `mise run build`  | リリースビルド                                               |
+| `mise run clean`  | ビルド成果物の削除                                           |
+| `mise run update` | 依存パッケージの更新                                         |
+| `mise run docs`   | ドキュメントのローカルプレビュー（VitePress dev server）     |
 
-| コマンド          | 説明                             |
-| ----------------- | -------------------------------- |
-| `mise run setup`  | 開発環境のセットアップ           |
-| `mise run build`  | リリースビルド                   |
-| `mise run clean`  | ビルド成果物の削除               |
-| `mise run update` | 依存パッケージの更新             |
-| `mise run docs`   | ドキュメントのローカルプレビュー |
-
-VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスク (build) を実行できる。
+VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスク（`mise run build`）を実行できる。
 
 ## デバッグ
 

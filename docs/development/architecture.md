@@ -45,10 +45,6 @@ Config、CommandList、ButtonLauncherData（Data）はすべてConfigStoreを継
 ConfigStoreは原子的なファイル保存（一時ファイルに書き込み後File.Moveで置換）を提供し、
 保存中のクラッシュによるデータ破損を防止する。
 
-制約: XMLシリアライズ対象プロパティのコレクション初期化子は変更禁止。
-XmlSerializerはデシリアライズ時に既存インスタンスへAddするため、
-初期化子で値を入れるとデシリアライズ結果と重複する。
-
 ### ApplicationHostFormによるIPCハブ
 
 ApplicationHostFormは不可視の常駐フォームで、アプリケーション全体のハブとして機能する。
@@ -90,7 +86,7 @@ BalloonTipはBeginInvoke（非同期）で実行する。
 
 BalloonTipはOSのトレイ通知であり自動消去されるため、この追跡対象には含めない。
 
-#### owner 選定と前景ウィンドウの復元
+### 通知ダイアログのowner選定とフォーカス復元
 
 `ApplicationHostForm.GetVisibleOwner()` はowner候補として
 CommandLauncherForm / ButtonLauncherForm / `Form.ActiveForm` の順で返す。
@@ -141,78 +137,34 @@ WinFormsの標準挙動に任せる責務分担にしている。
 
 ### STA制約
 
-コマンド実行・ディレクトリ展開・アイコン読込はすべてSTAスレッドで行う。
-ShellExecuteExやSHGetFileInfo等のShell APIはCOMのSTA（Single-Threaded Apartment）を前提としている。
-そのため、`Task.Run`（ThreadPool/MTA）では正常に動作しない。専用のSTAスレッドを生成して実行する必要がある。
-
-### アイコンローダーの並行度制限
-
-AsyncIconLoaderのワーカー数は8本固定。SHGetFileInfo（Shell API）は高並行度で不安定になるため、
-ProcessorCount等の動的な値は使用せず固定値とする。
-ButtonLauncherFormのHandle作成は、アイコン非同期読み込み（BuildTabs→iconLoader.Load）より前に行うこと。
-Handle未作成時にIconLoadedイベントが到着すると、BeginInvokeの失敗によりアイコンは破棄される。
-アイコン読み込み完了時のInvalidateは`btn.Parent?.Invalidate(true)`で親パネル全体を対象にすること。
-`btn.Invalidate()`では非選択タブのボタンが再描画されない。
+Shell APIはCOMのSTAを前提とするため、コマンド実行・ディレクトリ展開・アイコン読込・
+スケジューラータスク実行はすべてSTAスレッドで行う。
+実装上の不変条件はリポジトリ内の`.claude/rules/threading.md`にまとめている。
 
 ## フック管理
 
 `HookManager`がグローバルキーボード/マウスフックの状態管理を一元的に担当する。
+キーボードフックは`SetWindowsHookEx`で登録し、KEYDOWN時に仮想キーコードと修飾キーを照合してホットキーを検知する。
+マウスフックはボタン押下状態（`lbuttonDown`/`rbuttonDown`）を追跡し、設定されたトリガー（左右同時押し等）を検知する。
+検知時は`BeginInvoke`でUIスレッドへShowHideメッセージを送信する。
 
-- ホットキー検知: `SetWindowsHookEx`で登録したキーボードフックのコールバックで、
-  KEYDOWN時に仮想キーコードと修飾キーを照合する。一致した場合はKEYUPを抑制しつつ、
-  `BeginInvoke`でUIスレッドへShowHideメッセージを送信する
-- ボタンランチャー起動: マウスフックでボタン押下状態（`lbuttonDown`/`rbuttonDown`）を追跡し、
-  設定されたトリガー（左右同時押し等）を検知する。トリガー発動時はUPイベントを抑制して誤操作を防止する
-- UP抑制フラグ: `suppressNextLButtonUp`/`suppressNextRButtonUp`/`suppressKeyUpVK`により、
-  トリガー発動後の不要なUPイベントをフック内で消費する。
-  フックコールバック内でUPを消費しないと、トリガー操作の直後にボタンクリックやキー入力として誤検知される
+コールバック内で守るべき実装上の不変条件（即時return・UP抑制フラグ更新など）は
+リポジトリ内の`.claude/rules/win32-interop.md`にまとめている。
 
 ## 環境変数の自動リロード
 
-`EnvironmentRefresher` (`Win32/`) がレジストリから環境変数を再読込し、
-現プロセスの環境ブロックを差分更新する。
+`EnvironmentRefresher`（`Win32/`）がレジストリから環境変数を再読込し、現プロセスの環境ブロックを差分更新する。
+`ApplicationHostForm.WndProc`が`WM_SETTINGCHANGE`（`lParam == "Environment"`）を受信する。
+500msのデバウンスを経て`EnvironmentRefresher.Refresh()`を呼び、
+その後`ReplaceEnvList`を`CommandList`と`SchedulerData`に背景スレッドで再適用する。
+ReplaceEnvListに関する挙動上の注意はリポジトリ内の`.claude/rules/persistence.md`にまとめている。
 
-`ApplicationHostForm.WndProc` が `WM_SETTINGCHANGE` (`lParam == "Environment"`) を受ける。
-
-500msのデバウンスを経て `EnvironmentRefresher.Refresh()` を呼ぶ。
-その後、`ReplaceEnvList` を `CommandList` と `SchedulerData` に背景スレッドで再適用する。
-
-マージ規則はExplorer互換。
-
-`HKLM\Session Manager\Environment` と `HKCU\Environment` を統合する。
-`Path` / `PATHEXT` / `LIBPATH` / `OS2LIBPATH` のみシステム + ユーザーを `;` で連結する。
+マージ規則はExplorer互換である。
+`HKLM\Session Manager\Environment`と`HKCU\Environment`を統合し、
+`Path`／`PATHEXT`／`LIBPATH`／`OS2LIBPATH`のみシステム + ユーザーを`;`で連結する。
 それ以外はユーザー変数がシステム変数を上書きする。
-`REG_EXPAND_SZ` は現プロセス環境ベースで展開する。
+`REG_EXPAND_SZ`は現プロセス環境ベースで展開する。
 
-子プロセスへの伝搬は追加実装不要。
-
-`ShellExecuteEx` は呼び出し元プロセスの環境ブロックを継承する。
-`Environment.SetEnvironmentVariable` で更新すれば、以降の起動プロセスへ新値が反映される。
-
-### ReplaceEnvListの挙動に由来する制約
-
-`ReplaceEnvList` は値→`%VAR%` 形式への片方向圧縮で、元の生文字列を保持しない。
-そのため以下の非対称性がある。
-
-- 値変更 (`JAVA_HOME` のパス差し替え等): 表示は変わらない。ただし `Command.Execute` 内の
-  `Environment.ExpandEnvironmentVariables` が新値を使うため、子プロセスは新値で起動する
-- 変数追加: 新規に置換可能となったコマンドは `%VAR%` 形式に圧縮される
-- 変数削除: 一度 `%VAR%` 形式で保存されたコマンドは復元不能（再起動しても同じ）
-
-### ReplaceEnvListの排他は静的
-
-`ReplaceEnvList` は呼び出しごとに新規インスタンスが作られるため、ロックは
-`static` で保持している。
-これにより `CommandLauncherForm.ApplyConfig` の背景スレッドと環境変数変更の背景スレッドが、
-同じ `Command` や `SchedulerTask` を同時に書き換える事故を防いでいる。
-
-## 設計上の制約・選択
-
-- cfg/dat分離の徹底: `*.cfg`は設定変更時のみ書き換え、`*.dat`は頻繁に書き換わるデータとする。両者を混在させない
-- STAスレッド必須: Shell API呼び出しはすべてSTAスレッドから行う。ThreadPool/MTAからの呼び出しは禁止する
-- アイコンローダー8本固定: SHGetFileInfoの安定性のため動的調整しない
-- ReplaceEnvListの排他はstatic: 異なるインスタンス間でも`Command`/`SchedulerTask`への書き込みが並行しないように直列化するため
-- TopMost親からのダイアログ表示: 親フォームが`TopMost=true`の場合、
-  子モーダルダイアログも`TopMost`に揃えないとz-order再評価時に親の裏に回る。
-  すべての子Formの`ShowDialog`は`FormsHelper.ShowDialogOver`拡張メソッド経由で呼ぶこと。
-  ネストしたダイアログでも親から自動で伝播する
+子プロセスへの伝搬は追加実装不要である。
+`ShellExecuteEx`は呼び出し元プロセスの環境ブロックを継承するため、
+`Environment.SetEnvironmentVariable`で更新すれば以降の起動プロセスへ新値が反映される。
