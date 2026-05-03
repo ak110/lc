@@ -1,8 +1,10 @@
 # らんちゃ
 
-[![CI](https://github.com/ak110/lc/actions/workflows/ci.yaml/badge.svg)](https://github.com/ak110/lc/actions/workflows/ci.yaml)
+[![CI][ci-badge]][ci-url]
 [![Release][release-badge]][release-url]
 
+[ci-badge]: https://github.com/ak110/lc/actions/workflows/ci.yaml/badge.svg
+[ci-url]: https://github.com/ak110/lc/actions/workflows/ci.yaml
 [release-badge]: https://github.com/ak110/lc/actions/workflows/release.yaml/badge.svg
 [release-url]: https://github.com/ak110/lc/actions/workflows/release.yaml
 
