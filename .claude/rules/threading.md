@@ -1,5 +1,17 @@
 # スレッディング・STA関連のルール
 
+## スレッディングモデル
+
+| スレッド                         | 用途                                      | 備考                                       |
+| -------------------------------- | ----------------------------------------- | ------------------------------------------ |
+| UIスレッド (STA)                 | WinFormsメッセージループ、全UI操作        | `Application.Run(ApplicationHostForm)`     |
+| コマンド実行スレッド (STA)       | `Command.Execute()`の実行                 | `CommandLauncherForm.ExecuteCommand`で生成 |
+| ディレクトリ展開スレッド (STA)   | `Command.OpenDirectory()`の実行           | `CommandLauncherForm.OpenDirectory`で生成  |
+| アイコン読込スレッド (STAx8)     | `AsyncIconLoader`による非同期アイコン取得 | 固定8本STAワーカー + リトライ（最大2回）   |
+| 環境変数置換スレッド             | `ReplaceEnvList`のコマンド名置換          | `CommandLauncherForm.ApplyConfig`で生成    |
+| スケジューラー実行スレッド (STA) | `SchedulerPresenter.ExecuteItemTasks`     | タイマーTick時に生成、アイテムごとに1本    |
+| フックコールバック               | キーボード/マウスフックのイベント通知     | `BeginInvoke`でUIスレッドへディスパッチ    |
+
 ## STAスレッド制約
 
 Shell API（`ShellExecuteEx`・`SHGetFileInfo`等）はCOMのSTA（Single-Threaded Apartment）を前提とするため、

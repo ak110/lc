@@ -348,7 +348,7 @@ public partial class CommandLauncherForm : Form
         }
         else if (e.KeyCode == Keys.Enter && e.Modifiers == Keys.Control)
         {
-            // Ctrl+Enterは何故か(改行入力がらみ？)button1にならないので。。
+            // Ctrl+Enterは何故か(改行入力がらみ？)button1にならないので
             e.Handled = true;
             button1_Click(this, EventArgs.Empty);
         }
@@ -458,7 +458,7 @@ public partial class CommandLauncherForm : Form
         }
         else if (e.KeyCode == Keys.Enter && e.Modifiers == Keys.Control)
         {
-            // Ctrl+Enterは何故か(改行入力がらみ？)button1にならないので。。
+            // Ctrl+Enterは何故か(改行入力がらみ？)button1にならないので
             e.Handled = true;
             button1_Click(this, EventArgs.Empty);
         }

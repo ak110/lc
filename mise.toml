@@ -72,7 +72,7 @@ run = [
   "{{ vars.dotnet }} outdated -u Launcher.sln",
   "corepack use pnpm@latest",
   "pnpm update --latest",
-  "bash -c 'GITHUB_TOKEN=$(gh auth token) pinact run --update --min-age 1'",
+  "bash -c 'GITHUB_TOKEN=$(gh auth token) pinact run --update --min-age=1'",
 ]
 
 [tasks.docs]

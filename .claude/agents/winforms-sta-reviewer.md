@@ -38,7 +38,7 @@ model: sonnet
   対象API: `ShellExecuteEx`／`SHGetFileInfo`／`SHFileOperation`／`SHBrowseForFolder`／`IShellLink`関連。
   `src/Launcher/Win32/`配下のP/Invokeラッパー経由でも該当する
 - 新規`Thread`生成時、`SetApartmentState(ApartmentState.STA)`を生成直後に呼んでいるか
-- `async/await`周辺で`ConfigureAwait(false)`の有無により、UIスレッドへ戻れずShell APIがMTAで走るリスクが無いか
+- `async/await`周辺で`ConfigureAwait(false)`の有無により、UIスレッドへ戻れずShell APIがMTAで実行されるリスクが無いか
 - アイコン読み込み・コマンド実行・ディレクトリ展開・スケジューラータスク実行が、既存の専用STA経路を踏襲しているか。
   経路: `AsyncIconLoader`／`CommandLauncherForm.ExecuteCommand`／
   `CommandLauncherForm.OpenDirectory`／`SchedulerPresenter.ExecuteItemTasks`
@@ -71,7 +71,14 @@ model: sonnet
 - Core層（`src/Launcher/Core/`）にWinForms依存（`System.Windows.Forms`）が混入していないか
 - スケジューラーのUI連携で、`MessageBox`系は`Invoke`、`BalloonTip`系は`BeginInvoke`になっているか
 
-### F. その他の地雷
+### F. 通知ダイアログ（[.claude/rules/notification-dialog.md](../rules/notification-dialog.md)）
+
+- `activeNotifications` リストへの追跡（登録・削除）が漏れていないか
+- `HasActiveNotifications` が真のときの `ShowHide` / `WindowHideNoActive` のスキップが維持されているか
+- `GetVisibleOwner()` がnullのときのフォーカス復元処理が維持されているか
+- `RestoreForegroundWindow` が自プロセスHWNDに対して何もしない前提が維持されているか
+
+### G. その他
 
 - `Application.DoEvents`の追加（原則禁止、使う場合は理由コメント必須）
 - `WaitOne`／`Wait`／`.Result`でUIスレッドをブロックしていないか

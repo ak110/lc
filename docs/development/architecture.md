@@ -69,77 +69,9 @@ BalloonTip/MessageBoxの表示はデリゲート経由でUI層 (ApplicationHostF
 MessageBoxは`Invoke`（同期呼び出し）でダイアログが閉じるまで後続タスクをブロックする。
 BalloonTipはBeginInvoke（非同期）で実行する。
 
-### 非同期通知ダイアログの追跡
+### 通知ダイアログの追跡とowner選定
 
-`ApplicationHostForm` は現在表示中の非同期通知 (`NotificationForm`) を `activeNotifications` リストで追跡する。
-スケジューラーのMessageBoxタスクは `Invoke` 経由で `NotificationForm.ShowDialog` を呼び出し、
-スケジューラー STAスレッドは `ShowDialog` が戻るまで自然にブロックされる。
-`ShowDialog` のネストメッセージループ内でも `ApplicationHostForm.WndProc` は動作するため、
-表示中でも `WM_APPMSG_SHOWHIDE` を受信しホットキー操作を処理できる。
-
-ホットキー押下で呼び出される `ApplicationHostForm.ShowHide()` は、通知が追跡中のときはCommandLauncherFormを非表示化しない。
-代わりに通知Formを `Activate()` + `BringToFront()` で最前面化する。
-またCommandLauncherFormの `WindowHideNoActive` によるauto-hideも同じ条件でスキップする。
-具体的には `CommandLauncherForm_Deactivate` / `CommandLauncherForm_Leave` 内で判定する。
-`ApplicationHostForm.HasActiveNotifications` が真のときは処理を中止する。
-通知をActivateした直後の `CommandLauncherForm_Deactivate` でCommandLauncherFormが再び隠れる事故を防ぐためである。
-
-BalloonTipはOSのトレイ通知であり自動消去されるため、この追跡対象には含めない。
-
-### 通知ダイアログのowner選定とフォーカス復元
-
-`ApplicationHostForm.GetVisibleOwner()` はowner候補として
-CommandLauncherForm / ButtonLauncherForm / `Form.ActiveForm` の順で返す。
-`Form.ActiveForm` フォールバックは、CommandLauncherFormが非表示でConfigForm等のモーダルダイアログが開いている最中に
-スケジューラーが発火したケースをカバーする。この場合、NotificationFormはモーダルダイアログをownerとして
-`ShowDialog` するため、閉じたときはWinFormsの標準挙動でモーダルダイアログへフォーカスが戻る。
-
-一方、launcher内に表示フォームが一切無い状態（`HideFirst=true`での起動直後やCommandLauncherForm hide後）で
-発火したときはownerが`null`になる。`Form.ShowDialog(null)`は閉じるときのフォーカス復元先を持たないため、
-Windowsがz-order上の任意ウィンドウを前面化してしまう。
-これを避けるため、MessageBoxハンドラでは`NotificationForm`を表示する直前に
-`WindowHelper.GetForegroundWindowHandle()`で前景HWNDを記録する。
-`ShowDialog`終了後に`GetVisibleOwner()`が依然として`null`のときだけ
-`WindowHelper.RestoreForegroundWindow()`で記録したHWNDに前景を戻す。
-
-`RestoreForegroundWindow` は自プロセス所有のHWNDには何もしない。launcher内へのフォーカス復帰は
-WinFormsの標準挙動に任せる責務分担にしている。
-
-## 設定ファイル
-
-すべてXMLシリアライズで、アプリケーションと同じディレクトリに保存される。
-基底クラス`ConfigStore`がシリアライズ/デシリアライズを提供。
-
-`*.cfg`ファイルはユーザーが設定変更したときのみ書き換わる静的な設定ファイル。
-`*.dat`ファイルはアプリケーション動作中に頻繁に更新されるランタイムデータ
-（ウィンドウハンドル、スケジューラーの最終チェック時刻など）。
-この分離により、大容量になりうる設定ファイルの頻繁な書き込みを避けている。
-
-| ファイル            | 内容                                            |
-| ------------------- | ----------------------------------------------- |
-| `らんちゃ.cfg`      | アプリケーション設定 (Config)                   |
-| `らんちゃ.cmd.cfg`  | コマンド一覧 (CommandList)                      |
-| `らんちゃ.btns.cfg` | ボタン型ランチャーのデータ (ButtonLauncherData) |
-| `らんちゃ.sch.cfg`  | スケジューラー設定 (SchedulerData)              |
-| `らんちゃ.dat`      | ランタイムデータ (Data)                         |
-
-## スレッディングモデル
-
-| スレッド                         | 用途                                      | 備考                                       |
-| -------------------------------- | ----------------------------------------- | ------------------------------------------ |
-| UIスレッド (STA)                 | WinFormsメッセージループ、全UI操作        | `Application.Run(ApplicationHostForm)`     |
-| コマンド実行スレッド (STA)       | `Command.Execute()`の実行                 | `CommandLauncherForm.ExecuteCommand`で生成 |
-| ディレクトリ展開スレッド (STA)   | `Command.OpenDirectory()`の実行           | `CommandLauncherForm.OpenDirectory`で生成  |
-| アイコン読込スレッド (STAx8)     | `AsyncIconLoader`による非同期アイコン取得 | 固定8本STAワーカー + リトライ(最大2回)     |
-| 環境変数置換スレッド             | `ReplaceEnvList`のコマンド名置換          | `CommandLauncherForm.ApplyConfig`で生成    |
-| スケジューラー実行スレッド (STA) | `SchedulerPresenter.ExecuteItemTasks`     | タイマーTick時に生成、アイテムごとに1本    |
-| フックコールバック               | キーボード/マウスフックのイベント通知     | `BeginInvoke`でUIスレッドへディスパッチ    |
-
-### STA制約
-
-Shell APIはCOMのSTAを前提とするため、コマンド実行・ディレクトリ展開・アイコン読込・
-スケジューラータスク実行はすべてSTAスレッドで行う。
-実装上の不変条件はリポジトリ内の`.claude/rules/threading.md`にまとめている。
+実装上の不変条件は `.claude/rules/notification-dialog.md` にまとめている。
 
 ## フック管理
 
