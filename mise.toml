@@ -21,7 +21,7 @@ dotnet = "{{ env.LOCALAPPDATA }}/mise/dotnet-root/dotnet"
 description = "開発環境のセットアップ"
 # `corepack enable pnpm` は Node.js 同梱の corepack に pnpm のシムを配置させ、
 # `package.json` の `packageManager` で固定したバージョンを以降の pnpm 呼び出しで
-# 使えるようにする。CI/ローカルともに最初の `pnpm install` の前に必要。
+# 利用できるようにする。CI/ローカルともに最初の `pnpm install` の前に必要。
 run = [
   "{{ vars.dotnet }} tool restore",
   "corepack enable pnpm",

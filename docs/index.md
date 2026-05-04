@@ -12,7 +12,7 @@ hero:
       link: https://github.com/ak110/lc/releases
 features:
   - title: コマンド型ランチャー
-    details: コマンドの一覧表示・絞り込み・補完。常駐してホットキーで起動
+    details: コマンドの一覧表示・フィルタリング・補完。常駐してホットキーで起動
     link: /command-launcher
   - title: ボタン型ランチャー
     details: よく使うコマンドをボタンとしてグリッド状に配置。複数タブ対応
