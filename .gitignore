@@ -25,3 +25,7 @@ pnpm-debug.log*
 # VitePress
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+
+# uv（誤って `uv run python <path>` 形式で実行された場合の副作用ファイル）
+uv.lock
+.venv/
