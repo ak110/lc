@@ -166,7 +166,7 @@ public static class FileHelper
     }
 
     /// <summary>
-    /// パスへの書き込み可否を判定する (PHP の is_writable() に相当する)。
+    /// パスへの書き込み可否を判定する。ディレクトリは一時ファイル生成で、ファイルは実際に開いて確認する。
     /// </summary>
     public static bool IsWritable(string path)
     {

@@ -134,7 +134,7 @@ public partial class ButtonLauncherForm : Form
         tabControl1.TabPages.Clear();
         iconLoader.Clear();
 
-        // タブがなければデフォルト1つ作る
+        // タブがなければデフォルト1つ生成する
         if (Data.Tabs.Count == 0)
         {
             Data.Tabs.Add(new ButtonTab { Name = "Default" });

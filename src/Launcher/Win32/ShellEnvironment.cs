@@ -5,16 +5,13 @@ using System.Text;
 namespace Launcher.Win32;
 
 /// <summary>
-/// 環境変数とかその他いろいろ。
+/// 環境変数・特殊フォルダなどのシェル環境操作。
 /// </summary>
 public static class ShellEnvironment
 {
     /// <summary>
-    /// GetFolderPath()用enum。
+    /// GetFolderPath()用enum。System.Environmentにない特殊フォルダを定義する。
     /// </summary>
-    /// <remarks>
-    /// System.Environmentのにはないものなので。
-    /// </remarks>
     public enum SpecialFolder
     {
         CommonStartup,

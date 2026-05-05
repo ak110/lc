@@ -12,7 +12,7 @@ model: sonnet
 # winforms-sta-reviewer
 
 本プロジェクト固有の不変条件を、変更差分に対して機械的にチェックする専用レビュアー。
-不変条件のSSOTは`.claude/rules/`配下のトピック別ルール、アーキテクチャ概要は`docs/development/architecture.md`を参照する。
+不変条件のSSOTは`.claude/rules/`配下のトピック別ルール、アーキテクチャ概要は`docs/development/architecture.md`とする。
 一般的なC#のコーディングスタイルや命名はレビュー対象外。設計不変条件のみに集中する。
 
 ## 入力前提
@@ -20,7 +20,7 @@ model: sonnet
 呼び出し元から以下のいずれかが渡される。渡されない場合は最初に明示的に質問すること（推測で範囲を広げない）。
 
 - レビュー対象ファイルの絶対パス（複数可）
-- `git diff` 範囲（例: `master...HEAD`、`HEAD~1`）
+- `git diff`範囲（例: `master...HEAD`、`HEAD~1`）
 
 ## 調査手順
 

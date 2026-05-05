@@ -116,7 +116,7 @@ public sealed class CommandTests
     // --- LoadFrom ---
 
     [Fact]
-    public void LoadFrom_名前指定で基本フィールドが読める()
+    public void LoadFrom_名前指定で基本フィールドを読み込む()
     {
         var data = "test.exe\n-param\nC:\\work\n0\n3";
         var cmd = Command.LoadFrom("mycmd", data);

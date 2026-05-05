@@ -140,7 +140,7 @@ public sealed class SchedulerPresenterTests
     [Fact]
     public void DateInterval_年をまたぐ場合も正しく動作()
     {
-        // 元のすけじゅらでバグだった: DayOfYear % (DateInterval + 1) は年境界で壊れる
+        // 元のすけじゅらでバグだった: DayOfYear % (DateInterval + 1) は年境界で破綻する
         var schedule = MakeDateIntervalSchedule(new MonthDay(12, 30), new MonthDay(1, 5), 2);
         // 12/30(開始), 1/1(2日後), 1/3(4日後)
         var dec30 = new DateOnly(2025, 12, 30);

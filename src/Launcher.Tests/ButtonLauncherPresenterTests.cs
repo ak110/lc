@@ -52,7 +52,7 @@ public sealed class ButtonLauncherPresenterTests
     }
 
     [Fact]
-    public void CalculateGridSize_端数切り捨て()
+    public void CalculateGridSize_端数を破棄()
     {
         // 130 / 64 = 2.03 → 2
         var result = ButtonLauncherPresenter.CalculateGridSize(130, 200, 10, 10, 64, 64);

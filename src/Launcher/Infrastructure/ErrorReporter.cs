@@ -35,7 +35,7 @@ public sealed class ErrorReporter
     }
 
     /// <summary>
-    /// form を Owner に登録する。
+    /// Ownerを設定し、破棄時の自動解除を登録する。
     /// </summary>
     public void SetOwner(Control form)
     {
@@ -44,20 +44,18 @@ public sealed class ErrorReporter
     }
 
     /// <summary>
-    /// アプリケーションの再起動を行う。必ず実装すること。
+    /// アプリケーションの再起動イベント。必ずハンドラを登録すること。
     /// </summary>
     public event EventHandler? RestartApplication;
 
     /// <summary>
-    /// アプリケーションの終了を行う。必ず実装すること。
+    /// アプリケーションの終了イベント。必ずハンドラを登録すること。
+    /// 通常はApplication.Exit()を呼び出す実装でよい。
     /// </summary>
-    /// <remarks>
-    /// 通常は Application.Exit() を呼び出す実装で足りる。
-    /// </remarks>
     public event EventHandler? ExitApplication;
 
     /// <summary>
-    /// ハンドラを登録する。
+    /// 例外ハンドラを登録する。
     /// </summary>
     public void Register()
     {
@@ -65,7 +63,7 @@ public sealed class ErrorReporter
     }
 
     /// <summary>
-    /// ハンドラを登録解除する。
+    /// 例外ハンドラを登録解除する。
     /// </summary>
     public void UnRegister()
     {
@@ -119,7 +117,7 @@ public sealed class ErrorReporter
         catch (Exception ex)
         {
             System.Diagnostics.Debug.Fail(ex.ToString());
-            // 再帰的に呼び出されることを防ぐため、ここでは例外を握りつぶす。
+            // 再帰呼び出し防止のため例外を無視する。
         }
 #pragma warning restore CA1031
         finally

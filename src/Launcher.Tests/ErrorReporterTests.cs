@@ -37,7 +37,7 @@ public sealed class ErrorReporterTests
     [Fact]
     public void GetDetailMessage_BaseExceptionがInnerExceptionと異なる場合に両方出力する()
     {
-        // 3段ネストでBaseException != InnerExceptionを作る
+        // 3段ネストでBaseException != InnerExceptionを生成する
         var root = new ArgumentException("根本原因");
         var middle = new IOException("中間エラー", root);
         var outer = new InvalidOperationException("外部エラー", middle);
@@ -72,7 +72,7 @@ public sealed class ErrorReporterTests
     }
 
     [Fact]
-    public void GetDetailMessage_BaseExceptionが自分自身の場合はBaseExceptionセクションを出さない()
+    public void GetDetailMessage_BaseExceptionが自分自身の場合はBaseExceptionセクションを出力しない()
     {
         // InnerExceptionが1段のみ → BaseException == InnerException
         var inner = new ArgumentException("内部エラー");

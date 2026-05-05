@@ -44,7 +44,7 @@ sealed class ReplaceEnvList
         }
         catch (InvalidOperationException)
         {
-            // コレクション変更された、とか
+            // イテレーション中にコレクションが変更された場合を無視する
         }
     }
 
@@ -108,9 +108,9 @@ sealed class ReplaceEnvList
 
     private string? InnerReplace(string? str)
     {
-        // ひとまず逆向きに置換
+        // まず逆向きに置換
         string str2 = InnerReplace2(str, false);
-        // 存在せんのは置換しない。
+        // 存在しないパスは置換しない
         if (!File.Exists(str2) && !Directory.Exists(str2))
         {
             return null;
@@ -143,8 +143,7 @@ sealed class ReplaceEnvList
                 return str.Replace(s1, s2);
             }
         }
-        // 該当が無かった場合。
-        // 置換してたものをやめる場合もありうるので、strをそのまま返す。
+        // 該当なし。置換済み文字列を元に戻すケースもあるため str をそのまま返す。
         return str;
     }
 }

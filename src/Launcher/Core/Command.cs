@@ -201,7 +201,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     /// 管理者権限での実行方法に応じて <see cref="ShellProcessStartInfo"/> を加工する。
     /// </summary>
     /// <remarks>
-    /// 呼び出し元は事前に「現在のユーザーが管理者ではないが管理者権限が必要」な状況であることを確認する責務を持つ。
+    /// 呼び出し元は事前に「現在のユーザーが管理者ではないが管理者権限が必要」な状況であることを確認すること。
     /// </remarks>
     /// <param name="info">加工対象の起動情報。<see cref="ShellProcessStartInfo.FileName"/> および
     /// <see cref="ShellProcessStartInfo.Arguments"/> は呼び出し前に設定済みであること。</param>
@@ -240,9 +240,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         }
     }
 
-    /// <summary>
-    /// 後方互換性のための処理
-    /// </summary>
+    // 後方互換性のためのレガシーフォーマット読み込み用
     private static readonly string[] LineSeparators = ["\r\n", "\n"];
 
     public static Command LoadFrom(string? name, string data)

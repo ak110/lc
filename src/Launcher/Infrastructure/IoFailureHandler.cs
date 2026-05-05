@@ -2,7 +2,7 @@ namespace Launcher.Infrastructure;
 
 /// <summary>
 /// ファイル操作で <see cref="IOException"/> と <see cref="UnauthorizedAccessException"/> の両方を
-/// 握りつぶす定型パターンを集約する。
+/// 無視する定型パターンを集約する。
 /// </summary>
 /// <remarks>
 /// 一時ファイルの削除・属性補正・存在確認など、失敗してもアプリの動作継続が望ましい場面でのみ用いる。

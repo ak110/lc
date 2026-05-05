@@ -11,7 +11,7 @@ public partial class CommandLauncherForm : Form
     CommandLauncherPresenter presenter;
 
     InputState state;
-    int lastFocus;   // エディットボックスにフォーカスがあった場合0, リストな場合1
+    int lastFocus;   // エディットボックスにフォーカスがある場合0、リストビューにある場合1
 
     bool recurseGuard; //再帰防止
 
@@ -52,7 +52,7 @@ public partial class CommandLauncherForm : Form
         components ??= new Container();
         components.Add(saveConfigTimer);
 
-        // ウィンドウスタイルとか
+        // ウィンドウの位置・サイズを設定
         Location = ownerForm.Config.WindowPos;
         Size = ownerForm.Config.WindowSize;
     }
@@ -132,7 +132,7 @@ public partial class CommandLauncherForm : Form
         Size s = ownerForm.Config.WindowSize;
         FormBorderStyle = ownerForm.Config.WindowNoResize ?
             FormBorderStyle.FixedDialog : FormBorderStyle.Sizable;
-        Size = ownerForm.Config.WindowSize = s; // ずれるので再設定
+        Size = ownerForm.Config.WindowSize = s; // FormBorderStyle変更後にサイズがずれるため再設定する
         TopMost = ownerForm.Config.WindowTopMost;
         if (ownerForm.Config.CloseButton == CloseButtonBehavior.Disabled)
         {
@@ -269,7 +269,7 @@ public partial class CommandLauncherForm : Form
     #region textBox1
 
     /// <summary>
-    /// エディットボックスにフォーカス来た
+    /// エディットボックスがフォーカスを受け取った
     /// </summary>
     private void textBox1_Enter(object sender, EventArgs e)
     {
@@ -308,7 +308,7 @@ public partial class CommandLauncherForm : Form
             int n2 = n1 + textBox1.SelectionLength;
             if (textBox1.Text.Length == n2)
             {
-                // 選択されてるとこを削除して、あとはデフォルトの処理に任せる
+                // 選択部分（補完候補）を削除し、残りの処理はデフォルト動作に委ねる
                 System.Diagnostics.Debug.Assert(!recurseGuard);
                 recurseGuard = true;
                 try
@@ -348,7 +348,7 @@ public partial class CommandLauncherForm : Form
         }
         else if (e.KeyCode == Keys.Enter && e.Modifiers == Keys.Control)
         {
-            // Ctrl+Enterは何故か(改行入力がらみ？)button1にならないので
+            // Ctrl+EnterはKeyPressが改行入力として割り込むためbutton1クリックにならない。KeyDownで処理する
             e.Handled = true;
             button1_Click(this, EventArgs.Empty);
         }
@@ -396,7 +396,7 @@ public partial class CommandLauncherForm : Form
     #region listView1
 
     /// <summary>
-    /// リストビューにフォーカス来た
+    /// リストビューがフォーカスを受け取った
     /// </summary>
     private void listView1_Enter(object sender, EventArgs e)
     {
@@ -458,7 +458,7 @@ public partial class CommandLauncherForm : Form
         }
         else if (e.KeyCode == Keys.Enter && e.Modifiers == Keys.Control)
         {
-            // Ctrl+Enterは何故か(改行入力がらみ？)button1にならないので
+            // Ctrl+EnterはKeyPressが改行入力として割り込むためbutton1クリックにならない。KeyDownで処理する
             e.Handled = true;
             button1_Click(this, EventArgs.Empty);
         }
@@ -477,7 +477,7 @@ public partial class CommandLauncherForm : Form
     }
 
     /// <summary>
-    /// リストビューの1つの項目を選択状態にして、ついでにスクロールする。
+    /// リストビューの指定した項目を選択してスクロール位置を合わせる。
     /// </summary>
     private void SetListViewSelection(int index)
     {
@@ -597,7 +597,7 @@ public partial class CommandLauncherForm : Form
                         imageList1.Images.Add(command.FileName, (System.Drawing.Icon)e.Icon.Clone()!);
                     }
                     command.IconIndex = imageList1.Images.IndexOfKey(command.FileName);
-                    // リストビューに存在してたらセットしとく
+                    // リストビューに存在する場合はアイコンを設定する
                     foreach (ListViewItem item in listView1.Items)
                     {
                         if (command.Equals(item.Tag))

@@ -21,7 +21,7 @@ src/Launcher/
 ### モジュール分割の設計意図
 
 - Core — UIフレームワーク（WinForms）に依存しない純粋なドメインモデルとロジックを置く。
-  テスト容易性と関心の分離を目的とする
+  テスト容易性と関心の分離が目的である
 - Infrastructure — アプリケーション基盤。シリアライズ・パス操作・ファイル操作など、
   ドメインやUIに属さない横断的関心事を集約する。PathHelperはパス文字列操作のみ、
   FileHelperはファイル・ディレクトリ操作と役割を分離している
@@ -37,7 +37,7 @@ src/Launcher/
 
 CommandLauncherPresenter / ButtonLauncherPresenter / SchedulerPresenterがUIロジックを担当する。
 WinFormsのフォームクラスはイベントハンドラとコントロール操作のみを持ち、判断ロジックはPresenterに委譲する。
-これにより、UIロジックをWinFormsから分離してテスト可能にしている。
+UIロジックをWinFormsから分離してテスト可能にする設計である。
 
 ### ConfigStore継承による永続化
 
@@ -71,7 +71,7 @@ BalloonTipはBeginInvoke（非同期）で実行する。
 
 ### 通知ダイアログの追跡とowner選定
 
-実装上の不変条件は `.claude/rules/notification-dialog.md` にまとめている。
+実装上の不変条件は`.claude/rules/notification-dialog.md`に記載している。
 
 ## フック管理
 
@@ -81,7 +81,7 @@ BalloonTipはBeginInvoke（非同期）で実行する。
 検知時は`BeginInvoke`でUIスレッドへShowHideメッセージを送信する。
 
 コールバック内で守るべき実装上の不変条件（即時return・UP抑制フラグ更新など）は
-リポジトリ内の`.claude/rules/win32-interop.md`にまとめている。
+`.claude/rules/win32-interop.md`に記載している。
 
 ## 環境変数の自動リロード
 
@@ -89,7 +89,7 @@ BalloonTipはBeginInvoke（非同期）で実行する。
 `ApplicationHostForm.WndProc`が`WM_SETTINGCHANGE`（`lParam == "Environment"`）を受信する。
 500msのデバウンスを経て`EnvironmentRefresher.Refresh()`を呼び、
 その後`ReplaceEnvList`を`CommandList`と`SchedulerData`に背景スレッドで再適用する。
-ReplaceEnvListに関する挙動上の注意はリポジトリ内の`.claude/rules/persistence.md`にまとめている。
+ReplaceEnvListに関する挙動上の注意は`.claude/rules/persistence.md`に記載している。
 
 マージ規則はExplorer互換である。
 `HKLM\Session Manager\Environment`と`HKCU\Environment`を統合し、

@@ -61,7 +61,7 @@ public static class UpdatePerformer
                 extractedFiles
             );
 
-            // アセンブリ名が日本語のため CP932 (Shift_JIS) で書き出す。
+            // アセンブリ名が日本語のため CP932 (Shift_JIS) で書き込む。
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             var cp932 = Encoding.GetEncoding(932);
             File.WriteAllText(batchPath, batchContent, cp932);
@@ -102,7 +102,7 @@ public static class UpdatePerformer
 
     /// <summary>
     /// 更新用バッチスクリプトを生成する。
-    /// DBCS トレイルバイト問題を避けるため、if() ブロック内に日本語を入れず goto で制御する。
+    /// DBCS トレイルバイト問題を避けるため、if() ブロック内に日本語を含めず goto で制御する。
     /// </summary>
     public static string GenerateBatchScript(
         int pid, string appDir, string tempDir, string appExe, string batchPath, List<string> files)

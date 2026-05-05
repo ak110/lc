@@ -107,7 +107,7 @@ public sealed class CommandLauncherPresenter(Func<CommandList> getCommandList, F
         };
 
         // キャンセルボタン
-        string button2Text = state == InputState.Empty ? "隠す" : "消す";
+        string button2Text = state == InputState.Empty ? "隠す" : "消去";
 
         return new ButtonTexts(button1Text, button2Text);
     }

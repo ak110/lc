@@ -12,7 +12,7 @@ public class ConfigStore
     static readonly object lockObject = new();
 
     /// <summary>
-    /// デフォルトのディレクトリパス＋拡張子を除いたベースファイル名を取得。
+    /// 既定のディレクトリパス＋拡張子を除いたベースファイル名を取得する。
     /// </summary>
     public static string DefaultBaseName
     {
@@ -90,9 +90,9 @@ public class ConfigStore
     }
 
     /// <summary>
-    /// オブジェクトを文字列化
+    /// オブジェクトをXML文字列にシリアライズする。
     /// </summary>
-    /// <returns>文字列化されたデータ</returns>
+    /// <returns>シリアライズされたXML文字列</returns>
     public string SerializeToString()
     {
         using var stream = new StringWriter();
@@ -136,10 +136,10 @@ public class ConfigStore
     }
 
     /// <summary>
-    /// 文字列からオブジェクトを復元
+    /// XML文字列からオブジェクトをデシリアライズする。
     /// </summary>
-    /// <param name="data">文字列化されたデータ</param>
-    /// <returns>復元されたデータ</returns>
+    /// <param name="data">シリアライズされたXML文字列</param>
+    /// <returns>復元されたオブジェクト</returns>
     public static T DeserializeFromString<T>(string data)
     {
         using var stream = new StringReader(data);
@@ -164,8 +164,7 @@ public class ConfigStore
 
     /// <summary>
     /// Mutexの取得・解放を安全に行うラッパー。
-    /// ReleaseMutex()を呼んでからClose()することで、
-    /// 他プロセスでAbandonedMutexExceptionが発生するのを防ぐ。
+    /// ReleaseMutex()の後にClose()することで他プロセスでのAbandonedMutexExceptionを防ぐ。
     /// </summary>
     private sealed class MutexLock : IDisposable
     {

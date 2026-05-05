@@ -17,7 +17,7 @@ static class Program
 
     /// <summary>
     /// 常駐プロセスへウィンドウメッセージを送信する。
-    /// 失敗（常駐プロセスなし、ハンドル無効、ファイル不在など）はstderrへ出力するだけで握りつぶす。
+    /// 失敗（常駐プロセスなし、ハンドル無効、ファイル不在など）はstderrへ出力するだけで無視する。
     /// </summary>
     /// <param name="message">送信メッセージID</param>
     /// <param name="wParam">wParam値</param>
@@ -25,7 +25,7 @@ static class Program
     /// <param name="label">ログ先頭に付けるラベル（例: "/close", "/restart", "コマンド登録"）</param>
     /// <param name="successDescription">成功時に続けて出力する説明（例: "終了メッセージを送信しました。"）</param>
     /// <param name="failureDescription">PostMessage失敗時に続けて出力する説明</param>
-#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を握りつぶす必要がある
+#pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を無視する必要がある
     static void TryPostMessageToResident(
         int message, IntPtr wParam, IntPtr lParam,
         string label, string successDescription, string failureDescription)

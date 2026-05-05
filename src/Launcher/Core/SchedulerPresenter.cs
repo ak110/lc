@@ -243,7 +243,7 @@ public static class SchedulerPresenter
             {
                 ExecuteTask(task, showBalloonTip, showMessageBox);
             }
-#pragma warning disable CA1031 // スケジューラータスクの例外は握りつぶして次のタスクへ進む
+#pragma warning disable CA1031 // スケジューラータスクの例外は無視して次のタスクへ進む
             catch (Exception ex)
             {
                 Debug.WriteLine($"スケジューラータスク実行エラー: {task.FileName} - {ex.Message}");

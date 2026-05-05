@@ -4,7 +4,7 @@ using System.Windows.Forms;
 namespace Launcher.Infrastructure;
 
 /// <summary>
-/// アプリケーション的な処理。
+/// アプリケーション起動・終了の共通処理。
 /// </summary>
 public static class AppBase
 {
@@ -12,7 +12,7 @@ public static class AppBase
     static bool restart;
 
     /// <summary>
-    /// Program.Main()の開始時に呼ぶ処理。
+    /// Program.Main()の開始時に呼び出す処理。
     /// </summary>
     public static void Initialize()
     {
@@ -26,7 +26,7 @@ public static class AppBase
     }
 
     /// <summary>
-    /// 終了時に再起動させるようにする時に呼ぶ。
+    /// 終了時に再起動するよう設定する。
     /// </summary>
     public static void SetRestart()
     {
@@ -48,12 +48,12 @@ public static class AppBase
     }
 
     /// <summary>
-    /// Initialize(), OnExit()を呼ぶクラス。
+    /// Initialize()/OnExit()をusingスコープで呼び出すラッパー。
     /// </summary>
     public sealed class Initializer : IDisposable
     {
         /// <summary>
-        /// 初期化
+        /// Initialize()を呼び出す。
         /// </summary>
         public Initializer()
         {
@@ -61,7 +61,7 @@ public static class AppBase
         }
 
         /// <summary>
-        /// 後始末
+        /// OnExit()を呼び出す。
         /// </summary>
         public void Dispose()
         {

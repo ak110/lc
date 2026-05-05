@@ -36,7 +36,7 @@ public sealed class FaviconCache
             var host = new Uri(url).Host;
             if (string.IsNullOrEmpty(host)) return null;
 
-            // ホスト名にファイル名として使えない文字が含まれる場合は除去する
+            // ホスト名にファイル名として無効な文字が含まれる場合は除去する
             var safeHost = string.Concat(host.Split(Path.GetInvalidFileNameChars()));
             var cachePath = Path.Combine(_cacheDir, $"{safeHost}.png");
 

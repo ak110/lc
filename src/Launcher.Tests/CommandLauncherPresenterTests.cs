@@ -111,12 +111,12 @@ public sealed class CommandLauncherPresenterTests
     }
 
     [Fact]
-    public void GetButtonTexts_NoMatch時に追加と消す()
+    public void GetButtonTexts_NoMatch時に追加と削除()
     {
         var texts = CommandLauncherPresenter.GetButtonTexts(InputState.NoMatch, lastFocus: 0, Keys.None);
 
         texts.Button1Text.Should().Be("追加");
-        texts.Button2Text.Should().Be("消す");
+        texts.Button2Text.Should().Be("消去");
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public sealed class CommandLauncherPresenterTests
         var texts = CommandLauncherPresenter.GetButtonTexts(InputState.PartialMatch, lastFocus: 0, Keys.None);
 
         texts.Button1Text.Should().Be("実行");
-        texts.Button2Text.Should().Be("消す");
+        texts.Button2Text.Should().Be("消去");
     }
 
     #endregion

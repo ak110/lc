@@ -187,7 +187,7 @@ public partial class ApplicationHostForm : Form
                         buttonLauncherForm?.ShowLauncher();
                     }
                 }
-                // WndProc内の例外ハンドラ: WinFormsのメッセージループ内なので握りつぶす必要がある
+                // WndProc内の例外ハンドラ: WinFormsのメッセージループの最終防御ラインのため全例外を捕捉する
 #pragma warning disable CA1031 // WndProcはメッセージループの最終防御ライン
                 catch (Exception ex)
                 {
@@ -432,7 +432,7 @@ public partial class ApplicationHostForm : Form
         {
             BeginInvoke(() =>
             {
-                // トレイアイコンが非表示の場合、一時的に表示してバルーンを出す
+                // トレイアイコンが非表示の場合、一時的に表示してバルーン通知を表示する
                 bool wasVisible = notifyIcon1.Visible;
                 if (!wasVisible) notifyIcon1.Visible = true;
 

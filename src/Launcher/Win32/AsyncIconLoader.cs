@@ -5,7 +5,7 @@ using Launcher.Infrastructure;
 namespace Launcher.Win32;
 
 /// <summary>
-/// アイコン読み込んだぞイベントの引数。
+/// アイコン読み込み完了イベントの引数。
 /// 失敗時は Icon == null
 /// </summary>
 public sealed class IconLoadedEventArgs : EventArgs
@@ -77,7 +77,7 @@ public sealed class AsyncIconLoader : IDisposable
     public ThreadPriority ThreadPriority { get; }
 
     /// <summary>
-    /// アイコン読み込んだぞイベント
+    /// アイコン読み込み完了イベント
     /// </summary>
     public event EventHandler<IconLoadedEventArgs>? IconLoaded;
 
