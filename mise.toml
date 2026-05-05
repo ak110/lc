@@ -28,6 +28,7 @@ run = [
   "pnpm install",
   "git config --unset core.hooksPath || true",
   "uvx pre-commit install",
+  "git config --local commit.template .gitmessage",
 ]
 run_windows = [
   "{{ vars.dotnet }} tool restore",
@@ -35,6 +36,7 @@ run_windows = [
   "pnpm install",
   "git config --unset core.hooksPath & exit /b 0",
   "uvx pre-commit install",
+  "git config --local commit.template .gitmessage",
 ]
 
 [tasks.build]
