@@ -23,19 +23,15 @@ mise install && mise run setup
 
 ## 開発コマンド
 
-主な開発コマンドは`mise run format`（フォーマット+軽量lint・自動修正あり）と`mise run test`（全チェック）の2つ。
-`git commit`時にはpre-commitフックが`mise run test`を自動実行する。
-全タスクは以下のとおりである。
-
-| コマンド          | 説明                                                         |
-| ----------------- | ------------------------------------------------------------ |
-| `mise run setup`  | 開発環境のセットアップ（dotnet tool restore / pnpm install） |
-| `mise run format` | フォーマット + 軽量lint（開発時の手動実行用。自動修正あり）  |
-| `mise run test`   | 全チェック実行（これを通過すればコミット可能）               |
-| `mise run build`  | リリースビルド                                               |
-| `mise run clean`  | ビルド成果物の削除                                           |
-| `mise run update` | 依存パッケージの更新                                         |
-| `mise run docs`   | ドキュメントのローカルプレビュー（VitePress dev server）     |
+| コマンド          | 説明                                                        |
+| ----------------- | ----------------------------------------------------------- |
+| `mise run setup`  | 開発環境のセットアップ                                      |
+| `mise run format` | フォーマット + 軽量lint（開発時の手動実行用。自動修正あり） |
+| `mise run test`   | 全チェック実行（これを通過すればコミット可能）              |
+| `mise run build`  | リリースビルド                                              |
+| `mise run clean`  | ビルド成果物の削除                                          |
+| `mise run update` | 依存パッケージの更新                                        |
+| `mise run docs`   | ドキュメントのローカルプレビュー                            |
 
 VSCodeでは`Ctrl+Shift+B`でデフォルトのビルドタスク（`mise run build`）を実行できる。
 デバッグ実行はVSCodeで`F5`を押す（`.vscode/launch.json`に起動設定を定義している）。

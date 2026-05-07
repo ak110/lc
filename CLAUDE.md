@@ -11,9 +11,8 @@ Windows用アプリケーションランチャー（C#/.NET WinForms）。
 開発コマンドの一覧は[docs/development/development.md](docs/development/development.md)を参照する。
 
 - コミット前の検証方法: `uvx pyfltr run-for-agent`
-  - ドキュメントのみの変更の場合は省略可（pre-commitで実行されるため）
-  - 修正後の再実行時は、対象ファイルや対象ツールを必要に応じて限定して実行する（最終検証はCIに委ねる前提）
-    - 例: `uvx pyfltr run-for-agent --commands=dotnet-build,dotnet-test path/to/file`
+  - テストコードの単体実行なども極力`pyfltr run-for-agent <path>`を使う（直接呼び出さない）
+  - 修正後の再実行時は`--commands=dotnet-build,dotnet-test`等で限定して実行する（最終検証はCIに委ねる前提）
 
 ## アーキテクチャの参照先
 
