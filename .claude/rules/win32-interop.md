@@ -1,3 +1,8 @@
+---
+paths:
+  - "src/**/*.cs"
+---
+
 # Win32 API・WinForms連携のルール
 
 ## Win32フックコールバック

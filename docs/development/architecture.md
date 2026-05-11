@@ -71,7 +71,7 @@ BalloonTipはBeginInvoke（非同期）で実行する。
 
 ### 通知ダイアログの追跡とowner選定
 
-実装上の不変条件は`.claude/rules/notification-dialog.md`に記載している。
+実装上の不変条件は`.claude/skills/notification-dialog/`に記載している。
 
 ## フック管理
 
@@ -89,7 +89,7 @@ BalloonTipはBeginInvoke（非同期）で実行する。
 `ApplicationHostForm.WndProc`が`WM_SETTINGCHANGE`（`lParam == "Environment"`）を受信する。
 500msのデバウンスを経て`EnvironmentRefresher.Refresh()`を呼び、
 その後`ReplaceEnvList`を`CommandList`と`SchedulerData`に背景スレッドで再適用する。
-ReplaceEnvListに関する挙動上の注意は`.claude/rules/persistence.md`に記載している。
+ReplaceEnvListに関する挙動上の注意は`.claude/skills/persistence/`に記載している。
 
 マージ規則はExplorer互換である。
 `HKLM\Session Manager\Environment`と`HKCU\Environment`を統合し、

@@ -1,3 +1,12 @@
+---
+name: notification-dialog
+description: >
+  通知UI・ダイアログ実装の不変条件。
+  NotificationForm・非同期通知の追跡・owner選定・フォーカス復元を実装・修正するとき、
+  または「通知ダイアログ」「NotificationForm」「BalloonTip」「ShowDialog」「activeNotifications」
+  等のキーワードを含む実装を扱うときに呼び出す。
+---
+
 # 通知ダイアログのルール
 
 ## 非同期通知ダイアログの追跡

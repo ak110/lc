@@ -1,3 +1,12 @@
+---
+name: persistence
+description: >
+  設定永続化・XMLシリアライズの不変条件。
+  ConfigStore・設定ファイル（cfg/dat）・XMLシリアライザ・ReplaceEnvListを実装・修正するとき、
+  または「XMLシリアライズ」「設定永続化」「ConfigStore」「cfg」「dat」「ReplaceEnvList」
+  等のキーワードを含む実装を扱うときに呼び出す。
+---
+
 # 設定永続化のルール
 
 ## 設定ファイル一覧

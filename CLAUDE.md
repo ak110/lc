@@ -24,13 +24,17 @@ Windows用アプリケーションランチャー（C#/.NET WinForms）。
 実装上の不変条件はトピック別に規約ファイルとして分離している。
 
 - スレッディング（`.claude/rules/threading.md`）:
-  STAスレッド制約、スレッドモデル一覧、アイコンローダー並行度
+  STAスレッド制約、スレッドモデル一覧、アイコンローダー並行度。
+  C#ソース（`src/**/*.cs`）編集時に自動ロードされる
 - Win32相互運用（`.claude/rules/win32-interop.md`）:
-  フックコールバック制約、モーダルダイアログのTopMost伝播
-- 永続化（`.claude/rules/persistence.md`）:
-  cfg/dat分離、XMLシリアライザ制約、ReplaceEnvList非対称性
-- 通知ダイアログ（`.claude/rules/notification-dialog.md`）:
-  非同期通知の追跡パターン、owner選定、フォーカス復元
+  フックコールバック制約、モーダルダイアログのTopMost伝播。
+  C#ソース（`src/**/*.cs`）編集時に自動ロードされる
+- 永続化（`.claude/skills/persistence/`）:
+  cfg/dat分離、XMLシリアライザ制約、ReplaceEnvList非対称性。
+  XMLシリアライズ・設定永続化を扱うときに呼び出す
+- 通知ダイアログ（`.claude/skills/notification-dialog/`）:
+  非同期通知の追跡パターン、owner選定、フォーカス復元。
+  通知UI・ダイアログ実装を扱うときに呼び出す
 
 ## サブエージェント・スキル連携
 
