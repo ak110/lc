@@ -1,12 +1,5 @@
 # アーキテクチャ
 
-## 技術スタック
-
-- .NET 10 / C#
-- Windows Forms (WinForms)
-- Win32 API (P/Invoke)
-- GitHub Releases API（自動更新機能）
-
 ## モジュール構成
 
 ```text
@@ -76,9 +69,8 @@ BalloonTipはBeginInvoke（非同期）で実行する。
 ## フック管理
 
 `HookManager`がグローバルキーボード/マウスフックの状態管理を一元的に担当する。
-キーボードフックは`SetWindowsHookEx`で登録し、KEYDOWN時に仮想キーコードと修飾キーを照合してホットキーを検知する。
-マウスフックはボタン押下状態（`lbuttonDown`/`rbuttonDown`）を追跡し、設定されたトリガー（左右同時押し等）を検知する。
-検知時は`BeginInvoke`でUIスレッドへShowHideメッセージを送信する。
+マウスフックはボタン押下状態（`lbuttonDown`/`rbuttonDown`）を追跡し、
+設定されたトリガー（左右同時押し等）を検知する。
 
 コールバック内で守るべき実装上の不変条件（即時return・UP抑制フラグ更新など）は
 `.claude/rules/win32-interop.md`に記載している。
@@ -91,11 +83,7 @@ BalloonTipはBeginInvoke（非同期）で実行する。
 その後`ReplaceEnvList`を`CommandList`と`SchedulerData`に背景スレッドで再適用する。
 ReplaceEnvListに関する挙動上の注意は`.claude/skills/persistence/`に記載している。
 
-マージ規則はExplorer互換である。
-`HKLM\Session Manager\Environment`と`HKCU\Environment`を統合し、
-`Path`／`PATHEXT`／`LIBPATH`／`OS2LIBPATH`のみシステム + ユーザーを`;`で連結する。
-それ以外はユーザー変数がシステム変数を上書きする。
-`REG_EXPAND_SZ`は現プロセス環境ベースで展開する。
+マージ規則はExplorer互換（HKLM+HKCU統合、Path系のみ`;`連結、それ以外はユーザー変数優先）とする。
 
 子プロセスへの伝搬は追加実装不要である。
 `ShellExecuteEx`は呼び出し元プロセスの環境ブロックを継承するため、
