@@ -64,10 +64,12 @@ run = [
 
 [tasks.update]
 description = "依存パッケージの更新"
+# Windows runner 上で pnpm 11 系が対話プロンプトを表示し更新フローを停止させるのを防ぐ。
+env = { CI = "true" }
 # `corepack use pnpm@latest` は package.json の `packageManager` フィールドを
 # 最新 pnpm のバージョン+ハッシュに書き換える。`pnpm update --latest` は依存のみで
 # pnpm 本体のバージョンは更新しないため、両者を組にして依存とランナーを揃える。
-# pnpm 本体の更新を先に行ってから依存を更新することで、新しい pnpm の依存解決規則を
+# pnpm 本体を先に更新してから依存を更新することで、新しい pnpm の依存解決規則を
 # 反映した状態でロックファイルを再生成する。
 run = [
   "{{ vars.dotnet }} tool restore",

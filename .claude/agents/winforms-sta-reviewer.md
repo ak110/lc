@@ -12,7 +12,8 @@ model: sonnet
 # winforms-sta-reviewer
 
 本プロジェクト固有の不変条件を、変更差分に対して機械的にチェックする専用レビュアー。
-不変条件のSSOTは`.claude/rules/`配下のトピック別ルール、アーキテクチャ概要は`docs/development/architecture.md`とする。
+不変条件のSSOTは`.claude/rules/`配下のトピック別ルールおよび`.claude/skills/`配下のスキル、
+アーキテクチャ概要は`docs/development/architecture.md`とする。
 一般的なC#のコーディングスタイルや命名はレビュー対象外。設計不変条件のみに集中する。
 
 ## 入力前提
@@ -57,7 +58,7 @@ model: sonnet
 - 完了時の再描画が`btn.Parent?.Invalidate(true)`か
 - リトライ上限が2回のままか
 
-### D. ConfigStore（[.claude/rules/persistence.md](../rules/persistence.md)）
+### D. ConfigStore（[.claude/skills/persistence/SKILL.md](../skills/persistence/SKILL.md)）
 
 - 新規プロパティが正しいクラスに属しているか
   - 静的設定 → `Config`／`CommandList`／`ButtonLauncherData`／`SchedulerData`のいずれか（`*.cfg`）
@@ -71,7 +72,7 @@ model: sonnet
 - Core層（`src/Launcher/Core/`）にWinForms依存（`System.Windows.Forms`）が混入していないか
 - スケジューラーのUI連携で、`MessageBox`系は`Invoke`、`BalloonTip`系は`BeginInvoke`になっているか
 
-### F. 通知ダイアログ（[.claude/rules/notification-dialog.md](../rules/notification-dialog.md)）
+### F. 通知ダイアログ（[.claude/skills/notification-dialog/SKILL.md](../skills/notification-dialog/SKILL.md)）
 
 - `activeNotifications` リストへの追跡（登録・削除）が漏れていないか
 - `HasActiveNotifications` が真のときの `ShowHide` / `WindowHideNoActive` のスキップが維持されているか
