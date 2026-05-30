@@ -19,3 +19,5 @@ UI操作は`BeginInvoke`（非同期）でUIスレッドへディスパッチす
 親フォームが`TopMost=true`の場合、子モーダルダイアログも`TopMost`に揃えないと、z-order再評価時に親の裏に回る。
 すべての子Formの`ShowDialog`は`FormsHelper.ShowDialogOver`拡張メソッド経由で呼ぶ。
 ネストしたダイアログでも親から自動で伝播する。
+`ShowDialogOver`は`Form`派生のみを対象とする。
+`FontDialog`等の`CommonDialog`と`MessageBox`は`Form`派生でないため対象外とし、`ShowDialog(owner)`を直接使う。
