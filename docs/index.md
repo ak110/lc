@@ -20,4 +20,7 @@ features:
   - title: スケジューラー
     details: 指定した日時条件でタスクを自動実行
     link: /scheduler
+  - title: メモパッド
+    details: タブで複数のプレーンテキストを編集。自動保存と等幅フォント表示に対応
+    link: /memopad
 ---

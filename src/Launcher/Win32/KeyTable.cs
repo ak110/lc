@@ -228,7 +228,14 @@ public static class KeyTable
         {
             modifiers |= Modifiers.Win;
         }
-        Keys? key = GetKey(m[m.Count - 1]);
+        // 末尾キーが空の文字列 (未割り当て・修飾キーのみの場合を含む) は
+        // 未割り当てとして安全に扱い、GetKeyのアサーション失敗を避ける
+        string lastKey = m[m.Count - 1];
+        if (string.IsNullOrEmpty(lastKey))
+        {
+            return (null, (Modifiers)0);
+        }
+        Keys? key = GetKey(lastKey);
         return key.HasValue ?
             (key.Value, modifiers) :
             (null, (Modifiers)0);

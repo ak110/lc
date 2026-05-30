@@ -59,12 +59,20 @@ namespace Launcher.UI {
             this.label6 = new System.Windows.Forms.Label();
             this.numericUpDown2 = new System.Windows.Forms.NumericUpDown();
             this.label7 = new System.Windows.Forms.Label();
+            this.groupBox7 = new System.Windows.Forms.GroupBox();
+            this.comboBoxM = new System.Windows.Forms.ComboBox();
+            this.labelM = new System.Windows.Forms.Label();
+            this.checkBoxM4 = new System.Windows.Forms.CheckBox();
+            this.checkBoxM3 = new System.Windows.Forms.CheckBox();
+            this.checkBoxM2 = new System.Windows.Forms.CheckBox();
+            this.checkBoxM1 = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.groupBox5.SuspendLayout();
             this.groupBox6.SuspendLayout();
+            this.groupBox7.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).BeginInit();
             this.SuspendLayout();
@@ -73,7 +81,7 @@ namespace Launcher.UI {
             //
             this.buttonOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonOk.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.buttonOk.Location = new System.Drawing.Point(286, 468);
+            this.buttonOk.Location = new System.Drawing.Point(286, 580);
             this.buttonOk.Name = "buttonOk";
             this.buttonOk.Size = new System.Drawing.Size(75, 23);
             this.buttonOk.TabIndex = 0;
@@ -85,7 +93,7 @@ namespace Launcher.UI {
             //
             this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.buttonCancel.Location = new System.Drawing.Point(366, 468);
+            this.buttonCancel.Location = new System.Drawing.Point(366, 580);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 1;
@@ -455,13 +463,90 @@ namespace Launcher.UI {
             this.numericUpDown2.TabIndex = 5;
             this.numericUpDown2.Value = new decimal(new int[] { 7, 0, 0, 0 });
             //
+            // groupBox7
+            //
+            this.groupBox7.Controls.Add(this.comboBoxM);
+            this.groupBox7.Controls.Add(this.labelM);
+            this.groupBox7.Controls.Add(this.checkBoxM4);
+            this.groupBox7.Controls.Add(this.checkBoxM3);
+            this.groupBox7.Controls.Add(this.checkBoxM2);
+            this.groupBox7.Controls.Add(this.checkBoxM1);
+            this.groupBox7.Location = new System.Drawing.Point(8, 472);
+            this.groupBox7.Name = "groupBox7";
+            this.groupBox7.Size = new System.Drawing.Size(200, 100);
+            this.groupBox7.TabIndex = 9;
+            this.groupBox7.TabStop = false;
+            this.groupBox7.Text = "メモパッドのホットキー";
+            //
+            // comboBoxM
+            //
+            this.comboBoxM.DropDownHeight = 206;
+            this.comboBoxM.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxM.FormattingEnabled = true;
+            this.comboBoxM.IntegralHeight = false;
+            this.comboBoxM.ItemHeight = 12;
+            this.comboBoxM.Location = new System.Drawing.Point(88, 40);
+            this.comboBoxM.Name = "comboBoxM";
+            this.comboBoxM.Size = new System.Drawing.Size(104, 20);
+            this.comboBoxM.TabIndex = 5;
+            //
+            // labelM
+            //
+            this.labelM.AutoSize = true;
+            this.labelM.Location = new System.Drawing.Point(72, 48);
+            this.labelM.Name = "labelM";
+            this.labelM.Size = new System.Drawing.Size(11, 12);
+            this.labelM.TabIndex = 4;
+            this.labelM.Text = "+";
+            //
+            // checkBoxM4
+            //
+            this.checkBoxM4.AutoSize = true;
+            this.checkBoxM4.Location = new System.Drawing.Point(16, 72);
+            this.checkBoxM4.Name = "checkBoxM4";
+            this.checkBoxM4.Size = new System.Drawing.Size(42, 16);
+            this.checkBoxM4.TabIndex = 3;
+            this.checkBoxM4.Text = "Win";
+            this.checkBoxM4.UseVisualStyleBackColor = true;
+            //
+            // checkBoxM3
+            //
+            this.checkBoxM3.AutoSize = true;
+            this.checkBoxM3.Location = new System.Drawing.Point(16, 56);
+            this.checkBoxM3.Name = "checkBoxM3";
+            this.checkBoxM3.Size = new System.Drawing.Size(48, 16);
+            this.checkBoxM3.TabIndex = 2;
+            this.checkBoxM3.Text = "Shift";
+            this.checkBoxM3.UseVisualStyleBackColor = true;
+            //
+            // checkBoxM2
+            //
+            this.checkBoxM2.AutoSize = true;
+            this.checkBoxM2.Location = new System.Drawing.Point(16, 40);
+            this.checkBoxM2.Name = "checkBoxM2";
+            this.checkBoxM2.Size = new System.Drawing.Size(39, 16);
+            this.checkBoxM2.TabIndex = 1;
+            this.checkBoxM2.Text = "Alt";
+            this.checkBoxM2.UseVisualStyleBackColor = true;
+            //
+            // checkBoxM1
+            //
+            this.checkBoxM1.AutoSize = true;
+            this.checkBoxM1.Location = new System.Drawing.Point(16, 24);
+            this.checkBoxM1.Name = "checkBoxM1";
+            this.checkBoxM1.Size = new System.Drawing.Size(43, 16);
+            this.checkBoxM1.TabIndex = 0;
+            this.checkBoxM1.Text = "Ctrl";
+            this.checkBoxM1.UseVisualStyleBackColor = true;
+            //
             // ConfigForm
             //
             this.AcceptButton = this.buttonOk;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.buttonCancel;
-            this.ClientSize = new System.Drawing.Size(458, 498);
+            this.ClientSize = new System.Drawing.Size(458, 610);
+            this.Controls.Add(this.groupBox7);
             this.Controls.Add(this.groupBox6);
             this.Controls.Add(this.groupBox5);
             this.Controls.Add(this.groupBox4);
@@ -486,6 +571,8 @@ namespace Launcher.UI {
             this.groupBox5.ResumeLayout(false);
             this.groupBox6.ResumeLayout(false);
             this.groupBox6.PerformLayout();
+            this.groupBox7.ResumeLayout(false);
+            this.groupBox7.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).EndInit();
             this.ResumeLayout(false);
@@ -529,5 +616,12 @@ namespace Launcher.UI {
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.NumericUpDown numericUpDown2;
         private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.GroupBox groupBox7;
+        private System.Windows.Forms.ComboBox comboBoxM;
+        private System.Windows.Forms.Label labelM;
+        private System.Windows.Forms.CheckBox checkBoxM4;
+        private System.Windows.Forms.CheckBox checkBoxM3;
+        private System.Windows.Forms.CheckBox checkBoxM2;
+        private System.Windows.Forms.CheckBox checkBoxM1;
 	}
 }

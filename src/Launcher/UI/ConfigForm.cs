@@ -43,6 +43,16 @@ public partial class ConfigForm : Form
         {
             comboBox1.SelectedItem = "Space";
         }
+        // メモパッド用ホットキー。先頭の空項目で未割り当てを表す。
+        comboBoxM.Items.Add("");
+        comboBoxM.Items.AddRange(KeyTable.GetKeyNames(false));
+        var mhk = KeyTable.GetKeyWithModifiers(config.MemoHotKey);
+        checkBoxM1.Checked = (mhk.Modifiers & KeyTable.Modifiers.Ctrl) != 0;
+        checkBoxM2.Checked = (mhk.Modifiers & KeyTable.Modifiers.Alt) != 0;
+        checkBoxM3.Checked = (mhk.Modifiers & KeyTable.Modifiers.Shift) != 0;
+        checkBoxM4.Checked = (mhk.Modifiers & KeyTable.Modifiers.Win) != 0;
+        comboBoxM.SelectedItem = mhk.Key.HasValue ? KeyTable.GetKeyName(mhk.Key.Value) : "";
+
         checkBox5.Checked = config.TrayIcon;
         radioButtonList1.SelectedIndex = (int)config.IconDoubleClick;
         radioButtonList2.SelectedIndex = (int)config.ItemDoubleClick;
@@ -66,6 +76,23 @@ public partial class ConfigForm : Form
         if (checkBox3.Checked) key += "Shift+";
         if (checkBox4.Checked) key += "Win+";
         config.HotKey = key + (comboBox1.SelectedItem?.ToString() ?? "");
+
+        // メモパッド用ホットキー。空項目選択時は修飾キーを無視して空文字を保存する。
+        string memoKeyName = comboBoxM.SelectedItem?.ToString() ?? "";
+        if (string.IsNullOrEmpty(memoKeyName))
+        {
+            config.MemoHotKey = "";
+        }
+        else
+        {
+            string memoKey = "";
+            if (checkBoxM1.Checked) memoKey += "Ctrl+";
+            if (checkBoxM2.Checked) memoKey += "Alt+";
+            if (checkBoxM3.Checked) memoKey += "Shift+";
+            if (checkBoxM4.Checked) memoKey += "Win+";
+            config.MemoHotKey = memoKey + memoKeyName;
+        }
+
         config.TrayIcon = checkBox5.Checked;
         config.IconDoubleClick = (TrayIconAction)radioButtonList1.SelectedIndex;
         config.ItemDoubleClick = (ItemAction)radioButtonList2.SelectedIndex;

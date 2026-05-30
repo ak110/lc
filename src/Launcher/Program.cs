@@ -14,6 +14,7 @@ static class Program
     public static readonly IntPtr WM_APPMSG_RELOAD = (IntPtr)0x338ca4c1;
     public static readonly IntPtr WM_APPMSG_RESTART = (IntPtr)0x6b60850f;
     public static readonly IntPtr WM_APPMSG_SHOWBUTTONLAUNCHER = (IntPtr)0x2a3f7c01;
+    public static readonly IntPtr WM_APPMSG_SHOWMEMO = (IntPtr)0x5e2d9f13;
 
     /// <summary>
     /// 常駐プロセスへウィンドウメッセージを送信する。

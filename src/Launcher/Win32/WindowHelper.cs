@@ -247,6 +247,9 @@ public static class WM
     public const int WM_PENWINLAST = 0x038F;
     public const int WM_APP = 0x8000;
     public const int WM_USER = 0x0400;
+
+    /// <summary>リッチエディットの取り消し上限を設定するメッセージ (EM_SETUNDOLIMIT = WM_USER + 82)。</summary>
+    public const int EM_SETUNDOLIMIT = WM_USER + 82;
 }
 
 /// <summary>

@@ -15,9 +15,20 @@ sealed class HookManager
     readonly Func<IntPtr> getHandle;
     readonly Action<Action> beginInvoke;
 
-    // ホットキー設定
-    Keys hotkeyVK;
-    KeyTable.Modifiers modifiers;
+    /// <summary>
+    /// ホットキー1組の設定。一致時に表示指示 (<c>Message</c>) を送る。
+    /// </summary>
+    readonly struct HotkeyBinding
+    {
+        public Keys VKey { get; init; }
+        public KeyTable.Modifiers Modifiers { get; init; }
+
+        /// <summary>一致時に送る表示指示 (WM_APPMSG の lParam)</summary>
+        public IntPtr Message { get; init; }
+    }
+
+    // ホットキー設定 (ランチャー用・メモパッド用などの複数組)
+    List<HotkeyBinding> hotkeys = [];
 
     // マウスボタンの押下状態
     bool lbuttonDown;
@@ -41,13 +52,27 @@ sealed class HookManager
     }
 
     /// <summary>
-    /// ホットキー設定を更新する
+    /// ホットキー設定を更新する。
+    /// 各組はホットキー文字列と一致時に送る表示指示の対で渡す。
+    /// 解析できない組 (未割り当て・不正文字列) は登録しない。
     /// </summary>
-    public void UpdateHotkey(string hotKeyString)
+    public void UpdateHotkeys(params (string HotKey, IntPtr Message)[] bindings)
     {
-        var hk = KeyTable.GetKeyWithModifiers(hotKeyString);
-        hotkeyVK = KeyTable.KeysToVKey(hk.Key);
-        modifiers = hk.Modifiers;
+        var list = new List<HotkeyBinding>();
+        foreach (var (hotKey, message) in bindings)
+        {
+            var hk = KeyTable.GetKeyWithModifiers(hotKey);
+            if (hk.Key is null) continue;
+            var vkey = KeyTable.KeysToVKey(hk.Key.Value);
+            if (vkey == Keys.None) continue;
+            list.Add(new HotkeyBinding
+            {
+                VKey = vkey,
+                Modifiers = hk.Modifiers,
+                Message = message,
+            });
+        }
+        hotkeys = list;
     }
 
     /// <summary>
@@ -86,9 +111,13 @@ sealed class HookManager
             {
                 if (e.WParam == Hook.WM_KEYDOWN || e.WParam == Hook.WM_SYSKEYDOWN)
                 {
-                    if (e.HookStruct.vkCode == (int)hotkeyVK &&
-                        KeyTable.GetModifiers() == modifiers)
+                    var currentModifiers = KeyTable.GetModifiers();
+                    foreach (var hk in hotkeys)
                     {
+                        if (e.HookStruct.vkCode != (int)hk.VKey || currentModifiers != hk.Modifiers)
+                        {
+                            continue;
+                        }
                         e.Handled = true;
                         // キーリピート時は初回押下のみ処理する (多重発火防止)
                         if (suppressKeyUpVK == 0)
@@ -98,20 +127,22 @@ sealed class HookManager
                             // Alt修飾時はダミーキー入力を注入してAlt単独リリースによる
                             // システムメニュー表示を防止。KEYUP注入より前にF24を挿入することで
                             // 「Alt→F24→Alt解放」の順序を保証する
-                            if ((modifiers & KeyTable.Modifiers.Alt) != 0)
+                            if ((hk.Modifiers & KeyTable.Modifiers.Alt) != 0)
                             {
                                 BreakAltSequence();
                             }
                             // ホットキー修飾キーを前景アプリ向けに解放する
                             // (フォーカス移行前に注入することで前景アプリにKEYUPが届く)
-                            InjectHotkeyModifierKeyUps();
+                            InjectHotkeyModifierKeyUps(hk.Modifiers);
                             // フック内からSendMessageを呼ぶとWndProc→ActivateForce→DoEventsの連鎖で
                             // フックコールバックが再入するため、マウスフックと同様にPostMessageを使う
                             new WindowHelper(getHandle()).PostMessage(
                                 Program.WM_APPMSG,
                                 Program.WM_APPMSG_WPARAM,
-                                Program.WM_APPMSG_SHOWHIDE);
+                                hk.Message);
                         }
+                        // 一致したら他の組は判定しない
+                        break;
                     }
                 }
                 else if (e.WParam == Hook.WM_KEYUP || e.WParam == Hook.WM_SYSKEYUP)
@@ -207,7 +238,7 @@ sealed class HookManager
     /// ホットキーを構成する修飾キーのうち現在押下中のものに対してKEYUPを注入する。
     /// ランチャーのフォーカス取得前に前景アプリへ修飾キー解放を通知するために使う。
     /// </summary>
-    void InjectHotkeyModifierKeyUps()
+    static void InjectHotkeyModifierKeyUps(KeyTable.Modifiers modifiers)
     {
         const uint KEYEVENTF_KEYUP = 0x0002;
         const byte VK_LSHIFT = 0xA0;

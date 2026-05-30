@@ -20,6 +20,7 @@ export default defineConfig({
           { text: 'コマンド型ランチャー', link: '/guide/command-launcher' },
           { text: 'ボタン型ランチャー', link: '/guide/button-launcher' },
           { text: 'スケジューラー', link: '/guide/scheduler' },
+          { text: 'メモパッド', link: '/guide/memopad' },
         ],
       },
       {

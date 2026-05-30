@@ -19,6 +19,11 @@ public sealed class Config : ConfigStore, ICloneable
 
     public string HotKey { get; set; } = "Win+Space";
 
+    /// <summary>
+    /// メモパッド表示用のホットキー。既定は未割り当て (空文字)。
+    /// </summary>
+    public string MemoHotKey { get; set; } = "";
+
     public bool OpenDirByFiler { get; set; } = true;
     public string Filer { get; set; } = "Explorer.exe";
     public string OpenParentFiler { get; set; } = "Explorer.exe";

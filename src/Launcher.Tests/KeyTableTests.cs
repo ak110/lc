@@ -147,6 +147,19 @@ public sealed class KeyTableTests
         mods.Should().Be(KeyTable.Modifiers.Ctrl | KeyTable.Modifiers.Alt | KeyTable.Modifiers.Shift);
     }
 
+    [Theory]
+    [InlineData("")]            // 空文字 (未割り当て)
+    [InlineData("Ctrl+")]       // 修飾キーのみ (末尾キーが空)
+    [InlineData("Ctrl+Alt+")]   // 複数修飾キーのみ
+    [InlineData("Win+")]        // Win修飾のみ
+    public void GetKeyWithModifiers_末尾キーが空なら未割り当てを返す(string hotKey)
+    {
+        var (key, mods) = KeyTable.GetKeyWithModifiers(hotKey);
+
+        key.Should().BeNull();
+        mods.Should().Be((KeyTable.Modifiers)0);
+    }
+
     // GetKeyWithModifiers_不正なキー名のテストは省略 (Debug.Failがテストホストで例外になるため)
 
     // --- GetVKey ---

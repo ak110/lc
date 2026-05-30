@@ -31,6 +31,7 @@ namespace Launcher.UI {
 			this.設定CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.コマンドの管理LToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.メインウィンドウを表示非表示VToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.メモパッドDToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
 			this.実行ファイルのあるフォルダを開くMToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.ネットワーク更新NToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -58,6 +59,7 @@ namespace Launcher.UI {
             this.設定CToolStripMenuItem,
             this.コマンドの管理LToolStripMenuItem,
             this.メインウィンドウを表示非表示VToolStripMenuItem,
+            this.メモパッドDToolStripMenuItem,
             this.toolStripSeparator4,
             this.スケジューラー設定SToolStripMenuItem,
             this.スケジューラー一時停止PToolStripMenuItem,
@@ -120,6 +122,13 @@ namespace Launcher.UI {
 			this.メインウィンドウを表示非表示VToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.メインウィンドウを表示非表示VToolStripMenuItem.Text = "メインウィンドウを表示/非表示(&V)";
 			this.メインウィンドウを表示非表示VToolStripMenuItem.Click += new System.EventHandler(this.メインウィンドウを表示非表示VToolStripMenuItem_Click);
+			//
+			// メモパッドDToolStripMenuItem
+			//
+			this.メモパッドDToolStripMenuItem.Name = "メモパッドDToolStripMenuItem";
+			this.メモパッドDToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
+			this.メモパッドDToolStripMenuItem.Text = "メモパッド(&D)";
+			this.メモパッドDToolStripMenuItem.Click += new System.EventHandler(this.メモパッドDToolStripMenuItem_Click);
 			//
 			// toolStripSeparator1
 			//
@@ -202,6 +211,7 @@ namespace Launcher.UI {
 		private System.Windows.Forms.ToolStripMenuItem 終了XToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem 再起動RToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem メインウィンドウを表示非表示VToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem メモパッドDToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem スケジューラー設定SToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem スケジューラー一時停止PToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;

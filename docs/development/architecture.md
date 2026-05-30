@@ -28,13 +28,14 @@ src/Launcher/
 
 ### Presenterパターン
 
-CommandLauncherPresenter / ButtonLauncherPresenter / SchedulerPresenterがUIロジックを担当する。
+CommandLauncherPresenter / ButtonLauncherPresenter / SchedulerPresenter / MemoPresenterがUIロジックを担当する。
 WinFormsのフォームクラスはイベントハンドラとコントロール操作のみを持ち、判断ロジックはPresenterに委譲する。
 UIロジックをWinFormsから分離してテスト可能にする設計である。
 
 ### ConfigStore継承による永続化
 
-Config、CommandList、ButtonLauncherData（Data）はすべてConfigStoreを継承し、XMLシリアライズで永続化される。
+ConfigStoreを継承するクラスはXMLシリアライズで永続化される。
+対象はConfig・CommandList・ButtonLauncherData・SchedulerData・Data・MemoDataである。
 ConfigStoreは原子的なファイル保存（一時ファイルに書き込み後File.Moveで置換）を提供し、
 保存中のクラッシュによるデータ破損を防止する。
 
@@ -42,7 +43,7 @@ ConfigStoreは原子的なファイル保存（一時ファイルに書き込み
 
 ApplicationHostFormは不可視の常駐フォームで、アプリケーション全体のハブとして機能する。
 WM_APPMSGによるプロセス間通信（/close、/restart等のコマンドライン引数の処理）を受け付ける。
-加えて、子フォーム（CommandLauncherForm、ButtonLauncherForm）のライフサイクルを管理する。
+加えて、子フォーム（CommandLauncherForm、ButtonLauncherForm、MemoForm）のライフサイクルを管理する。
 WinFormsのメッセージループを維持するために常駐フォームが必要であり、
 CommandLauncherFormは表示/非表示を繰り返すため、この役割を分離している。
 また、スケジューラーのタイマー（30秒間隔）を管理し、スケジュール条件に合致したタスクの自動実行も制御する。

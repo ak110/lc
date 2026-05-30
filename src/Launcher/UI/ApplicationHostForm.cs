@@ -18,6 +18,7 @@ public partial class ApplicationHostForm : Form
     HookManager hookManager;
     CommandLauncherForm commandLauncherForm;
     ButtonLauncherForm? buttonLauncherForm;
+    MemoForm? memoForm;
 
     /// <summary>スケジューラータスク実行中フラグ (二重実行防止)</summary>
     bool schedulerRunning;
@@ -47,6 +48,7 @@ public partial class ApplicationHostForm : Form
 
     public CommandList CommandList { get; private set; }
     public ButtonLauncherData ButtonLauncherData { get; private set; }
+    public MemoData MemoData { get; private set; }
 
     /// <summary>
     /// commandLauncherForm が破棄されていなければ <paramref name="action"/> を実行する。
@@ -69,6 +71,8 @@ public partial class ApplicationHostForm : Form
     {
         if (buttonLauncherForm is { IsDisposed: false, Visible: true })
             return buttonLauncherForm;
+        if (memoForm is { IsDisposed: false, Visible: true })
+            return memoForm;
         if (!commandLauncherForm.IsDisposed && commandLauncherForm.Visible)
             return commandLauncherForm;
 
@@ -94,6 +98,7 @@ public partial class ApplicationHostForm : Form
         config = Config.Deserialize();
         CommandList = CommandList.Deserialize(".cmd.cfg");
         ButtonLauncherData = ButtonLauncherData.Deserialize();
+        MemoData = MemoData.Deserialize();
         schedulerData = SchedulerData.Deserialize();
         new ReplaceEnvList(config.ReplaceEnv).Replace(schedulerData);
         try { data = Data.Deserialize(); } catch (IOException) { } catch (InvalidOperationException) { }
@@ -144,6 +149,12 @@ public partial class ApplicationHostForm : Form
         hookManager.Unregister();
         notifyIcon1.Dispose();
 
+        // メモ内容のデバウンス保存が残っていれば最終保存する
+        if (memoForm is { IsDisposed: false })
+        {
+            memoForm.FlushPendingSave();
+        }
+
         data.WindowHandle = 0;
         data.Serialize();
     }
@@ -185,6 +196,10 @@ public partial class ApplicationHostForm : Form
                     else if (m.LParam == Program.WM_APPMSG_SHOWBUTTONLAUNCHER)
                     {
                         buttonLauncherForm?.ShowLauncher();
+                    }
+                    else if (m.LParam == Program.WM_APPMSG_SHOWMEMO)
+                    {
+                        ShowHideMemo();
                     }
                 }
                 // WndProc内の例外ハンドラ: WinFormsのメッセージループの最終防御ラインのため全例外を捕捉する
@@ -243,6 +258,18 @@ public partial class ApplicationHostForm : Form
         {
             showHideInProgress = false;
         }
+    }
+
+    /// <summary>
+    /// メモパッドの表示と非表示を切り替える。未生成なら生成する。
+    /// </summary>
+    public void ShowHideMemo()
+    {
+        if (memoForm is null || memoForm.IsDisposed)
+        {
+            memoForm = new MemoForm(this);
+        }
+        memoForm.ToggleVisible();
     }
 
     /// <summary>
@@ -329,6 +356,11 @@ public partial class ApplicationHostForm : Form
     private void メインウィンドウを表示非表示VToolStripMenuItem_Click(object sender, EventArgs e)
     {
         ShowHide();
+    }
+
+    private void メモパッドDToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        ShowHideMemo();
     }
 
     private void 実行ファイルのあるフォルダを開くMToolStripMenuItem_Click(object sender, EventArgs e)
@@ -586,8 +618,10 @@ public partial class ApplicationHostForm : Form
             5 => ProcessPriorityClass.Idle,
             _ => ProcessPriorityClass.Normal,
         };
-        // ホットキー
-        hookManager.UpdateHotkey(config.HotKey);
+        // ホットキー (ランチャー用・メモパッド用の2組)
+        hookManager.UpdateHotkeys(
+            (config.HotKey, Program.WM_APPMSG_SHOWHIDE),
+            (config.MemoHotKey, Program.WM_APPMSG_SHOWMEMO));
 
         // ボタンランチャーの生成・破棄
         bool enabled = config.ButtonLauncherActivation != Core.ButtonLauncherActivation.Disabled;

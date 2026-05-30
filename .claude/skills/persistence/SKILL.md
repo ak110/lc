@@ -20,6 +20,7 @@ description: >
 | `らんちゃ.cmd.cfg`  | コマンド一覧 (CommandList)                      |
 | `らんちゃ.btns.cfg` | ボタン型ランチャーのデータ (ButtonLauncherData) |
 | `らんちゃ.sch.cfg`  | スケジューラー設定 (SchedulerData)              |
+| `らんちゃ.memo.cfg` | メモパッドのデータ (MemoData)                   |
 | `らんちゃ.dat`      | ランタイムデータ (Data)                         |
 
 ## 設定ファイル分離（cfg/dat）
