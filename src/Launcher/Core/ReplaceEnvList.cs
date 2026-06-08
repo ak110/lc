@@ -5,7 +5,7 @@ namespace Launcher.Core;
 /// <summary>
 /// 環境変数の置換処理。
 /// </summary>
-sealed class ReplaceEnvList
+public sealed class ReplaceEnvList
 {
     // 置換時のスレッドセーフ用ロック。
     // 複数スレッド (CommandLauncherForm.ApplyConfig の背景スレッド、環境変数変更時の Refresh 等)

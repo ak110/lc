@@ -5,18 +5,16 @@ using Xunit;
 namespace Launcher.Tests;
 
 /// <summary>
-/// EnvironmentRefresher のテスト。
-/// Refresh() 自体はレジストリと現プロセス環境を変更するためテスト対象外とする。
-/// Explorer 互換のマージ規則を実装する BuildExpectedEnv (純粋関数) のみを検証する。
+/// Explorer 互換マージ規則を実装する <see cref="EnvironmentVarsMerger"/> のテスト。
 /// </summary>
-public sealed class EnvironmentRefresherTests
+public sealed class EnvironmentVarsMergerTests
 {
     static KeyValuePair<string, string> Kv(string k, string v) => new(k, v);
 
     [Fact]
     public void ユーザー変数がシステム変数を上書きする()
     {
-        var result = EnvironmentRefresher.BuildExpectedEnv(
+        var result = EnvironmentVarsMerger.Merge(
             [Kv("FOO", "a")],
             [Kv("FOO", "b")]);
 
@@ -26,7 +24,7 @@ public sealed class EnvironmentRefresherTests
     [Fact]
     public void PATH連結_システム先頭ユーザー末尾()
     {
-        var result = EnvironmentRefresher.BuildExpectedEnv(
+        var result = EnvironmentVarsMerger.Merge(
             [Kv("Path", @"C:\sys")],
             [Kv("Path", @"C:\user")]);
 
@@ -36,7 +34,7 @@ public sealed class EnvironmentRefresherTests
     [Fact]
     public void PATH連結_システム末尾セミコロンを吸収()
     {
-        var result = EnvironmentRefresher.BuildExpectedEnv(
+        var result = EnvironmentVarsMerger.Merge(
             [Kv("Path", @"C:\sys;")],
             [Kv("Path", @"C:\user")]);
 
@@ -46,7 +44,7 @@ public sealed class EnvironmentRefresherTests
     [Fact]
     public void PATH_ユーザーのみの場合はそのまま()
     {
-        var result = EnvironmentRefresher.BuildExpectedEnv(
+        var result = EnvironmentVarsMerger.Merge(
             [],
             [Kv("Path", @"C:\user")]);
 
@@ -56,7 +54,7 @@ public sealed class EnvironmentRefresherTests
     [Fact]
     public void PATH_システムのみの場合はそのまま()
     {
-        var result = EnvironmentRefresher.BuildExpectedEnv(
+        var result = EnvironmentVarsMerger.Merge(
             [Kv("Path", @"C:\sys")],
             []);
 
@@ -66,7 +64,7 @@ public sealed class EnvironmentRefresherTests
     [Fact]
     public void PATHEXT連結()
     {
-        var result = EnvironmentRefresher.BuildExpectedEnv(
+        var result = EnvironmentVarsMerger.Merge(
             [Kv("PATHEXT", ".COM;.EXE")],
             [Kv("PATHEXT", ".PY")]);
 
@@ -77,7 +75,7 @@ public sealed class EnvironmentRefresherTests
     public void PATH連結は大文字小文字を無視する()
     {
         // システム側は "path"、ユーザー側は "PATH" という想定。
-        var result = EnvironmentRefresher.BuildExpectedEnv(
+        var result = EnvironmentVarsMerger.Merge(
             [Kv("path", @"C:\sys")],
             [Kv("PATH", @"C:\user")]);
 
@@ -90,7 +88,7 @@ public sealed class EnvironmentRefresherTests
     {
         // %SystemRoot% は通常 C:\Windows を指す。
         string systemRoot = Environment.GetEnvironmentVariable("SystemRoot")!;
-        var result = EnvironmentRefresher.BuildExpectedEnv(
+        var result = EnvironmentVarsMerger.Merge(
             [],
             [Kv("MY_TEST_VAR", @"%SystemRoot%\foo")]);
 
@@ -100,7 +98,7 @@ public sealed class EnvironmentRefresherTests
     [Fact]
     public void 非PATH変数はユーザー値で上書きされる()
     {
-        var result = EnvironmentRefresher.BuildExpectedEnv(
+        var result = EnvironmentVarsMerger.Merge(
             [Kv("JAVA_HOME", @"C:\java-system")],
             [Kv("JAVA_HOME", @"C:\java-user")]);
 

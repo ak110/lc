@@ -5,14 +5,16 @@ using Xunit;
 namespace Launcher.Tests;
 
 /// <summary>
-/// スケジューラーロジックのテスト
+/// スケジューラーのオーケストレーション層 (<see cref="SchedulerPresenter"/>) のテスト。
+/// 日付条件判定の単体は <see cref="SchedulerScheduleEvaluatorTests"/>、
+/// 単一タスク実行は <see cref="SchedulerTaskExecutorTests"/> を参照。
 /// </summary>
 public sealed class SchedulerPresenterTests
 {
     // テスト用日時: 2025年6月16日(月) を基準に使う
     private static readonly DateTime Monday0900 = new(2025, 6, 16, 9, 0, 0);
 
-    #region CheckTimeInRange (SpecificTimes)
+    #region SpecificTimes (IsScheduleActive 経由)
 
     [Fact]
     public void SpecificTimes_last未満now以下の時刻で発火()
@@ -66,7 +68,7 @@ public sealed class SchedulerPresenterTests
 
     #endregion
 
-    #region CheckTimeInRange (Interval)
+    #region Interval (IsScheduleActive 経由)
 
     [Fact]
     public void Interval_範囲内の間隔時刻で発火()
@@ -89,67 +91,6 @@ public sealed class SchedulerPresenterTests
         var now = new DateTime(2025, 6, 16, 14, 0, 0);
 
         SchedulerPresenter.IsScheduleActive(schedule, now, last).Should().BeFalse();
-    }
-
-    #endregion
-
-    #region MatchesDateCondition (Weekday)
-
-    [Fact]
-    public void Weekday_正しい曜日でtrue()
-    {
-        var schedule = MakeWeekdaySchedule([true, false, false, false, false, false, false]); // 月曜のみ
-        var date = new DateOnly(2025, 6, 16); // 月曜
-
-        SchedulerPresenter.MatchesDateCondition(schedule, date).Should().BeTrue();
-    }
-
-    [Fact]
-    public void Weekday_誤った曜日でfalse()
-    {
-        var schedule = MakeWeekdaySchedule([true, false, false, false, false, false, false]); // 月曜のみ
-        var date = new DateOnly(2025, 6, 17); // 火曜
-
-        SchedulerPresenter.MatchesDateCondition(schedule, date).Should().BeFalse();
-    }
-
-    [Fact]
-    public void Weekday_月日範囲外でfalse()
-    {
-        var schedule = MakeWeekdaySchedule([true, true, true, true, true, true, true]);
-        schedule.WeeksStart = new MonthDay(7, 1);
-        schedule.WeeksEnd = new MonthDay(8, 31);
-
-        var date = new DateOnly(2025, 6, 16); // 6月は範囲外
-        SchedulerPresenter.MatchesDateCondition(schedule, date).Should().BeFalse();
-    }
-
-    #endregion
-
-    #region MatchesDateCondition (DateInterval)
-
-    [Fact]
-    public void DateInterval_正しい日数間隔でtrue()
-    {
-        var schedule = MakeDateIntervalSchedule(new MonthDay(1, 1), new MonthDay(12, 31), 3);
-        // 2025/1/1 から3日おき: 1/1, 1/4, 1/7, ...
-        var date = new DateOnly(2025, 1, 4);
-        SchedulerPresenter.MatchesDateCondition(schedule, date).Should().BeTrue();
-    }
-
-    [Fact]
-    public void DateInterval_年をまたぐ場合も正しく動作()
-    {
-        // 元のすけじゅらでバグだった: DayOfYear % (DateInterval + 1) は年境界で破綻する
-        var schedule = MakeDateIntervalSchedule(new MonthDay(12, 30), new MonthDay(1, 5), 2);
-        // 12/30(開始), 1/1(2日後), 1/3(4日後)
-        var dec30 = new DateOnly(2025, 12, 30);
-        var jan1 = new DateOnly(2026, 1, 1);
-        var jan2 = new DateOnly(2026, 1, 2);
-
-        SchedulerPresenter.MatchesDateCondition(schedule, dec30).Should().BeTrue();
-        SchedulerPresenter.MatchesDateCondition(schedule, jan1).Should().BeTrue();
-        SchedulerPresenter.MatchesDateCondition(schedule, jan2).Should().BeFalse();
     }
 
     #endregion
@@ -272,58 +213,6 @@ public sealed class SchedulerPresenterTests
 
     #endregion
 
-    #region ExecuteTask (メッセージ表示)
-
-    [Fact]
-    public void ExecuteTask_BalloonTipタスクでShowBalloonTipActionが呼ばれる()
-    {
-        string? capturedTitle = null;
-        string? capturedMessage = null;
-        var task = new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "テスト通知" };
-        SchedulerPresenter.ExecuteTask(task, (t, m) => { capturedTitle = t; capturedMessage = m; }, null);
-
-        capturedTitle.Should().NotBeNull();
-        capturedMessage.Should().Be("テスト通知");
-    }
-
-    [Fact]
-    public void ExecuteTask_MessageBoxタスクでShowMessageBoxActionが呼ばれる()
-    {
-        string? capturedTitle = null;
-        string? capturedMessage = null;
-        var task = new SchedulerTask { Type = SchedulerTaskType.MessageBox, Message = "テストメッセージ" };
-        SchedulerPresenter.ExecuteTask(task, null, (t, m) => { capturedTitle = t; capturedMessage = m; });
-
-        capturedTitle.Should().NotBeNull();
-        capturedMessage.Should().Be("テストメッセージ");
-    }
-
-    [Fact]
-    public void ExecuteTask_メッセージ内の環境変数が展開される()
-    {
-        string? capturedMessage = null;
-        var task = new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "%USERNAME%" };
-        SchedulerPresenter.ExecuteTask(task, (_, m) => capturedMessage = m, null);
-
-        capturedMessage.Should().NotBe("%USERNAME%");
-        capturedMessage.Should().Be(Environment.GetEnvironmentVariable("USERNAME"));
-    }
-
-    [Fact]
-    public void ExecuteTask_デリゲート未設定でも例外が発生しない()
-    {
-        var balloonTask = new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "テスト" };
-        var messageBoxTask = new SchedulerTask { Type = SchedulerTaskType.MessageBox, Message = "テスト" };
-
-        var act1 = () => SchedulerPresenter.ExecuteTask(balloonTask, null, null);
-        var act2 = () => SchedulerPresenter.ExecuteTask(messageBoxTask, null, null);
-
-        act1.Should().NotThrow();
-        act2.Should().NotThrow();
-    }
-
-    #endregion
-
     // --- ヘルパー ---
 
     /// <summary>指定時刻のスケジュール (全曜日有効) を作成</summary>
@@ -355,36 +244,6 @@ public sealed class SchedulerPresenterTests
             WeeksStart = new MonthDay(1, 1),
             WeeksEnd = new MonthDay(12, 31),
             Weekdays = [true, true, true, true, true, true, true],
-        };
-    }
-
-    /// <summary>曜日指定のスケジュール (時刻は全時間帯) を作成</summary>
-    private static Schedule MakeWeekdaySchedule(bool[] weekdays)
-    {
-        return new Schedule
-        {
-            Enable = true,
-            TimeType = ScheduleTimeType.SpecificTimes,
-            Times = [new HourMinute(0, 0)],
-            DateType = ScheduleDateType.Weekday,
-            WeeksStart = new MonthDay(1, 1),
-            WeeksEnd = new MonthDay(12, 31),
-            Weekdays = weekdays,
-        };
-    }
-
-    /// <summary>日数間隔のスケジュール (時刻は0:00、曜日は全日) を作成</summary>
-    private static Schedule MakeDateIntervalSchedule(MonthDay start, MonthDay end, int interval)
-    {
-        return new Schedule
-        {
-            Enable = true,
-            TimeType = ScheduleTimeType.SpecificTimes,
-            Times = [new HourMinute(0, 0)],
-            DateType = ScheduleDateType.DateInterval,
-            DateIntervalStart = start,
-            DateIntervalEnd = end,
-            DateIntervalDays = interval,
         };
     }
 }

@@ -9,19 +9,12 @@ namespace Launcher.Win32;
 /// 環境ブロックを継承するため)。
 /// </summary>
 /// <remarks>
-/// Explorer 互換のマージ規則: PATH / PATHEXT / LIBPATH / OS2LIBPATH は
-/// システム + ユーザーを ; で連結、それ以外はユーザー変数がシステム変数を上書きする。
-/// REG_EXPAND_SZ は <see cref="Environment.ExpandEnvironmentVariables(string)"/>
-/// で展開するが、これは現プロセス環境ベースのため、レジストリ変数同士の相互参照は
-/// 完全には解決しない (実用上 %SystemRoot% 等プロセス環境にある値への参照が大半)。
+/// マージ規則の詳細は <see cref="EnvironmentVarsMerger"/> を参照。
 /// </remarks>
 public sealed class EnvironmentRefresher
 {
     const string SystemEnvKeyPath = @"System\CurrentControlSet\Control\Session Manager\Environment";
     const string UserEnvKeyPath = @"Environment";
-
-    // Explorer 互換: システム + ユーザーを連結する変数名
-    static readonly string[] PathLikeVars = ["Path", "PATHEXT", "LIBPATH", "OS2LIBPATH"];
 
     // 過去にレジストリから読み込んだ変数名 (削除検出用)。
     // 起動時に外部から注入された変数 (USERNAME 等) を誤って削除しないため、
@@ -78,57 +71,7 @@ public sealed class EnvironmentRefresher
     {
         var systemRaw = ReadKey(Registry.LocalMachine, SystemEnvKeyPath);
         var userRaw = ReadKey(Registry.CurrentUser, UserEnvKeyPath);
-        return BuildExpectedEnv(systemRaw, userRaw);
-    }
-
-    /// <summary>
-    /// システム変数とユーザー変数を Explorer 互換のマージ規則で結合し、
-    /// %VAR% 展開済みの辞書を返す (純粋関数; テスト容易性のため分離)。
-    /// </summary>
-    internal static Dictionary<string, string> BuildExpectedEnv(
-        IReadOnlyList<KeyValuePair<string, string>> systemRaw,
-        IReadOnlyList<KeyValuePair<string, string>> userRaw)
-    {
-        var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var (name, value) in systemRaw)
-        {
-            merged[name] = value;
-        }
-
-        foreach (var (name, value) in userRaw)
-        {
-            if (IsPathLike(name)
-                && merged.TryGetValue(name, out string? sysValue)
-                && !string.IsNullOrEmpty(sysValue))
-            {
-                merged[name] = sysValue.TrimEnd(';') + ";" + value;
-            }
-            else
-            {
-                merged[name] = value;
-            }
-        }
-
-        // REG_EXPAND_SZ の %VAR% を現プロセス環境ベースで展開
-        var expanded = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (name, value) in merged)
-        {
-            expanded[name] = Environment.ExpandEnvironmentVariables(value);
-        }
-        return expanded;
-    }
-
-    static bool IsPathLike(string name)
-    {
-        foreach (string p in PathLikeVars)
-        {
-            if (string.Equals(name, p, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-        return false;
+        return EnvironmentVarsMerger.Merge(systemRaw, userRaw);
     }
 
     static List<KeyValuePair<string, string>> ReadKey(RegistryKey root, string subKey)
@@ -139,7 +82,7 @@ public sealed class EnvironmentRefresher
 
         foreach (string name in key.GetValueNames())
         {
-            // DoNotExpandEnvironmentNames で生値を取得し、展開は BuildExpectedEnv で一括
+            // DoNotExpandEnvironmentNames で生値を取得し、展開は EnvironmentVarsMerger.Merge で一括
             object? raw = key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
             if (raw is string s)
             {
