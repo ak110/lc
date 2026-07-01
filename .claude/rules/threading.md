@@ -24,6 +24,16 @@ Shell API（`ShellExecuteEx`・`SHGetFileInfo`等）はCOMのSTA（Single-Thread
 `Task.Run`（ThreadPool/MTA）からの呼び出しは禁止する。
 新規`Thread`を生成する場合は、生成直後に`SetApartmentState(ApartmentState.STA)`を呼ぶ。
 コマンド実行・ディレクトリ展開・アイコン読込・スケジューラータスク実行はすべて専用STAスレッドで動かす。
+表示範囲が限定される用途に限り「Shell APIのUIスレッド同期呼び出し例外」節でUIスレッド同期呼び出しを許容する。
+
+## Shell APIのUIスレッド同期呼び出し例外
+
+前節「STAスレッド制約」の例外として、次の用途に限りUIスレッド上での同期呼び出しを許容する。
+Shellコンテキストメニュー呼び出し（`ShellContextMenuInvoker`）と、
+フォルダポップアップメニューのアイコン取得（`FolderPopupMenuBuilder`）を対象とする。
+UIスレッドはSTAアパートメントのためShell APIを呼び出せる。
+本例外の適用範囲は単一メニュー1階層分の表示処理に限定し、それ以外は専用STAスレッド経由とする。
+`AsyncIconLoader`が担うグリッド全体のアイコン取得は引き続き専用STAワーカー8本を維持する。
 
 ## アイコンローダーの並行度
 

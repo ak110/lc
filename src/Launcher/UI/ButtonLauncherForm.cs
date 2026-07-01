@@ -25,6 +25,15 @@ public partial class ButtonLauncherForm : Form
     Button? dragSource;              // UI固有のためForm側に残す
     readonly DragDropState dragState = new();
 
+    // 長押し検知用 (フォルダ登録ボタンの長押しでポップアップメニューを表示する)
+    readonly System.Windows.Forms.Timer longPressTimer;
+    Button? longPressCandidate;
+    ButtonEntry? longPressEntry;
+    Point longPressStartPoint;
+    bool longPressFired;
+
+    const int LongPressMilliseconds = 500;
+
     ButtonLauncherData Data => owner.ButtonLauncherData;
 
     public ButtonLauncherForm(ApplicationHostForm owner, ContextMenuStrip mainMenu)
@@ -96,6 +105,10 @@ public partial class ButtonLauncherForm : Form
         tabControl1.DragDrop += TabControl1_DragDrop;
 
         iconLoader.IconLoaded += IconLoader_IconLoaded;
+
+        // 長押し検知タイマー
+        longPressTimer = new System.Windows.Forms.Timer { Interval = LongPressMilliseconds };
+        longPressTimer.Tick += LongPressTimer_Tick;
 
         // ロック状態を復元
         lockButton.Checked = Data.IsLocked;
@@ -386,6 +399,12 @@ public partial class ButtonLauncherForm : Form
 
     private void GridButton_Click(object? sender, EventArgs e)
     {
+        if (longPressFired)
+        {
+            longPressFired = false;
+            return;
+        }
+
         var btn = (Button)sender!;
         var pos = (ButtonPosition)btn.Tag!;
         var tabData = GetCurrentTabData();
@@ -419,6 +438,31 @@ public partial class ButtonLauncherForm : Form
             MessageBox.Show(this, $"実行に失敗しました: {ex.Message}", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    /// <summary>
+    /// 長押し検知タイマーのTick: 発火条件を満たせばフォルダポップアップメニューを表示する
+    /// </summary>
+    private void LongPressTimer_Tick(object? sender, EventArgs e)
+    {
+        longPressTimer.Stop();
+        if (longPressCandidate is null || longPressEntry is null) return;
+
+        // 左ボタンが押され続けており、カーソルがボタン上にあるときのみ発火
+        if ((MouseButtons & MouseButtons.Left) != MouseButtons.Left) return;
+        if (!longPressCandidate.ClientRectangle.Contains(
+                longPressCandidate.PointToClient(Cursor.Position))) return;
+
+        longPressFired = true;
+        // 進行中のD&D準備を破棄する
+        dragState.Reset();
+        dragSource = null;
+
+        var builder = new FolderPopupMenuBuilder(Handle);
+#pragma warning disable CA2000 // menu は Closed イベントで自己 Dispose する (Builder 側実装)
+        var menu = builder.Build(longPressEntry.FileName);
+#pragma warning restore CA2000
+        menu.Show(longPressCandidate, longPressCandidate.PointToClient(Cursor.Position));
     }
 
     #endregion
@@ -455,13 +499,22 @@ public partial class ButtonLauncherForm : Form
     {
         if (e.Button == MouseButtons.Left && Data.IsLocked)
         {
-            // ロック時のD&D開始準備 (実際のDoDragDropはMouseMoveで閾値超過時に呼ぶ)
             var btn = (Button)sender!;
             var pos = (ButtonPosition)btn.Tag!;
             var tabData = GetCurrentTabData();
             var entry = tabData?.GetButton(pos.Row, pos.Col);
             if (entry is not null && !entry.IsEmpty)
             {
+                // 長押し検知の準備 (フォルダ登録ボタンのみ)
+                if (Directory.Exists(entry.FileName))
+                {
+                    longPressCandidate = btn;
+                    longPressEntry = entry;
+                    longPressStartPoint = e.Location;
+                    longPressFired = false;
+                    longPressTimer.Start();
+                }
+                // ロック時のD&D開始準備 (実際のDoDragDropはMouseMoveで閾値超過時に呼ぶ)
                 dragSource = btn;
                 dragState.Start(entry, tabData!, e.Location);
             }
@@ -556,6 +609,14 @@ public partial class ButtonLauncherForm : Form
 
     private void GridButton_MouseMove(object? sender, MouseEventArgs e)
     {
+        // 移動閾値超過なら長押しをキャンセル (D&Dへ譲る)
+        if (longPressTimer.Enabled &&
+            (Math.Abs(e.Location.X - longPressStartPoint.X) > SystemInformation.DragSize.Width / 2 ||
+             Math.Abs(e.Location.Y - longPressStartPoint.Y) > SystemInformation.DragSize.Height / 2))
+        {
+            longPressTimer.Stop();
+        }
+
         if (dragSource is null || !dragState.IsActive) return;
         if (e.Button != MouseButtons.Left) return;
 
@@ -572,6 +633,8 @@ public partial class ButtonLauncherForm : Form
 
     private void GridButton_MouseUp(object? sender, MouseEventArgs e)
     {
+        if (e.Button == MouseButtons.Left) longPressTimer.Stop();
+
         // ドラッグ閾値未到達でリリースした場合のクリア (通常クリック動作を壊さない)
         if (e.Button == MouseButtons.Left)
         {
@@ -891,6 +954,7 @@ public partial class ButtonLauncherForm : Form
             iconLoader.Dispose();
             buttonContextMenu?.Dispose();
             tabContextMenu?.Dispose();
+            longPressTimer?.Dispose();
             components?.Dispose();
         }
         base.Dispose(disposing);
