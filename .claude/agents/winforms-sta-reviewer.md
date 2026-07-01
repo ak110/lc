@@ -53,7 +53,8 @@ model: sonnet
 
 ### C. アイコンローダー（[.claude/rules/threading.md](../rules/threading.md)）
 
-- ワーカー数が8本固定のままか（`Environment.ProcessorCount`等の動的値に変えていないか）
+- ワーカー数が用途別の固定値か（グリッド全体は8本固定・per-menu用途は4本まで許容し、
+  いずれも`Environment.ProcessorCount`等の動的値に変えていないか）
 - `ButtonLauncherForm.Handle`の作成が`iconLoader.Load`より前か
 - 完了時の再描画が`btn.Parent?.Invalidate(true)`か
 - リトライ上限が2回のままか

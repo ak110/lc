@@ -37,3 +37,12 @@ UI操作は`BeginInvoke`（非同期）でUIスレッドへディスパッチす
 `SHBindToParent`の`ppidlLast`は絶対PIDL内部を指す非所有ポインタである。
 独立解放するとダブルフリーになるため解放しない。
 `ShellNamespaceHelper.BindToParent`はこの規約に従い、`fullPidl`のみ呼び出し側で解放させる。
+
+## ContextMenuStrip の Closed イベントでの Dispose 遅延
+
+`ContextMenuStrip`の`Closed`イベント内で`Dispose`を同期実行すると、
+Closed発火後にWinForms内部の後始末処理（`ToolStripManager`追跡解除など）が続く。
+その処理がDisposed済みインスタンスへアクセスして`ObjectDisposedException`が発生する。
+`Closed`イベント内で`Dispose`する場合は`BeginInvoke`で次のメッセージループへ遅延する。
+遅延の呼び出し先はメニュー自身ではなく、生存中の`Control`（親フォームなど）の`BeginInvoke`を使う。
+メニュー自身の`BeginInvoke`はハンドル未作成状態で失敗する場合がある。

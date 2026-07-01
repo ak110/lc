@@ -454,12 +454,9 @@ public partial class ButtonLauncherForm : Form
                 longPressCandidate.PointToClient(Cursor.Position))) return;
 
         longPressFired = true;
-        // 進行中のD&D準備を破棄する
-        dragState.Reset();
-        dragSource = null;
 
-        var builder = new FolderPopupMenuBuilder(Handle);
-#pragma warning disable CA2000 // menu は Closed イベントで自己 Dispose する (Builder 側実装)
+#pragma warning disable CA2000 // builder と menu は Closed イベントで内部 Dispose される (Builder 側実装)
+        var builder = new FolderPopupMenuBuilder(Handle, this);
         var menu = builder.Build(longPressEntry.FileName);
 #pragma warning restore CA2000
         menu.Show(longPressCandidate, longPressCandidate.PointToClient(Cursor.Position));
@@ -497,26 +494,29 @@ public partial class ButtonLauncherForm : Form
 
     private void GridButton_MouseDown(object? sender, MouseEventArgs e)
     {
-        if (e.Button == MouseButtons.Left && Data.IsLocked)
+        if (e.Button != MouseButtons.Left) return;
+        var btn = (Button)sender!;
+        var pos = (ButtonPosition)btn.Tag!;
+        var tabData = GetCurrentTabData();
+        var entry = tabData?.GetButton(pos.Row, pos.Col);
+        if (entry is null || entry.IsEmpty) return;
+
+        if (Data.IsLocked)
         {
-            var btn = (Button)sender!;
-            var pos = (ButtonPosition)btn.Tag!;
-            var tabData = GetCurrentTabData();
-            var entry = tabData?.GetButton(pos.Row, pos.Col);
-            if (entry is not null && !entry.IsEmpty)
+            // ロック時のD&D開始準備 (実際のDoDragDropはMouseMoveで閾値超過時に呼ぶ)
+            dragSource = btn;
+            dragState.Start(entry, tabData!, e.Location);
+        }
+        else
+        {
+            // ロック解除時の長押し検知の準備 (フォルダ登録ボタンのみ)
+            if (Directory.Exists(entry.FileName))
             {
-                // 長押し検知の準備 (フォルダ登録ボタンのみ)
-                if (Directory.Exists(entry.FileName))
-                {
-                    longPressCandidate = btn;
-                    longPressEntry = entry;
-                    longPressStartPoint = e.Location;
-                    longPressFired = false;
-                    longPressTimer.Start();
-                }
-                // ロック時のD&D開始準備 (実際のDoDragDropはMouseMoveで閾値超過時に呼ぶ)
-                dragSource = btn;
-                dragState.Start(entry, tabData!, e.Location);
+                longPressCandidate = btn;
+                longPressEntry = entry;
+                longPressStartPoint = e.Location;
+                longPressFired = false;
+                longPressTimer.Start();
             }
         }
     }

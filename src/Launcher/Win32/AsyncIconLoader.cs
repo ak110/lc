@@ -35,7 +35,9 @@ public sealed class IconLoadedEventArgs : EventArgs
 /// Clear()はキュードレイン+世代インクリメントのみでスレッドの停止・再作成は行わない。
 ///
 /// Shell API (SHGetFileInfo) は高並行度で不安定になるため、ワーカー数は
-/// ProcessorCount等の動的な値ではなく固定値(デフォルト8本)を使用する。
+/// ProcessorCount等の動的な値ではなく用途別の固定値を使用する。
+/// グリッド全体用は8本固定、フォルダポップアップメニュー用のper-menu生成インスタンスは4本とする。
+/// 詳細は .claude/rules/threading.md「アイコンローダーの並行度」節を参照。
 /// </summary>
 public sealed class AsyncIconLoader : IDisposable
 {
