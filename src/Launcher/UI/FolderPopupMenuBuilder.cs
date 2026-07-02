@@ -13,9 +13,9 @@ public sealed class FolderPopupMenuBuilder : IDisposable
 {
     const string LoadingLabel = "(読み込み中)";
     const string OpenFolderLabel = "(このフォルダを開く)";
-    const int MaxItemsPerLevel = 500;
+    const int MaxItemsPerLevel = 50;
     // グリッド全体用の8本に対しper-menu用途は4本に限定する。
-    // 表示件数上限500件に対して4本で応答性を確保でき、
+    // 表示件数上限50件に対して4本で応答性を確保でき、
     // per-menu生成のたびに8本を立てるとリソース消費が過大になるため。
     // 詳細は .claude/rules/threading.md「アイコンローダーの並行度」節を参照。
     const int IconWorkerCount = 4;
