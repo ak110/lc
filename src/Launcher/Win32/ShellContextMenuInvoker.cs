@@ -20,8 +20,14 @@ public static class ShellContextMenuInvoker
 
     /// <summary>
     /// pathのShellコンテキストメニューをscreenLocationに表示し、選択項目を実行する。
+    /// 呼び出し前に、親のContextMenuStrip等のWinFormsメニューモーダルループを
+    /// 閉じた状態にしておく必要がある。
+    /// 詳細は.claude/rules/win32-interop.md
+    /// 「ContextMenuStrip項目からShellモーダルUIを呼ぶ場合の親メニュークローズ」節を参照。
     /// </summary>
     /// <exception cref="Win32Exception">Shell API呼び出しの失敗</exception>
+    /// <exception cref="COMException">Shell拡張実装の失敗</exception>
+    /// <exception cref="ExternalException">Shell拡張実装の失敗</exception>
     public static void Show(string path, IntPtr ownerHwnd, Point screenLocation)
     {
         ShellNamespaceHelper.BindToParent(path, out var parent, out var childPidl, out var fullPidl);
@@ -38,8 +44,17 @@ public static class ShellContextMenuInvoker
             {
                 throw new Win32Exception(hr, $"GetUIObjectOf failed for {path}");
             }
-            contextMenuObj = Marshal.GetObjectForIUnknown(ppv);
-            Marshal.Release(ppv);
+            // Marshal.GetObjectForIUnknownが例外を送出してもppvのIUnknown参照を解放するため、
+            // try/finallyで囲む。
+            // 詳細は.claude/rules/win32-interop.md「IUnknown生ポインタとRCWの同時保持」節を参照。
+            try
+            {
+                contextMenuObj = Marshal.GetObjectForIUnknown(ppv);
+            }
+            finally
+            {
+                Marshal.Release(ppv);
+            }
             var contextMenu = (IContextMenu)contextMenuObj;
 
             hMenu = CreatePopupMenu();

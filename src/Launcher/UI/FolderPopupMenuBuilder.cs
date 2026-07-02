@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using Launcher.Infrastructure;
 using Launcher.Win32;
 
@@ -38,6 +40,7 @@ public sealed class FolderPopupMenuBuilder : IDisposable
     /// </summary>
     public void Dispose()
     {
+        iconLoader.IconLoaded -= IconLoader_IconLoaded;
         iconLoader.Dispose();
     }
 
@@ -48,29 +51,45 @@ public sealed class FolderPopupMenuBuilder : IDisposable
     public ContextMenuStrip Build(string folderPath)
     {
         var menu = new ContextMenuStrip();
-        // Closed 内での同期 Dispose は WinForms 内部の後始末処理と衝突し
-        // ObjectDisposedException を引き起こす。
-        // ownerControl.BeginInvoke で次のメッセージループへ遅延する。
-        // 参照: .claude/rules/win32-interop.md「ContextMenuStrip の Closed イベントでの Dispose 遅延」
-        menu.Closed += (_, _) => ownerControl.BeginInvoke(new MethodInvoker(() =>
+        // Closed 内での同期 Dispose は WinForms 内部の後始末処理と衝突するため
+        // BeginInvoke で次のメッセージループへ遅延する。
+        // ガード発火（ownerControl 破棄）時は同期 menu.Dispose を対象外とし、
+        // ビルダー側の解放のみ onSkipped で保証する（menu と ContextMenuStrip の
+        // ライフサイクルは ownerControl 破棄時に併せて GC 対象化される想定）。
+        // ApplicationHostForm.ApplyConfig 経由でボタンランチャーが無効化される場合も同経路で解放する。
+        // 詳細は .claude/rules/win32-interop.md「ContextMenuStrip の Closed イベントでの Dispose 遅延」節
+        // および .claude/rules/threading.md「UIスレッドBeginInvoke内例外の回送」節を参照。
+        menu.Closed += (_, _) => UiThreadDispatcher.SafeBeginInvoke(ownerControl, () =>
         {
             menu.Dispose();
-            iconLoader.Dispose();
-        }));
-        PopulateItems(menu, menu.Items, folderPath, isRoot: true);
+            Dispose();
+        }, onSkipped: Dispose);
+        PopulateItems(menu, menu.Items, folderPath, isRoot: true, topMenu: menu);
         return menu;
     }
 
 #pragma warning disable CA2000 // ContextMenuStrip が配下 ToolStripItem のライフサイクルを管理
-    void PopulateItems(ToolStrip owner, ToolStripItemCollection items, string folderPath, bool isRoot)
+    void PopulateItems(
+        ToolStrip owner, ToolStripItemCollection items, string folderPath,
+        bool isRoot, ContextMenuStrip topMenu)
     {
         items.Clear();
 
         // サブメニューの先頭にフォルダ自体を開く項目を配置 (ルート以外)
         if (!isRoot)
         {
+            // topMenu.Close は Shell モーダル UI（TrackPopupMenuEx ベース）呼び出し前に
+            // 親 ContextMenuStrip を閉じるためのもの。右クリックでは自動的に閉じないため、
+            // 二重モーダル回避のため明示的に閉じる。左クリックでは自動的に閉じるため
+            // 呼び出しは冪等だが、意図明示のため省略しない。
+            // 詳細は .claude/rules/win32-interop.md
+            // 「ContextMenuStrip項目からShellモーダルUIを呼ぶ場合の親メニュークローズ」節を参照。
             var openItem = new ToolStripMenuItem(OpenFolderLabel);
-            openItem.Click += (_, _) => InvokeShellExecuteDeferred(folderPath);
+            openItem.Click += (_, _) =>
+            {
+                topMenu.Close(ToolStripDropDownCloseReason.ItemClicked);
+                InvokeShellExecuteDeferred(folderPath);
+            };
             items.Add(openItem);
             items.Add(new ToolStripSeparator());
         }
@@ -103,17 +122,24 @@ public sealed class FolderPopupMenuBuilder : IDisposable
                         if (item.DropDownItems.Count == 1 &&
                             item.DropDownItems[0].Text == LoadingLabel)
                         {
-                            PopulateItems(item.DropDown, item.DropDownItems, entry.FullPath, isRoot: false);
+                            PopulateItems(
+                                item.DropDown, item.DropDownItems, entry.FullPath,
+                                isRoot: false, topMenu: topMenu);
                         }
                     };
                 }
                 else
                 {
-                    item.Click += (_, _) => InvokeShellExecuteDeferred(entry.FullPath);
+                    item.Click += (_, _) =>
+                    {
+                        topMenu.Close(ToolStripDropDownCloseReason.ItemClicked);
+                        InvokeShellExecuteDeferred(entry.FullPath);
+                    };
                 }
                 item.MouseUp += (_, e) =>
                 {
                     if (e.Button != MouseButtons.Right) return;
+                    topMenu.Close(ToolStripDropDownCloseReason.ItemClicked);
                     InvokeContextMenuDeferred(entry.FullPath);
                 };
                 items.Add(item);
@@ -136,8 +162,9 @@ public sealed class FolderPopupMenuBuilder : IDisposable
     void IconLoader_IconLoaded(object? sender, IconLoadedEventArgs e)
     {
         if (e.Generation != iconLoader.Generation) { e.Icon?.Dispose(); return; }
-        if (!ownerControl.IsHandleCreated) { e.Icon?.Dispose(); return; }
-        ownerControl.BeginInvoke(new MethodInvoker(() =>
+        // ownerControl のガードは SafeBeginInvoke 内部で行い、
+        // ガード発火時の Icon 解放は onSkipped に委ねる。
+        UiThreadDispatcher.SafeBeginInvoke(ownerControl, () =>
         {
             try
             {
@@ -151,41 +178,43 @@ public sealed class FolderPopupMenuBuilder : IDisposable
             {
                 e.Icon?.Dispose();
             }
-        }));
+        }, onSkipped: () => e.Icon?.Dispose());
     }
 
     void InvokeShellExecuteDeferred(string path)
     {
         // 親メニューが完全に閉じた後に Shell 呼び出しを実行する
-        ownerControl.BeginInvoke(new MethodInvoker(() =>
+        UiThreadDispatcher.SafeBeginInvoke(ownerControl, () =>
         {
             try
             {
                 ProcessLauncher.Start(new ShellProcessStartInfo(path));
             }
-            catch (System.ComponentModel.Win32Exception ex)
+            catch (Win32Exception ex)
             {
                 MessageBox.Show(ownerControl,
                     $"開けませんでした: {ex.Message}", "エラー",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }));
+        });
     }
 
     void InvokeContextMenuDeferred(string path)
     {
-        ownerControl.BeginInvoke(new MethodInvoker(() =>
+        UiThreadDispatcher.SafeBeginInvoke(ownerControl, () =>
         {
             try
             {
                 ShellContextMenuInvoker.Show(path, ownerHwnd, Cursor.Position);
             }
-            catch (System.ComponentModel.Win32Exception ex)
+            // Win32Exception も COMException も ExternalException のサブクラスであるため
+            // ExternalException で両方をカバーできる。
+            catch (ExternalException ex)
             {
                 MessageBox.Show(ownerControl,
                     $"シェルメニューの表示に失敗しました: {ex.Message}", "エラー",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }));
+        });
     }
 }

@@ -74,6 +74,11 @@ public sealed class AsyncIconLoader : IDisposable
     public int Generation => generation;
 
     /// <summary>
+    /// Dispose 済みかどうか。
+    /// </summary>
+    public bool IsDisposed => disposed;
+
+    /// <summary>
     /// ワーカースレッドの優先度 (読み取り専用)。コンストラクタで設定。
     /// </summary>
     public ThreadPriority ThreadPriority { get; }

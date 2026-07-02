@@ -12,7 +12,7 @@ public static class FolderEntryEnumerator
     /// フォルダ配下のフォルダ・ファイルを列挙する。
     /// フォルダ→ファイルの順に並べ、各ブロックはナチュラルソートで揃える。
     /// 隠しファイル・システムファイルは除外する。
-    /// folderPath が存在しない、またはアクセス権限がない場合は空の一覧を返す。
+    /// folderPath が存在しない、アクセス権限がない、または I/O エラーが発生する場合は空の一覧を返す。
     /// </summary>
     /// <param name="folderPath">列挙対象のフォルダパス</param>
     /// <returns>フォルダ→ファイルの順に並んだ一覧</returns>

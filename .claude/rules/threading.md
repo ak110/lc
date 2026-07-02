@@ -36,6 +36,23 @@ UIスレッドはSTAアパートメントのためShell APIを呼び出せる。
 `AsyncIconLoader`が担うグリッド全体・フォルダポップアップメニューのアイコン取得は
 引き続き専用STAワーカー経由で行う。
 
+## UIスレッドBeginInvoke内例外の回送
+
+`Control.BeginInvoke`でUIスレッドへポストした`MethodInvoker`内で発生した例外は、
+`Application.ThreadException`まで届かない場合がある（.NET/OSバージョン依存）。
+ポスト先の`MethodInvoker`内では`catch (Exception)`を必ず設けて
+`ErrorReporter.Instance.OnException(ex)`へ回送する。
+共通処理は`Launcher.Infrastructure.UiThreadDispatcher.SafeBeginInvoke`にまとめ、
+直接`Control.BeginInvoke`を呼び出す新規実装は避ける。
+`SafeBeginInvoke`は`Control.IsHandleCreated`・`Control.IsDisposed`をガードする。
+破棄済み・ハンドル未作成の場合は`action`を実行しない。
+`SafeBeginInvoke`は第3引数`onSkipped`（`Action?`型、既定値null）を受け取る。
+`onSkipped`が指定されている場合、ガード発火時に同期呼び出しする。
+リソース解放を伴う`action`を渡す場合はガード時に安全に実行できる解放処理を`onSkipped`へ登録する。
+`ContextMenuStrip.Closed`イベント配下での`menu.Dispose()`のように同期実行が不適切な処理は`onSkipped`から除外する。
+`onSkipped`は`InvalidOperationException`のレース発生時にも呼び出される。
+`onSkipped`未指定時は何もしない。
+
 ## アイコンローダーの並行度
 
 `AsyncIconLoader`のワーカー数は用途別に固定値を指定する。

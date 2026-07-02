@@ -87,7 +87,14 @@ public static class ProcessLauncher
                 System.Diagnostics.ProcessPriorityClass.Idle => IDLE_PRIORITY_CLASS,
                 _ => NORMAL_PRIORITY_CLASS,
             };
-            SetPriorityClass(hProcess, priorityValue);
+            if (!SetPriorityClass(hProcess, priorityValue))
+            {
+                // プロセスは起動済みのため優先度設定失敗を例外扱いにしない。
+                // GetLastError を保存してからログ記録する。
+                var ex = new System.ComponentModel.Win32Exception();
+                System.Diagnostics.Debug.WriteLine(
+                    $"SetPriorityClass failed (hProcess={hProcess}, priority={priority}): {ex.Message}");
+            }
         }
         finally
         {
@@ -133,7 +140,16 @@ public static class ProcessLauncher
 
         if (!ShellExecuteEx(ref shinfo))
         {
-            throw new System.ComponentModel.Win32Exception();
+            // Win32Exception 構築を先に行い直前のエラー情報を保存する。
+            // SEE_MASK_NOCLOSEPROCESS指定時は失敗経路でもhProcessが非ゼロで返る場合があるため、
+            // ハンドルリーク回避のためCloseHandleする。
+            // 詳細は.claude/rules/win32-interop.md「ShellExecuteEx失敗時のhProcess解放」節を参照。
+            var ex = new System.ComponentModel.Win32Exception();
+            if (shinfo.hProcess != IntPtr.Zero)
+            {
+                CloseHandle(shinfo.hProcess);
+            }
+            throw ex;
         }
         return shinfo.hProcess;
     }
@@ -196,9 +212,6 @@ public static class ProcessLauncher
     [DllImport("kernel32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool CloseHandle(IntPtr hObject);
-
-    [DllImport("kernel32.dll")]
-    static extern int GetProcessId(IntPtr Process);
 
     public const uint ABOVE_NORMAL_PRIORITY_CLASS = 0x00008000;
     public const uint BELOW_NORMAL_PRIORITY_CLASS = 0x00004000;

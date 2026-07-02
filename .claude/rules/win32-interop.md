@@ -31,12 +31,42 @@ UI操作は`BeginInvoke`（非同期）でUIスレッドへディスパッチす
 転送しないとサブメニュー展開・オーナードロー項目・アクセラレータキーが機能しない。
 転送は`ShellContextMenuInvoker`が内部で保持する`NativeWindow`派生で行う。
 
+## ContextMenuStrip項目からShellモーダルUIを呼ぶ場合の親メニュークローズ
+
+`ContextMenuStrip`の項目イベント（`Click`・`MouseUp`）内からShellモーダルUIを発火する場合の対処を定める。
+対象のShellモーダルUIは`ShellContextMenuInvoker.Show`など`TrackPopupMenuEx`ベースの呼び出しである。
+項目イベントハンドラでは先に親`ContextMenuStrip`を`Close(ToolStripDropDownCloseReason.ItemClicked)`で閉じる。
+右クリック時は`ContextMenuStrip`が自動的に閉じない。
+閉じずに`TrackPopupMenuEx`を呼ぶと二重のメニューモーダルループが発生する。
+結果としてハング、またはShell拡張のCOM例外による異常終了が発生する。
+Shell呼び出しは親メニューを閉じた後に`UiThreadDispatcher.SafeBeginInvoke`へポストする。
+FIFOで並ぶメッセージキュー上で、親メニューのDispose遅延（`Closed`イベント内でポストされる）が先に処理される。
+続いてShell呼び出しが実行される。
+左クリック時は`ContextMenuStrip`が自動的に閉じるため`Close`呼び出しは冪等となる。
+それでも意図明示のため呼び出しを省略しない。
+
 ## PIDL解放規約
 
 `SHParseDisplayName`は絶対PIDLを新規割り当てる。呼び出し側で`Marshal.FreeCoTaskMem`する。
 `SHBindToParent`の`ppidlLast`は絶対PIDL内部を指す非所有ポインタである。
 独立解放するとダブルフリーになるため解放しない。
 `ShellNamespaceHelper.BindToParent`はこの規約に従い、`fullPidl`のみ呼び出し側で解放させる。
+
+## IUnknown生ポインタとRCWの同時保持
+
+`IShellFolder.GetUIObjectOf`等は`out ppv`で生`IUnknown`ポインタを返す。
+`Marshal.GetObjectForIUnknown(ppv)`でRCWを取得したら、
+対応する`Marshal.Release(ppv)`は`try/finally`の`finally`側で実行する。
+`GetObjectForIUnknown`が例外を送出した場合でも`ppv`が解放される構造にする。
+取得したRCWは呼び出し側の`finally`ブロックで`Marshal.ReleaseComObject`により解放する。
+
+## ShellExecuteEx失敗時のhProcess解放
+
+`SEE_MASK_NOCLOSEPROCESS`を設定した`ShellExecuteEx`は、
+`false`を返す失敗経路でも`hProcess`が非ゼロで返る場合がある。
+失敗判定時は`Win32Exception`を先に構築して`GetLastError`のスナップショットを保存する。
+その後`hProcess != IntPtr.Zero`なら`CloseHandle`する。
+`CloseHandle`は`GetLastError`を上書きし得るため、順序を守る。
 
 ## ContextMenuStrip の Closed イベントでの Dispose 遅延
 

@@ -11,9 +11,10 @@ public static class ShellNamespaceHelper
 {
     /// <summary>
     /// pathから親IShellFolder・子PIDL・絶対PIDLを取り出す。
-    /// 呼び出し側はparentをMarshal.ReleaseComObjectし、
-    /// fullPidlのみMarshal.FreeCoTaskMemで解放する。
-    /// childPidlはfullPidl内部を指す非所有ポインタのため独立解放しない。
+    /// PIDL解放規約は.claude/rules/win32-interop.md「PIDL解放規約」節に従う。
+    /// 呼び出し側は成功時に parent を Marshal.ReleaseComObject で解放する。
+    /// SHParseDisplayNameはE_INVALIDARG・ERROR_FILE_NOT_FOUND等でWin32Exceptionを送出する。
+    /// SHBindToParent失敗時は本メソッド内でfullPidlを解放し、例外を送出する。
     /// </summary>
     /// <exception cref="Win32Exception">SHParseDisplayNameまたはSHBindToParentの失敗</exception>
     public static void BindToParent(
