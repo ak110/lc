@@ -30,6 +30,9 @@ UI操作は`BeginInvoke`（非同期）でUIスレッドへディスパッチす
 対象メッセージは`WM_INITMENUPOPUP`・`WM_MENUCHAR`・`WM_DRAWITEM`・`WM_MEASUREITEM`とする。
 転送しないとサブメニュー展開・オーナードロー項目・アクセラレータキーが機能しない。
 転送は`ShellContextMenuInvoker`が内部で保持する`NativeWindow`派生で行う。
+当該`NativeWindow`派生（`MenuMessageForwarder`）は`AssignHandle(ownerHwnd)`で`ownerHwnd`をサブクラス化する。
+同一`ownerHwnd`に対する多重生成（メニュー表示中の再帰的なShellモーダルUI呼び出し等）は禁止する。
+生存区間が重なると`AssignHandle`が保存する旧WNDPROCのチェーンが破損する。
 
 ## ContextMenuStrip項目からShellモーダルUIを呼ぶ場合の親メニュークローズ
 
@@ -44,6 +47,23 @@ FIFOで並ぶメッセージキュー上で、親メニューのDispose遅延（
 続いてShell呼び出しが実行される。
 左クリック時は`ContextMenuStrip`が自動的に閉じるため`Close`呼び出しは冪等となる。
 それでも意図明示のため呼び出しを省略しない。
+
+本節はハング系の予防策である。
+AccessViolation等のCLR corrupted-state exceptionによる即クラッシュには本節の対策のみでは不十分であり、
+「AccessViolationクラッシュの診断」節の運用と併用する。
+
+## AccessViolationクラッシュの診断
+
+`AccessViolationException`（Windowsイベントログの例外コード0xc0000005）はCLR corrupted-state exceptionに属する。
+`AppDomain.CurrentDomain.UnhandledException`および`Application.ThreadException`のいずれでも捕捉されずプロセスが即終了する。
+`try/catch (Exception)`もすり抜けるため、既存の`ErrorReporter`経由の通知は機能しない。
+診断のため、永続ログAPI`Launcher.Infrastructure.DiagnosticLog`をShell/Win32境界の疑わしい呼び出しへ
+`Trace`のbefore/afterペアで配置し、AV発生ステージを特定できる構造にする。
+ファイル配置は`Application.ExecutablePath`親ディレクトリ配下の`crash-log/`とする。
+書き込みは`FileOptions.WriteThrough`＋`Flush(flushToDisk: true)`で即時ディスク反映する。
+1分あたりの書き込み行数を制限しログ肥大化を防ぐ。
+`Program.cs`の`UnhandledException`ハンドラは捕捉できた例外を`DiagnosticLog.TraceException`で併記する。
+`AccessViolationException`本体は捕捉せずfail-fastでプロセスを終了させる（隠すと診断価値を失う）。
 
 ## PIDL解放規約
 

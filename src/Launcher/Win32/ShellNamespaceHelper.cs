@@ -77,11 +77,16 @@ public interface IShellFolder
     int CreateViewObject(IntPtr hwndOwner, ref Guid riid, out IntPtr ppv);
 
     [PreserveSig]
-    int GetAttributesOf(uint cidl, IntPtr[] apidl, ref uint rgfInOut);
+    int GetAttributesOf(
+        uint cidl,
+        [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 0)] IntPtr[] apidl,
+        ref uint rgfInOut);
 
     [PreserveSig]
     int GetUIObjectOf(
-        IntPtr hwndOwner, uint cidl, IntPtr[] apidl, ref Guid riid,
+        IntPtr hwndOwner, uint cidl,
+        [In, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] IntPtr[] apidl,
+        ref Guid riid,
         IntPtr rgfReserved, out IntPtr ppv);
 
     [PreserveSig]

@@ -78,6 +78,9 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
+        DiagnosticLog.Trace("Startup",
+            $"pid={Environment.ProcessId} version={Application.ProductVersion}");
+
         // UIスレッド以外で発生した未処理例外を捕捉する。
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
@@ -85,6 +88,14 @@ static class Program
                 ? $"未処理の例外が発生しました:\n{ex.Message}\n\n{ex.StackTrace}"
                 : $"未処理の例外が発生しました:\n{e.ExceptionObject}";
             System.Diagnostics.Debug.WriteLine(message);
+            if (e.ExceptionObject is Exception exForLog)
+            {
+                DiagnosticLog.TraceException("UnhandledException", exForLog);
+            }
+            else
+            {
+                DiagnosticLog.Trace("UnhandledException", message);
+            }
             MessageBox.Show(message, "致命的なエラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
         };
 

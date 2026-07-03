@@ -88,6 +88,7 @@ public sealed class FolderPopupMenuBuilder : IDisposable
             openItem.Click += (_, _) =>
             {
                 topMenu.Close(ToolStripDropDownCloseReason.ItemClicked);
+                Application.DoEvents(); // ContextMenuStripの描画更新とClosedイベント処理を進める
                 InvokeShellExecuteDeferred(folderPath);
             };
             items.Add(openItem);
@@ -133,13 +134,17 @@ public sealed class FolderPopupMenuBuilder : IDisposable
                     item.Click += (_, _) =>
                     {
                         topMenu.Close(ToolStripDropDownCloseReason.ItemClicked);
+                        Application.DoEvents(); // ContextMenuStripの描画更新とClosedイベント処理を進める
                         InvokeShellExecuteDeferred(entry.FullPath);
                     };
                 }
                 item.MouseUp += (_, e) =>
                 {
                     if (e.Button != MouseButtons.Right) return;
+                    DiagnosticLog.Trace("Popup.MouseUp",
+                        $"Right on {entry.FullPath}");
                     topMenu.Close(ToolStripDropDownCloseReason.ItemClicked);
+                    Application.DoEvents(); // ContextMenuStripの描画更新とClosedイベント処理を進める
                     InvokeContextMenuDeferred(entry.FullPath);
                 };
                 items.Add(item);
@@ -203,14 +208,18 @@ public sealed class FolderPopupMenuBuilder : IDisposable
     {
         UiThreadDispatcher.SafeBeginInvoke(ownerControl, () =>
         {
+            DiagnosticLog.Trace("Popup.InvokeContextMenu",
+                $"before Show path={path}");
             try
             {
                 ShellContextMenuInvoker.Show(path, ownerHwnd, Cursor.Position);
+                DiagnosticLog.Trace("Popup.InvokeContextMenu", "after Show OK");
             }
             // Win32Exception も COMException も ExternalException のサブクラスであるため
             // ExternalException で両方をカバーできる。
             catch (ExternalException ex)
             {
+                DiagnosticLog.TraceException("Popup.InvokeContextMenu", ex);
                 MessageBox.Show(ownerControl,
                     $"シェルメニューの表示に失敗しました: {ex.Message}", "エラー",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);

@@ -27,7 +27,10 @@ Windows用アプリケーションランチャー（C#/.NET WinForms）。
   STAスレッド制約、スレッドモデル一覧、アイコンローダー並行度。
   C#ソース（`src/**/*.cs`）編集時に自動ロードされる
 - Win32相互運用（`.claude/rules/win32-interop.md`）:
-  フックコールバック制約、モーダルダイアログのTopMost伝播。
+  Win32フックコールバック制約、モーダルダイアログのTopMost伝播、Shell IContextMenuのメッセージ転送。
+  PIDL解放規約、IUnknown生ポインタとRCWの同時保持、ShellExecuteEx失敗時のhProcess解放。
+  ContextMenuStrip項目からのShellモーダルUI呼び出し時の親メニュークローズとDispose遅延、
+  AccessViolationクラッシュの診断。
   C#ソース（`src/**/*.cs`）編集時に自動ロードされる
 - 永続化（`.claude/skills/persistence/`）:
   cfg/dat分離、XMLシリアライザ制約、ReplaceEnvList非対称性。
