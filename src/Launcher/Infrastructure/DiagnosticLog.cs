@@ -22,7 +22,51 @@ public static class DiagnosticLog
     static DiagnosticLog()
     {
         var exeDir = Path.GetDirectoryName(Application.ExecutablePath);
-        InitializeLogDirectory(exeDir is null ? null : Path.Combine(exeDir, "crash-log"));
+        if (exeDir is not null)
+        {
+            MigrateLegacyDirectory(exeDir);
+        }
+        InitializeLogDirectory(exeDir is null ? null : Path.Combine(exeDir, "logs"));
+    }
+
+    /// <summary>
+    /// 旧`crash-log`ディレクトリを`logs`へ一度きり移行する。
+    /// <paramref name="exeDir"/>配下の`crash-log`が無ければ移行対象がないため何もしない。
+    /// `logs`が未作成の場合は`Directory.Move`で丸ごと改名する。
+    /// `logs`が既にある場合は`crash-log`内の`.log`ファイルを個別に`logs`へ移動する。
+    /// 移動先で同名ファイルが既存の場合はそのファイルの移動を飛ばす。
+    /// 移動後に`crash-log`が空になれば当該ディレクトリを削除する。
+    /// 例外が発生した場合は例外を捕捉し移行処理を中断する（診断機構が本体クラッシュ原因にならない方針）。
+    /// テスト経路から呼び出せるようpublicで公開する。
+    /// </summary>
+    public static void MigrateLegacyDirectory(string exeDir)
+    {
+        try
+        {
+            var legacy = Path.Combine(exeDir, "crash-log");
+            var target = Path.Combine(exeDir, "logs");
+            if (!Directory.Exists(legacy)) return;
+            if (!Directory.Exists(target))
+            {
+                Directory.Move(legacy, target);
+                return;
+            }
+            foreach (var file in Directory.GetFiles(legacy, "*.log"))
+            {
+                var dest = Path.Combine(target, Path.GetFileName(file));
+                if (File.Exists(dest)) continue;
+                File.Move(file, dest);
+            }
+            if (!Directory.EnumerateFileSystemEntries(legacy).Any())
+            {
+                Directory.Delete(legacy);
+            }
+        }
+#pragma warning disable CA1031 // 例外を捕捉し移行処理を中断する（診断機構が本体クラッシュ原因にならない方針）
+        catch (Exception)
+#pragma warning restore CA1031
+        {
+        }
     }
 
     static void InitializeLogDirectory(string? logDir)
@@ -32,10 +76,10 @@ public static class DiagnosticLog
             if (logDir is null) return;
             logDirectory = logDir;
             Directory.CreateDirectory(logDirectory);
-            currentLogPath = Path.Combine(logDirectory, $"crash-{DateTime.Now:yyyyMMdd}.log");
+            currentLogPath = Path.Combine(logDirectory, $"{DateTime.Now:yyyyMMdd}.log");
             CleanupOldLogs();
         }
-#pragma warning disable CA1031 // 初期化失敗時はno-opへフォールバック
+#pragma warning disable CA1031 // 例外を捕捉し初期化を中断してno-op状態へフォールバックする（診断機構が本体クラッシュ原因にならない方針）
         catch (Exception)
 #pragma warning restore CA1031
         {
@@ -113,7 +157,7 @@ public static class DiagnosticLog
                 stream.Flush(flushToDisk: true);
             }
         }
-#pragma warning disable CA1031 // ログ失敗はサイレント（診断機構が本体クラッシュ原因になってはならない）
+#pragma warning disable CA1031 // 例外を捕捉しログ書き込みを中断する（診断機構が本体クラッシュ原因にならない方針）
         catch (Exception)
 #pragma warning restore CA1031
         {
@@ -126,7 +170,7 @@ public static class DiagnosticLog
         try
         {
             var cutoff = DateTime.Now.AddDays(-RetentionDays);
-            foreach (var file in Directory.GetFiles(logDirectory, "crash-*.log"))
+            foreach (var file in Directory.GetFiles(logDirectory, "*.log"))
             {
                 if (File.GetLastWriteTime(file) < cutoff)
                 {

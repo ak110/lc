@@ -17,7 +17,6 @@ public static class ShellContextMenuInvoker
     const uint CMF_NORMAL = 0x00000000;
     const uint CMF_EXPLORE = 0x00000004;
     const uint TPM_RETURNCMD = 0x0100;
-    const uint TPM_RIGHTBUTTON = 0x0002;
 
     // AV発生ステージ特定後にtrueへ切り替えて代替経路を有効化する。
     // static readonlyとしJITのコンパイル時定数畳み込みを避け、CS0162（到達不能コード）を発生させない。
@@ -122,8 +121,12 @@ public static class ShellContextMenuInvoker
             DiagnosticLog.Trace(diagnosticCategory, "before MenuMessageForwarder");
             forwarder = new MenuMessageForwarder(contextMenuObj, ownerHwnd);
             DiagnosticLog.Trace(diagnosticCategory, $"before TrackPopupMenuEx hwnd=0x{ownerHwnd.ToInt64():x}");
+            // TPM_RIGHTBUTTONは付与しない。付与すると呼び出し元の右クリック残留
+            // （WM_RBUTTONUP直後のTrackPopupMenuEx表示）が最初の項目選択として認識され、
+            // ユーザー未操作のまま「開く」などのInvokeCommandが実行される事例がある。
+            // 左ボタンのみでの項目選択に限定する。
             int cmd = TrackPopupMenuEx(
-                hMenu, TPM_RETURNCMD | TPM_RIGHTBUTTON,
+                hMenu, TPM_RETURNCMD,
                 screenLocation.X, screenLocation.Y, ownerHwnd, IntPtr.Zero);
             DiagnosticLog.Trace(diagnosticCategory, $"after TrackPopupMenuEx cmd={cmd}");
             if (cmd <= 0) return;

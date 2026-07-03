@@ -22,7 +22,7 @@ UI操作は`BeginInvoke`（非同期）でUIスレッドへディスパッチす
 `ShowDialogOver`は`Form`派生のみを対象とする。
 `FontDialog`等の`CommonDialog`と`MessageBox`は`Form`派生でないため対象外とし、`ShowDialog(owner)`を直接使う。
 
-## Shell IContextMenuのメッセージ転送
+## Shell IContextMenuの呼び出しとメッセージ転送
 
 `IShellFolder.GetUIObjectOf`で取得した`IContextMenu`を`TrackPopupMenuEx`で表示する。
 表示中は次のメッセージを転送する。
@@ -30,13 +30,20 @@ UI操作は`BeginInvoke`（非同期）でUIスレッドへディスパッチす
 対象メッセージは`WM_INITMENUPOPUP`・`WM_MENUCHAR`・`WM_DRAWITEM`・`WM_MEASUREITEM`とする。
 転送しないとサブメニュー展開・オーナードロー項目・アクセラレータキーが機能しない。
 転送は`ShellContextMenuInvoker`が内部で保持する`NativeWindow`派生で行う。
+
 当該`NativeWindow`派生（`MenuMessageForwarder`）は`AssignHandle(ownerHwnd)`で`ownerHwnd`をサブクラス化する。
 同一`ownerHwnd`に対する多重生成（メニュー表示中の再帰的なShellモーダルUI呼び出し等）は禁止する。
 生存区間が重なると`AssignHandle`が保存する旧WNDPROCのチェーンが破損する。
 
+`TrackPopupMenuEx`のフラグには`TPM_RIGHTBUTTON`を付与しない。
+呼び出し元の右クリック（WM_RBUTTONUP直後の表示）で右ボタン残留が
+最初の項目選択として認識され、ユーザー未操作のまま`InvokeCommand`が実行される。
+`TPM_RETURNCMD`のみを指定し左ボタンでの項目選択に限定する。
+
 ## ContextMenuStrip項目からShellモーダルUIを呼ぶ場合の親メニュークローズ
 
-`ContextMenuStrip`の項目イベント（`Click`・`MouseUp`）内からShellモーダルUIを発火する場合の対処を定める。
+`ContextMenuStrip`の項目の`MouseUp`イベント内からShellモーダルUIを発火する場合の対処を定める。
+項目イベントで用いる`Click`と`MouseUp`の使い分けは「ContextMenuStrip項目のマウスボタン別ハンドラ設計」節に従う。
 対象のShellモーダルUIは`ShellContextMenuInvoker.Show`など`TrackPopupMenuEx`ベースの呼び出しである。
 項目イベントハンドラでは先に親`ContextMenuStrip`を`Close(ToolStripDropDownCloseReason.ItemClicked)`で閉じる。
 右クリック時は`ContextMenuStrip`が自動的に閉じない。
@@ -52,6 +59,31 @@ FIFOで並ぶメッセージキュー上で、親メニューのDispose遅延（
 AccessViolation等のCLR corrupted-state exceptionによる即クラッシュには本節の対策のみでは不十分であり、
 「AccessViolationクラッシュの診断」節の運用と併用する。
 
+## ContextMenuStrip項目のマウスボタン別ハンドラ設計
+
+`ContextMenuStrip`の項目で左クリックと右クリックの動作を分岐する場合、左右分岐は`MouseUp`ハンドラ単独で判定する。
+`MouseUp`ハンドラ内で`e.Button == MouseButtons.Left`と`e.Button == MouseButtons.Right`の分岐に統一する。
+`ToolStripMenuItem`個別の`Click`ハンドラは登録しない。
+.NET 10 WinFormsの`ToolStripMenuItem`はマウス右クリック時にも`Click`イベントが発火する経路
+（`MouseUp`より先に発火する場合もある）を持つ。
+`Click`ハンドラを併用すると右クリック時に左クリック相当の動作が実行され、二重動作を招く。
+`item.Click -= clickHandler`で1回目発火後に解除する形でも初回発火自体は防げないため採用しない。
+キーボードEnter操作で左クリック相当の動作を発火させたい場合は、
+`ContextMenuStrip.KeyDown`イベントで`Keys.Return`または`Keys.Enter`を検知する。
+検知後は選択中の項目（`ToolStripMenuItem.Selected`が真の項目）へ動作を発火する。
+Shellモーダル呼び出し前段で親メニューを閉じる規約は
+「ContextMenuStrip項目からShellモーダルUIを呼ぶ場合の親メニュークローズ」節と併せて適用する。
+
+## ContextMenuStrip項目イベントでのApplication.DoEvents非使用
+
+前節「ContextMenuStrip項目のマウスボタン別ハンドラ設計」で登録する項目イベント内では
+`Application.DoEvents()`を呼び出さない。
+Shell呼び出しと親メニュー`Closed`イベントのFIFO順序は
+「ContextMenuStrip項目からShellモーダルUIを呼ぶ場合の親メニュークローズ」節が定める。
+追加のメッセージポンプ進行は不要である。
+`Application.DoEvents()`は副次的なマウス・キーボードイベントも処理する副作用があり、
+前節の動作分岐と衝突する。
+
 ## AccessViolationクラッシュの診断
 
 `AccessViolationException`（Windowsイベントログの例外コード0xc0000005）はCLR corrupted-state exceptionに属する。
@@ -59,7 +91,7 @@ AccessViolation等のCLR corrupted-state exceptionによる即クラッシュに
 `try/catch (Exception)`もすり抜けるため、既存の`ErrorReporter`経由の通知は機能しない。
 診断のため、永続ログAPI`Launcher.Infrastructure.DiagnosticLog`をShell/Win32境界の疑わしい呼び出しへ
 `Trace`のbefore/afterペアで配置し、AV発生ステージを特定できる構造にする。
-ファイル配置は`Application.ExecutablePath`親ディレクトリ配下の`crash-log/`とする。
+ファイル配置は`Application.ExecutablePath`親ディレクトリ配下の`logs/`とする。
 書き込みは`FileOptions.WriteThrough`＋`Flush(flushToDisk: true)`で即時ディスク反映する。
 1分あたりの書き込み行数を制限しログ肥大化を防ぐ。
 `Program.cs`の`UnhandledException`ハンドラは捕捉できた例外を`DiagnosticLog.TraceException`で併記する。
@@ -88,7 +120,7 @@ AccessViolation等のCLR corrupted-state exceptionによる即クラッシュに
 その後`hProcess != IntPtr.Zero`なら`CloseHandle`する。
 `CloseHandle`は`GetLastError`を上書きし得るため、順序を守る。
 
-## ContextMenuStrip の Closed イベントでの Dispose 遅延
+## ContextMenuStripのClosedイベントでのDispose遅延
 
 `ContextMenuStrip`の`Closed`イベント内で`Dispose`を同期実行すると、
 Closed発火後にWinForms内部の後始末処理（`ToolStripManager`追跡解除など）が続く。
