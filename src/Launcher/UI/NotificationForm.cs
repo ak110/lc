@@ -1,4 +1,5 @@
 using System.Media;
+using Launcher.Infrastructure;
 using Launcher.Win32;
 
 namespace Launcher.UI;
@@ -31,7 +32,7 @@ public partial class NotificationForm : Form
     }
 
     /// <summary>
-    /// 表示時に最前面化と通知音の再生を行う。
+    /// 表示時に最前面化と通知音の再生をする。
     /// スケジューラー発火はユーザーが別の作業をしている最中に起きるため、
     /// バックグラウンドからの確実なアクティブ化が必要になる。
     /// </summary>
@@ -40,5 +41,6 @@ public partial class NotificationForm : Form
         base.OnShown(e);
         WindowHelper.ActivateForce(this);
         SystemSounds.Asterisk.Play();
+        DiagnosticLog.Info("Notification.Show", "");
     }
 }

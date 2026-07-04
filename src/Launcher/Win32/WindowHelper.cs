@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Launcher.Infrastructure;
 
 namespace Launcher.Win32;
 
@@ -313,14 +314,13 @@ public sealed class WindowHelper
         // 他アプリのボタンが押しっぱなしになるため。
         ReleaseCapture();
         int time = 0;
-        try
+        if (!SystemParametersInfo(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0))
         {
-            SystemParametersInfo(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0);
-            SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, IntPtr.Zero, 0);
+            LogSystemParametersInfoFailure("GET");
         }
-        catch (System.ComponentModel.Win32Exception e)
+        if (!SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, IntPtr.Zero, 0))
         {
-            System.Diagnostics.Debug.WriteLine(e.ToString());
+            LogSystemParametersInfoFailure("SET");
         }
 
         Application.DoEvents();
@@ -337,15 +337,19 @@ public sealed class WindowHelper
 
         if (time != 0)
         {
-            try
+            if (!SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0))
             {
-                SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0);
-            }
-            catch (System.ComponentModel.Win32Exception e)
-            {
-                System.Diagnostics.Debug.WriteLine(e.ToString());
+                LogSystemParametersInfoFailure("SET");
             }
         }
+    }
+
+    static void LogSystemParametersInfoFailure(string operation)
+    {
+        var ex = new System.ComponentModel.Win32Exception();
+        DiagnosticLog.Warn(
+            "Window.SetForegroundLockTimeout",
+            $"SystemParametersInfo({operation}) failed: {ex.GetType().Name}: {ex.Message}");
     }
 
     /// <summary>
@@ -376,11 +380,11 @@ public sealed class WindowHelper
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool ReleaseCapture();
 
-    [DllImport("user32.dll")]
+    [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool SystemParametersInfo(int uiAction, int uiParam, IntPtr pvParam, int fWinIni);
 
-    [DllImport("user32.dll")]
+    [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool SystemParametersInfo(int uiAction, int uiParam, ref int pvParam, int fWinIni);
 

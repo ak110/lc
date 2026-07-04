@@ -68,7 +68,7 @@ public sealed class FaviconCache
         catch (Exception e)
 #pragma warning restore CA1031
         {
-            System.Diagnostics.Debug.WriteLine($"ファビコン取得エラー ({url}): {e}");
+            DiagnosticLog.Warn("Favicon", $"取得失敗 ({url}): {e.GetType().Name}: {e.Message}");
             return null;
         }
     }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Launcher.Infrastructure;
 using Launcher.Win32;
 
@@ -12,7 +11,7 @@ namespace Launcher.Core;
 public static class SchedulerTaskExecutor
 {
     /// <summary>
-    /// 単一タスクを実行する。タスク種類に応じてファイル実行またはメッセージ表示を行う。
+    /// 単一タスクを実行する。タスク種類に応じてファイル実行またはメッセージを表示する。
     /// </summary>
     public static void Execute(
         SchedulerTask task,
@@ -49,7 +48,7 @@ public static class SchedulerTaskExecutor
 #pragma warning disable CA1031 // パス解析エラーは無視して workDir=null で続行
         catch (Exception ex)
         {
-            Debug.WriteLine($"作業ディレクトリ取得エラー: {ex.Message}");
+            DiagnosticLog.Warn("Scheduler.Task", $"作業ディレクトリ取得失敗: {ex.GetType().Name}: {ex.Message}");
         }
 #pragma warning restore CA1031
 

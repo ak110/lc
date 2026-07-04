@@ -11,6 +11,8 @@ paths:
 コールバック内で`MessageBox.Show`・`Thread.Sleep`・同期I/O・長時間ループは禁止する。
 UI操作は`BeginInvoke`（非同期）でUIスレッドへディスパッチする。
 `Invoke`（同期）はデッドロックの恐れがある。
+コールバック内で例外情報を`DiagnosticLog`へ記録する場合は`Task.Run`で非同期化し、
+コールバック本体は即時returnする（`DiagnosticLog`の書き込みは同期I/Oのため）。
 ホットキー／マウストリガー検知時のUP抑制フラグ
 （`suppressNextLButtonUp`・`suppressNextRButtonUp`・`suppressKeyUpVK`）の更新を漏らさない。
 
@@ -89,12 +91,11 @@ Shell呼び出しと親メニュー`Closed`イベントのFIFO順序は
 `AccessViolationException`（Windowsイベントログの例外コード0xc0000005）はCLR corrupted-state exceptionに属する。
 `AppDomain.CurrentDomain.UnhandledException`および`Application.ThreadException`のいずれでも捕捉されずプロセスが即終了する。
 `try/catch (Exception)`もすり抜けるため、既存の`ErrorReporter`経由の通知は機能しない。
-診断のため、永続ログAPI`Launcher.Infrastructure.DiagnosticLog`をShell/Win32境界の疑わしい呼び出しへ
-`Trace`のbefore/afterペアで配置し、AV発生ステージを特定できる構造にする。
-ファイル配置は`Application.ExecutablePath`親ディレクトリ配下の`logs/`とする。
-書き込みは`FileOptions.WriteThrough`＋`Flush(flushToDisk: true)`で即時ディスク反映する。
-1分あたりの書き込み行数を制限しログ肥大化を防ぐ。
-`Program.cs`の`UnhandledException`ハンドラは捕捉できた例外を`DiagnosticLog.TraceException`で併記する。
+AV再発時の診断のため、永続ログAPI`Launcher.Infrastructure.DiagnosticLog`の`Debug`を用いる。
+Shell/Win32境界の疑わしい呼び出しへ`before/after`ペアで一時的に配置しAV発生ステージを特定する。
+原因特定・修正が完了した時点で当該ペアは削除する。
+`DiagnosticLog`の実装仕様・レベル使い分け・パス出力禁止などは`.claude/rules/logging.md`に従う。
+`Program.cs`の`UnhandledException`ハンドラは捕捉できた例外を`DiagnosticLog.Error`で併記する。
 `AccessViolationException`本体は捕捉せずfail-fastでプロセスを終了させる（隠すと診断価値を失う）。
 
 ## PIDL解放規約

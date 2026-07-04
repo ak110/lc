@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using Launcher.Infrastructure;
 
 namespace Launcher.Win32;
 
@@ -46,18 +45,14 @@ public static class ShellContextMenuInvoker
             ShellItemContextMenuInvoker.Show(path, ownerHwnd, screenLocation);
             return;
         }
-        DiagnosticLog.Trace("Shell.Show", $"before BindToParent path={path}");
         ShellNamespaceHelper.BindToParent(path, out var parent, out var childPidl, out var fullPidl);
-        DiagnosticLog.Trace("Shell.Show", "after BindToParent");
         object? contextMenuObj = null;
         try
         {
             var apidl = new[] { childPidl };
             var iidContextMenu = typeof(IContextMenu).GUID;
-            DiagnosticLog.Trace("Shell.Show", "before GetUIObjectOf");
             int hr = parent.GetUIObjectOf(
                 ownerHwnd, 1, apidl, ref iidContextMenu, IntPtr.Zero, out IntPtr ppv);
-            DiagnosticLog.Trace("Shell.Show", $"after GetUIObjectOf hr=0x{hr:x8}");
             if (hr != 0 || ppv == IntPtr.Zero)
             {
                 throw new Win32Exception(hr, $"GetUIObjectOf failed for {path}");
@@ -67,15 +62,13 @@ public static class ShellContextMenuInvoker
             // 詳細は.claude/rules/win32-interop.md「IUnknown生ポインタとRCWの同時保持」節を参照。
             try
             {
-                DiagnosticLog.Trace("Shell.Show", "before GetObjectForIUnknown");
                 contextMenuObj = Marshal.GetObjectForIUnknown(ppv);
-                DiagnosticLog.Trace("Shell.Show", "after GetObjectForIUnknown");
             }
             finally
             {
                 Marshal.Release(ppv);
             }
-            ShowContextMenu(contextMenuObj, ownerHwnd, screenLocation, "Shell.Show");
+            ShowContextMenu(contextMenuObj, ownerHwnd, screenLocation);
         }
         finally
         {
@@ -94,33 +87,26 @@ public static class ShellContextMenuInvoker
     /// 呼び出し元はcontextMenuObjの解放（<see cref="Marshal.ReleaseComObject(object)"/>）を
     /// 自身のfinallyブロックで行う。
     /// </summary>
-    /// <param name="diagnosticCategory">診断ログのカテゴリー識別子（"Shell.Show"または"ShellItem.Show"）</param>
     internal static void ShowContextMenu(
-        object contextMenuObj, IntPtr ownerHwnd, Point screenLocation, string diagnosticCategory)
+        object contextMenuObj, IntPtr ownerHwnd, Point screenLocation)
     {
         var contextMenu = (IContextMenu)contextMenuObj;
         IntPtr hMenu = IntPtr.Zero;
         MenuMessageForwarder? forwarder = null;
         try
         {
-            DiagnosticLog.Trace(diagnosticCategory, "before CreatePopupMenu");
             hMenu = CreatePopupMenu();
-            DiagnosticLog.Trace(diagnosticCategory, $"after CreatePopupMenu hMenu=0x{hMenu.ToInt64():x}");
             if (hMenu == IntPtr.Zero)
             {
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "CreatePopupMenu failed");
             }
-            DiagnosticLog.Trace(diagnosticCategory, "before QueryContextMenu");
             int hr = contextMenu.QueryContextMenu(hMenu, 0, CMD_FIRST, uint.MaxValue, CMF_NORMAL | CMF_EXPLORE);
-            DiagnosticLog.Trace(diagnosticCategory, $"after QueryContextMenu hr=0x{hr:x8}");
             if (hr < 0)
             {
                 throw new Win32Exception(hr, "QueryContextMenu failed");
             }
 
-            DiagnosticLog.Trace(diagnosticCategory, "before MenuMessageForwarder");
             forwarder = new MenuMessageForwarder(contextMenuObj, ownerHwnd);
-            DiagnosticLog.Trace(diagnosticCategory, $"before TrackPopupMenuEx hwnd=0x{ownerHwnd.ToInt64():x}");
             // TPM_RIGHTBUTTONは付与しない。付与すると呼び出し元の右クリック残留
             // （WM_RBUTTONUP直後のTrackPopupMenuEx表示）が最初の項目選択として認識され、
             // ユーザー未操作のまま「開く」などのInvokeCommandが実行される事例がある。
@@ -128,7 +114,6 @@ public static class ShellContextMenuInvoker
             int cmd = TrackPopupMenuEx(
                 hMenu, TPM_RETURNCMD,
                 screenLocation.X, screenLocation.Y, ownerHwnd, IntPtr.Zero);
-            DiagnosticLog.Trace(diagnosticCategory, $"after TrackPopupMenuEx cmd={cmd}");
             if (cmd <= 0) return;
 
             var invokeInfo = new CMINVOKECOMMANDINFO
@@ -143,9 +128,7 @@ public static class ShellContextMenuInvoker
                 dwHotKey = 0,
                 hIcon = IntPtr.Zero,
             };
-            DiagnosticLog.Trace(diagnosticCategory, "before InvokeCommand");
             hr = contextMenu.InvokeCommand(ref invokeInfo);
-            DiagnosticLog.Trace(diagnosticCategory, $"after InvokeCommand hr=0x{hr:x8}");
             if (hr != 0)
             {
                 throw new Win32Exception(hr, "InvokeCommand failed");

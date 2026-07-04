@@ -29,7 +29,8 @@ Windows用アプリケーションランチャー（C#/.NET WinForms）。
 - Win32相互運用（`.claude/rules/win32-interop.md`）:
   Win32フックコールバック制約、モーダルダイアログのTopMost伝播、Shell IContextMenuのメッセージ転送。
   PIDL解放規約、IUnknown生ポインタとRCWの同時保持、ShellExecuteEx失敗時のhProcess解放。
-  ContextMenuStrip項目からのShellモーダルUI呼び出し時の親メニュークローズとDispose遅延、
+  ContextMenuStrip項目のマウスボタン別ハンドラ設計、Application.DoEvents非使用。
+  Shellモーダル呼び出し時の親メニュークローズ、ClosedイベントでのDispose遅延。
   AccessViolationクラッシュの診断。
   C#ソース（`src/**/*.cs`）編集時に自動ロードされる
 - 永続化（`.claude/skills/persistence/`）:
@@ -38,6 +39,9 @@ Windows用アプリケーションランチャー（C#/.NET WinForms）。
 - 通知ダイアログ（`.claude/skills/notification-dialog/`）:
   非同期通知の追跡パターン、owner選定、フォーカス復元。
   通知UI・ダイアログ実装を扱うときに呼び出す
+- ログ運用（`.claude/rules/logging.md`）:
+  `DiagnosticLog`のレベル別API使い分け、パス・個人情報の出力禁止、カテゴリー命名規約。
+  C#ソース（`src/**/*.cs`）編集時に自動ロードされる
 
 ## サブエージェント・スキル連携
 

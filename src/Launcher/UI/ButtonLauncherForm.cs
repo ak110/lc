@@ -1,4 +1,5 @@
 using Launcher.Core;
+using Launcher.Infrastructure;
 using Launcher.Win32;
 
 namespace Launcher.UI;
@@ -340,13 +341,13 @@ public partial class ButtonLauncherForm : Form
         }
         catch (InvalidOperationException ex)
         {
-            System.Diagnostics.Debug.WriteLine($"ShowLauncher失敗: {ex}");
+            DiagnosticLog.Error("Button.ShowLauncher", ex);
             MessageBox.Show($"ボタンランチャーの表示に失敗しました:\n{ex.Message}", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"ShowLauncher失敗: {ex}");
+            DiagnosticLog.Error("Button.ShowLauncher", ex);
             MessageBox.Show($"ボタンランチャーの表示に失敗しました:\n{ex.Message}", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
@@ -418,6 +419,7 @@ public partial class ButtonLauncherForm : Form
         {
             // ShellExecuteExのhwndに自身のハンドルを渡し、現在のモニターでアプリを起動させる
             entry.Execute("", owner.Config, Handle);
+            DiagnosticLog.Info("Button.Execute", $"row={pos.Row} col={pos.Col}");
             if (!Data.IsLocked)
             {
                 Hide();
@@ -425,16 +427,19 @@ public partial class ButtonLauncherForm : Form
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
+            DiagnosticLog.Error("Button.Execute", ex);
             MessageBox.Show(this, $"実行に失敗しました: {ex.Message}", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (IOException ex)
         {
+            DiagnosticLog.Error("Button.Execute", ex);
             MessageBox.Show(this, $"実行に失敗しました: {ex.Message}", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (InvalidOperationException ex)
         {
+            DiagnosticLog.Error("Button.Execute", ex);
             MessageBox.Show(this, $"実行に失敗しました: {ex.Message}", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
@@ -459,6 +464,8 @@ public partial class ButtonLauncherForm : Form
         var builder = new FolderPopupMenuBuilder(Handle, this);
         var menu = builder.Build(longPressEntry.FileName);
 #pragma warning restore CA2000
+        var pos = (ButtonPosition)longPressCandidate.Tag!;
+        DiagnosticLog.Info("Button.FolderPopup", $"row={pos.Row} col={pos.Col}");
         menu.Show(longPressCandidate, longPressCandidate.PointToClient(Cursor.Position));
     }
 
@@ -556,6 +563,7 @@ public partial class ButtonLauncherForm : Form
             }
             contextMenuTarget!.Text = entry!.Name ?? "";
             iconLoader.Load(entry.FileName, false, contextMenuTarget);
+            DiagnosticLog.Info("Button.Edit", $"row={pos.Row} col={pos.Col} isNew={isNew}");
             SaveData();
         }
     }
@@ -586,6 +594,7 @@ public partial class ButtonLauncherForm : Form
             tabData.SetButton(pos.Row, pos.Col, newEntry);
             contextMenuTarget.Text = newEntry.Name ?? "";
             iconLoader.Load(newEntry.FileName, false, contextMenuTarget);
+            DiagnosticLog.Info("Button.AssignFromCommand", $"row={pos.Row} col={pos.Col}");
             SaveData();
         }
     }
@@ -600,6 +609,7 @@ public partial class ButtonLauncherForm : Form
         tabData.SetButton(pos.Row, pos.Col, null);
         contextMenuTarget.Text = "";
         contextMenuTarget.Image = null;
+        DiagnosticLog.Info("Button.Delete", $"row={pos.Row} col={pos.Col}");
         SaveData();
     }
 
@@ -747,11 +757,13 @@ public partial class ButtonLauncherForm : Form
 
         var tab = new ButtonTab { Name = name };
         Data.Tabs.Add(tab);
+        int tabIndex = Data.Tabs.Count - 1;
 
         var tabPage = new TabPage(name) { Tag = tab };
         BuildGrid(tabPage, tab);
         tabControl1.TabPages.Add(tabPage);
         tabControl1.SelectedTab = tabPage;
+        DiagnosticLog.Info("Tab.Add", $"index={tabIndex}");
         SaveData();
     }
 
@@ -766,12 +778,16 @@ public partial class ButtonLauncherForm : Form
 
         tabData.Name = name;
         tabPage.Text = name;
+        int tabIndex = tabControl1.SelectedIndex;
+        DiagnosticLog.Info("Tab.Rename", $"index={tabIndex}");
         SaveData();
     }
 
     private void SetDefaultTab()
     {
         ButtonLauncherPresenter.SetDefaultTab(Data, tabControl1.SelectedIndex);
+        int tabIndex = tabControl1.SelectedIndex;
+        DiagnosticLog.Info("Tab.SetDefault", $"index={tabIndex}");
         SaveData();
     }
 
@@ -797,6 +813,7 @@ public partial class ButtonLauncherForm : Form
         // UI更新: TabPageを削除
         tabControl1.TabPages.Remove(tabPage);
 
+        DiagnosticLog.Info("Tab.Delete", $"index={tabIndex}");
         SaveData();
     }
 
@@ -811,6 +828,7 @@ public partial class ButtonLauncherForm : Form
         tabControl1.TabPages.Insert(toIndex, tabPage);
 
         tabControl1.SelectedIndex = toIndex;
+        DiagnosticLog.Info("Tab.Move", $"from={fromIndex} to={toIndex}");
         SaveData();
     }
 

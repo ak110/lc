@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.InteropServices;
-using Launcher.Infrastructure;
 
 namespace Launcher.Win32;
 
@@ -23,10 +22,8 @@ internal static class ShellItemContextMenuInvoker
     /// <exception cref="ExternalException">Shell 拡張実装の失敗</exception>
     public static void Show(string path, IntPtr ownerHwnd, Point screenLocation)
     {
-        DiagnosticLog.Trace("ShellItem.Show", $"before SHCreateItemFromParsingName path={path}");
         var iidShellItem = typeof(IShellItem).GUID;
         int hr = SHCreateItemFromParsingName(path, IntPtr.Zero, ref iidShellItem, out var shellItem);
-        DiagnosticLog.Trace("ShellItem.Show", $"after SHCreateItemFromParsingName hr=0x{hr:x8}");
         if (hr != 0 || shellItem is null)
         {
             throw new Win32Exception(hr, $"SHCreateItemFromParsingName failed for {path}");
@@ -37,9 +34,7 @@ internal static class ShellItemContextMenuInvoker
         {
             var iidContextMenu = typeof(IContextMenu).GUID;
             var bhid = BHID_SFUIObject;
-            DiagnosticLog.Trace("ShellItem.Show", "before BindToHandler");
             hr = shellItem.BindToHandler(IntPtr.Zero, ref bhid, ref iidContextMenu, out IntPtr ppv);
-            DiagnosticLog.Trace("ShellItem.Show", $"after BindToHandler hr=0x{hr:x8}");
             if (hr != 0 || ppv == IntPtr.Zero)
             {
                 throw new Win32Exception(hr, $"BindToHandler failed for {path}");
@@ -52,7 +47,7 @@ internal static class ShellItemContextMenuInvoker
             {
                 Marshal.Release(ppv);
             }
-            ShellContextMenuInvoker.ShowContextMenu(contextMenuObj, ownerHwnd, screenLocation, "ShellItem.Show");
+            ShellContextMenuInvoker.ShowContextMenu(contextMenuObj, ownerHwnd, screenLocation);
         }
         finally
         {

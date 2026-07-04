@@ -8,6 +8,7 @@ namespace Launcher.Tests;
 /// DiagnosticLogの主要挙動テスト。
 /// ResetForTestingで一時ディレクトリへ出力先を差し替えて実際の書き込みを検証する。
 /// </summary>
+[Collection("DiagnosticLog")]
 public sealed class DiagnosticLogTests : IDisposable
 {
     readonly DirectoryInfo tempDir;
@@ -21,7 +22,9 @@ public sealed class DiagnosticLogTests : IDisposable
     public void Dispose()
     {
         DiagnosticLog.ResetForTesting(null);
-        tempDir.Delete(recursive: true);
+        try { tempDir.Delete(recursive: true); }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     [Fact]
@@ -35,26 +38,69 @@ public sealed class DiagnosticLogTests : IDisposable
     }
 
     [Fact]
-    public void Trace_ファイルへ書き込まれる()
+    public void Info_ファイルへ書き込まれる()
     {
         var marker = Guid.NewGuid().ToString("N");
-        DiagnosticLog.Trace("Test", marker);
+        DiagnosticLog.Info("Test", marker);
 
         var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
         content.Should().Contain(marker);
-        content.Should().Contain("[Test]");
+        content.Should().Contain("[INFO] [Test]");
     }
 
     [Fact]
-    public void TraceException_例外情報がログに含まれる()
+    public void Debug_ファイルへ書き込まれる()
     {
         var marker = Guid.NewGuid().ToString("N");
-        var ex = new InvalidOperationException($"marker-{marker}");
-        DiagnosticLog.TraceException("Test", ex);
+        DiagnosticLog.Debug("Test", marker);
 
         var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
+        content.Should().Contain(marker);
+        content.Should().Contain("[DEBUG] [Test]");
+    }
+
+    [Fact]
+    public void Warn_ファイルへ書き込まれる()
+    {
+        var marker = Guid.NewGuid().ToString("N");
+        DiagnosticLog.Warn("Test", marker);
+
+        var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
+        content.Should().Contain(marker);
+        content.Should().Contain("[WARN] [Test]");
+    }
+
+    [Fact]
+    public void Error_メッセージ版がファイルへ書き込まれる()
+    {
+        var marker = Guid.NewGuid().ToString("N");
+        DiagnosticLog.Error("Test", marker);
+
+        var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
+        content.Should().Contain(marker);
+        content.Should().Contain("[ERROR] [Test]");
+    }
+
+    [Fact]
+    public void Error_例外情報がログに含まれる()
+    {
+        var marker = Guid.NewGuid().ToString("N");
+        Exception thrown;
+        try
+        {
+            throw new InvalidOperationException($"marker-{marker}");
+        }
+        catch (InvalidOperationException ex)
+        {
+            thrown = ex;
+        }
+        DiagnosticLog.Error("Test", thrown);
+
+        var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
+        content.Should().Contain("[ERROR] [Test]");
         content.Should().Contain($"marker-{marker}");
         content.Should().Contain("InvalidOperationException");
+        content.Should().Contain(nameof(Error_例外情報がログに含まれる));
     }
 
     [Fact]
@@ -63,8 +109,24 @@ public sealed class DiagnosticLogTests : IDisposable
         DiagnosticLog.ResetForTesting(null);
 
         DiagnosticLog.CurrentLogPath.Should().BeNull();
-        // 利用不能状態でもTrace呼び出し自体は例外を送出しない(no-opフォールバック)
-        DiagnosticLog.Trace("Test", "unreachable");
+        // 利用不能状態でもInfo呼び出し自体は例外を送出しない(no-opフォールバック)
+        DiagnosticLog.Info("Test", "unreachable");
+    }
+
+    [Fact]
+    public void PerMinuteLimit到達時は書き込みがスキップされる()
+    {
+        const int perMinuteLimit = 200;
+        for (var i = 0; i < perMinuteLimit; i++)
+        {
+            DiagnosticLog.Info("Test", "fill");
+        }
+
+        var marker = Guid.NewGuid().ToString("N");
+        DiagnosticLog.Info("Test", marker);
+
+        var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
+        content.Should().NotContain(marker);
     }
 
     [Fact]

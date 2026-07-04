@@ -1,8 +1,8 @@
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using Launcher.Core;
+using Launcher.Infrastructure;
 using Launcher.Win32;
 
 namespace Launcher.UI;
@@ -445,7 +445,7 @@ public partial class MemoForm : Form
         }
         catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
         {
-            Debug.WriteLine($"メモ保存失敗: {ex.Message}");
+            DiagnosticLog.Error("Memo.Save", ex);
         }
     }
 

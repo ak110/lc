@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using Launcher.Infrastructure;
 
 namespace Launcher.Core;
 
@@ -80,12 +80,14 @@ public static class SchedulerPresenter
             if (!task.Enable) continue;
             try
             {
+                DiagnosticLog.Info("Scheduler.Task", "started");
                 SchedulerTaskExecutor.Execute(task, showBalloonTip, showMessageBox);
+                DiagnosticLog.Info("Scheduler.Task", "completed");
             }
 #pragma warning disable CA1031 // スケジューラータスクの例外は無視して次のタスクへ進む
             catch (Exception ex)
             {
-                Debug.WriteLine($"スケジューラータスク実行エラー: {task.FileName} - {ex.Message}");
+                DiagnosticLog.Error("Scheduler.Task", ex);
             }
 #pragma warning restore CA1031
             Thread.Sleep(item.SleepTimeMs);

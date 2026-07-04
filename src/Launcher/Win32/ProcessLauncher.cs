@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Launcher.Core;
+using Launcher.Infrastructure;
 
 namespace Launcher.Win32;
 
@@ -92,8 +93,9 @@ public static class ProcessLauncher
                 // プロセスは起動済みのため優先度設定失敗を例外扱いにしない。
                 // GetLastError を保存してからログ記録する。
                 var ex = new System.ComponentModel.Win32Exception();
-                System.Diagnostics.Debug.WriteLine(
-                    $"SetPriorityClass failed (hProcess={hProcess}, priority={priority}): {ex.Message}");
+                DiagnosticLog.Warn(
+                    "Process.SetPriority",
+                    $"SetPriorityClass failed (priority={priority}): {ex.GetType().Name}: {ex.Message}");
             }
         }
         finally

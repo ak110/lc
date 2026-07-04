@@ -1,6 +1,7 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Launcher.Core;
+using Launcher.Infrastructure;
 using Launcher.Win32;
 
 namespace Launcher.UI;
@@ -159,9 +160,10 @@ sealed class HookManager
 #pragma warning disable CA1031 // フックコールバック内の最終防御ライン
         catch (Exception ex)
         {
-            Debug.WriteLine($"OnKeyHookで例外: {ex}");
-            // フックコールバック内ではMessageBoxを直接表示するとフックがタイムアウトするため、
-            // BeginInvokeで非同期表示
+            // フックコールバック内は同期I/O禁止のため非同期で書き込む。
+            // 詳細は.claude/rules/win32-interop.md「Win32フックコールバック」節を参照。
+            _ = Task.Run(() => DiagnosticLog.Error("Hook.Key", ex));
+            // MessageBoxもBeginInvokeで非同期表示（フックタイムアウト回避）
             beginInvoke(() => MessageBox.Show(
                 $"キーボードフック処理中にエラーが発生しました:\n{ex.Message}\n\n{ex.StackTrace}",
                 "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error));
@@ -226,7 +228,9 @@ sealed class HookManager
 #pragma warning disable CA1031 // フックコールバック内の最終防御ライン
         catch (Exception ex)
         {
-            Debug.WriteLine($"OnMouseHookで例外: {ex}");
+            // フックコールバック内は同期I/O禁止のため非同期で書き込む。
+            // 詳細は.claude/rules/win32-interop.md「Win32フックコールバック」節を参照。
+            _ = Task.Run(() => DiagnosticLog.Error("Hook.Mouse", ex));
             beginInvoke(() => MessageBox.Show(
                 $"マウスフック処理中にエラーが発生しました:\n{ex.Message}\n\n{ex.StackTrace}",
                 "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error));

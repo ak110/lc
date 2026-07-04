@@ -229,18 +229,16 @@ public sealed class FolderPopupMenuBuilder : IDisposable
     {
         UiThreadDispatcher.SafeBeginInvoke(ownerControl, () =>
         {
-            DiagnosticLog.Trace("Popup.InvokeContextMenu",
-                $"before Show path={path}");
+            DiagnosticLog.Info("Popup.InvokeContextMenu", "show");
             try
             {
                 ShellContextMenuInvoker.Show(path, ownerHwnd, Cursor.Position);
-                DiagnosticLog.Trace("Popup.InvokeContextMenu", "after Show OK");
             }
             // Win32Exception も COMException も ExternalException のサブクラスであるため
             // ExternalException で両方をカバーできる。
             catch (ExternalException ex)
             {
-                DiagnosticLog.TraceException("Popup.InvokeContextMenu", ex);
+                DiagnosticLog.Error("Popup.InvokeContextMenu", ex);
                 MessageBox.Show(ownerControl,
                     $"シェルメニューの表示に失敗しました: {ex.Message}", "エラー",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);

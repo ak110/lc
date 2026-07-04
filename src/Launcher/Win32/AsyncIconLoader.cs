@@ -195,7 +195,10 @@ public sealed class AsyncIconLoader : IDisposable
         }
         catch (Exception e) when (e is not OperationCanceledException and not ObjectDisposedException)
         {
-            System.Diagnostics.Debug.WriteLine($"アイコン読み込みエラー ({r.FileName}, retry={r.RetryCount}): {e}");
+            var ext = Path.GetExtension(r.FileName);
+            DiagnosticLog.Warn(
+                "IconLoader.Load",
+                $"アイコン読み込み失敗 (ext={ext} retry={r.RetryCount}): {e.GetType().Name}");
             icon?.Dispose();
 
             // リトライ: 世代がまだ有効で、リトライ回数上限未満なら再キュー
@@ -218,7 +221,7 @@ public sealed class AsyncIconLoader : IDisposable
         catch (Exception e)
 #pragma warning restore CA1031
         {
-            System.Diagnostics.Debug.WriteLine($"IconLoadedイベント通知エラー: {e}");
+            DiagnosticLog.Error("IconLoader.Load", e);
             icon?.Dispose();
         }
     }

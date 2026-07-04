@@ -1,6 +1,6 @@
 using System.ComponentModel;
-using System.Diagnostics;
 using Launcher.Core;
+using Launcher.Infrastructure;
 using Launcher.Win32;
 
 namespace Launcher.UI;
@@ -119,7 +119,7 @@ public partial class CommandLauncherForm : Form
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {
-                Debug.WriteLine($"Config保存失敗 (終了時): {ex.Message}");
+                DiagnosticLog.Error("Config.Save", ex);
             }
         }
     }
@@ -777,6 +777,7 @@ public partial class CommandLauncherForm : Form
     /// </summary>
     private void ExecuteCommand(Command command, string input)
     {
+        DiagnosticLog.Info("Command.Execute", $"name={command.Name}");
 #if DEBUG
         ExecuteThread(new ExecuteParams(command, input, Handle));
 #else
@@ -788,7 +789,8 @@ public partial class CommandLauncherForm : Form
     }
 
     /// <summary>
-    /// ThreadPool上で実行される処理。
+    /// コマンド実行スレッド本体。DEBUGビルドではUIスレッド同期呼び出し、Releaseビルドでは専用STAスレッド上で実行される。
+    /// STA制約は`.claude/rules/threading.md`を参照する。
     /// </summary>
     private void ExecuteThread(object? args)
     {

@@ -1,3 +1,5 @@
+using Launcher.Infrastructure;
+
 namespace Launcher.Updater;
 
 /// <summary>
@@ -43,7 +45,7 @@ public sealed class UpdateForm : Form
 #pragma warning disable CA1031 // 更新処理は様々な例外が発生しうる
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"更新失敗: {ex.Message}");
+            DiagnosticLog.Error("Update", ex);
             MessageBox.Show(this, $"更新に失敗しました: {ex.Message}", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             DialogResult = DialogResult.Cancel;

@@ -6,10 +6,11 @@ namespace Launcher.Infrastructure;
 /// <summary>
 /// 永続診断ログ。AV等CLR corrupted-state exceptionでもプロセス終了前にログを残す用途。
 /// 詳細は.claude/rules/win32-interop.md「AccessViolationクラッシュの診断」節を参照。
+/// レベル別APIの使い分けは.claude/rules/logging.md「出力API」節を参照する。
 /// </summary>
 public static class DiagnosticLog
 {
-    static readonly object writeLock = new();
+    static readonly Lock writeLock = new();
     static string? logDirectory;
     static string? currentLogPath;
     static long linesInLastMinute;
@@ -31,12 +32,8 @@ public static class DiagnosticLog
 
     /// <summary>
     /// 旧`crash-log`ディレクトリを`logs`へ一度きり移行する。
-    /// <paramref name="exeDir"/>配下の`crash-log`が無ければ移行対象がないため何もしない。
-    /// `logs`が未作成の場合は`Directory.Move`で丸ごと改名する。
-    /// `logs`が既にある場合は`crash-log`内の`.log`ファイルを個別に`logs`へ移動する。
-    /// 移動先で同名ファイルが既存の場合はそのファイルの移動を飛ばす。
-    /// 移動後に`crash-log`が空になれば当該ディレクトリを削除する。
-    /// 例外が発生した場合は例外を捕捉し移行処理を中断する（診断機構が本体クラッシュ原因にならない方針）。
+    /// 移動先で同名ファイルが既存の場合はそのファイルの移動を飛ばす（既存ログを保護する方針）。
+    /// 例外が発生した場合は移行処理を中断する（診断機構が本体クラッシュ原因にならない方針）。
     /// テスト経路から呼び出せるようpublicで公開する。
     /// </summary>
     public static void MigrateLegacyDirectory(string exeDir)
@@ -111,32 +108,38 @@ public static class DiagnosticLog
     /// </summary>
     public static string? CurrentLogPath => currentLogPath;
 
-    /// <summary>
-    /// カテゴリー付き1行ログを書き込む。
-    /// </summary>
-    public static void Trace(string category, string message)
-    {
-        WriteLine(category, message);
-        System.Diagnostics.Debugger.Log(0, category, message + Environment.NewLine);
-    }
+    /// <summary>詳細トレース。通常運用では出さない、原因調査用の細粒度ログ。</summary>
+    public static void Debug(string category, string message) => Write("DEBUG", category, message);
 
-    /// <summary>
-    /// 例外情報（型・メッセージ・スタックトレース）をログへ書き込む。
-    /// </summary>
-    public static void TraceException(string category, Exception ex)
+    /// <summary>ユーザー操作・重要な状態遷移。運用時に残す通常ログ。</summary>
+    public static void Info(string category, string message) => Write("INFO", category, message);
+
+    /// <summary>想定外だが継続可能な事象。原因確認候補として残す。</summary>
+    public static void Warn(string category, string message) => Write("WARN", category, message);
+
+    /// <summary>例外・失敗の記録（メッセージ版）。</summary>
+    public static void Error(string category, string message) => Write("ERROR", category, message);
+
+    /// <summary>例外・失敗の記録（例外版）。型・メッセージ・スタックトレースを書き込む。</summary>
+    public static void Error(string category, Exception ex)
     {
         var message = $"{ex.GetType().FullName}: {ex.Message}{Environment.NewLine}{ex.StackTrace}";
-        WriteLine(category, message);
+        Write("ERROR", category, message);
+    }
+
+    static void Write(string level, string category, string message)
+    {
+        WriteLine(level, category, message);
         System.Diagnostics.Debugger.Log(0, category, message + Environment.NewLine);
     }
 
-    static void WriteLine(string category, string message)
+    static void WriteLine(string level, string category, string message)
     {
         if (currentLogPath is null) return;
-        var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [{category}] {message}{Environment.NewLine}";
+        var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [{level}] [{category}] {message}{Environment.NewLine}";
         try
         {
-            // Traceは任意のスレッドから同時多発しうるため、
+            // 任意のスレッドから同時多発しうるため、
             // 1分ウィンドウ内の書き込み数制限もwriteLockの範囲内で判定し競合状態を防ぐ。
             lock (writeLock)
             {

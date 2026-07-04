@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Launcher.Infrastructure;
 
 namespace Launcher.Win32;
 
@@ -169,7 +171,9 @@ public static class Hook
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"キーボードフックで例外: {ex}");
+                // フックコールバック内は同期I/O禁止のため非同期で書き込む。
+                // 詳細は.claude/rules/win32-interop.md「Win32フックコールバック」節を参照。
+                _ = Task.Run(() => DiagnosticLog.Error("Hook.Key", ex));
                 return CallNextHookEx(keyHook, nCode, wParam, ref lParam);
             }
         });
@@ -206,7 +210,9 @@ public static class Hook
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"マウスフックで例外: {ex}");
+                // フックコールバック内は同期I/O禁止のため非同期で書き込む。
+                // 詳細は.claude/rules/win32-interop.md「Win32フックコールバック」節を参照。
+                _ = Task.Run(() => DiagnosticLog.Error("Hook.Mouse", ex));
                 return CallNextHookEx(mouseHook, nCode, wParam, ref lParam);
             }
         });

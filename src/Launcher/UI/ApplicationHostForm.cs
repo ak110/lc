@@ -206,7 +206,7 @@ public partial class ApplicationHostForm : Form
 #pragma warning disable CA1031 // WndProcはメッセージループの最終防御ライン
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"WndProc WM_APPMSG処理で例外: {ex}");
+                    DiagnosticLog.Error("Host.HandleMessage", ex);
                     MessageBox.Show($"メッセージ処理中にエラーが発生しました:\n{ex.Message}\n\n{ex.StackTrace}",
                         "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
@@ -574,7 +574,7 @@ public partial class ApplicationHostForm : Form
                                 || ex is UnauthorizedAccessException)
         {
             // レジストリの読み込みに失敗してもアプリ本体の動作は継続する。
-            Debug.WriteLine($"環境変数リロード失敗: {ex}");
+            DiagnosticLog.Error("Env.Reload", ex);
             return;
         }
         if (!changed) return;
