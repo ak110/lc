@@ -50,7 +50,7 @@ public sealed class AttachThreadInput : IDisposable
     [DllImport("user32.dll")]
     extern static IntPtr GetForegroundWindow();
 
-    [DllImport("user32.dll", EntryPoint = "AttachThreadInput")]
+    [DllImport("user32.dll", EntryPoint = "AttachThreadInput", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     extern static bool AttachThreadInput_(int idAttach, int idAttachTo, [MarshalAs(UnmanagedType.Bool)] bool fAttach);
 

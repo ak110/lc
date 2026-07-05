@@ -156,7 +156,7 @@ public class ConfigStore
             if (!mutex.WaitOne(30000))
             {
                 mutex.Close();
-                throw new TimeoutException($"設定ファイルのロック取得がタイムアウトした: {fileName}");
+                throw new TimeoutException("設定ファイルのロック取得がタイムアウトした");
             }
             return new MutexLock(mutex);
         }

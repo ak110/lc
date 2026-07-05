@@ -55,7 +55,7 @@ public static class ShellContextMenuInvoker
                 ownerHwnd, 1, apidl, ref iidContextMenu, IntPtr.Zero, out IntPtr ppv);
             if (hr != 0 || ppv == IntPtr.Zero)
             {
-                throw new Win32Exception(hr, $"GetUIObjectOf failed for {path}");
+                throw new Win32Exception(hr, "GetUIObjectOf failed");
             }
             // Marshal.GetObjectForIUnknownが例外を送出してもppvのIUnknown参照を解放するため、
             // try/finallyで囲む。

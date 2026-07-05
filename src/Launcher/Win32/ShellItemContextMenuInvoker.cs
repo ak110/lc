@@ -26,7 +26,7 @@ internal static class ShellItemContextMenuInvoker
         int hr = SHCreateItemFromParsingName(path, IntPtr.Zero, ref iidShellItem, out var shellItem);
         if (hr != 0 || shellItem is null)
         {
-            throw new Win32Exception(hr, $"SHCreateItemFromParsingName failed for {path}");
+            throw new Win32Exception(hr, "SHCreateItemFromParsingName failed");
         }
 
         object? contextMenuObj = null;
@@ -37,7 +37,7 @@ internal static class ShellItemContextMenuInvoker
             hr = shellItem.BindToHandler(IntPtr.Zero, ref bhid, ref iidContextMenu, out IntPtr ppv);
             if (hr != 0 || ppv == IntPtr.Zero)
             {
-                throw new Win32Exception(hr, $"BindToHandler failed for {path}");
+                throw new Win32Exception(hr, "BindToHandler failed");
             }
             try
             {

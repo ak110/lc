@@ -23,7 +23,7 @@ public static class ShellNamespaceHelper
         int hr = SHParseDisplayName(path, IntPtr.Zero, out fullPidl, 0, out _);
         if (hr != 0 || fullPidl == IntPtr.Zero)
         {
-            throw new Win32Exception(hr, $"SHParseDisplayName failed for {path}");
+            throw new Win32Exception(hr, "SHParseDisplayName failed");
         }
         var iid = typeof(IShellFolder).GUID;
         hr = SHBindToParent(fullPidl, ref iid, out parent, out childPidl);
@@ -31,7 +31,7 @@ public static class ShellNamespaceHelper
         {
             Marshal.FreeCoTaskMem(fullPidl);
             fullPidl = IntPtr.Zero;
-            throw new Win32Exception(hr, $"SHBindToParent failed for {path}");
+            throw new Win32Exception(hr, "SHBindToParent failed");
         }
     }
 
