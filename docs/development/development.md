@@ -26,7 +26,7 @@ mise install && mise run setup
 | `mise run update` | 依存パッケージの更新                                        |
 | `mise run docs`   | ドキュメントのローカルプレビュー                            |
 
-Linux環境ではドキュメントのlintのみ実行できる（`uvx pyfltr run-for-agent docs/ README.md CLAUDE.md`）。
+Linux環境ではドキュメントのlintのみ実行できる（`uvx pyfltr run docs/ README.md CLAUDE.md`）。
 全チェック（`mise run test`）はWindowsのみで実行する。
 
 ## サプライチェーン攻撃対策

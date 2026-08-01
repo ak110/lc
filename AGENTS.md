@@ -10,8 +10,8 @@ Windows用アプリケーションランチャー（C#/.NET WinForms）。
 `dotnet`・`node`・`pnpm`などはすべてmise経由で実行する（システムにインストールされたものは使わない）。
 開発コマンドの一覧は[docs/development/development.md](docs/development/development.md)を参照する。
 
-- コミット前の検証方法: `uvx pyfltr run-for-agent`
-  - テストコードの単体実行なども極力`pyfltr run-for-agent <path>`を使う（直接呼び出さない）
+- コミット前の検証方法: `mise run test`
+  - テストコードの単体実行なども極力`uvx pyfltr run <path>`を使う（直接呼び出さない）
   - 修正後の再実行時は`--commands=dotnet-build,dotnet-test`等で限定して実行する（最終検証はCIに委ねる前提）
 
 ## アーキテクチャの参照先
