@@ -6,7 +6,7 @@ namespace Launcher.UI;
 /// <summary>
 /// 書式を持たないプレーンテキスト運用のRichTextBox派生。
 /// 右端で折り返し、行番号は持たない。
-/// 貼り付けは書式と画像を捨ててテキストのみ挿入する。
+/// 貼り付けは書式と画像を除去してテキストのみ挿入する。
 /// 取り消し上限を大きく設定し、実用上は無制限に取り消せる。
 /// </summary>
 public sealed class PlainRichTextBox : RichTextBox

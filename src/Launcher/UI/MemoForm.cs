@@ -214,7 +214,7 @@ public partial class MemoForm : Form
     }
 
     /// <summary>
-    /// 閉じたタブの復元メニュー用ラベルを作る。タブ名と本文先頭を併記する。
+    /// 閉じたタブの復元メニュー用ラベルを生成する。タブ名と本文先頭を併記する。
     /// </summary>
     static string BuildRestoreLabel(MemoTab tab)
     {
@@ -259,7 +259,7 @@ public partial class MemoForm : Form
     void CloseCurrentTab()
     {
         // tabControl1.TabPagesとData.TabsはBuildTabs以降つねに同順・同数で対応する。
-        // SelectedIndexはData.Tabsのインデックスとしてそのまま使える。
+        // SelectedIndexはData.Tabsのインデックスとしてそのまま利用できる。
         int index = tabControl1.SelectedIndex;
         if (index < 0) return;
 

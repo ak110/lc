@@ -6,6 +6,7 @@ preset = "latest"
 dotnet = true
 js-runner = "pnpm"
 prettier = true
+colloquial-check = true
 
 extend-exclude = [
     "bin",

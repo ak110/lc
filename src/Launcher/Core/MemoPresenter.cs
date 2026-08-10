@@ -41,7 +41,7 @@ public static class MemoPresenter
     }
 
     /// <summary>
-    /// 閉じたタブをゴミ箱の先頭へ積み、上限を超えた古いタブを捨てる。
+    /// 閉じたタブをゴミ箱の先頭へ積み、上限を超えた古いタブを破棄する。
     /// </summary>
     static void PushClosedTab(MemoData data, MemoTab tab)
     {

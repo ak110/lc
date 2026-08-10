@@ -32,7 +32,7 @@ public static class DiagnosticLog
 
     /// <summary>
     /// 旧`crash-log`ディレクトリを`logs`へ一度きり移行する。
-    /// 移動先で同名ファイルが既存の場合はそのファイルの移動を飛ばす（既存ログを保護する方針）。
+    /// 移動先で同名ファイルが既存の場合はそのファイルの移動をスキップする（既存ログを保護する方針）。
     /// 例外が発生した場合は移行処理を中断する（診断機構が本体クラッシュ原因にならない方針）。
     /// テスト経路から呼び出せるようpublicで公開する。
     /// </summary>
@@ -108,7 +108,7 @@ public static class DiagnosticLog
     /// </summary>
     public static string? CurrentLogPath => currentLogPath;
 
-    /// <summary>詳細トレース。通常運用では出さない、原因調査用の細粒度ログ。</summary>
+    /// <summary>詳細トレース。通常運用では出力しない、原因調査用の細粒度ログ。</summary>
     public static void Debug(string category, string message) => Write("DEBUG", category, message);
 
     /// <summary>ユーザー操作・重要な状態遷移。運用時に残す通常ログ。</summary>

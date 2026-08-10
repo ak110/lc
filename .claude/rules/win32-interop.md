@@ -119,7 +119,7 @@ P/Invoke宣言に対する失敗検知に`new Win32Exception()`（引数なし�
 `[DllImport(..., SetLastError = true)]`を必ず付与する。
 付与しないと`GetLastError`は当該P/Invoke失敗以外の値を返し得る。
 `Win32Exception`を構築するタイミングはP/Invoke戻り値評価の直後とする。
-他のP/Invoke呼び出しを挟まない位置で構築し、`GetLastError`のスナップショットを保存する。
+他のP/Invoke呼び出しを介在させない位置で構築し、`GetLastError`のスナップショットを保存する。
 本節は「ShellExecuteEx失敗時のhProcess解放」節と同一原則を全P/Invoke宣言へ拡張する規範である。
 
 ## ShellExecuteEx失敗時のhProcess解放

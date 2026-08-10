@@ -45,8 +45,8 @@ public sealed class MemoPresenterTests
     [Theory]
     [InlineData(9, 9)]   // 上限未満は全保持
     [InlineData(10, 10)] // 上限ちょうどは全保持
-    [InlineData(11, 10)] // 上限超過は最古が押し出される
-    public void CloseTab_ゴミ箱の上限を超えると最古が押し出される(int closeCount, int expectedTrashCount)
+    [InlineData(11, 10)] // 上限超過時は最古が削除される
+    public void CloseTab_ゴミ箱の上限を超えると最古が削除される(int closeCount, int expectedTrashCount)
     {
         var data = new MemoData(); // ClosedTabsLimit = 10 (既定)
         // closeCount 個閉じられるよう closeCount + 1 個のタブを用意する
