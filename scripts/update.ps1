@@ -23,7 +23,6 @@ function Invoke-NativeCommand {
 # dotnet package updateは更新対象がない場合に終了コード2を返す。
 Invoke-NativeCommand -AllowedExitCodes @(0, 2) -Command { & $Dotnet package update --project Launcher.sln }
 Invoke-NativeCommand -Command { & corepack use pnpm@latest }
-Invoke-NativeCommand -Command { & corepack enable pnpm }
 Invoke-NativeCommand -Command { & corepack pnpm update --latest }
 
 $originalGithubToken = [Environment]::GetEnvironmentVariable('GITHUB_TOKEN', 'Process')

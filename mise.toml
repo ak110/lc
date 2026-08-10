@@ -19,18 +19,15 @@ dotnet = "{{ env.LOCALAPPDATA }}/mise/dotnet-root/dotnet"
 
 [tasks.setup]
 description = "開発環境のセットアップ"
-# `corepack enable pnpm` は Node.js 同梱の corepack に pnpm のシムを配置させ、
-# `package.json` の `packageManager` で固定したバージョンを以降の pnpm 呼び出しで
-# 利用できるようにする。CI/ローカルともに最初の `pnpm install` の前に必要。
+# `corepack pnpm` は `package.json` の `packageManager` で固定した pnpm を直接起動する。
+# PATH 上の古い shim を経由しないため、CI/ローカルともに同じ実体で install できる。
 run = [
-  "corepack enable pnpm",
   "corepack pnpm install",
   "git config --unset core.hooksPath || true",
   "uvx prek install -c .pre-commit-config.yaml",
   "git config --local commit.template .gitmessage",
 ]
 run_windows = [
-  "corepack enable pnpm",
   "corepack pnpm install",
   "git config --unset core.hooksPath & exit /b 0",
   "uvx prek install -c .pre-commit-config.yaml",
@@ -72,7 +69,6 @@ env = { CI = "true" }
 run = [
   "{{ vars.dotnet }} package update --project Launcher.sln || [ $? -eq 2 ]",
   "corepack use pnpm@latest",
-  "corepack enable pnpm",
   "corepack pnpm update --latest",
   "bash -c 'GITHUB_TOKEN=$(gh auth token) pinact run --update --min-age=1'",
 ]

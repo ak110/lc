@@ -4,7 +4,9 @@ exclude-newer = "1 day"
 [tool.pyfltr]
 preset = "latest"
 dotnet = true
-js-runner = "pnpm"
+# Windowsで古いmise shimを拾わず、
+# node_modules/.binの実行ファイルを直接解決する。
+js-runner = "direct"
 prettier = true
 colloquial-check = true
 
