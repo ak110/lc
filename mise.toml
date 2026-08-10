@@ -23,17 +23,15 @@ description = "開発環境のセットアップ"
 # `package.json` の `packageManager` で固定したバージョンを以降の pnpm 呼び出しで
 # 利用できるようにする。CI/ローカルともに最初の `pnpm install` の前に必要。
 run = [
-  "{{ vars.dotnet }} tool restore",
   "corepack enable pnpm",
-  "pnpm install",
+  "corepack pnpm install",
   "git config --unset core.hooksPath || true",
   "uvx prek install -c .pre-commit-config.yaml",
   "git config --local commit.template .gitmessage",
 ]
 run_windows = [
-  "{{ vars.dotnet }} tool restore",
   "corepack enable pnpm",
-  "pnpm install",
+  "corepack pnpm install",
   "git config --unset core.hooksPath & exit /b 0",
   "uvx prek install -c .pre-commit-config.yaml",
   "git config --local commit.template .gitmessage",
@@ -72,13 +70,16 @@ env = { CI = "true" }
 # pnpm 本体を先に更新してから依存を更新することで、新しい pnpm の依存解決規則を
 # 反映した状態でロックファイルを再生成する。
 run = [
-  "{{ vars.dotnet }} tool restore",
-  "{{ vars.dotnet }} outdated -u Launcher.sln",
+  "{{ vars.dotnet }} package update --project Launcher.sln || [ $? -eq 2 ]",
   "corepack use pnpm@latest",
-  "pnpm update --latest",
+  "corepack enable pnpm",
+  "corepack pnpm update --latest",
   "bash -c 'GITHUB_TOKEN=$(gh auth token) pinact run --update --min-age=1'",
+]
+run_windows = [
+  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/update.ps1 {{ vars.dotnet }}",
 ]
 
 [tasks.docs]
 description = "ドキュメントのローカルプレビュー"
-run = "pnpm run docs:dev"
+run = "corepack pnpm run docs:dev"
