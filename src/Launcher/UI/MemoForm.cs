@@ -89,6 +89,16 @@ public partial class MemoForm : Form
         WindowHelper.ActivateForce(this);
     }
 
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == (Keys.Control | Keys.W))
+        {
+            Close();
+            return true;
+        }
+        return base.ProcessCmdKey(ref msg, keyData);
+    }
+
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         // オーナー(ApplicationHostForm)からの閉じる操作以外は非表示にするだけ
