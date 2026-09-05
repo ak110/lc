@@ -229,6 +229,63 @@ public sealed class PlainRichTextBoxTests
             clipboardOperationCount.Should().Be(0);
         });
 
+    [Fact]
+    public void ComputeIndentReplacement_複数行選択の全行を2スペースインデントする()
+    {
+        string text = "aaa\nbbb\nccc";
+        // 1行目末尾から3行目途中までを選択 (改行をまたぐ)
+        string replaced = InvokeComputeIndent(text, selStart: 2, selLength: 7, dedent: false,
+            out int regionStart, out int regionLength, out int newSelLength);
+
+        regionStart.Should().Be(0);
+        regionLength.Should().Be(text.Length);
+        replaced.Should().Be("  aaa\n  bbb\n  ccc");
+        newSelLength.Should().Be(replaced.Length);
+    }
+
+    [Fact]
+    public void ComputeIndentReplacement_空行にはインデントを追加しない()
+    {
+        string text = "aaa\n\nbbb";
+        string replaced = InvokeComputeIndent(text, selStart: 0, selLength: text.Length, dedent: false,
+            out _, out _, out _);
+        replaced.Should().Be("  aaa\n\n  bbb");
+    }
+
+    [Fact]
+    public void ComputeIndentReplacement_Dedentは行頭スペースを最大2つ除去する()
+    {
+        string text = "    aaa\n bbb\nccc";
+        string replaced = InvokeComputeIndent(text, selStart: 0, selLength: text.Length, dedent: true,
+            out _, out _, out _);
+        replaced.Should().Be("  aaa\nbbb\nccc");
+    }
+
+    [Fact]
+    public void ComputeIndentReplacement_選択が次行冒頭で終わる場合は次行を含めない()
+    {
+        string text = "aaa\nbbb\nccc";
+        // "aaa\n"だけを選択 (SelectionStart=0, Length=4)
+        string replaced = InvokeComputeIndent(text, selStart: 0, selLength: 4, dedent: false,
+            out int regionStart, out int regionLength, out _);
+        regionStart.Should().Be(0);
+        regionLength.Should().Be(4);
+        replaced.Should().Be("  aaa\n");
+    }
+
+    static string InvokeComputeIndent(string text, int selStart, int selLength, bool dedent,
+        out int regionStart, out int regionLength, out int newSelLength)
+    {
+        var method = typeof(PlainRichTextBox).GetMethod(
+            "ComputeIndentReplacement", BindingFlags.Static | BindingFlags.NonPublic)!;
+        object?[] args = [text, selStart, selLength, dedent, 0, 0, 0];
+        string result = (string)method.Invoke(null, args)!;
+        regionStart = (int)args[4]!;
+        regionLength = (int)args[5]!;
+        newSelLength = (int)args[6]!;
+        return result;
+    }
+
     static PlainRichTextBox CreateControl(
         Func<bool> containsText,
         Func<string> getText,

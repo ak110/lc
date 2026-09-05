@@ -46,6 +46,8 @@ public partial class MemoForm : Form
         tabContextMenu.Opening += TabContextMenu_Opening;
         tabControl1.ContextMenuStrip = tabContextMenu;
         tabControl1.MouseWheel += TabControl1_MouseWheel;
+        tabControl1.MouseUp += TabControl1_MouseUp;
+        tabControl1.MouseDoubleClick += TabControl1_MouseDoubleClick;
         tabControl1.SelectedIndexChanged += TabControl1_SelectedIndexChanged;
 
         LocationChanged += MemoForm_LocationChanged;
@@ -73,6 +75,18 @@ public partial class MemoForm : Form
         else
         {
             ShowMemo();
+        }
+    }
+
+    /// <summary>
+    /// 表示中なら隠す。ランチャー起動時に呼び出される。
+    /// </summary>
+    public void HideIfVisible()
+    {
+        if (Visible)
+        {
+            FlushPendingSave();
+            Hide();
         }
     }
 
@@ -243,6 +257,16 @@ public partial class MemoForm : Form
         string? name = ShowInputDialog("タブ名を入力してください:", "新しいタブ", $"メモ{Data.Tabs.Count + 1}");
         if (name is null) return;
 
+        AddTabWithName(name);
+    }
+
+    /// <summary>
+    /// デフォルト名で新しいタブを追加する。タブ余白のダブルクリックから呼ばれる。
+    /// </summary>
+    void AddTabWithDefaultName() => AddTabWithName($"メモ{Data.Tabs.Count + 1}");
+
+    void AddTabWithName(string name)
+    {
         var tab = new MemoTab { Name = name };
         Data.Tabs.Add(tab);
         var page = CreateTabPage(tab);
@@ -327,6 +351,38 @@ public partial class MemoForm : Form
         if (loading) return;
         Data.CurrentTabIndex = tabControl1.SelectedIndex;
         ScheduleSave(); // タブ切替はデバウンス保存
+    }
+
+    /// <summary>
+    /// タブ余白のダブルクリックでデフォルト名の新規タブを追加する。
+    /// タブ本体上のダブルクリックは無視する (改名操作と誤爆させない)。
+    /// </summary>
+    void TabControl1_MouseDoubleClick(object? sender, MouseEventArgs e)
+    {
+        if (e.Button != MouseButtons.Left) return;
+        if (HitTestTab(e.Location) >= 0) return;
+        AddTabWithDefaultName();
+    }
+
+    /// <summary>
+    /// タブヘッダのホイールクリックでそのタブを閉じる。
+    /// </summary>
+    void TabControl1_MouseUp(object? sender, MouseEventArgs e)
+    {
+        if (e.Button != MouseButtons.Middle) return;
+        int hit = HitTestTab(e.Location);
+        if (hit < 0) return;
+        tabControl1.SelectedIndex = hit;
+        CloseCurrentTab();
+    }
+
+    int HitTestTab(Point pos)
+    {
+        for (int i = 0; i < tabControl1.TabCount; i++)
+        {
+            if (tabControl1.GetTabRect(i).Contains(pos)) return i;
+        }
+        return -1;
     }
 
     void TabControl1_MouseWheel(object? sender, MouseEventArgs e)

@@ -195,6 +195,7 @@ public partial class ApplicationHostForm : Form
                     }
                     else if (m.LParam == Program.WM_APPMSG_SHOWBUTTONLAUNCHER)
                     {
+                        HideMemoIfVisible();
                         buttonLauncherForm?.ShowLauncher();
                     }
                     else if (m.LParam == Program.WM_APPMSG_SHOWMEMO)
@@ -230,11 +231,13 @@ public partial class ApplicationHostForm : Form
 
             if (commandLauncherForm.IsDisposed)
             {
+                HideMemoIfVisible();
                 commandLauncherForm = new CommandLauncherForm(this, contextMenuStrip1);
                 commandLauncherForm.Show(this);
             }
             else if (!commandLauncherForm.Visible)
             {
+                HideMemoIfVisible();
                 commandLauncherForm.ShowWindow();
             }
             else if (!hasNotifications)
@@ -257,6 +260,17 @@ public partial class ApplicationHostForm : Form
         finally
         {
             showHideInProgress = false;
+        }
+    }
+
+    /// <summary>
+    /// メモパッドが表示中なら閉じる。ランチャー起動と連動して呼ばれる。
+    /// </summary>
+    void HideMemoIfVisible()
+    {
+        if (memoForm is { IsDisposed: false })
+        {
+            memoForm.HideIfVisible();
         }
     }
 
