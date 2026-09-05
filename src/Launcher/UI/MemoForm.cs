@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
 using Launcher.Core;
 using Launcher.Infrastructure;
 using Launcher.Win32;
@@ -16,6 +18,7 @@ public partial class MemoForm : Form
     readonly ApplicationHostForm owner;
     readonly ContextMenuStrip tabContextMenu;
     readonly System.Windows.Forms.Timer saveTimer;
+    FindReplaceDialog? findReplaceDialog;
 
     /// <summary>初期化・タブ再構築・ウィンドウ復元中の保存抑制ガード</summary>
     bool loading;
@@ -53,6 +56,8 @@ public partial class MemoForm : Form
         LocationChanged += MemoForm_LocationChanged;
         SizeChanged += MemoForm_SizeChanged;
 
+        WireMenu();
+
         // オーナー設定 (Show→Hideだと一瞬表示されるのでプロパティで設定)
         Owner = owner;
         _ = Handle;
@@ -64,11 +69,12 @@ public partial class MemoForm : Form
     #region 表示・非表示
 
     /// <summary>
-    /// 表示中なら隠し、非表示なら表示してアクティブ化する。
+    /// 表示中なら隠し、非表示または最小化中なら表示・復元してアクティブ化する。
+    /// 最小化された状態を「非表示相当」として扱い、隠さずに復元する。
     /// </summary>
     public void ToggleVisible()
     {
-        if (Visible)
+        if (Visible && WindowState != FormWindowState.Minimized)
         {
             Hide();
         }
@@ -91,7 +97,8 @@ public partial class MemoForm : Form
     }
 
     /// <summary>
-    /// メモパッドを表示してアクティブ化する。
+    /// メモパッドを表示してアクティブ化し、現在タブの本文へフォーカスを移す。
+    /// 最小化されていた場合は通常状態へ復元する。
     /// </summary>
     public void ShowMemo()
     {
@@ -101,16 +108,24 @@ public partial class MemoForm : Form
         }
         Show();
         WindowHelper.ActivateForce(this);
+        FocusCurrentTextBox();
     }
 
-    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    /// <summary>
+    /// 現在選択中のタブに含まれるテキストボックスへフォーカスを移す。
+    /// タブ自体にフォーカスがあたる問題を回避するために表示直後・タブ切替後に呼ぶ。
+    /// </summary>
+    void FocusCurrentTextBox()
     {
-        if (keyData == (Keys.Control | Keys.W))
-        {
-            Close();
-            return true;
-        }
-        return base.ProcessCmdKey(ref msg, keyData);
+        var textBox = GetCurrentTextBox();
+        textBox?.Focus();
+    }
+
+    PlainRichTextBox? GetCurrentTextBox()
+    {
+        var page = tabControl1.SelectedTab;
+        if (page is null || page.Controls.Count == 0) return null;
+        return page.Controls[0] as PlainRichTextBox;
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
@@ -125,6 +140,335 @@ public partial class MemoForm : Form
         }
         FlushPendingSave();
         base.OnFormClosing(e);
+    }
+
+    #endregion
+
+    #region メニュー
+
+    /// <summary>
+    /// メニュー項目のハンドラを結線する。
+    /// タブ操作系メニューはDropDownOpeningで有効/無効と復元候補を更新する。
+    /// </summary>
+    void WireMenu()
+    {
+        newTabMenuItem.Click += (s, e) => AddTab();
+        renameTabMenuItem.Click += (s, e) => RenameTab();
+        closeTabMenuItem.Click += (s, e) => CloseCurrentTab();
+        closeWindowMenuItem.Click += (s, e) => Close();
+
+        fileMenu.DropDownOpening += (s, e) => UpdateFileMenu();
+
+        undoMenuItem.Click += (s, e) => GetCurrentTextBox()?.Undo();
+        redoMenuItem.Click += (s, e) => GetCurrentTextBox()?.Redo();
+        cutMenuItem.Click += (s, e) => GetCurrentTextBox()?.Cut();
+        copyMenuItem.Click += (s, e) => GetCurrentTextBox()?.Copy();
+        pasteMenuItem.Click += (s, e) => GetCurrentTextBox()?.Paste();
+        selectAllMenuItem.Click += (s, e) => GetCurrentTextBox()?.SelectAll();
+        findMenuItem.Click += (s, e) => OpenFindDialog(replaceMode: false);
+        replaceMenuItem.Click += (s, e) => OpenFindDialog(replaceMode: true);
+        findNextMenuItem.Click += (s, e) => FindNextFromDialogOrOpen(reverse: false);
+        findPrevMenuItem.Click += (s, e) => FindNextFromDialogOrOpen(reverse: true);
+
+        editMenu.DropDownOpening += (s, e) => UpdateEditMenu();
+
+        fontMenuItem.Click += (s, e) => ChangeFont();
+    }
+
+    void UpdateFileMenu()
+    {
+        renameTabMenuItem.Enabled = tabControl1.SelectedTab is not null;
+        closeTabMenuItem.Enabled = tabControl1.TabPages.Count > 1;
+
+        // 閉じたタブを戻す (サブメニューを動的構築)
+        restoreClosedTabMenuItem.DropDownItems.Clear();
+        if (Data.ClosedTabs.Count == 0)
+        {
+            restoreClosedTabMenuItem.Enabled = false;
+        }
+        else
+        {
+            restoreClosedTabMenuItem.Enabled = true;
+            for (int i = 0; i < Data.ClosedTabs.Count; i++)
+            {
+                int index = i;
+                restoreClosedTabMenuItem.DropDownItems.Add(
+                    BuildRestoreLabel(Data.ClosedTabs[i]), null, (s, ev) => RestoreClosedTab(index));
+            }
+        }
+    }
+
+    void UpdateEditMenu()
+    {
+        var textBox = GetCurrentTextBox();
+        bool hasBox = textBox is not null;
+        bool hasSelection = hasBox && textBox!.SelectionLength > 0;
+        undoMenuItem.Enabled = hasBox && textBox!.CanUndo;
+        redoMenuItem.Enabled = hasBox && textBox!.CanRedo;
+        cutMenuItem.Enabled = hasSelection;
+        copyMenuItem.Enabled = hasSelection;
+        pasteMenuItem.Enabled = hasBox && Clipboard.ContainsText();
+        selectAllMenuItem.Enabled = hasBox && textBox!.TextLength > 0;
+        findMenuItem.Enabled = hasBox;
+        replaceMenuItem.Enabled = hasBox;
+        findNextMenuItem.Enabled = hasBox;
+        findPrevMenuItem.Enabled = hasBox;
+    }
+
+    #endregion
+
+    #region 検索・置換
+
+    void OpenFindDialog(bool replaceMode)
+    {
+        // モードが変わる場合は再生成する
+        if (findReplaceDialog is not null && (findReplaceDialog.IsDisposed || IsReplaceMode(findReplaceDialog) != replaceMode))
+        {
+            findReplaceDialog.Dispose();
+            findReplaceDialog = null;
+        }
+        if (findReplaceDialog is null)
+        {
+            findReplaceDialog = new FindReplaceDialog(replaceMode);
+            findReplaceDialog.FindNext += (s, e) => ExecuteFind(e, reverse: false);
+            findReplaceDialog.FindPrev += (s, e) => ExecuteFind(e, reverse: true);
+            findReplaceDialog.Replace += (s, e) => ExecuteReplace(e);
+            findReplaceDialog.ReplaceAll += (s, e) => ExecuteReplaceAll(e);
+            findReplaceDialog.FormClosed += (s, e) =>
+            {
+                findReplaceDialog?.Dispose();
+                findReplaceDialog = null;
+            };
+        }
+
+        // 選択文字列があれば初期値として使う
+        string? initial = null;
+        var textBox = GetCurrentTextBox();
+        if (textBox is not null && textBox.SelectionLength > 0 && !textBox.SelectedText.Contains('\n'))
+        {
+            initial = textBox.SelectedText;
+        }
+        findReplaceDialog.ShowOrActivate(this, initial);
+    }
+
+    static bool IsReplaceMode(FindReplaceDialog dialog)
+    {
+        // ダイアログのTextで判定 (置換モードは"置換")
+        return dialog.Text == "置換";
+    }
+
+    /// <summary>
+    /// 検索ダイアログが未表示ならF3で再検索できるように直前条件を保持する必要があるが、
+    /// 本メモパッドではダイアログが無いときは検索ダイアログを開く。
+    /// </summary>
+    void FindNextFromDialogOrOpen(bool reverse)
+    {
+        if (findReplaceDialog is null || findReplaceDialog.IsDisposed)
+        {
+            OpenFindDialog(replaceMode: false);
+            return;
+        }
+        var args = new FindEventArgs(findReplaceDialog.FindText, findReplaceDialog.MatchCase, findReplaceDialog.UseRegex);
+        if (string.IsNullOrEmpty(args.Pattern))
+        {
+            findReplaceDialog.Activate();
+            return;
+        }
+        ExecuteFind(args, reverse);
+    }
+
+    void ExecuteFind(FindEventArgs e, bool reverse)
+    {
+        var textBox = GetCurrentTextBox();
+        if (textBox is null) return;
+
+        string text = textBox.Text;
+        int startIndex;
+        if (reverse)
+        {
+            startIndex = textBox.SelectionStart;
+        }
+        else
+        {
+            startIndex = textBox.SelectionStart + textBox.SelectionLength;
+        }
+
+        var (matchStart, matchLength) = FindMatch(text, e.Pattern, startIndex, reverse, e.MatchCase, e.UseRegex);
+        if (matchStart < 0)
+        {
+            // 末尾/先頭に達したら折り返して再検索
+            int wrapStart = reverse ? text.Length : 0;
+            (matchStart, matchLength) = FindMatch(text, e.Pattern, wrapStart, reverse, e.MatchCase, e.UseRegex);
+            if (matchStart < 0)
+            {
+                findReplaceDialog?.SetStatus("見つかりませんでした。");
+                return;
+            }
+            findReplaceDialog?.SetStatus("先頭/末尾まで達したため折り返しました。");
+        }
+        else
+        {
+            findReplaceDialog?.SetStatus(string.Empty);
+        }
+
+        textBox.Select(matchStart, matchLength);
+        textBox.ScrollToCaret();
+    }
+
+    void ExecuteReplace(ReplaceEventArgs e)
+    {
+        var textBox = GetCurrentTextBox();
+        if (textBox is null) return;
+
+        // 現在選択が検索条件に一致する場合は置換し、その後次を検索する
+        if (textBox.SelectionLength > 0 && IsMatch(textBox.SelectedText, e.Pattern, e.MatchCase, e.UseRegex))
+        {
+            string replacement = ComputeReplacement(textBox.SelectedText, e.Pattern, e.Replacement, e.MatchCase, e.UseRegex);
+            textBox.SelectedText = replacement;
+        }
+        ExecuteFind(e, reverse: false);
+    }
+
+    void ExecuteReplaceAll(ReplaceEventArgs e)
+    {
+        var textBox = GetCurrentTextBox();
+        if (textBox is null) return;
+
+        string original = textBox.Text;
+        int count;
+        string replaced;
+        try
+        {
+            replaced = ReplaceAllInText(original, e.Pattern, e.Replacement, e.MatchCase, e.UseRegex, out count);
+        }
+        catch (ArgumentException ex)
+        {
+            findReplaceDialog?.SetStatus($"置換エラー: {ex.Message}");
+            return;
+        }
+
+        if (count == 0)
+        {
+            findReplaceDialog?.SetStatus("見つかりませんでした。");
+            return;
+        }
+
+        // 全選択→SelectedTextで置換することで取り消し履歴を1操作にまとめる
+        int caret = textBox.SelectionStart;
+        textBox.SelectAll();
+        textBox.SelectedText = replaced;
+        textBox.SelectionStart = Math.Min(caret, replaced.Length);
+        textBox.SelectionLength = 0;
+        findReplaceDialog?.SetStatus($"{count}件置換しました。");
+    }
+
+    internal static (int start, int length) FindMatch(
+        string text, string pattern, int startIndex, bool reverse, bool matchCase, bool useRegex)
+    {
+        if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(text)) return (-1, 0);
+        startIndex = Math.Clamp(startIndex, 0, text.Length);
+
+        if (useRegex)
+        {
+            var options = RegexOptions.Multiline;
+            if (!matchCase) options |= RegexOptions.IgnoreCase;
+            if (reverse) options |= RegexOptions.RightToLeft;
+            try
+            {
+                var regex = new Regex(pattern, options);
+                var match = regex.Match(text, startIndex);
+                return match.Success ? (match.Index, match.Length) : (-1, 0);
+            }
+            catch (ArgumentException)
+            {
+                return (-1, 0);
+            }
+        }
+        else
+        {
+            var comparison = matchCase ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+            int index = reverse
+                ? text.LastIndexOf(pattern, Math.Max(0, startIndex - 1), comparison)
+                : text.IndexOf(pattern, startIndex, comparison);
+            return index >= 0 ? (index, pattern.Length) : (-1, 0);
+        }
+    }
+
+    internal static bool IsMatch(string text, string pattern, bool matchCase, bool useRegex)
+    {
+        if (useRegex)
+        {
+            var options = RegexOptions.Multiline;
+            if (!matchCase) options |= RegexOptions.IgnoreCase;
+            try
+            {
+                var match = Regex.Match(text, pattern, options);
+                return match.Success && match.Index == 0 && match.Length == text.Length;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return string.Equals(text, pattern, matchCase ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    internal static string ComputeReplacement(string matched, string pattern, string replacement, bool matchCase, bool useRegex)
+    {
+        if (!useRegex) return replacement;
+        var options = RegexOptions.Multiline;
+        if (!matchCase) options |= RegexOptions.IgnoreCase;
+        return Regex.Replace(matched, pattern, replacement, options);
+    }
+
+    internal static string ReplaceAllInText(
+        string text, string pattern, string replacement, bool matchCase, bool useRegex, out int count)
+    {
+        if (useRegex)
+        {
+            var options = RegexOptions.Multiline;
+            if (!matchCase) options |= RegexOptions.IgnoreCase;
+            var regex = new Regex(pattern, options);
+            int localCount = 0;
+            string result = regex.Replace(text, m =>
+            {
+                localCount++;
+                return m.Result(replacement);
+            });
+            count = localCount;
+            return result;
+        }
+        else
+        {
+            var comparison = matchCase ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+            var sb = new StringBuilder(text.Length);
+            int index = 0;
+            int localCount = 0;
+            while (index <= text.Length)
+            {
+                int next = text.IndexOf(pattern, index, comparison);
+                if (next < 0)
+                {
+                    sb.Append(text, index, text.Length - index);
+                    break;
+                }
+                sb.Append(text, index, next - index);
+                sb.Append(replacement);
+                index = next + pattern.Length;
+                localCount++;
+                if (pattern.Length == 0)
+                {
+                    // ゼロ幅一致の無限ループを回避 (通常は正規表現側の話だが安全策)
+                    if (index < text.Length) sb.Append(text[index]);
+                    index++;
+                }
+            }
+            count = localCount;
+            return sb.ToString();
+        }
     }
 
     #endregion
@@ -274,6 +618,7 @@ public partial class MemoForm : Form
         tabControl1.SelectedTab = page;
         Data.CurrentTabIndex = tabControl1.SelectedIndex;
         SaveData(); // タブ増減は即時保存
+        FocusCurrentTextBox();
     }
 
     void RenameTab()
@@ -332,6 +677,7 @@ public partial class MemoForm : Form
             loading = false;
         }
         SaveData(); // タブ増減は即時保存
+        FocusCurrentTextBox();
     }
 
     void RestoreClosedTab(int closedIndex)
@@ -344,6 +690,7 @@ public partial class MemoForm : Form
         tabControl1.TabPages.Add(page);
         tabControl1.SelectedTab = page;
         SaveData(); // タブ増減は即時保存
+        FocusCurrentTextBox();
     }
 
     void TabControl1_SelectedIndexChanged(object? sender, EventArgs e)
@@ -351,6 +698,7 @@ public partial class MemoForm : Form
         if (loading) return;
         Data.CurrentTabIndex = tabControl1.SelectedIndex;
         ScheduleSave(); // タブ切替はデバウンス保存
+        FocusCurrentTextBox();
     }
 
     /// <summary>
@@ -552,6 +900,7 @@ public partial class MemoForm : Form
         {
             memoFont?.Dispose();
             tabContextMenu?.Dispose();
+            findReplaceDialog?.Dispose();
             components?.Dispose();
         }
         base.Dispose(disposing);
