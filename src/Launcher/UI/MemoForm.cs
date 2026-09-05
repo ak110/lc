@@ -221,66 +221,55 @@ public partial class MemoForm : Form
 
     void OpenFindDialog(bool replaceMode)
     {
-        // モードが変わる場合は再生成する
-        if (findReplaceDialog is not null && (findReplaceDialog.IsDisposed || IsReplaceMode(findReplaceDialog) != replaceMode))
-        {
-            findReplaceDialog.Dispose();
-            findReplaceDialog = null;
-        }
-        if (findReplaceDialog is null)
-        {
-            findReplaceDialog = new FindReplaceDialog(replaceMode);
-            findReplaceDialog.FindNext += (s, e) => ExecuteFind(e, reverse: false);
-            findReplaceDialog.FindPrev += (s, e) => ExecuteFind(e, reverse: true);
-            findReplaceDialog.Replace += (s, e) => ExecuteReplace(e);
-            findReplaceDialog.ReplaceAll += (s, e) => ExecuteReplaceAll(e);
-            findReplaceDialog.FormClosed += (s, e) =>
-            {
-                findReplaceDialog?.Dispose();
-                findReplaceDialog = null;
-            };
-        }
+        findReplaceDialog ??= CreateFindReplaceDialog();
 
-        // 選択文字列があれば初期値として使う
+        // 選択文字列があれば検索文字列の初期値として使う (無ければ前回の検索文字列を保持)
         string? initial = null;
         var textBox = GetCurrentTextBox();
         if (textBox is not null && textBox.SelectionLength > 0 && !textBox.SelectedText.Contains('\n'))
         {
             initial = textBox.SelectedText;
         }
-        findReplaceDialog.ShowOrActivate(this, initial);
+        findReplaceDialog.ShowOrActivate(this, replaceMode, initial);
     }
 
-    static bool IsReplaceMode(FindReplaceDialog dialog)
+    FindReplaceDialog CreateFindReplaceDialog()
     {
-        // ダイアログのTextで判定 (置換モードは"置換")
-        return dialog.Text == "置換";
+        var dialog = new FindReplaceDialog();
+        dialog.FindNext += (s, e) => ExecuteFind(e, reverse: false);
+        dialog.FindPrev += (s, e) => ExecuteFind(e, reverse: true);
+        dialog.Replace += (s, e) => ExecuteReplace(e);
+        dialog.ReplaceAll += (s, e) => ExecuteReplaceAll(e);
+        return dialog;
     }
 
     /// <summary>
-    /// 検索ダイアログが未表示ならF3で再検索できるように直前条件を保持する必要があるが、
-    /// 本メモパッドではダイアログが無いときは検索ダイアログを開く。
+    /// F3/Shift+F3の処理。ダイアログが保持する直前の検索条件で検索する。
+    /// 条件が無い場合と見つからなかった場合は検索ダイアログを表示して理由を示す。
     /// </summary>
     void FindNextFromDialogOrOpen(bool reverse)
     {
-        if (findReplaceDialog is null || findReplaceDialog.IsDisposed)
+        findReplaceDialog ??= CreateFindReplaceDialog();
+        if (!findReplaceDialog.TryGetFindCondition(out var args))
         {
             OpenFindDialog(replaceMode: false);
             return;
         }
-        var args = new FindEventArgs(findReplaceDialog.FindText, findReplaceDialog.MatchCase, findReplaceDialog.UseRegex);
-        if (string.IsNullOrEmpty(args.Pattern))
+        if (!ExecuteFind(args, reverse) && !findReplaceDialog.Visible)
         {
-            findReplaceDialog.Activate();
-            return;
+            string status = "見つかりませんでした。";
+            OpenFindDialog(replaceMode: false);
+            findReplaceDialog.SetStatus(status);
         }
-        ExecuteFind(args, reverse);
     }
 
-    void ExecuteFind(FindEventArgs e, bool reverse)
+    /// <summary>
+    /// 現在タブで検索して一致箇所を選択する。一致が無い場合はfalseを返す。
+    /// </summary>
+    bool ExecuteFind(FindEventArgs e, bool reverse)
     {
         var textBox = GetCurrentTextBox();
-        if (textBox is null) return;
+        if (textBox is null) return false;
 
         string text = textBox.Text;
         int startIndex;
@@ -302,7 +291,7 @@ public partial class MemoForm : Form
             if (matchStart < 0)
             {
                 findReplaceDialog?.SetStatus("見つかりませんでした。");
-                return;
+                return false;
             }
             findReplaceDialog?.SetStatus("先頭/末尾まで達したため折り返しました。");
         }
@@ -313,6 +302,7 @@ public partial class MemoForm : Form
 
         textBox.Select(matchStart, matchLength);
         textBox.ScrollToCaret();
+        return true;
     }
 
     void ExecuteReplace(ReplaceEventArgs e)

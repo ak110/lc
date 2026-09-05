@@ -47,6 +47,8 @@ public sealed class PlainRichTextBox : RichTextBox
         ScrollBars = RichTextBoxScrollBars.Vertical;
         BorderStyle = BorderStyle.None;
         Dock = DockStyle.Fill;
+        // 検索ダイアログへフォーカスが移っても一致箇所の選択を表示し続ける
+        HideSelection = false;
     }
 
     /// <summary>

@@ -6,10 +6,11 @@ namespace Launcher.UI;
 /// <summary>
 /// 検索・置換用のモードレスダイアログ。
 /// 呼び出し元(MemoForm)は現在のタブへ検索・置換を委譲するコールバックを渡す。
+/// 1つのインスタンスを検索モードと置換モードで共用し、閉じる操作では非表示にするだけとして
+/// 検索文字列・置換後文字列・オプションを次回表示時まで保持する。
 /// </summary>
 public sealed class FindReplaceDialog : Form
 {
-    readonly bool replaceMode;
     readonly Label findLabel;
     readonly TextBox findTextBox;
     readonly Label replaceLabel;
@@ -23,6 +24,8 @@ public sealed class FindReplaceDialog : Form
     readonly Button closeButton;
     readonly Label statusLabel;
 
+    bool replaceMode;
+
     public event EventHandler<FindEventArgs>? FindNext;
     public event EventHandler<FindEventArgs>? FindPrev;
     public event EventHandler<ReplaceEventArgs>? Replace;
@@ -33,101 +36,78 @@ public sealed class FindReplaceDialog : Form
     public bool MatchCase => matchCaseCheckBox.Checked;
     public bool UseRegex => regexCheckBox.Checked;
 
-    public FindReplaceDialog(bool replaceMode)
+    public FindReplaceDialog()
     {
-        this.replaceMode = replaceMode;
-        Text = replaceMode ? "置換" : "検索";
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        StartPosition = FormStartPosition.CenterParent;
-        KeyPreview = true;
+        StartPosition = FormStartPosition.Manual;
 
-        int labelWidth = 72;
-        int inputLeft = 88;
-        int inputWidth = 240;
-        int buttonLeft = 336;
-        int buttonWidth = 96;
-        int rowHeight = 28;
-        int top = 12;
+        // TabIndexはラベル→入力欄→オプション→ボタンの順とし、置換モードでは検索文字列の次を置換後にする
+        findLabel = new Label { Text = "検索文字列(&N):", AutoSize = true, TabIndex = 0 };
+        findTextBox = new TextBox { TabIndex = 1 };
+        replaceLabel = new Label { Text = "置換後(&P):", AutoSize = true, TabIndex = 2 };
+        replaceTextBox = new TextBox { TabIndex = 3 };
+        matchCaseCheckBox = new CheckBox { Text = "大文字と小文字を区別(&C)", AutoSize = true, TabIndex = 4 };
+        regexCheckBox = new CheckBox { Text = "正規表現(&E)", AutoSize = true, TabIndex = 5 };
+        findNextButton = new Button { Text = "次を検索(&F)", TabIndex = 6 };
+        findPrevButton = new Button { Text = "前を検索(&V)", TabIndex = 7 };
+        replaceButton = new Button { Text = "置換(&R)", TabIndex = 8 };
+        replaceAllButton = new Button { Text = "すべて置換(&A)", TabIndex = 9 };
+        closeButton = new Button { Text = "閉じる", TabIndex = 10 };
+        statusLabel = new Label { ForeColor = Color.DarkRed, AutoEllipsis = true };
 
-        findLabel = new Label { Text = "検索文字列(&N):", Left = 8, Top = top + 4, Width = labelWidth, TextAlign = ContentAlignment.MiddleLeft };
-        findTextBox = new TextBox { Left = inputLeft, Top = top, Width = inputWidth };
-        findNextButton = new Button { Text = "次を検索(&F)", Left = buttonLeft, Top = top - 2, Width = buttonWidth };
         findNextButton.Click += (s, e) => RaiseFindNext();
-
-        top += rowHeight;
-
-        replaceLabel = new Label { Text = "置換後(&P):", Left = 8, Top = top + 4, Width = labelWidth, TextAlign = ContentAlignment.MiddleLeft, Visible = replaceMode };
-        replaceTextBox = new TextBox { Left = inputLeft, Top = top, Width = inputWidth, Visible = replaceMode };
-        findPrevButton = new Button { Text = "前を検索(&V)", Left = buttonLeft, Top = top - 2, Width = buttonWidth };
         findPrevButton.Click += (s, e) => RaiseFindPrev();
-
-        top += rowHeight;
-
-        replaceButton = new Button { Text = "置換(&R)", Left = buttonLeft, Top = top - 2, Width = buttonWidth, Visible = replaceMode };
         replaceButton.Click += (s, e) => RaiseReplace();
-
-        top += rowHeight;
-
-        replaceAllButton = new Button { Text = "すべて置換(&A)", Left = buttonLeft, Top = top - 2, Width = buttonWidth, Visible = replaceMode };
         replaceAllButton.Click += (s, e) => RaiseReplaceAll();
-
-        top += rowHeight;
-
-        matchCaseCheckBox = new CheckBox { Text = "大文字と小文字を区別(&C)", Left = 8, Top = top, Width = 220 };
-        regexCheckBox = new CheckBox { Text = "正規表現(&E)", Left = 232, Top = top, Width = 128 };
-        closeButton = new Button { Text = "閉じる", Left = buttonLeft, Top = top - 2, Width = buttonWidth };
         closeButton.Click += (s, e) => Close();
-
-        top += rowHeight;
-
-        statusLabel = new Label { Left = 8, Top = top, Width = 420, Height = 20, ForeColor = Color.DarkRed };
-
-        ClientSize = new Size(buttonLeft + buttonWidth + 12, top + 28);
 
         Controls.AddRange(new Control[]
         {
-            findLabel, findTextBox, findNextButton, findPrevButton,
-            replaceLabel, replaceTextBox, replaceButton, replaceAllButton,
-            matchCaseCheckBox, regexCheckBox, closeButton, statusLabel,
+            findLabel, findTextBox, replaceLabel, replaceTextBox,
+            matchCaseCheckBox, regexCheckBox,
+            findNextButton, findPrevButton, replaceButton, replaceAllButton, closeButton,
+            statusLabel,
         });
 
         AcceptButton = findNextButton;
         CancelButton = closeButton;
 
-        // Escで閉じる（CancelButtonで動作するが、モードレスのKeyPreviewも念のため）
-        KeyDown += (s, e) =>
-        {
-            if (e.KeyCode == Keys.Escape)
-            {
-                Close();
-                e.Handled = true;
-            }
-        };
+        ApplyMode(replaceMode: false);
     }
 
     /// <summary>
-    /// ダイアログを表示するか、既に表示中であればアクティブ化する。検索文字列に初期値を設定する。
+    /// 指定モードでダイアログを表示するか、既に表示中であればモードを切り替えてアクティブ化する。
+    /// 初期値が指定された場合は検索文字列を置き換え、未指定なら前回の検索文字列を保持する。
+    /// 新たに表示する場合はオーナーの中央へ配置する。
     /// </summary>
-    public void ShowOrActivate(IWin32Window owner, string? initialText)
+    public void ShowOrActivate(Form owner, bool replaceMode, string? initialText)
     {
+        ApplyMode(replaceMode);
         if (!string.IsNullOrEmpty(initialText))
         {
             findTextBox.Text = initialText;
         }
+        statusLabel.Text = string.Empty;
+
         if (Visible)
         {
             Activate();
         }
         else
         {
+            // モードレス表示ではCenterParentが適用されないため、自前で中央へ配置する
+            var bounds = owner.Bounds;
+            var pos = new Point(
+                bounds.Left + (bounds.Width - Width) / 2,
+                bounds.Top + (bounds.Height - Height) / 2);
+            FormsHelper.SetLocationWithClip(this, pos);
             Show(owner);
         }
         findTextBox.Focus();
         findTextBox.SelectAll();
-        statusLabel.Text = string.Empty;
     }
 
     /// <summary>
@@ -136,49 +116,150 @@ public sealed class FindReplaceDialog : Form
     public void SetStatus(string message) => statusLabel.Text = message;
 
     /// <summary>
-    /// 正規表現の妥当性を検査する。無効な場合は状態欄へメッセージを表示してfalseを返す。
+    /// 現在の入力から検索条件を生成する。検索文字列が空か正規表現が無効な場合はfalseを返し、
+    /// 状態欄へ理由を表示する。
     /// </summary>
-    bool ValidateRegex()
+    public bool TryGetFindCondition(out FindEventArgs args)
     {
-        if (!UseRegex) return true;
-        try
+        args = new FindEventArgs(FindText, MatchCase, UseRegex);
+        if (string.IsNullOrEmpty(FindText))
         {
-            _ = new Regex(FindText);
-            return true;
-        }
-        catch (ArgumentException ex)
-        {
-            statusLabel.Text = $"正規表現エラー: {ex.Message}";
+            statusLabel.Text = "検索文字列を入力してください。";
             return false;
         }
+        if (UseRegex)
+        {
+            try
+            {
+                _ = new Regex(FindText);
+            }
+            catch (ArgumentException ex)
+            {
+                statusLabel.Text = $"正規表現エラー: {ex.Message}";
+                return false;
+            }
+        }
+        statusLabel.Text = string.Empty;
+        return true;
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        // 利用者の閉じる操作は非表示に留め、入力内容とオプションを保持する
+        if (e.CloseReason == CloseReason.UserClosing)
+        {
+            e.Cancel = true;
+            Hide();
+            return;
+        }
+        base.OnFormClosing(e);
+    }
+
+    protected override void OnFontChanged(EventArgs e)
+    {
+        base.OnFontChanged(e);
+        ApplyLayout();
+    }
+
+    /// <summary>
+    /// モードに応じてタイトルと置換関連コントロールの表示を切り替え、再配置する。
+    /// </summary>
+    void ApplyMode(bool replaceMode)
+    {
+        this.replaceMode = replaceMode;
+        Text = replaceMode ? "置換" : "検索";
+        replaceLabel.Visible = replaceMode;
+        replaceTextBox.Visible = replaceMode;
+        replaceButton.Visible = replaceMode;
+        replaceAllButton.Visible = replaceMode;
+        ApplyLayout();
+    }
+
+    /// <summary>
+    /// フォントの実測寸法から各コントロールを配置する。
+    /// 左列に入力欄とオプション、右列にボタンを縦に並べ、最下段に状態欄を置く。
+    /// 固定ピクセルを使わないため、DPIとフォントの違いによる重なりと欠けが生じない。
+    /// </summary>
+    void ApplyLayout()
+    {
+        int unit = Font.Height;
+        int margin = unit;
+        int gap = unit / 2;
+        int rowHeight = findTextBox.PreferredHeight + gap;
+        int buttonHeight = findTextBox.PreferredHeight + gap / 2;
+
+        int labelWidth = Math.Max(findLabel.PreferredSize.Width, replaceLabel.PreferredSize.Width);
+        int inputLeft = margin + labelWidth + gap;
+        // 左列の幅はチェックボックスが収まる幅を下限とする
+        int optionWidth = Math.Max(matchCaseCheckBox.PreferredSize.Width, regexCheckBox.PreferredSize.Width);
+        int inputWidth = Math.Max(unit * 16, optionWidth - labelWidth - gap);
+        int buttonLeft = inputLeft + inputWidth + margin;
+        int buttonWidth = new[] { findNextButton, findPrevButton, replaceButton, replaceAllButton, closeButton }
+            .Max(b => b.PreferredSize.Width);
+
+        // 左列
+        int top = margin;
+        PlaceRow(findLabel, findTextBox, top, margin, inputLeft, inputWidth);
+        top += rowHeight;
+        if (replaceMode)
+        {
+            PlaceRow(replaceLabel, replaceTextBox, top, margin, inputLeft, inputWidth);
+            top += rowHeight;
+        }
+        matchCaseCheckBox.Location = new Point(margin, top + (rowHeight - matchCaseCheckBox.Height) / 2);
+        top += rowHeight;
+        regexCheckBox.Location = new Point(margin, top + (rowHeight - regexCheckBox.Height) / 2);
+        top += rowHeight;
+        int leftBottom = top;
+
+        // 右列 (Visibleはフォーム非表示中に常にfalseとなるため、モードから配置対象を決める)
+        top = margin;
+        var buttons = replaceMode
+            ? new[] { findNextButton, findPrevButton, replaceButton, replaceAllButton, closeButton }
+            : new[] { findNextButton, findPrevButton, closeButton };
+        foreach (var button in buttons)
+        {
+            button.SetBounds(buttonLeft, top, buttonWidth, buttonHeight);
+            top += rowHeight;
+        }
+        int rightBottom = top;
+
+        // 状態欄
+        int statusTop = Math.Max(leftBottom, rightBottom);
+        int width = buttonLeft + buttonWidth + margin;
+        statusLabel.SetBounds(margin, statusTop, width - margin * 2, unit + gap / 2);
+
+        ClientSize = new Size(width, statusTop + statusLabel.Height + margin);
+    }
+
+    static void PlaceRow(Label label, TextBox textBox, int top, int labelLeft, int inputLeft, int inputWidth)
+    {
+        textBox.SetBounds(inputLeft, top, inputWidth, textBox.PreferredHeight);
+        label.Location = new Point(labelLeft, top + (textBox.Height - label.Height) / 2);
     }
 
     void RaiseFindNext()
     {
-        if (string.IsNullOrEmpty(FindText) || !ValidateRegex()) return;
-        statusLabel.Text = string.Empty;
-        FindNext?.Invoke(this, new FindEventArgs(FindText, MatchCase, UseRegex));
+        if (!TryGetFindCondition(out var args)) return;
+        FindNext?.Invoke(this, args);
     }
 
     void RaiseFindPrev()
     {
-        if (string.IsNullOrEmpty(FindText) || !ValidateRegex()) return;
-        statusLabel.Text = string.Empty;
-        FindPrev?.Invoke(this, new FindEventArgs(FindText, MatchCase, UseRegex));
+        if (!TryGetFindCondition(out var args)) return;
+        FindPrev?.Invoke(this, args);
     }
 
     void RaiseReplace()
     {
-        if (string.IsNullOrEmpty(FindText) || !ValidateRegex()) return;
-        statusLabel.Text = string.Empty;
-        Replace?.Invoke(this, new ReplaceEventArgs(FindText, ReplaceText, MatchCase, UseRegex));
+        if (!TryGetFindCondition(out var args)) return;
+        Replace?.Invoke(this, new ReplaceEventArgs(args.Pattern, ReplaceText, args.MatchCase, args.UseRegex));
     }
 
     void RaiseReplaceAll()
     {
-        if (string.IsNullOrEmpty(FindText) || !ValidateRegex()) return;
-        statusLabel.Text = string.Empty;
-        ReplaceAll?.Invoke(this, new ReplaceEventArgs(FindText, ReplaceText, MatchCase, UseRegex));
+        if (!TryGetFindCondition(out var args)) return;
+        ReplaceAll?.Invoke(this, new ReplaceEventArgs(args.Pattern, ReplaceText, args.MatchCase, args.UseRegex));
     }
 }
 
