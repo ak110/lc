@@ -33,12 +33,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          $maxAttempts = 30
+          $maxAttempts = 45
           $intervalSec = 20
           for ($i = 1; $i -le $maxAttempts; $i++) {
-            $conclusion = gh api repos/${{ github.repository }}/commits/${{ github.sha }}/check-suites `
-              --jq='.check_suites[] | select(.app.slug == "github-actions") | .conclusion' `
-              | Select-Object -First 1
+            $conclusion = gh run list --repo=${{ github.repository }} --workflow=ci.yaml `
+              --commit=${{ github.sha }} --limit=1 --json=conclusion --jq='.[0].conclusion'
+            $ghExitCode = $LASTEXITCODE
+            if ($ghExitCode -ne 0) {
+              exit $ghExitCode
+            }
             if ($conclusion -eq "success") {
               Write-Host "CI passed."
               exit 0
@@ -74,7 +77,7 @@ jobs:
           }
 
       - name: Setup tools
-        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
 
       - name: Configure git identity
         if: steps.existing.outputs.rerun != 'true'

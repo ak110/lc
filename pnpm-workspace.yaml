@@ -1,4 +1,6 @@
 packages: []
+# pnpm本体はCorepackがpackageManagerから選ぶ。pnpm側の版照合を省き、Dependency Graphが解釈できる単一文書のlockfileを保つ。
+pmOnFail: ignore
 allowBuilds:
   esbuild: true
 minimumReleaseAge: 1440
