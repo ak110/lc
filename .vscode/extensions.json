@@ -1,9 +1,0 @@
-{
-  "recommendations": [
-    "ms-dotnettools.csharp",
-    "ms-dotnettools.csdevkit",
-    "DavidAnson.vscode-markdownlint",
-    "esbenp.prettier-vscode",
-    "3w36zj6.textlint"
-  ]
-}
