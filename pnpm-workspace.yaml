@@ -13,8 +13,12 @@ onlyBuiltDependencies:
 # Dependabot は GHSA-h67p-54hq-rp68（CVE-2026-53550）に対し js-yaml 4.2.0 以上を要求してくる。
 # textlint-rule-prh が prh 6 系へ更新されるまでの間、prh 自体を 6 系へ強制 override し、
 # 併せて js-yaml を patched 版 4.2.0 以上へ引き上げる（GHSA の脆弱範囲は 4.0.0〜4.1.1 と 3.x 未満）。
+# markdownlint-cli2 0.23.2 が smol-toml を 1.7.0 固定で要求するのに対し、
+# Dependabot は GHSA-7w5x-hrqm-74c2（CVE-2026-85730）に対し smol-toml 1.7.1 以上を要求してくる。
+# markdownlint-cli2 が修正版を取り込むまでの間、smol-toml を patched 版へ強制 override する。
 overrides:
   vite: ^6.4.2
   esbuild: ^0.25.0
   prh: ^6.0.6
   js-yaml: ^4.2.0
+  smol-toml: ^1.7.1
