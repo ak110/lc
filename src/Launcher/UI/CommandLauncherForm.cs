@@ -147,13 +147,8 @@ public partial class CommandLauncherForm : Form
         ReloadIcons();
 
         // ReplaceEnv
-        Thread thread = new Thread(() =>
-        {
-            new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(ownerForm.CommandList);
-        });
-        thread.IsBackground = true;
-        thread.Priority = ThreadPriority.Lowest;
-        thread.Start();
+        ReplaceEnvList.StartBackgroundReplace(
+            ownerForm.Config.ReplaceEnv, rep => rep.Replace(ownerForm.CommandList));
     }
 
     /// <summary>

@@ -291,11 +291,14 @@ public partial class ApplicationHostForm : Form
     /// </summary>
     public void Reload()
     {
+        var stopwatch = Stopwatch.StartNew();
         CommandList = CommandList.Deserialize(".cmd.cfg");
         ButtonLauncherData = ButtonLauncherData.Deserialize();
         schedulerData = SchedulerData.Deserialize();
-        new ReplaceEnvList(config.ReplaceEnv).Replace(schedulerData);
+        var data = schedulerData;
+        ReplaceEnvList.StartBackgroundReplace(config.ReplaceEnv, rep => rep.Replace(data));
         IfCommandLauncherFormAlive(form => form.ApplyConfig());
+        DiagnosticLog.Info("Host.Reload", $"elapsed={stopwatch.ElapsedMilliseconds}ms");
     }
 
     #region メニューなど
@@ -593,11 +596,9 @@ public partial class ApplicationHostForm : Form
         }
         if (!changed) return;
 
-        // ReplaceEnvList の再適用は CommandLauncherForm.ApplyConfig と同じく背景スレッドで行う。
         // ReplaceEnvList 側は static ロックで直列化される。
-        var thread = new Thread(() =>
+        ReplaceEnvList.StartBackgroundReplace(config.ReplaceEnv, rep =>
         {
-            var rep = new ReplaceEnvList(config.ReplaceEnv);
             rep.Replace(CommandList);
             rep.Replace(schedulerData);
             try
@@ -611,12 +612,7 @@ public partial class ApplicationHostForm : Form
             {
                 // フォーム破棄済み (ObjectDisposedException を含む)
             }
-        })
-        {
-            IsBackground = true,
-            Priority = ThreadPriority.Lowest,
-        };
-        thread.Start();
+        });
     }
 
     private void ApplyConfig()

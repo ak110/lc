@@ -31,6 +31,27 @@ public sealed class ReplaceEnvList
     }
 
     /// <summary>
+    /// 一括置換を背景スレッドで実行する。
+    /// 置換は<see cref="InnerReplace"/>でパスの実在を確認するため、
+    /// 切断済みのネットワークドライブやリムーバブルメディアが対象に含まれると
+    /// 1件あたり数十秒ブロックする。
+    /// 複数のコマンドやタスクをまとめて置換する呼び出しは、
+    /// 実行文脈を呼び出し側で判断せず、本メソッドを通してUIスレッドの占有を避ける。
+    /// 単一の<see cref="Command"/>だけを置換する呼び出しは対象外とする。
+    /// </summary>
+    /// <param name="names">置換対象の環境変数名</param>
+    /// <param name="apply">生成した置換器へ適用する一括置換</param>
+    public static void StartBackgroundReplace(List<string> names, Action<ReplaceEnvList> apply)
+    {
+        var thread = new Thread(() => apply(new ReplaceEnvList(names)))
+        {
+            IsBackground = true,
+            Priority = ThreadPriority.Lowest,
+        };
+        thread.Start();
+    }
+
+    /// <summary>
     /// 置換処理
     /// </summary>
     public void Replace(CommandList commandList)
