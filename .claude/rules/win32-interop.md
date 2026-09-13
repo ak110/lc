@@ -138,3 +138,15 @@ Closed発火後にWinForms内部の後始末処理（`ToolStripManager`追跡解
 `Closed`イベント内で`Dispose`する場合は`BeginInvoke`で次のメッセージループへ遅延する。
 遅延の呼び出し先はメニュー自身ではなく、生存中の`Control`（親フォームなど）の`BeginInvoke`を使う。
 メニュー自身の`BeginInvoke`はハンドル未作成状態で失敗する場合がある。
+
+## 子コントロールが参照するリソースの破棄順
+
+`Form`派生の`Dispose(bool)`では、子コントロールがプロパティとして参照するリソースを
+`base.Dispose(disposing)`の後に解放する。
+対象は、子の`Font`へ設定したフォント、子の`ContextMenuStrip`へ設定したメニュー、
+`ListView`の`SmallImageList`・`LargeImageList`へ設定した画像リストなどである。
+`base.Dispose(disposing)`は子コントロールを破棄する過程でレイアウトを変え、
+子の`OnSizeChanged`などのイベントを発火する。
+破棄済みのリソースを子が参照すると、当該イベントの処理でGDI+が`ArgumentException`を返す。
+子コントロールが参照しないリソース（自クラス専用のローダー、タイマー、`components`）は
+`base.Dispose(disposing)`の前に解放してよい。

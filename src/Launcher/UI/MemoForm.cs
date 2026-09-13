@@ -888,12 +888,18 @@ public partial class MemoForm : Form
     {
         if (disposing)
         {
-            memoFont?.Dispose();
-            tabContextMenu?.Dispose();
             findReplaceDialog?.Dispose();
             components?.Dispose();
         }
         base.Dispose(disposing);
+        if (disposing)
+        {
+            // 子コントロールが参照するリソースは、base.Disposeが子の破棄を終えた後に解放する。
+            // 破棄済みのフォントを本文編集コントロールが参照すると、
+            // 破棄中に発生するサイズ変更の処理でGDI+が例外を返す。
+            memoFont?.Dispose();
+            tabContextMenu?.Dispose();
+        }
     }
 
     #endregion

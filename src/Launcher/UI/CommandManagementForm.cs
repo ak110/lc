@@ -168,9 +168,14 @@ public partial class CommandManagementForm : Form
         if (disposing)
         {
             iconLoader.Dispose();
-            imageList?.Dispose();
             components?.Dispose();
         }
         base.Dispose(disposing);
+        if (disposing)
+        {
+            // リストビューがSmallImageListとして参照するため、
+            // base.Disposeが子の破棄を終えた後に解放する。
+            imageList?.Dispose();
+        }
     }
 }

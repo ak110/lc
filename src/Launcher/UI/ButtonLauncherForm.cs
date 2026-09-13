@@ -970,12 +970,17 @@ public partial class ButtonLauncherForm : Form
         if (disposing)
         {
             iconLoader.Dispose();
-            buttonContextMenu?.Dispose();
-            tabContextMenu?.Dispose();
             longPressTimer?.Dispose();
             components?.Dispose();
         }
         base.Dispose(disposing);
+        if (disposing)
+        {
+            // ボタンとタブコントロールがContextMenuStripとして参照するため、
+            // base.Disposeが子の破棄を終えた後に解放する。
+            buttonContextMenu?.Dispose();
+            tabContextMenu?.Dispose();
+        }
     }
 
     #endregion
