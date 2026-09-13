@@ -8,8 +8,19 @@ node = "lts"
 # Windows runner インストールが失敗するため、ツール定義からは外す。
 pinact = "latest"
 git-cliff = "latest"
-actionlint = "latest"
 typos = "latest"
+
+# actionlint の配布物はインストールrootへ実行ファイルと `man`・`docs` ディレクトリを
+# 直接展開する。`bin` サブディレクトリが無いため mise はインストールrootをPATHへ加え、
+# `man` が `/usr/bin/man` より先に解決されて shim がディレクトリを実行し失敗する。
+# `symlink_bins` は実行ファイルだけを `.mise-bins` へ集めてPATHへ加える。
+# 既に actionlint を導入済みの環境では、再インストールまたは版の更新を1回行うまで
+# PATHは切り替わらない。新規導入の環境では追加の操作を要しない。
+# `mise upgrade --bump` はinline tableを単一文字列へ平坦化してoptionsを失うため、
+# 版の更新後も `symlink_bins` を保つよう別テーブル形式で書く。
+[tools.actionlint]
+version = "latest"
+symlink_bins = true
 
 # システム側の `C:\Program Files\dotnet\` がPATH先頭に固定されておりSDK 8.0が拾われる。
 # `mise run` 配下では `mise exec` のtools解決もスキップされるため、mise が管理する
