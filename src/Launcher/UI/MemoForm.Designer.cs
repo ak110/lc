@@ -78,7 +78,7 @@ namespace Launcher.UI
             //
             this.closeTabMenuItem.Name = "closeTabMenuItem";
             this.closeTabMenuItem.Text = "タブを閉じる(&C)";
-            this.closeTabMenuItem.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.W;
+            this.closeTabMenuItem.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F4;
             //
             // restoreClosedTabMenuItem
             //
@@ -93,6 +93,7 @@ namespace Launcher.UI
             //
             this.closeWindowMenuItem.Name = "closeWindowMenuItem";
             this.closeWindowMenuItem.Text = "閉じる(&X)";
+            this.closeWindowMenuItem.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.W;
             //
             // editMenu
             //
