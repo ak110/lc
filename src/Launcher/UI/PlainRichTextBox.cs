@@ -64,9 +64,26 @@ public sealed class PlainRichTextBox : RichTextBox
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        // ハンドル生成後に取り消し上限を設定する (ハンドル再生成時にも再設定される)
-        new WindowHelper(Handle).SendMessage(WM.EM_SETUNDOLIMIT, (IntPtr)UndoLimit, IntPtr.Zero);
+        // ハンドル生成後に設定する (ハンドル再生成時にも再設定される)
+        var window = new WindowHelper(Handle);
+        window.SendMessage(WM.EM_SETUNDOLIMIT, (IntPtr)UndoLimit, IntPtr.Zero);
+        DisableAutomaticFontBinding(window);
         ApplyPadding();
+    }
+
+    /// <summary>
+    /// 文字ごとにフォントを割り当てるRichEditの既定動作を止める。
+    /// IMF_DUALFONTはASCIIへ英文フォント、アジア文字へアジアフォントを割り当て、
+    /// IMF_AUTOFONTはキーボードレイアウトの切り替えに応じてフォントを変える。
+    /// いずれも既定で有効なため、書式を持たない運用では入力経路と文字種で文字書式が分かれる。
+    /// EM_SETLANGOPTIONSは言語オプションの全ビットを設定するため、
+    /// 現在値を取得し、対象の3ビットだけを無効化した値を書き戻す。
+    /// </summary>
+    static void DisableAutomaticFontBinding(WindowHelper window)
+    {
+        int options = window.SendMessage(WM.EM_GETLANGOPTIONS, IntPtr.Zero, IntPtr.Zero);
+        int updated = options & ~(IMF_AUTOFONT | IMF_AUTOFONTSIZEADJUST | IMF_DUALFONT);
+        window.SendMessage(WM.EM_SETLANGOPTIONS, IntPtr.Zero, (IntPtr)updated);
     }
 
     protected override void OnSizeChanged(EventArgs e)
@@ -279,6 +296,11 @@ public sealed class PlainRichTextBox : RichTextBox
     #region P/Invoke
 
     const int EM_SETRECT = 0x00B3;
+
+    // 言語オプションのビット定義 (Windows SDK 10.0.19041.0 の richedit.h)
+    const int IMF_AUTOFONT = 0x0002;
+    const int IMF_AUTOFONTSIZEADJUST = 0x0010;
+    const int IMF_DUALFONT = 0x0080;
 
     [StructLayout(LayoutKind.Sequential)]
     struct RECT

@@ -251,6 +251,12 @@ public static class WM
 
     /// <summary>リッチエディットの取り消し上限を設定するメッセージ (EM_SETUNDOLIMIT = WM_USER + 82)。</summary>
     public const int EM_SETUNDOLIMIT = WM_USER + 82;
+
+    /// <summary>リッチエディットの言語オプションを設定するメッセージ (EM_SETLANGOPTIONS = WM_USER + 120)。</summary>
+    public const int EM_SETLANGOPTIONS = WM_USER + 120;
+
+    /// <summary>リッチエディットの言語オプションを取得するメッセージ (EM_GETLANGOPTIONS = WM_USER + 121)。</summary>
+    public const int EM_GETLANGOPTIONS = WM_USER + 121;
 }
 
 /// <summary>

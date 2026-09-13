@@ -273,6 +273,34 @@ public sealed class PlainRichTextBoxTests
         replaced.Should().Be("  aaa\n");
     }
 
+    [Fact]
+    public void OnHandleCreated_ASCIIと日本語を同じフォントで表示する() =>
+        RunInSta(() =>
+        {
+            using var font = new Font("Consolas", 11f);
+            using var form = new Form();
+            using var control = CreateControl(() => false, () => string.Empty, _ => { });
+            form.Controls.Add(control);
+            control.ApplyFont(font);
+            form.Show();
+            try
+            {
+                control.Text = "abc あいう def";
+
+                for (int index = 0; index < control.TextLength; index++)
+                {
+                    control.Select(index, 1);
+                    using var selectionFont = control.SelectionFont;
+                    selectionFont.Should().NotBeNull();
+                    selectionFont!.Name.Should().Be(font.Name, "位置{0}の文字書式", index);
+                }
+            }
+            finally
+            {
+                form.Close();
+            }
+        });
+
     static string InvokeComputeIndent(string text, int selStart, int selLength, bool dedent,
         out int regionStart, out int regionLength, out int newSelLength)
     {
