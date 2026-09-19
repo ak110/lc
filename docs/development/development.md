@@ -65,7 +65,4 @@ for /f "usebackq" %i in (`gh run list --workflow=release.yaml -L1 --json=databas
 ## 環境制限
 
 - `dotnet-format`・`dotnet-build`・`dotnet-test`はWindowsターゲットのためLinuxでは実行不可
-- `mise.toml`の`dotnet-root`テンプレートはWindowsの`LOCALAPPDATA`を参照するため、
-  Linux環境では`mise`が呼ばれるpre-commitフックがテンプレート展開エラーで失敗する。
-  ドキュメントのみ変更時は例外として`git commit --no-verify`が許容される（CIのWindows runnerでlintを担保）
 - WinForms Designer.csのマルチバイト文字を含むテーブル等ではmarkdownlint MD060が発生する場合がある

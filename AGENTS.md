@@ -53,8 +53,4 @@ ConfigStore派生クラスの変更をレビューする専用エージェント
 
 ## 注意点
 
-Linux環境での検証は限定的。
-`mise.toml`の`dotnet-root`テンプレートはWindowsの`LOCALAPPDATA`を参照するため、
-Linuxではpre-commitフックがテンプレート展開エラーで失敗する。
-ドキュメントのみ変更時は例外として`git commit --no-verify`が許容される
-（CIのWindows runnerでlintを担保）。
+Linux環境ではドキュメントのlintだけを実行し、全体検証はWindows CIで行う。
