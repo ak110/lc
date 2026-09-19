@@ -78,6 +78,28 @@ public sealed class MemoDataTests
         deserialized.ClosedTabs.Should().BeEmpty();
     }
 
+    [Fact]
+    public void MemoData_XML不正文字を除去して有効文字を保持する()
+    {
+        var tab = new MemoTab
+        {
+            Name = "名\u000B前",
+            Text = "本文\t\r\n\U0001F600\uD800後\uDC00",
+        };
+        var original = new MemoData { Tabs = new List<MemoTab> { tab } };
+
+        tab.Name.Should().Be("名前");
+        tab.Text.Should().Be("本文\t\r\n\U0001F600後");
+
+        var xml = SerializeToString(original);
+        var deserialized = DeserializeFromString<MemoData>(xml);
+
+        deserialized.Tabs.Should().ContainSingle();
+        deserialized.Tabs[0].Name.Should().Be("名前");
+        // XMLの要素テキストはCRLFをLFへ正規化する
+        deserialized.Tabs[0].Text.Should().Be("本文\t\n\U0001F600後");
+    }
+
     // --- ヘルパー ---
 
     private static string SerializeToString<T>(T obj)
