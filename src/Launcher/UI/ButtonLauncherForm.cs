@@ -31,7 +31,9 @@ public partial class ButtonLauncherForm : Form
     Button? longPressCandidate;
     ButtonEntry? longPressEntry;
     Point longPressStartPoint;
-    bool longPressFired;
+    readonly LongPressOperationState longPressState = new();
+    long longPressOperationId;
+    Button? longPressClickSuppressionTarget;
 
     const int LongPressMilliseconds = 500;
 
@@ -400,9 +402,10 @@ public partial class ButtonLauncherForm : Form
 
     private void GridButton_Click(object? sender, EventArgs e)
     {
-        if (longPressFired)
+        if (ReferenceEquals(sender, longPressClickSuppressionTarget) &&
+            longPressState.ConsumeClickSuppression())
         {
-            longPressFired = false;
+            longPressClickSuppressionTarget = null;
             return;
         }
 
@@ -414,35 +417,29 @@ public partial class ButtonLauncherForm : Form
         var entry = tabData.GetButton(pos.Row, pos.Col);
         if (entry is null || entry.IsEmpty) return;
 
-        // 実行
-        try
+        Command command = entry.Clone();
+        var config = owner.Config;
+        IntPtr windowHandle = Handle;
+        StaThreadRunner.Start(() =>
         {
-            // ShellExecuteExのhwndに自身のハンドルを渡し、現在のモニターでアプリを起動させる
-            entry.Execute("", owner.Config, Handle);
-            DiagnosticLog.Info("Button.Execute", $"row={pos.Row} col={pos.Col}");
-            if (!Data.IsLocked)
+            try
             {
-                Hide();
+                // ShellExecuteExのhwndに自身のハンドルを渡し、現在のモニターでアプリを起動させる
+                command.Execute("", config, windowHandle);
+                DiagnosticLog.Info("Button.Execute", $"row={pos.Row} col={pos.Col}");
+                UiThreadDispatcher.SafeBeginInvoke(this, () =>
+                {
+                    if (!Data.IsLocked)
+                    {
+                        Hide();
+                    }
+                });
             }
-        }
-        catch (System.ComponentModel.Win32Exception ex)
-        {
-            DiagnosticLog.Error("Button.Execute", ex);
-            MessageBox.Show(this, $"実行に失敗しました: {ex.Message}", "エラー",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-        catch (IOException ex)
-        {
-            DiagnosticLog.Error("Button.Execute", ex);
-            MessageBox.Show(this, $"実行に失敗しました: {ex.Message}", "エラー",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-        catch (InvalidOperationException ex)
-        {
-            DiagnosticLog.Error("Button.Execute", ex);
-            MessageBox.Show(this, $"実行に失敗しました: {ex.Message}", "エラー",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException or InvalidOperationException)
+            {
+                ShowOperationError("Button.Execute", "実行に失敗しました", ex);
+            }
+        });
     }
 
     /// <summary>
@@ -458,15 +455,33 @@ public partial class ButtonLauncherForm : Form
         if (!longPressCandidate.ClientRectangle.Contains(
                 longPressCandidate.PointToClient(Cursor.Position))) return;
 
-        longPressFired = true;
+        Button candidate = longPressCandidate;
+        string folderPath = longPressEntry.FileName;
+        long operationId = longPressOperationId;
+        StaThreadRunner.Start(() =>
+        {
+            bool isDirectory = Directory.Exists(folderPath);
+            UiThreadDispatcher.SafeBeginInvoke(this, () =>
+            {
+                if (!ReferenceEquals(longPressCandidate, candidate) || candidate.IsDisposed) return;
+                if (!isDirectory) return;
+                if ((MouseButtons & MouseButtons.Left) != MouseButtons.Left ||
+                    !candidate.ClientRectangle.Contains(candidate.PointToClient(Cursor.Position)))
+                {
+                    return;
+                }
+                if (!longPressState.TryFire(operationId)) return;
+                longPressClickSuppressionTarget = candidate;
 
 #pragma warning disable CA2000 // builder と menu は Closed イベントで内部 Dispose される (Builder 側実装)
-        var builder = new FolderPopupMenuBuilder(Handle, this);
-        var menu = builder.Build(longPressEntry.FileName);
+                var builder = new FolderPopupMenuBuilder(Handle, this);
+                var menu = builder.Build(folderPath);
 #pragma warning restore CA2000
-        var pos = (ButtonPosition)longPressCandidate.Tag!;
-        DiagnosticLog.Info("Button.FolderPopup", $"row={pos.Row} col={pos.Col}");
-        menu.Show(longPressCandidate, longPressCandidate.PointToClient(Cursor.Position));
+                var pos = (ButtonPosition)candidate.Tag!;
+                DiagnosticLog.Info("Button.FolderPopup", $"row={pos.Row} col={pos.Col}");
+                menu.Show(candidate, candidate.PointToClient(Cursor.Position));
+            });
+        });
     }
 
     #endregion
@@ -516,15 +531,13 @@ public partial class ButtonLauncherForm : Form
         }
         else
         {
-            // ロック解除時の長押し検知の準備 (フォルダ登録ボタンのみ)
-            if (Directory.Exists(entry.FileName))
-            {
-                longPressCandidate = btn;
-                longPressEntry = entry;
-                longPressStartPoint = e.Location;
-                longPressFired = false;
-                longPressTimer.Start();
-            }
+            // フォルダー判定は長押し成立後にワーカースレッドで行う
+            longPressCandidate = btn;
+            longPressEntry = entry;
+            longPressStartPoint = e.Location;
+            longPressOperationId = longPressState.Begin();
+            longPressClickSuppressionTarget = null;
+            longPressTimer.Start();
         }
     }
 
@@ -576,7 +589,27 @@ public partial class ButtonLauncherForm : Form
         var entry = tabData?.GetButton(pos.Row, pos.Col);
         if (entry is null || entry.IsEmpty) return;
 
-        entry.OpenDirectory(owner.Config);
+        Command command = entry.Clone();
+        var config = owner.Config;
+        StaThreadRunner.Start(() =>
+        {
+            try
+            {
+                command.OpenDirectory(config);
+            }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException or InvalidOperationException)
+            {
+                ShowOperationError("Button.OpenDirectory", "フォルダーを開けませんでした", ex);
+            }
+        });
+    }
+
+    private void ShowOperationError(string category, string message, Exception exception)
+    {
+        DiagnosticLog.Error(category, exception);
+        UiThreadDispatcher.SafeBeginInvoke(this, () =>
+            MessageBox.Show(this, $"{message}: {exception.Message}", "エラー",
+                MessageBoxButtons.OK, MessageBoxIcon.Error));
     }
 
     private void ButtonMenu_AssignFromCommand(object? sender, EventArgs e)
@@ -625,6 +658,9 @@ public partial class ButtonLauncherForm : Form
              Math.Abs(e.Location.Y - longPressStartPoint.Y) > SystemInformation.DragSize.Height / 2))
         {
             longPressTimer.Stop();
+            longPressState.Cancel();
+            longPressCandidate = null;
+            longPressEntry = null;
         }
 
         if (dragSource is null || !dragState.IsActive) return;
@@ -643,7 +679,13 @@ public partial class ButtonLauncherForm : Form
 
     private void GridButton_MouseUp(object? sender, MouseEventArgs e)
     {
-        if (e.Button == MouseButtons.Left) longPressTimer.Stop();
+        if (e.Button == MouseButtons.Left)
+        {
+            longPressTimer.Stop();
+            longPressState.Cancel();
+            longPressCandidate = null;
+            longPressEntry = null;
+        }
 
         // ドラッグ閾値未到達でリリースした場合のクリア (通常クリック動作を壊さない)
         if (e.Button == MouseButtons.Left)

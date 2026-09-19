@@ -30,6 +30,36 @@ public sealed class ButtonLauncherPresenterTests
 
     #endregion
 
+    #region LongPressOperationState
+
+    [Fact]
+    public void LongPressOperationState_判定完了前に解除するとクリックを抑止しない()
+    {
+        var state = new LongPressOperationState();
+        long operationId = state.Begin();
+
+        state.Cancel();
+
+        state.TryFire(operationId).Should().BeFalse();
+        int executionCount = state.ConsumeClickSuppression() ? 0 : 1;
+        executionCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void LongPressOperationState_前回の完了は次の操作を変更しない()
+    {
+        var state = new LongPressOperationState();
+        long firstOperationId = state.Begin();
+        long secondOperationId = state.Begin();
+
+        state.TryFire(firstOperationId).Should().BeFalse();
+        state.TryFire(secondOperationId).Should().BeTrue();
+        state.ConsumeClickSuppression().Should().BeTrue();
+        state.ConsumeClickSuppression().Should().BeFalse();
+    }
+
+    #endregion
+
     #region CalculateGridSize
 
     [Fact]
