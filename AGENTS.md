@@ -1,8 +1,8 @@
-# CLAUDE.md: lc
+# AGENTS.md: lc
 
 Windows用アプリケーションランチャー（C#/.NET WinForms）。
 コマンド型・ボタン型・スケジューラーを統合する単一ユーザー向けGUIアプリ。
-開発知識はCLAUDE.mdおよびClaude Codeが参照する規約ファイル群に集約する。
+開発知識はAGENTS.mdおよびClaude Codeが参照する規約ファイル群に集約する。
 利用者・外部開発者向け情報は`docs/`配下を参照する。
 
 ## 開発手順
