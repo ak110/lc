@@ -17,12 +17,12 @@ description: >
 `ShowDialog`のネストメッセージループ内でも`ApplicationHostForm.WndProc`は動作するため、
 表示中でも`WM_APPMSG_SHOWHIDE`を受信しホットキー操作を処理できる。
 
-ホットキー押下で呼び出される`ApplicationHostForm.ShowHide()`は、通知が追跡中のときはCommandLauncherFormを非表示化しない。
+通知の追跡中にホットキー押下で`ApplicationHostForm.ShowHide()`が呼ばれても、CommandLauncherFormは非表示化しない。
 代わりに通知Formを`Activate()`+`BringToFront()`で最前面化する。
 またCommandLauncherFormの`WindowHideNoActive`によるauto-hideも同じ条件でスキップする。
 具体的には`CommandLauncherForm_Deactivate`/`CommandLauncherForm_Leave`内で判定する。
 `ApplicationHostForm.HasActiveNotifications`が真のときは処理を中止する。
-通知をActivateした直後の`CommandLauncherForm_Deactivate`でCommandLauncherFormが再び隠れる事故を防ぐためである。
+通知をActivateした直後の`CommandLauncherForm_Deactivate`でCommandLauncherFormが再び隠れてしまうのを防ぐためである。
 
 BalloonTipはOSのトレイ通知であり自動消去されるため、この追跡対象には含めない。
 

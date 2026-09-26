@@ -41,8 +41,8 @@ XMLシリアライズ対象プロパティのコレクションに値付き初�
 ## ReplaceEnvListの排他は静的
 
 `ReplaceEnvList`は呼び出しごとに新規インスタンスが作成されるため、ロックは`static`で保持する。
-これにより`CommandLauncherForm.ApplyConfig`の背景スレッドと環境変数変更の背景スレッドが、
-同じ`Command`や`SchedulerTask`を同時に書き換える事故を防いでいる。
+このロックがあるため、`CommandLauncherForm.ApplyConfig`の背景スレッドと環境変数変更の背景スレッドは、
+同じ`Command`や`SchedulerTask`を同時には書き換えない。
 
 ## ReplaceEnvListの片方向圧縮
 

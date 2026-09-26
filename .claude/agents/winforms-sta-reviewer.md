@@ -40,15 +40,15 @@ model: sonnet
   `src/Launcher/Win32/`配下のP/Invokeラッパー経由でも該当する
 - 新規`Thread`生成時、`SetApartmentState(ApartmentState.STA)`を生成直後に呼んでいるか
 - `async/await`周辺で`ConfigureAwait(false)`の有無により、UIスレッドへ戻れずShell APIがMTAで実行されるリスクが無いか
-- アイコン読み込み・コマンド実行・ディレクトリ展開・スケジューラータスク実行が、既存の専用STA経路を踏襲しているか。
-  経路: `AsyncIconLoader`／`CommandLauncherForm.ExecuteCommand`／
-  `CommandLauncherForm.OpenDirectory`／`SchedulerPresenter.ExecuteItemTasks`
+- アイコン読み込み・コマンド実行・ディレクトリ展開・スケジューラータスク実行が、既存の専用STAスレッドで実行する仕組みを踏襲しているか。
+  既存の仕組みは`AsyncIconLoader`／`CommandLauncherForm.ExecuteCommand`／
+  `CommandLauncherForm.OpenDirectory`／`SchedulerPresenter.ExecuteItemTasks`が担う
 
 ### B. Win32 フックコールバック（[.claude/rules/win32-interop.md](../rules/win32-interop.md)）
 
 - フックコールバック内に`MessageBox.Show`・`Thread.Sleep`・同期I/O・長時間ループが無いか
 - UI操作が`BeginInvoke`（非同期）でディスパッチされているか（`Invoke`はデッドロックの恐れあり）
-- UP抑制フラグ（`suppressNextLButtonUp`／`suppressNextRButtonUp`／`suppressKeyUpVK`）の更新漏れが無いか
+- UP抑制フラグ（`suppressNextLButtonUp`／`suppressNextRButtonUp`／`suppressKeyUpVK`）を更新し忘れている箇所が無いか
 - フック解除（`UnhookWindowsHookEx`）のタイミングと、解除後にコールバックが残存しないこと
 
 ### C. アイコンローダー（[.claude/rules/threading.md](../rules/threading.md)）
@@ -84,7 +84,7 @@ model: sonnet
 
 - `Application.DoEvents`の追加（原則禁止、使う場合は理由コメント必須）
 - `WaitOne`／`Wait`／`.Result`でUIスレッドをブロックしていないか
-- `IDisposable`リソース（Icon・Bitmap・Stream・COMオブジェクト）の`using`または明示的Dispose漏れ
+- `IDisposable`リソース（Icon・Bitmap・Stream・COMオブジェクト）の`using`または明示的Disposeが欠けていないか
 
 ## 出力フォーマット例
 

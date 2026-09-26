@@ -14,7 +14,7 @@ paths:
 `Error`は例外・失敗を記録する。例外オブジェクトを持つ場合は`Error(category, Exception)`を用いる。
 
 `System.Diagnostics.Debug.WriteLine`はReleaseビルドで無効化されるため運用ログには使わない。
-開発時の到達不能ケース検査（`Debug.Assert`・`Debug.Fail`）は本節の対象外とし、そのまま使用する。
+開発時に到達不能ケースを確認する`Debug.Assert`・`Debug.Fail`は本節の対象外とし、そのまま使用する。
 
 ## パス・個人情報の出力禁止
 
@@ -24,12 +24,12 @@ paths:
 例外オブジェクトの`Message`にパスが含まれる場合の許容範囲は生成主体で判断する。
 OS由来のメッセージ（`Win32Exception`を引数なしまたは`(int errorCode)`のみで構築し、
 `.NET`ランタイムが`errorCode`から自動生成するメッセージ）はそのまま出力してよい。
-プロジェクト側が構築したメッセージのうち、ログ到達経路が存在するものにはパスを含めない。
+プロジェクト側が構築したメッセージのうち、ログへ届き得るものにはパスを含めない。
 対象は`throw new Exception($"failed for {path}")`のような文字列引数付きコンストラクタ全般とする。
 `Win32Exception`の`(int errorCode, string message)`コンストラクタ第2引数も対象に含める。
-ログ到達経路は、当該例外がキャッチされて`DiagnosticLog`へ`ex`もしくは`ex.Message`が渡る経路、
-および未捕捉のまま`Program.cs`の`UnhandledException`ハンドラへ届く経路を指す。
-既存の`Message`にパスが含まれ、かつログ到達経路がある例外の是正手段は次の2択とする。
+ログへ届き得るとは、当該例外がキャッチされて`DiagnosticLog`へ`ex`もしくは`ex.Message`が渡る場合、
+および未捕捉のまま`Program.cs`の`UnhandledException`ハンドラへ届く場合を指す。
+既存の`Message`にパスが含まれ、かつログへ届き得る例外の是正手段は次の2択とする。
 
 - 例外構築側の第2引数からパスを除去する
 - キャッチ側で`Message`を除外し例外型名（`e.GetType().Name`）のみ記録する

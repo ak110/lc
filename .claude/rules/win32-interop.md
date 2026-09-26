@@ -66,8 +66,8 @@ AccessViolation等のCLR corrupted-state exceptionによる即クラッシュに
 `ContextMenuStrip`の項目で左クリックと右クリックの動作を分岐する場合、左右分岐は`MouseUp`ハンドラ単独で判定する。
 `MouseUp`ハンドラ内で`e.Button == MouseButtons.Left`と`e.Button == MouseButtons.Right`の分岐に統一する。
 `ToolStripMenuItem`個別の`Click`ハンドラは登録しない。
-.NET 10 WinFormsの`ToolStripMenuItem`はマウス右クリック時にも`Click`イベントが発火する経路
-（`MouseUp`より先に発火する場合もある）を持つ。
+.NET 10 WinFormsの`ToolStripMenuItem`はマウス右クリック時にも`Click`イベントを発火することがある
+（`MouseUp`より先に発火する場合もある）。
 `Click`ハンドラを併用すると右クリック時に左クリック相当の動作が実行され、二重動作を招く。
 `item.Click -= clickHandler`で1回目発火後に解除する形でも初回発火自体は防げないため採用しない。
 キーボードEnter操作で左クリック相当の動作を発火させたい場合は、
@@ -124,8 +124,8 @@ P/Invoke宣言に対する失敗検知に`new Win32Exception()`（引数なし�
 
 ## ShellExecuteEx失敗時のhProcess解放
 
-`SEE_MASK_NOCLOSEPROCESS`を設定した`ShellExecuteEx`は、
-`false`を返す失敗経路でも`hProcess`が非ゼロで返る場合がある。
+`SEE_MASK_NOCLOSEPROCESS`を設定した`ShellExecuteEx`は
+`false`を返して失敗した場合でも`hProcess`が非ゼロで返る場合がある。
 失敗判定時は`Win32Exception`を先に構築して`GetLastError`のスナップショットを保存する。
 その後`hProcess != IntPtr.Zero`なら`CloseHandle`する。
 `CloseHandle`は`GetLastError`を上書きし得るため、順序を守る。
@@ -143,7 +143,7 @@ Closed発火後にWinForms内部の後始末処理（`ToolStripManager`追跡解
 
 `Form`派生の`Dispose(bool)`では、子コントロールがプロパティとして参照するリソースを
 `base.Dispose(disposing)`の後に解放する。
-対象は、子の`Font`へ設定したフォント、子の`ContextMenuStrip`へ設定したメニュー、
+対象は子の`Font`へ設定したフォント、子の`ContextMenuStrip`へ設定したメニュー、
 `ListView`の`SmallImageList`・`LargeImageList`へ設定した画像リストなどである。
 `base.Dispose(disposing)`は子コントロールを破棄する過程でレイアウトを変え、
 子の`OnSizeChanged`などのイベントを発火する。
