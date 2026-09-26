@@ -25,7 +25,9 @@ repos:
     hooks:
       - id: pyfltr
         name: pyfltr
-        entry: uvx pyfltr fast
+        # pyfltrの推奨ガイドから意図して外れる個人環境向けの設定。
+        # グローバルuv設定の`exclude-newer`からpyfltrだけを除外し、公開直後のpyfltrを使う（uvxはプロジェクトの`[tool.uv]`を読まないためコマンドラインで指定する）。
+        entry: uvx --exclude-newer-package pyfltr=false pyfltr fast
         types_or: [markdown, toml, yaml, javascript, ts]
         require_serial: true
         language: system
