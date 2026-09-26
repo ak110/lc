@@ -39,3 +39,10 @@ rules:
     # 半角大かっこの全角自動変換がコード識別子・記法ラベルを破壊するため無効化する
     "4.3.2.大かっこ［］": false
   ja-no-abusage: true
+  preset-ai-words-ja:
+    # 言い換えの適否は文脈ごとに書き手が判断するため、検査を止めない警告として扱う
+    no-ai-words:
+      severity: warning
+    # プリセットの説明と異なりpresetの有効化だけで動作し、severityを明示しないとerrorのまま残る
+    no-short-topic-comma:
+      severity: warning
