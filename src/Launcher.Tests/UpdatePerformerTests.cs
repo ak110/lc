@@ -179,16 +179,22 @@ public sealed class UpdatePerformerTests
     }
 
     /// <summary>
-    /// 生成した更新バッチを隔離フォルダで実行する環境。フォルダ名に日本語を含め、CP932での書き込みも検証する。
+    /// 生成した更新バッチを隔離フォルダで実行する環境。
+    /// 更新バッチはCP932で書くため、コードページが932の環境 (日本語版Windows) ではフォルダ名に日本語を含め、
+    /// CP932での書き込みも検証する。それ以外の環境 (CIのランナーなど) ではcmdが日本語のパスを解釈できないため、ASCIIのフォルダ名で動作を検証する。
     /// </summary>
     private sealed class BatchEnvironment : IDisposable
     {
+        private static readonly bool JapaneseCodePage =
+            System.Globalization.CultureInfo.InstalledUICulture.TextInfo.OEMCodePage == 932;
+
         private readonly string _root;
 
         public BatchEnvironment()
         {
-            _root = Path.Combine(Path.GetTempPath(), "らんちゃ更新テスト_" + Guid.NewGuid().ToString("N")[..8]);
-            AppDir = Path.Combine(_root, "アプリ");
+            _root = Path.Combine(Path.GetTempPath(),
+                (JapaneseCodePage ? "らんちゃ更新テスト_" : "lc_update_test_") + Guid.NewGuid().ToString("N")[..8]);
+            AppDir = Path.Combine(_root, JapaneseCodePage ? "アプリ" : "app");
             TempDir = Path.Combine(_root, "update");
             BatchPath = Path.Combine(_root, "_launcher_update_test.bat");
             Directory.CreateDirectory(AppDir);
