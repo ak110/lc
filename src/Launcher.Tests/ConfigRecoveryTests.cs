@@ -132,6 +132,23 @@ public sealed class ConfigRecoveryTests : IDisposable
     }
 
     [Fact]
+    public void 読込時にバックアップを作成できない場合は結果に失敗を含める()
+    {
+        Commands("a").SerializeTo(".cmd.cfg", baseName);
+        Directory.CreateDirectory(ConfigFileState.BackupName(CommandFile));
+
+        var result = CommandList.Load(".cmd.cfg", baseName);
+
+        result.Status.Should().Be(ConfigLoadStatus.Loaded);
+        Names(result.Value).Should().Equal("a");
+        result.BackupError.Should().NotBeNull();
+
+        // 正常に作成できる場合は失敗を含めない
+        Directory.Delete(ConfigFileState.BackupName(CommandFile));
+        CommandList.Load(".cmd.cfg", baseName).BackupError.Should().BeNull();
+    }
+
+    [Fact]
     public void 本体もバックアップも無い初回は初期値で保存できる()
     {
         var result = CommandList.Load(".cmd.cfg", baseName);
@@ -165,7 +182,7 @@ public sealed class ConfigRecoveryTests : IDisposable
         File.WriteAllText(CommandFile, Broken);
         CommandList.Load(".cmd.cfg", baseName).Status.Should().Be(ConfigLoadStatus.Failed);
 
-        // 旧形式の行（キー = 値）に見える部分を含む破損XMLも旧形式として受理しない
+        // 旧形式の行（キー = 値）と同じ形の部分を含む破損XMLも旧形式として受理しない
         File.WriteAllText(CommandFile, "<?xml version=\"1.0\"?>\r\n<CommandList>\r\n  <Commands>\r\n    <Command>x = a.exe\\n\\n\\n0\\n3\r\n");
         CommandList.Load(".cmd.cfg", baseName).Status.Should().Be(ConfigLoadStatus.Failed);
 

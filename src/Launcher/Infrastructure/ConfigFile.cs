@@ -31,6 +31,9 @@ public sealed record ConfigLoadResult<T>(
 {
     /// <summary>ログと通知で使う拡張子部分 (例: <c>.cmd.cfg</c>)</summary>
     public string Kind => ConfigFileState.KindOf(FileName);
+
+    /// <summary>読込には成功したが、その内容でバックアップを更新できなかった場合の原因</summary>
+    public Exception? BackupError { get; init; }
 }
 
 /// <summary>
@@ -117,8 +120,9 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // バックアップを作成できなくても読めたデータは使える。保存時に改めて作成を試みる
+            // バックアップを作成できなくても読めたデータは使える。利用者へは結果の BackupError で通知させる
             DiagnosticLog.Warn("Config.Backup", $"バックアップ更新失敗: {ConfigFileState.KindOf(fileName)} {ex.GetType().Name}");
+            return new(value, ConfigLoadStatus.Loaded, fileName, false, null) { BackupError = ex };
         }
         return new(value, ConfigLoadStatus.Loaded, fileName, false, null);
     }

@@ -320,6 +320,15 @@ public partial class ApplicationHostForm : Form
     static T AcceptLoadResult<T>(ConfigLoadResult<T> result, ConfigFile<T> store, T fallback)
         where T : ConfigStore, new()
     {
+        if (result.BackupError is { } backupError)
+        {
+            DiagnosticLog.Warn("Config.Backup", $"バックアップ作成失敗を通知: {result.Kind}");
+            MessageBox.Show(
+                $"設定ファイル({result.Kind})のバックアップ(.bak)を作成できませんでした。\r\n原因: {backupError.Message}\r\n\r\n"
+                    + "読み込んだ内容はそのまま使えますが、バックアップを作成できるまで、このファイルへの保存は失敗します。\r\n"
+                    + "らんちゃのフォルダーへ書き込める状態にしてください。",
+                AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
         if (result.Status != ConfigLoadStatus.Failed)
         {
             return result.Value;
