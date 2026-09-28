@@ -223,6 +223,10 @@ public sealed class Schedule : ICloneable
 [Serializable]
 public sealed class SchedulerItem : ICloneable
 {
+    /// <summary>
+    /// 設定変更をまたいでアイテムを追跡する識別子。旧版の設定には無く、読込後に<see cref="SchedulerData.EnsureIds"/>で補う
+    /// </summary>
+    public string Id { get; set; } = string.Empty;
     public bool Enable { get; set; } = true;
     public string Name { get; set; } = string.Empty;
     /// <summary>タスク間の待機時間 (ミリ秒)</summary>
@@ -230,11 +234,27 @@ public sealed class SchedulerItem : ICloneable
     public List<Schedule> Schedules { get; set; } = [];
     public List<SchedulerTask> Tasks { get; set; } = [];
 
+    /// <summary>新しい識別子</summary>
+    public static string NewId() => Guid.NewGuid().ToString("N");
+
+    /// <summary>
+    /// 複製する。編集用の複製であり、識別子は元と同じ
+    /// </summary>
     public SchedulerItem Clone()
     {
         var copy = (SchedulerItem)MemberwiseClone();
         copy.Schedules = Schedules.Select(s => s.Clone()).ToList();
         copy.Tasks = Tasks.Select(t => t.Clone()).ToList();
+        return copy;
+    }
+
+    /// <summary>
+    /// 利用者の「複製」操作用に、新しい識別子を持つ別アイテムとして複製する
+    /// </summary>
+    public SchedulerItem CloneAsNew()
+    {
+        var copy = Clone();
+        copy.Id = NewId();
         return copy;
     }
     object ICloneable.Clone() => Clone();
@@ -255,28 +275,34 @@ public sealed class SchedulerData : ConfigStore
 {
     public List<SchedulerItem> Items { get; set; } = [];
 
+    /// <summary>
+    /// 識別子の無いアイテムと、識別子が重複したアイテムへ新しい識別子を付ける。付けた場合は true
+    /// </summary>
+    public bool EnsureIds()
+    {
+        var seen = new HashSet<string>();
+        bool changed = false;
+        foreach (var item in Items)
+        {
+            if (string.IsNullOrEmpty(item.Id) || !seen.Add(item.Id))
+            {
+                item.Id = SchedulerItem.NewId();
+                seen.Add(item.Id);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
     public void Serialize()
     {
         Serialize(".sch.cfg");
     }
 
-    public static SchedulerData Deserialize()
-    {
-        try
-        {
-            return Deserialize<SchedulerData>(".sch.cfg");
-        }
-        catch (InvalidOperationException)
-        {
-            return new SchedulerData();
-        }
-        catch (XmlException)
-        {
-            return new SchedulerData();
-        }
-        catch (IOException)
-        {
-            return new SchedulerData();
-        }
-    }
+    public static ConfigLoadResult<SchedulerData> Load(string? baseName = null) => Store.Load(baseName);
+
+    /// <summary>
+    /// 保存データ (.sch.cfg) の読込・復元
+    /// </summary>
+    public static ConfigFile<SchedulerData> Store { get; } = new(".sch.cfg");
 }

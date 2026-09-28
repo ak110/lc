@@ -38,25 +38,12 @@ public sealed class MemoData : ConfigStore
     /// <summary>
     /// 読み込み
     /// </summary>
-    public static MemoData Deserialize()
-    {
-        try
-        {
-            return Deserialize<MemoData>(".memo.cfg");
-        }
-        catch (InvalidOperationException)
-        {
-            return new MemoData();
-        }
-        catch (XmlException)
-        {
-            return new MemoData();
-        }
-        catch (IOException)
-        {
-            return new MemoData();
-        }
-    }
+    public static ConfigLoadResult<MemoData> Load(string? baseName = null) => Store.Load(baseName);
+
+    /// <summary>
+    /// 保存データ (.memo.cfg) の読込・復元
+    /// </summary>
+    public static ConfigFile<MemoData> Store { get; } = new(".memo.cfg");
 }
 
 /// <summary>

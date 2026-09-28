@@ -284,6 +284,46 @@ public sealed class SchedulerDataTests
 
     #endregion
 
+    #region 識別子
+
+    [Fact]
+    public void 識別子の無いアイテムへ識別子を補う()
+    {
+        // 旧版の設定 (Id要素なし) を読み込む
+        var xml = SerializeToString(new SchedulerData { Items = [new SchedulerItem { Name = "a" }, new SchedulerItem { Name = "b" }] })
+            .Replace("<Id />", "", StringComparison.Ordinal);
+        var data = DeserializeFromString<SchedulerData>(xml);
+        data.Items.Should().OnlyContain(i => i.Id == "");
+
+        data.EnsureIds().Should().BeTrue();
+        data.Items.Should().OnlyContain(i => i.Id != "");
+        data.Items.Select(i => i.Id).Should().OnlyHaveUniqueItems();
+
+        // 保存して読み直しても同じ識別子で、再度の補完は不要
+        var reloaded = DeserializeFromString<SchedulerData>(SerializeToString(data));
+        reloaded.Items.Select(i => i.Id).Should().Equal(data.Items.Select(i => i.Id));
+        reloaded.EnsureIds().Should().BeFalse();
+    }
+
+    [Fact]
+    public void 編集用の複製は識別子を保ち利用者の複製は新しい識別子にする()
+    {
+        var item = new SchedulerItem { Id = SchedulerItem.NewId(), Name = "a" };
+
+        item.Clone().Id.Should().Be(item.Id);
+        var copy = item.CloneAsNew();
+        copy.Id.Should().NotBe(item.Id).And.NotBeEmpty();
+        copy.Name.Should().Be("a");
+
+        // 重複した識別子は補完で解消する
+        var data = new SchedulerData { Items = [item, item.Clone()] };
+        data.EnsureIds().Should().BeTrue();
+        data.Items.Select(i => i.Id).Should().OnlyHaveUniqueItems();
+        data.Items[0].Id.Should().Be(item.Id);
+    }
+
+    #endregion
+
     // --- ヘルパー ---
 
     private static string SerializeToString<T>(T obj)

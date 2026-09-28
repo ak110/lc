@@ -57,14 +57,27 @@ public static class SchedulerPresenter
     }
 
     /// <summary>
-    /// アイテムのタスクを逐次実行する。STAスレッドで実行される。
+    /// アイテムのタスクを逐次実行する。STAスレッドで実行し、呼出元へはすぐに戻る。
+    /// タスク列 (タスク間の待機を含む) が終わると、そのスレッドで<paramref name="onCompleted"/>を1回呼ぶ。
+    /// 完了はらんちゃ内のタスク列の完了であり、起動した外部アプリの終了は待たない。
     /// </summary>
     public static void ExecuteItemTasks(
         SchedulerItem item,
         Action<string, string>? showBalloonTip,
-        Action<string, string>? showMessageBox)
+        Action<string, string>? showMessageBox,
+        Action? onCompleted = null)
     {
-        var thread = new Thread(() => InnerExecuteTasks(item, showBalloonTip, showMessageBox));
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                InnerExecuteTasks(item, showBalloonTip, showMessageBox);
+            }
+            finally
+            {
+                onCompleted?.Invoke();
+            }
+        });
         thread.SetApartmentState(ApartmentState.STA);
         thread.IsBackground = true;
         thread.Start();

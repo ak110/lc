@@ -50,16 +50,22 @@ public class ConfigStore
     public void SerializeToFile(string fileName)
     {
         using var mutex = Lock(fileName);
-        string tmpFileName = fileName + ".tmp";
-        using (FileStream stream = File.Create(tmpFileName))
+        byte[] content;
+        using (var buffer = new MemoryStream())
         {
             XmlSerializer s = new XmlSerializer(GetType());
-            s.Serialize(stream, this);
+            s.Serialize(buffer, this);
+            content = buffer.ToArray();
         }
+        // ConfigFileで読み込んだファイルは、保存停止の判定と直前の本体の退避を置換より先に行う
+        ConfigFileState.BeforeReplace(fileName);
+        string tmpFileName = fileName + ".tmp";
+        File.WriteAllBytes(tmpFileName, content);
         // 同一ボリューム上のMoveは原子的なリネーム(MoveFileEx)になるため、
         // 書き込み途中のクラッシュでファイルが破損するリスクを回避できる。
         // 外部プロセス(アンチウイルス等)による一時的なファイルロックに備えてリトライする。
         MoveFileWithRetry(tmpFileName, fileName);
+        ConfigFileState.AfterReplace(fileName, content);
     }
 
     /// <summary>
@@ -131,6 +137,14 @@ public class ConfigStore
     {
         using var mutex = Lock(fileName);
         using FileStream stream = File.OpenRead(fileName);
+        return DeserializeFromStream<T>(stream);
+    }
+
+    /// <summary>
+    /// ストリームからオブジェクトを復元
+    /// </summary>
+    public static T DeserializeFromStream<T>(Stream stream)
+    {
         XmlSerializer formatter = new XmlSerializer(typeof(T));
         return (T)formatter.Deserialize(stream)!;
     }
@@ -147,7 +161,7 @@ public class ConfigStore
         return (T)formatter.Deserialize(stream)!;
     }
 
-    static MutexLock Lock(string fileName)
+    internal static IDisposable Lock(string fileName)
     {
         lock (lockObject)
         {

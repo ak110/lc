@@ -46,7 +46,7 @@ public sealed class UpdateForm : Form
         catch (Exception ex)
         {
             DiagnosticLog.Error("Update", ex);
-            MessageBox.Show(this, $"更新に失敗しました: {ex.Message}", "エラー",
+            MessageBox.Show(this, $"更新に失敗しました: {ex.Message}\r\n\r\nインストール済みのアプリは変更していません。", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             DialogResult = DialogResult.Cancel;
         }

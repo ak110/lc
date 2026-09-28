@@ -49,30 +49,6 @@ static class Program
 #pragma warning restore CA1031
 
     /// <summary>
-    /// 更新後に残った.oldファイルを削除する。
-    /// </summary>
-    static void CleanupOldFiles()
-    {
-        try
-        {
-            string? appDir = Path.GetDirectoryName(Application.ExecutablePath);
-            if (appDir is null) return;
-            foreach (var file in Directory.GetFiles(appDir, "*.old"))
-            {
-                try { File.Delete(file); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-            }
-        }
-        catch (IOException)
-        {
-            // クリーンアップ失敗は無視
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // クリーンアップ失敗は無視
-        }
-    }
-
-    /// <summary>
     /// アプリケーションのメインエントリポイント。
     /// </summary>
     [STAThread]
@@ -97,9 +73,6 @@ static class Program
             }
             MessageBox.Show(message, "致命的なエラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
         };
-
-        // 更新後に残った .old ファイルを削除する。
-        CleanupOldFiles();
 
         using var app = new AppBase.Initializer();
         using var singleInstance = new SingleInstance();
@@ -133,13 +106,21 @@ static class Program
             else if (File.Exists(args[i]) || Directory.Exists(args[i]))
             {
                 Command command = Command.FromFile(args[i]);
-                new ReplaceEnvList(Config.Deserialize().ReplaceEnv).Replace(command);
+                new ReplaceEnvList(Config.Load().Value.ReplaceEnv).Replace(command);
                 using var form = new EditCommandForm(command);
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    CommandList commandList = CommandList.Deserialize(".cmd.cfg");
-                    commandList.Add(command);
-                    commandList.Serialize(".cmd.cfg");
+                    var result = CommandList.AddAndSave(".cmd.cfg", command);
+                    if (result.Status == ConfigLoadStatus.Failed)
+                    {
+                        // 読めない一覧へ追加して保存すると、既存のコマンドが失われる
+                        MessageBox.Show(
+                            $"コマンド一覧({result.Kind})を読み込めないため、コマンドを追加しませんでした。\r\n原因: {result.Error?.Message}\r\n\r\n"
+                                + "らんちゃを起動すると、読込失敗の通知からバックアップを使って復元できます。",
+                            AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        exit = true;
+                        continue;
+                    }
 
                     TryPostMessageToResident(
                         WM_APPMSG, WM_APPMSG_WPARAM, WM_APPMSG_RELOAD,

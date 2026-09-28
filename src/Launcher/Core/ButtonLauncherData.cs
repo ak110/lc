@@ -30,25 +30,12 @@ public sealed class ButtonLauncherData : ConfigStore
     /// <summary>
     /// 読み込み
     /// </summary>
-    public static ButtonLauncherData Deserialize()
-    {
-        try
-        {
-            return Deserialize<ButtonLauncherData>(".btns.cfg");
-        }
-        catch (InvalidOperationException)
-        {
-            return new ButtonLauncherData();
-        }
-        catch (XmlException)
-        {
-            return new ButtonLauncherData();
-        }
-        catch (IOException)
-        {
-            return new ButtonLauncherData();
-        }
-    }
+    public static ConfigLoadResult<ButtonLauncherData> Load(string? baseName = null) => Store.Load(baseName);
+
+    /// <summary>
+    /// 保存データ (.btns.cfg) の読込・復元
+    /// </summary>
+    public static ConfigFile<ButtonLauncherData> Store { get; } = new(".btns.cfg");
 }
 
 /// <summary>

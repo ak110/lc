@@ -14,6 +14,46 @@ public sealed class SchedulerPresenterTests
     // テスト用日時: 2025年6月16日(月) を基準に使う
     private static readonly DateTime Monday0900 = new(2025, 6, 16, 9, 0, 0);
 
+    [Fact]
+    public void ExecuteItemTasks_タスク列の完了後に完了通知を呼ぶ()
+    {
+        var events = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        using var done = new ManualResetEventSlim();
+        int completedCount = 0;
+        var item = new SchedulerItem
+        {
+            SleepTimeMs = 100,
+            Tasks =
+            [
+                new SchedulerTask { Type = SchedulerTaskType.BalloonTip, Message = "1" },
+                new SchedulerTask { Type = SchedulerTaskType.MessageBox, Message = "2" },
+            ],
+        };
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        SchedulerPresenter.ExecuteItemTasks(
+            item,
+            (_, message) =>
+            {
+                events.Enqueue("balloon");
+                throw new InvalidOperationException("タスクの例外");
+            },
+            (_, message) => events.Enqueue("message"),
+            () =>
+            {
+                events.Enqueue("completed");
+                Interlocked.Increment(ref completedCount);
+                done.Set();
+            });
+
+        done.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+        Thread.Sleep(200);
+        events.Should().Equal("balloon", "message", "completed");
+        completedCount.Should().Be(1);
+        // 2件のタスク間待機を含めて完了する
+        stopwatch.ElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(190);
+    }
+
     #region SpecificTimes (IsScheduleActive 経由)
 
     [Fact]

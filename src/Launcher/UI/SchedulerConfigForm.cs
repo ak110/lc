@@ -39,7 +39,7 @@ public partial class SchedulerConfigForm : Form
 
     private void buttonAdd_Click(object? sender, EventArgs e)
     {
-        var item = new SchedulerItem { Name = "新規アイテム" };
+        var item = new SchedulerItem { Id = SchedulerItem.NewId(), Name = "新規アイテム" };
         using var form = new SchedulerItemForm(item, showBalloonTip, showMessageBox);
         if (form.ShowDialogOver(this) == DialogResult.OK)
         {
@@ -53,7 +53,7 @@ public partial class SchedulerConfigForm : Form
         {
             if (MessageBox.Show(this, $"「{selected.Name}」を複製しますか？", Text,
                 MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
-            FormsHelper.Insert(listBoxItems, selected.Clone());
+            FormsHelper.Insert(listBoxItems, selected.CloneAsNew());
         }
     }
 

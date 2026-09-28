@@ -39,6 +39,9 @@ ConfigStoreを継承するクラスはXMLシリアライズで永続化される
 対象はConfig・CommandList・ButtonLauncherData・SchedulerData・Data・MemoDataである。
 ConfigStoreは原子的なファイル保存（一時ファイルに書き込み後File.Moveで置換）を提供し、
 保存中のクラッシュによるデータ破損を防止する。
+Data以外の5種は`ConfigFile<T>`で読み込み、読込結果を成功・初回の不在・失敗に分ける。
+失敗したファイルへの保存は止め、読込と保存のたびに直前の正常な内容を`.bak`へ1世代残し、失敗の通知から復元できるようにする。
+不変条件は`.claude/skills/persistence/`に記載している。
 
 ### ApplicationHostFormによるIPCハブ
 
@@ -48,6 +51,10 @@ WM_APPMSGによるプロセス間通信（/close、/restart等のコマンドラ
 WinFormsのメッセージループを維持するために常駐フォームが必要であり、
 CommandLauncherFormは表示/非表示を繰り返すため、この役割を分離している。
 また、スケジューラーのタイマー（30秒間隔）を管理し、スケジュール条件に合致したタスクの自動実行も制御する。
+予定実行の開始・保留・完了はアイテムの識別子（`SchedulerItem.Id`）ごとに`SchedulerRunCoordinator`で管理する。
+`SchedulerPresenter.ExecuteItemTasks`はタスク列（タスク間の待機を含む）の完了時に完了通知を呼び、
+ApplicationHostFormは`UiThreadDispatcher.SafeBeginInvoke`でUIスレッドへ配送して実行状態を解放する。
+実行中に到来した同じアイテムの予定は1件の保留にまとめ、完了後に最新の確定設定で1回実行する。
 
 ### スケジューラータスクの種類
 

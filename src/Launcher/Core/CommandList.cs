@@ -43,36 +43,48 @@ public sealed class CommandList : ConfigStore, ICloneable
     /// </summary>
     public new void Serialize(string ext)
     {
+        SerializeTo(ext, null);
+    }
+
+    /// <summary>
+    /// 書き込み (保存先のベースファイル名を指定する)
+    /// </summary>
+    public void SerializeTo(string ext, string? baseName)
+    {
         Commands.Sort();
-        base.Serialize(ext);
+        SerializeToFile(Store(ext).FileName(baseName));
+    }
+
+    /// <summary>
+    /// 保存済みの一覧へコマンドを追加して保存する (「送る」からの登録)。
+    /// 一覧を読み込めない場合は追加も保存もせず、その読込結果を返す。
+    /// </summary>
+    public static ConfigLoadResult<CommandList> AddAndSave(string ext, Command command, string? baseName = null)
+    {
+        var result = Load(ext, baseName);
+        if (result.Status == ConfigLoadStatus.Failed)
+        {
+            return result;
+        }
+        result.Value.Add(command);
+        result.Value.SerializeTo(ext, baseName);
+        return result;
     }
 
     /// <summary>
     /// 読み込み
     /// </summary>
-    public static CommandList Deserialize(string ext)
+    public static ConfigLoadResult<CommandList> Load(string ext, string? baseName = null) => Store(ext).Load(baseName);
+
+    /// <summary>
+    /// 保存データの読込・復元。XMLとして読めない旧形式のコマンド一覧も読む
+    /// </summary>
+    public static ConfigFile<CommandList> Store(string ext) => new(ext, LoadLegacy);
+
+    static CommandList LoadLegacy(byte[] content)
     {
-        try
-        {
-            return Deserialize<CommandList>(ext);
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or XmlException or IOException)
-        {
-            // XMLデシリアライズ失敗時はレガシー形式での読み込みを試みる
-            string name = DefaultBaseName + ext;
-            if (File.Exists(name))
-            {
-                LegacyConfigReader reader = new LegacyConfigReader(name);
-                try
-                {
-                    return CommandList.LoadFrom(reader);
-                }
-                catch (Exception ex2) when (ex2 is InvalidOperationException or IOException or FormatException)
-                {
-                }
-            }
-            return new CommandList();
-        }
+        using var stream = new MemoryStream(content);
+        return LoadFrom(new LegacyConfigReader(stream, false));
     }
 
     #endregion

@@ -20,8 +20,8 @@ public partial class ApplicationHostForm : Form
     ButtonLauncherForm? buttonLauncherForm;
     MemoForm? memoForm;
 
-    /// <summary>スケジューラータスク実行中フラグ (二重実行防止)</summary>
-    bool schedulerRunning;
+    /// <summary>スケジューラーの予定実行の管理 (同じアイテムの重複防止と予定の集約)</summary>
+    readonly SchedulerRunCoordinator schedulerRunCoordinator;
 
     /// <summary>ShowHide 再入防止フラグ (DoEvents 経由の多重呼び出しを防ぐ)</summary>
     bool showHideInProgress;
@@ -95,11 +95,17 @@ public partial class ApplicationHostForm : Form
         Location = new Point(screenRect.Left - Size.Width, screenRect.Top - Size.Height);
 
         // 設定ファイルの読み込み
-        config = Config.Deserialize();
-        CommandList = CommandList.Deserialize(".cmd.cfg");
-        ButtonLauncherData = ButtonLauncherData.Deserialize();
-        MemoData = MemoData.Deserialize();
-        schedulerData = SchedulerData.Deserialize();
+        // 読めないファイルは通知し、復元しなければ初期値で起動する (そのファイルへの保存は止まる)
+        var configResult = Config.Load();
+        config = AcceptLoadResult(configResult, Config.Store, configResult.Value);
+        var commandResult = CommandList.Load(".cmd.cfg");
+        CommandList = AcceptLoadResult(commandResult, CommandList.Store(".cmd.cfg"), commandResult.Value);
+        var buttonResult = ButtonLauncherData.Load();
+        ButtonLauncherData = AcceptLoadResult(buttonResult, ButtonLauncherData.Store, buttonResult.Value);
+        var memoResult = MemoData.Load();
+        MemoData = AcceptLoadResult(memoResult, MemoData.Store, memoResult.Value);
+        var schedulerResult = SchedulerData.Load();
+        schedulerData = AcceptLoadResult(schedulerResult, SchedulerData.Store, schedulerResult.Value);
         new ReplaceEnvList(config.ReplaceEnv).Replace(schedulerData);
         try { data = Data.Deserialize(); } catch (IOException) { } catch (InvalidOperationException) { }
 
@@ -119,6 +125,8 @@ public partial class ApplicationHostForm : Form
         }
         ApplyConfig();
         SetupSchedulerActions();
+        schedulerRunCoordinator = new SchedulerRunCoordinator(() => schedulerData.Items, StartSchedulerItem);
+        EnsureSchedulerIds();
 
         // 起動時の自動更新チェックは無効化 (手動で実行する)
     }
@@ -146,6 +154,7 @@ public partial class ApplicationHostForm : Form
     private void ApplicationHostForm_FormClosing(object sender, FormClosingEventArgs e)
     {
         schedulerTimer.Stop();
+        schedulerRunCoordinator.Shutdown();
         hookManager.Unregister();
         notifyIcon1.Dispose();
 
@@ -292,13 +301,57 @@ public partial class ApplicationHostForm : Form
     public void Reload()
     {
         var stopwatch = Stopwatch.StartNew();
-        CommandList = CommandList.Deserialize(".cmd.cfg");
-        ButtonLauncherData = ButtonLauncherData.Deserialize();
-        schedulerData = SchedulerData.Deserialize();
+        // 読めないファイルは通知し、復元しなければ保持中のデータを使い続ける
+        CommandList = AcceptLoadResult(CommandList.Load(".cmd.cfg"), CommandList.Store(".cmd.cfg"), CommandList);
+        ButtonLauncherData = AcceptLoadResult(ButtonLauncherData.Load(), ButtonLauncherData.Store, ButtonLauncherData);
+        schedulerData = AcceptLoadResult(SchedulerData.Load(), SchedulerData.Store, schedulerData);
+        schedulerRunCoordinator.ItemsChanged();
+        EnsureSchedulerIds();
         var data = schedulerData;
         ReplaceEnvList.StartBackgroundReplace(config.ReplaceEnv, rep => rep.Replace(data));
         IfCommandLauncherFormAlive(form => form.ApplyConfig());
         DiagnosticLog.Info("Host.Reload", $"elapsed={stopwatch.ElapsedMilliseconds}ms");
+    }
+
+    /// <summary>
+    /// 読込結果を受け取る。失敗していれば通知し、バックアップがあれば復元を選べるようにする。
+    /// 復元したらそのデータを、復元しなければ<paramref name="fallback"/>を返す。
+    /// </summary>
+    static T AcceptLoadResult<T>(ConfigLoadResult<T> result, ConfigFile<T> store, T fallback)
+        where T : ConfigStore, new()
+    {
+        if (result.Status != ConfigLoadStatus.Failed)
+        {
+            return result.Value;
+        }
+        string text = $"設定ファイル({result.Kind})を読み込めませんでした。\r\n原因: {result.Error?.Message}\r\n\r\n"
+            + "原本を上書きしないよう、このファイルへの保存を停止しています。";
+        if (!result.BackupAvailable)
+        {
+            MessageBox.Show(text + "\r\nファイルを直してから再起動してください。", AppVersion.Title,
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return fallback;
+        }
+        var answer = MessageBox.Show(
+            text + "\r\n\r\n前回正常に読み込めた内容のバックアップから復元しますか？\r\n"
+                + "(読み込めなかったファイルは「.broken-日時」を付けた名前で残します)",
+            AppVersion.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+        if (answer != DialogResult.Yes)
+        {
+            return fallback;
+        }
+        try
+        {
+            return store.RestoreFromBackup();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidOperationException or InvalidDataException or System.Xml.XmlException)
+        {
+            DiagnosticLog.Warn("Config.Restore", $"復元失敗: {result.Kind} {ex.GetType().Name}");
+            MessageBox.Show($"復元できませんでした。保存の停止は続きます。\r\n原因: {ex.Message}", AppVersion.Title,
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return fallback;
+        }
     }
 
     #region メニューなど
@@ -442,6 +495,8 @@ public partial class ApplicationHostForm : Form
         if (form.ShowDialogOver(GetVisibleOwner()) == DialogResult.OK)
         {
             schedulerData = form.Value;
+            schedulerRunCoordinator.ItemsChanged();
+            EnsureSchedulerIds();
             schedulerData.Serialize();
         }
     }
@@ -449,6 +504,14 @@ public partial class ApplicationHostForm : Form
     private void スケジューラー一時停止PToolStripMenuItem_Click(object sender, EventArgs e)
     {
         schedulerTimer.Enabled = !schedulerTimer.Enabled;
+        if (schedulerTimer.Enabled)
+        {
+            schedulerRunCoordinator.Resume();
+        }
+        else
+        {
+            schedulerRunCoordinator.Pause();
+        }
         スケジューラー一時停止PToolStripMenuItem.Text = schedulerTimer.Enabled
             ? "スケジューラー一時停止(&P)"
             : "スケジューラー再開(&P)";
@@ -547,30 +610,39 @@ public partial class ApplicationHostForm : Form
     /// </summary>
     private void schedulerTimer_Tick(object sender, EventArgs e)
     {
-        if (schedulerRunning) return; // 前回のタスクがまだ実行中
-
         var now = DateTime.Now;
-        var itemsToRun = SchedulerPresenter.GetItemsToRun(schedulerData, data.SchedulerLastCheckTime, now);
-        if (itemsToRun.Count == 0)
+        // 別アイテムは並行して開始する。実行中のアイテムへの予定は保留にまとめ、完了後に1回実行する
+        foreach (var item in SchedulerPresenter.GetItemsToRun(schedulerData, data.SchedulerLastCheckTime, now))
         {
-            // 実行対象なしでもLastCheckTimeを前進 (正常動作時の二重実行防止)
-            data.SchedulerLastCheckTime = now;
-            data.Serialize();
-            return;
+            schedulerRunCoordinator.Request(item);
         }
-
-        schedulerRunning = true;
-        // 各アイテムのタスクをSTAスレッドで並行実行し、完了後にLastCheckTimeを更新
-        foreach (var item in itemsToRun)
-        {
-            SchedulerPresenter.ExecuteItemTasks(item, schedulerShowBalloonTip, schedulerShowMessageBox);
-        }
-        // ExecuteItemTasks はバックグラウンドスレッドを起動して即座に返る。
-        // 厳密な完了待ちは行わず、次の Tick で isRunning ガードを解除する簡易方式とする。
-        // (元のスケジューラと同等の挙動)
+        // 実行対象の有無によらずLastCheckTimeを前進させ、同じ予定を二重に数えない
         data.SchedulerLastCheckTime = now;
         data.Serialize();
-        schedulerRunning = false;
+    }
+
+    /// <summary>
+    /// 予定実行の開始。タスク列の完了をUIスレッドへ配送し、配送できなければ実行状態だけを解放する。
+    /// </summary>
+    private void StartSchedulerItem(SchedulerItem item, Action onCompleted)
+    {
+        SchedulerPresenter.ExecuteItemTasks(item, schedulerShowBalloonTip, schedulerShowMessageBox,
+            () => UiThreadDispatcher.SafeBeginInvoke(this, onCompleted,
+                onSkipped: () => schedulerRunCoordinator.Release(item.Id)));
+    }
+
+    /// <summary>
+    /// 識別子の無いスケジューラーアイテムへ識別子を補って保存する。保存できなければ予定実行を止めて通知する。
+    /// </summary>
+    private void EnsureSchedulerIds()
+    {
+        if (!schedulerRunCoordinator.EnsureIds(schedulerData, schedulerData.Serialize))
+        {
+            MessageBox.Show(
+                "スケジューラー設定(.sch.cfg)へアイテムの識別子を保存できなかったため、スケジューラーの予定実行を停止しています。\r\n"
+                    + "ファイルを書き込める状態にしてから、らんちゃを再起動してください。",
+                AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
     }
 
     /// <summary>

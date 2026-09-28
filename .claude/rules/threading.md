@@ -14,8 +14,11 @@ paths:
 | ディレクトリ展開スレッド (STA)   | `Command.OpenDirectory()`の実行           | `CommandLauncherForm.OpenDirectory`で生成  |
 | アイコン読込スレッド (STA)       | `AsyncIconLoader`による非同期アイコン取得 | 用途別STAワーカー + リトライ（最大2回）    |
 | 環境変数置換スレッド             | `ReplaceEnvList`のコマンド名置換          | `CommandLauncherForm.ApplyConfig`で生成    |
-| スケジューラー実行スレッド (STA) | `SchedulerPresenter.ExecuteItemTasks`     | タイマーTick時に生成、アイテムごとに1本    |
+| スケジューラー実行スレッド (STA) | `SchedulerPresenter.ExecuteItemTasks`     | アイテムごとに1本 (後述の直列化)           |
 | フックコールバック               | キーボード/マウスフックのイベント通知     | `BeginInvoke`でUIスレッドへディスパッチ    |
+
+スケジューラーの予定実行は`SchedulerRunCoordinator`経由で開始し、同じアイテムの実行スレッドは同時に1本までとする。
+タスク列の完了通知は`UiThreadDispatcher.SafeBeginInvoke`でUIスレッドへ配送して実行状態を解放し、配送できなければ`Release`で解放する。
 
 ## STAスレッド制約
 

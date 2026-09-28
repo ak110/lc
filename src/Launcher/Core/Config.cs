@@ -99,44 +99,17 @@ public sealed class Config : ConfigStore, ICloneable
     /// <summary>
     /// 読み込み
     /// </summary>
-    public static Config Deserialize()
-    {
-        try
-        {
-            return Deserialize<Config>(".cfg");
-        }
-        catch (InvalidOperationException)
-        {
-            return TryLoadLegacyConfig();
-        }
-        catch (XmlException)
-        {
-            return TryLoadLegacyConfig();
-        }
-        catch (IOException)
-        {
-            return TryLoadLegacyConfig();
-        }
-    }
+    public static ConfigLoadResult<Config> Load(string? baseName = null) => Store.Load(baseName);
 
     /// <summary>
-    /// レガシー設定ファイルからの読み込みを試行する
+    /// 保存データ (.cfg) の読込・復元。XMLとして読めない旧形式の設定も読む
     /// </summary>
-    private static Config TryLoadLegacyConfig()
+    public static ConfigFile<Config> Store { get; } = new(".cfg", LoadLegacy);
+
+    static Config LoadLegacy(byte[] content)
     {
-        string name = DefaultBaseName + ".cfg";
-        if (File.Exists(name))
-        {
-            LegacyConfigReader reader = new LegacyConfigReader(name);
-            try
-            {
-                return Config.LoadFrom(reader);
-            }
-            catch (IOException) { }
-            catch (FormatException) { }
-            catch (IndexOutOfRangeException) { }
-        }
-        return new Config();
+        using var stream = new MemoryStream(content);
+        return LoadFrom(new LegacyConfigReader(stream, false));
     }
 
     #endregion
