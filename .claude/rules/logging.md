@@ -27,7 +27,7 @@ OS由来のメッセージ（`Win32Exception`を引数なしまたは`(int error
 プロジェクト側が構築したメッセージのうち、ログへ届き得るものにはパスを含めない。
 対象は`throw new Exception($"failed for {path}")`のような文字列引数付きコンストラクタ全般とする。
 `Win32Exception`の`(int errorCode, string message)`コンストラクタ第2引数も対象に含める。
-ログへ届き得るとは、当該例外がキャッチされて`DiagnosticLog`へ`ex`もしくは`ex.Message`が渡る場合、
+ログへ届き得るとは、例外がキャッチされて`DiagnosticLog`へ`ex`もしくは`ex.Message`が渡る場合、
 および未捕捉のまま`Program.cs`の`UnhandledException`ハンドラへ届く場合を指す。
 既存の`Message`にパスが含まれ、かつログへ届き得る例外の是正手段は次の2択とする。
 

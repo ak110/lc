@@ -49,7 +49,7 @@ public static class ShellNamespaceHelper
 /// 参照先: Microsoft Learn
 /// https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ishellfolder
 /// 簡略化: GetUIObjectOf以外のメソッドの複雑な型（STRRET・IEnumIDList等）をIntPtrで宣言しVTable順のみ厳密に保つ。
-/// 既知の限界: GetUIObjectOf以外を呼び出す場合は当該メソッドの型を公式仕様どおりに置き換える必要がある。
+/// 既知の限界: GetUIObjectOf以外のメソッドを呼び出す場合は、呼び出すメソッドの型を公式仕様どおりに置き換える必要がある。
 /// 見直し契機: GetUIObjectOf以外を実際に呼び出す実装が加わった時点。
 /// </summary>
 [ComImport, Guid("000214E6-0000-0000-C000-000000000046"),

@@ -33,7 +33,7 @@ UI操作は`BeginInvoke`（非同期）でUIスレッドへディスパッチす
 転送しないとサブメニュー展開・オーナードロー項目・アクセラレータキーが機能しない。
 転送は`ShellContextMenuInvoker`が内部で保持する`NativeWindow`派生で行う。
 
-当該`NativeWindow`派生（`MenuMessageForwarder`）は`AssignHandle(ownerHwnd)`で`ownerHwnd`をサブクラス化する。
+メッセージ転送用の`NativeWindow`派生（`MenuMessageForwarder`）は`AssignHandle(ownerHwnd)`で`ownerHwnd`をサブクラス化する。
 同一`ownerHwnd`に対する多重生成（メニュー表示中の再帰的なShellモーダルUI呼び出し等）は禁止する。
 生存区間が重なると`AssignHandle`が保存する旧WNDPROCのチェーンが破損する。
 
@@ -93,7 +93,7 @@ Shell呼び出しと親メニュー`Closed`イベントのFIFO順序は
 `try/catch (Exception)`もすり抜けるため、既存の`ErrorReporter`経由の通知は機能しない。
 AV再発時の診断のため、永続ログAPI`Launcher.Infrastructure.DiagnosticLog`の`Debug`を用いる。
 Shell/Win32境界の疑わしい呼び出しへ`before/after`ペアで一時的に配置しAV発生ステージを特定する。
-原因特定・修正が完了した時点で当該ペアは削除する。
+原因特定・修正が完了した時点で、診断用に置いた`before/after`ペアを削除する。
 `DiagnosticLog`の実装仕様・レベル使い分け・パス出力禁止などは`.claude/rules/logging.md`に従う。
 `Program.cs`の`UnhandledException`ハンドラは捕捉できた例外を`DiagnosticLog.Error`で併記する。
 `AccessViolationException`本体は捕捉せずfail-fastでプロセスを終了させる（隠すと診断価値を失う）。
@@ -117,7 +117,7 @@ Shell/Win32境界の疑わしい呼び出しへ`before/after`ペアで一時的�
 
 P/Invoke宣言に対する失敗検知に`new Win32Exception()`（引数なしコンストラクタ）を用いる場合、
 `[DllImport(..., SetLastError = true)]`を必ず付与する。
-付与しないと`GetLastError`は当該P/Invoke失敗以外の値を返し得る。
+付与しないと`GetLastError`は対象のP/Invokeが失敗したときの値以外を返し得る。
 `Win32Exception`を構築するタイミングはP/Invoke戻り値評価の直後とする。
 他のP/Invoke呼び出しを介在させない位置で構築し、`GetLastError`のスナップショットを保存する。
 本節は「ShellExecuteEx失敗時のhProcess解放」節と同一原則を全P/Invoke宣言へ拡張する規範である。
@@ -147,6 +147,6 @@ Closed発火後にWinForms内部の後始末処理（`ToolStripManager`追跡解
 `ListView`の`SmallImageList`・`LargeImageList`へ設定した画像リストなどである。
 `base.Dispose(disposing)`は子コントロールを破棄する過程でレイアウトを変え、
 子の`OnSizeChanged`などのイベントを発火する。
-破棄済みのリソースを子が参照すると、当該イベントの処理でGDI+が`ArgumentException`を返す。
+破棄済みのリソースを子が参照すると、`OnSizeChanged`などのイベント処理でGDI+が`ArgumentException`を返す。
 子コントロールが参照しないリソース（自クラス専用のローダー、タイマー、`components`）は
 `base.Dispose(disposing)`の前に解放してよい。
