@@ -153,19 +153,31 @@ public partial class ApplicationHostForm : Form
 
     private void ApplicationHostForm_FormClosing(object sender, FormClosingEventArgs e)
     {
+        if (!ConfirmPendingMemoSave("終了"))
+        {
+            e.Cancel = true;
+            return;
+        }
         schedulerTimer.Stop();
         schedulerRunCoordinator.Shutdown();
         hookManager.Unregister();
         notifyIcon1.Dispose();
 
-        // メモ内容のデバウンス保存が残っていれば最終保存する
-        if (memoForm is { IsDisposed: false })
-        {
-            memoForm.FlushPendingSave();
-        }
-
         data.WindowHandle = 0;
         data.Serialize();
+    }
+
+    /// <summary>未保存のメモを保存し、失敗したら内容を失う操作の続行を利用者に確認する。</summary>
+    private bool ConfirmPendingMemoSave(string operation)
+    {
+        if (memoForm is not { IsDisposed: false } || memoForm.FlushPendingSave()) return true;
+
+        memoForm.ShowMemo();
+        return MessageBox.Show(memoForm,
+            $"メモを保存できませんでした。{operation}すると未保存の内容が失われます。\r\n"
+                + $"「いいえ」で戻り、再保存するか本文を別の場所へコピーしてください。\r\n\r\n{operation}しますか？",
+            AppVersion.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+            MessageBoxDefaultButton.Button2) == DialogResult.Yes;
     }
 
     /// <summary>
@@ -464,6 +476,7 @@ public partial class ApplicationHostForm : Form
                 return;
             }
 
+            if (!ConfirmPendingMemoSave("更新")) return;
             using var form = new UpdateForm(release!);
             form.ShowDialogOver(GetVisibleOwner());
             // UpdateForm 内でバッチ起動と Environment.Exit() を実行するため、ここに到達するのはキャンセル時のみ。
@@ -540,8 +553,9 @@ public partial class ApplicationHostForm : Form
 
     private void Restart()
     {
-        AppBase.SetRestart();
         Close();
+        // 保存失敗で終了を取り消した場合、次の通常終了に再起動を持ち越さない。
+        if (IsDisposed) AppBase.SetRestart();
     }
 
     /// <summary>

@@ -15,10 +15,20 @@ namespace Launcher.UI;
 /// </summary>
 public partial class MemoForm : Form
 {
-    readonly ApplicationHostForm owner;
+    readonly MemoData data;
+    readonly Action saveData;
     readonly ContextMenuStrip tabContextMenu;
     readonly System.Windows.Forms.Timer saveTimer;
+    readonly ToolStripStatusLabel saveStatus;
+    readonly ToolStripButton retrySaveButton;
+    readonly ToolStripMenuItem saveMenuItem = new("保存(&S)")
+    {
+        Name = "saveMenuItem",
+        ShortcutKeys = Keys.Control | Keys.S,
+    };
     FindReplaceDialog? findReplaceDialog;
+    bool savePending;
+    bool saveFailed;
 
     /// <summary>初期化・タブ再構築・ウィンドウ復元中の保存抑制ガード</summary>
     bool loading;
@@ -26,13 +36,34 @@ public partial class MemoForm : Form
     /// <summary>全タブへ一括適用する現在のフォント</summary>
     Font? memoFont;
 
-    MemoData Data => owner.MemoData;
+    MemoData Data => data;
 
     public MemoForm(ApplicationHostForm owner)
+        : this(owner.MemoData, owner.MemoData.Serialize)
     {
-        this.owner = owner;
+        Owner = owner;
+    }
+
+    internal MemoForm(MemoData data, Action saveData)
+    {
+        this.data = data;
+        this.saveData = saveData;
         InitializeComponent();
         Text = $"{Infrastructure.AppVersion.Title} : メモパッド";
+
+        var statusStrip = new StatusStrip { Name = "saveStatusStrip", SizingGrip = false, ShowItemToolTips = true };
+        saveStatus = new ToolStripStatusLabel("保存済み")
+        {
+            Name = "saveStatus",
+            Spring = true,
+            TextAlign = ContentAlignment.MiddleLeft,
+        };
+        retrySaveButton = new ToolStripButton("再保存") { Name = "retrySaveButton", Enabled = false };
+        retrySaveButton.Click += (s, e) => SaveData();
+        statusStrip.Items.AddRange([saveStatus, retrySaveButton]);
+        Controls.Add(statusStrip);
+        // 上下のバーを先に配置し、残りの領域をタブへ割り当てる。
+        Controls.SetChildIndex(statusStrip, 1);
 
         // テキスト変更・位置/サイズ変更・タブ切替のデバウンス保存タイマー
         saveTimer = new System.Windows.Forms.Timer { Interval = 200 };
@@ -58,8 +89,7 @@ public partial class MemoForm : Form
 
         WireMenu();
 
-        // オーナー設定 (Show→Hideだと一瞬表示されるのでプロパティで設定)
-        Owner = owner;
+        // 表示前にハンドルを作成し、本文のフォントとウィンドウ位置を初期化する。
         _ = Handle;
 
         RestoreWindowBounds();
@@ -153,6 +183,8 @@ public partial class MemoForm : Form
     void WireMenu()
     {
         newTabMenuItem.Click += (s, e) => AddTab();
+        saveMenuItem.Click += (s, e) => SaveData();
+        fileMenu.DropDownItems.Insert(1, saveMenuItem);
         renameTabMenuItem.Click += (s, e) => RenameTab();
         closeTabMenuItem.Click += (s, e) => CloseCurrentTab();
         closeWindowMenuItem.Click += (s, e) => Close();
@@ -825,31 +857,50 @@ public partial class MemoForm : Form
 
     void ScheduleSave()
     {
+        savePending = true;
+        if (!saveFailed) saveStatus.Text = "未保存";
         saveTimer.Stop();
         saveTimer.Start();
     }
 
     /// <summary>
-    /// デバウンス保存が残っていたら即座に保存する。
+    /// 未保存の内容があれば即座に保存し、未保存が残っていないかを返す。
     /// </summary>
-    public void FlushPendingSave()
+    public bool FlushPendingSave()
     {
-        if (saveTimer.Enabled)
+        if (savePending)
         {
-            saveTimer.Stop();
             SaveData();
         }
+        return !savePending;
     }
 
     void SaveData()
     {
+        savePending = true;
+        saveTimer.Stop();
         try
         {
-            Data.Serialize();
+            saveData();
+            savePending = false;
+            saveFailed = false;
+            saveStatus.Text = "保存済み";
+            saveStatus.ToolTipText = string.Empty;
+            retrySaveButton.Enabled = false;
+            saveMenuItem.Enabled = true;
         }
         catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
         {
             DiagnosticLog.Error("Memo.Save", ex);
+            saveFailed = true;
+            saveStatus.Text = ex is ConfigSaveBlockedException
+                ? "未保存: 内容をコピーしてから復元してください"
+                : "未保存: 書き込みを確認して再保存してください";
+            saveStatus.ToolTipText = ex is ConfigSaveBlockedException
+                ? "読込失敗で保存が停止しています。編集中の本文を別の場所へコピーしてから、起動時の復元案内に従ってください。"
+                : $"メモを保存できませんでした。フォルダーの書き込み権限やファイルの使用状態を確認し、再保存してください。\r\n{ex.Message}";
+            retrySaveButton.Enabled = ex is not ConfigSaveBlockedException;
+            saveMenuItem.Enabled = retrySaveButton.Enabled;
         }
     }
 

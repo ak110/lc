@@ -28,6 +28,71 @@ jobs:
       # mise等がGitHub APIを呼び出す際のレート制限（403）回避。
       GITHUB_TOKEN: ${{ github.token }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Prepare release
+        id: version
+        env:
+          RELEASE_BUMP: ${{ inputs.bump }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sourceCommit = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw '起動コミットを取得できません。Gitの状態を確認してください。' }
+          $propsPath = 'Directory.Build.props'
+          $content = [IO.File]::ReadAllText($propsPath)
+          if ($content -notmatch '<Version>(\d+\.\d+\.\d+)</Version>') {
+            throw 'Version要素を読み取れません。Directory.Build.propsを確認してください。'
+          }
+          $currentVersion = $Matches[1]
+          $parts = $currentVersion.Split('.')
+          $major = [int]$parts[0]
+          $minor = [int]$parts[1]
+          $patch = [int]$parts[2]
+          switch ($env:RELEASE_BUMP) {
+            'PATCH' { $patch++ }
+            'MINOR' { $minor++; $patch = 0 }
+            'MAJOR' { $major++; $minor = 0; $patch = 0 }
+            default { throw '版数の更新タイプを確認してください。PATCH・MINOR・MAJORを指定できます。' }
+          }
+          $newVersion = "$major.$minor.$patch"
+          $tags = @(git tag --points-at HEAD)
+          if ($LASTEXITCODE -ne 0) { throw 'タグを取得できません。Gitの状態を確認してください。' }
+          $tag = $tags | Where-Object { $_ -eq "v$currentVersion" } | Select-Object -First 1
+          if (-not $tag) {
+            # GitHubの再実行は版数更新前のSHAから始まる。既に公開した子commitのタグを再利用する。
+            $candidate = "v$newVersion"
+            $tagCommit = git rev-parse --verify --quiet "refs/tags/$candidate^{commit}"
+            if ($LASTEXITCODE -eq 0) {
+              $parentCommit = git rev-parse --verify "$tagCommit^"
+              if ($LASTEXITCODE -ne 0 -or $parentCommit -ne $sourceCommit) {
+                throw "タグ $candidate は別の変更に属します。対象コミットと公開済みの版を確認してください。"
+              }
+              $tag = $candidate
+            } elseif ($LASTEXITCODE -ne 1) {
+              throw '既存タグを照合できません。Gitの状態を確認してください。'
+            }
+          }
+          if ($tag) {
+            git checkout --detach $tag
+            if ($LASTEXITCODE -ne 0) { throw '公開済みの版を取得できません。タグの状態を確認してください。' }
+            $newVersion = $tag.Substring(1)
+            $ciCommit = git rev-parse --verify 'HEAD^'
+            if ($LASTEXITCODE -ne 0) { throw '版数更新前のコミットを取得できません。タグの履歴を確認してください。' }
+            'rerun=true' >> $env:GITHUB_OUTPUT
+          } else {
+            $ciCommit = $sourceCommit
+            $regex = [regex]'<Version>[^<]+</Version>'
+            [IO.File]::WriteAllText($propsPath, $regex.Replace($content, "<Version>$newVersion</Version>", 1))
+            'rerun=false' >> $env:GITHUB_OUTPUT
+          }
+          "version=$newVersion" >> $env:GITHUB_OUTPUT
+          "ci_commit=$ciCommit" >> $env:GITHUB_OUTPUT
+
       - name: Verify CI passed
         env:
           GH_TOKEN: ${{ github.token }}
@@ -37,7 +102,7 @@ jobs:
           $intervalSec = 20
           for ($i = 1; $i -le $maxAttempts; $i++) {
             $conclusion = gh run list --repo=${{ github.repository }} --workflow=ci.yaml `
-              --commit=${{ github.sha }} --limit=1 --json=conclusion --jq='.[0].conclusion'
+              --commit=${{ steps.version.outputs.ci_commit }} --limit=1 --json=conclusion --jq='.[0].conclusion'
             $ghExitCode = $LASTEXITCODE
             if ($ghExitCode -ne 0) {
               exit $ghExitCode
@@ -57,97 +122,32 @@ jobs:
           Write-Error "Timed out waiting for CI to complete (waited $($maxAttempts * $intervalSec)s)."
           exit 1
 
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Check for existing release tag
-        id: existing
-        shell: pwsh
-        run: |
-          $tag = git tag --points-at=HEAD | Where-Object { $_ -match '^v\d+\.' } | Select-Object -First 1
-          if ($tag) {
-            Write-Host "Found existing tag $tag on HEAD, reusing"
-            "version=$($tag.TrimStart('v'))" >> $env:GITHUB_OUTPUT
-            "rerun=true" >> $env:GITHUB_OUTPUT
-          } else {
-            "rerun=false" >> $env:GITHUB_OUTPUT
-          }
-
       - name: Setup tools
         uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
 
       - name: Configure git identity
-        if: steps.existing.outputs.rerun != 'true'
+        if: steps.version.outputs.rerun != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # Directory.Build.props から現在のバージョンを取得し、bump種別に応じてインクリメント
-      - name: Bump version
-        if: steps.existing.outputs.rerun != 'true'
-        id: version
-        shell: pwsh
-        run: |
-          $propsPath = "Directory.Build.props"
-          # XmlDocument.Saveは末尾改行を除去するため、ファイル原形を保つ正規表現置換で書き換える
-          $content = [IO.File]::ReadAllText($propsPath)
-          if ($content -notmatch '<Version>([^<]+)</Version>') {
-            throw "Version要素が見つからない: $propsPath"
-          }
-          $currentVersion = $Matches[1]
-          $parts = $currentVersion.Split('.')
-          $major = [int]$parts[0]
-          $minor = [int]$parts[1]
-          $patch = [int]$parts[2]
-
-          switch ("${{ inputs.bump }}") {
-          "PATCH" {
-            $patch++
-          }
-          "MINOR" {
-            $minor++
-            $patch = 0
-          }
-          "MAJOR" {
-            $major++
-            $minor = 0
-            $patch = 0
-          }
-          }
-
-          $newVersion = "$major.$minor.$patch"
-          Write-Host "Version: $currentVersion -> $newVersion"
-
-          # Directory.Build.props を更新（最初の<Version>要素のみ差し替え）
-          $regex = [regex]'<Version>[^<]+</Version>'
-          $newContent = $regex.Replace($content, "<Version>$newVersion</Version>", 1)
-          [IO.File]::WriteAllText($propsPath, $newContent)
-
-          echo "version=$newVersion" >> $env:GITHUB_OUTPUT
-
       - name: Build
-        if: steps.existing.outputs.rerun != 'true'
         run: dotnet publish src/Launcher/Launcher.csproj -c Release -o publish/
 
       - name: Copy LICENSE and README
-        if: steps.existing.outputs.rerun != 'true'
         run: |
           Copy-Item LICENSE publish/
           Copy-Item README.md publish/
         shell: pwsh
 
       - name: Create ZIP
-        if: steps.existing.outputs.rerun != 'true'
         shell: pwsh
         run: |
           $zipName = "lc-v${{ steps.version.outputs.version }}.zip"
           Compress-Archive -Path publish/* -DestinationPath $zipName
 
       - name: Update version.json for GitHub Pages
-        if: steps.existing.outputs.rerun != 'true'
+        if: steps.version.outputs.rerun != 'true'
         shell: pwsh
         run: |
           $version = "${{ steps.version.outputs.version }}"
@@ -158,7 +158,7 @@ jobs:
           Set-Content -Path "docs/public/version.json" -Value $json
 
       - name: Commit and tag
-        if: steps.existing.outputs.rerun != 'true'
+        if: steps.version.outputs.rerun != 'true'
         run: |
           git add Directory.Build.props docs/public/version.json
           git commit -m "release: v${{ steps.version.outputs.version }}"
@@ -171,11 +171,7 @@ jobs:
       - name: Append changelog link
         shell: pwsh
         run: |
-          $version = if ("${{ steps.existing.outputs.rerun }}" -eq "true") {
-            "${{ steps.existing.outputs.version }}"
-          } else {
-            "${{ steps.version.outputs.version }}"
-          }
+          $version = "${{ steps.version.outputs.version }}"
           $tags = git tag --sort=version:refname | Where-Object { $_ -match '^v\d' }
           $prevTag = $tags[-2]
           Add-Content CHANGES.md "`n**Full Changelog**: https://github.com/${{ github.repository }}/compare/$prevTag...v$version"
@@ -185,18 +181,29 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          $version = if ("${{ steps.existing.outputs.rerun }}" -eq "true") {
-            "${{ steps.existing.outputs.version }}"
-          } else {
-            "${{ steps.version.outputs.version }}"
-          }
+          $version = "${{ steps.version.outputs.version }}"
           $tag = "v$version"
           $asset = "lc-v$version.zip"
-          $exists = gh release view $tag 2>&1
+          $releaseJson = gh release view $tag --json=assets,isDraft
           if ($LASTEXITCODE -eq 0) {
-            Write-Host "Release $tag already exists, skipping"
+            $release = $releaseJson | ConvertFrom-Json
+            if (-not ($release.assets | Where-Object { $_.name -eq $asset })) {
+              gh release upload $tag $asset
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+            if ($release.isDraft) {
+              gh release edit $tag --draft=false
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
           } else {
             gh release create $tag $asset --title="$tag" --notes-file=CHANGES.md
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          $releaseJson = gh release view $tag --json=assets,isDraft
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $release = $releaseJson | ConvertFrom-Json
+          if ($release.isDraft -or -not ($release.assets | Where-Object { $_.name -eq $asset })) {
+            throw '配布ZIPの公開を確認できません。Releaseの公開状態とアセットを確認してください。'
           }
 
       - name: Trigger docs deployment
