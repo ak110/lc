@@ -1,19 +1,17 @@
 using Launcher.Infrastructure;
-using Launcher.Win32;
 
 namespace Launcher.Core;
 
 /// <summary>
 /// 単一スケジューラータスクの実行ロジック。
-/// STAスレッド生成を伴う <see cref="SchedulerPresenter.ExecuteItemTasks"/> から、
-/// タスク種別ごとの実行ロジックをテスト容易性のために分離した。
+/// ファイルタスクは起動要求を返し、通知タスクは渡された通知処理へ委譲する。
 /// </summary>
 public static class SchedulerTaskExecutor
 {
     /// <summary>
     /// 単一タスクを実行する。タスク種類に応じてファイル実行またはメッセージを表示する。
     /// </summary>
-    public static void Execute(
+    public static ShellProcessStartInfo? Execute(
         SchedulerTask task,
         Action<string, string>? showBalloonTip,
         Action<string, string>? showMessageBox)
@@ -27,42 +25,18 @@ public static class SchedulerTaskExecutor
                 ExecuteMessageBoxTask(task, showMessageBox);
                 break;
             default:
-                ExecuteFileTask(task);
-                break;
+                return ExecuteFileTask(task);
         }
+        return null;
     }
 
     /// <summary>
     /// ファイル実行タスク。ShellExecuteExでプログラムを起動する。
     /// </summary>
-    private static void ExecuteFileTask(SchedulerTask task)
+    public static ShellProcessStartInfo ExecuteFileTask(SchedulerTask task)
     {
-        string fileName = Environment.ExpandEnvironmentVariables(task.FileName);
-        string param = Environment.ExpandEnvironmentVariables(task.Param);
-
-        string? workDir = null;
-        try
-        {
-            workDir = Path.GetDirectoryName(fileName);
-        }
-#pragma warning disable CA1031 // パス解析エラーは無視して workDir=null で続行
-        catch (Exception ex)
-        {
-            DiagnosticLog.Warn("Scheduler.Task", $"作業ディレクトリ取得失敗: {ex.GetType().Name}");
-        }
-#pragma warning restore CA1031
-
-        var info = new ShellProcessStartInfo
-        {
-            FileName = fileName,
-            Arguments = param,
-            WorkingDirectory = workDir,
-            CreateNoWindow = false,
-            ErrorDialog = true,
-            WindowStyle = ProcessLauncher.ToWindowStyle(task.Show),
-        };
-
-        ProcessLauncher.Start(info, ProcessLauncher.ToPriorityClass(task.Priority));
+        return LaunchRequestBuilder.Create(task.FileName, task.Param,
+            windowStyle: task.Show, priority: task.Priority);
     }
 
     /// <summary>

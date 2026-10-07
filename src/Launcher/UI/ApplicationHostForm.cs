@@ -450,12 +450,9 @@ public partial class ApplicationHostForm : Form
 
     private void 実行ファイルのあるフォルダを開くMToolStripMenuItem_Click(object sender, EventArgs e)
     {
-        var psi = new ProcessStartInfo
-        {
-            FileName = System.IO.Path.GetDirectoryName(Application.ExecutablePath),
-            UseShellExecute = true,
-        };
-        Process.Start(psi);
+        var handle = Handle;
+        ShellLaunchService.Start(this,
+            () => LaunchRequestBuilder.Create(Path.GetDirectoryName(Application.ExecutablePath)!, owner: handle));
     }
 
     private async void ネットワーク更新NToolStripMenuItem_Click(object sender, EventArgs e)
@@ -487,22 +484,8 @@ public partial class ApplicationHostForm : Form
     private void ホームページを開くHToolStripMenuItem_Click(object sender, EventArgs e)
     {
         const string url = "https://github.com/ak110/lc";
-        try
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = url,
-                UseShellExecute = true,
-            };
-            Process.Start(psi);
-        }
-#pragma warning disable CA1031 // ブラウザ起動は様々な例外が発生しうるため包括的にキャッチ
-        catch (Exception ex)
-        {
-            MessageBox.Show($"ブラウザの起動に失敗しました。\n{ex.Message}", AppVersion.Title,
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-#pragma warning restore CA1031
+        var handle = Handle;
+        ShellLaunchService.Start(this, () => LaunchRequestBuilder.Create(url, owner: handle));
     }
 
     private void スケジューラー設定SToolStripMenuItem_Click(object sender, EventArgs e)
@@ -644,7 +627,7 @@ public partial class ApplicationHostForm : Form
     /// </summary>
     private void StartSchedulerItem(SchedulerItem item, Action onCompleted)
     {
-        SchedulerPresenter.ExecuteItemTasks(item, schedulerShowBalloonTip, schedulerShowMessageBox,
+        SchedulerTaskRunner.ExecuteItemTasks(this, item, schedulerShowBalloonTip, schedulerShowMessageBox,
             () => UiThreadDispatcher.SafeBeginInvoke(this, onCompleted,
                 onSkipped: () => schedulerRunCoordinator.Release(item.Id)));
     }
@@ -715,16 +698,8 @@ public partial class ApplicationHostForm : Form
     private void ApplyConfig()
     {
         // プロセス優先度
-        Process.GetCurrentProcess().PriorityClass = config.ProcessPriority switch
-        {
-            0 => ProcessPriorityClass.RealTime,
-            1 => ProcessPriorityClass.High,
-            2 => ProcessPriorityClass.AboveNormal,
-            3 => ProcessPriorityClass.Normal,
-            4 => ProcessPriorityClass.BelowNormal,
-            5 => ProcessPriorityClass.Idle,
-            _ => ProcessPriorityClass.Normal,
-        };
+        using (var process = Process.GetCurrentProcess())
+            process.PriorityClass = ProcessLauncher.ToPriorityClass(config.ProcessPriority);
         // ホットキー (ランチャー用・メモパッド用の2組)
         hookManager.UpdateHotkeys(
             (config.HotKey, Program.WM_APPMSG_SHOWHIDE),

@@ -10,11 +10,11 @@ paths:
 | スレッド                         | 用途                                      | 備考                                                      |
 | -------------------------------- | ----------------------------------------- | --------------------------------------------------------- |
 | UIスレッド (STA)                 | WinFormsメッセージループ、全UI操作        | `Application.Run(ApplicationHostForm)`                    |
-| コマンド実行スレッド (STA)       | `Command.Execute()`の実行                 | `CommandLauncherForm.ExecuteCommand`で生成                |
-| ディレクトリ展開スレッド (STA)   | `Command.OpenDirectory()`の実行           | `CommandLauncherForm.OpenDirectory`で生成                 |
+| コマンド実行スレッド (STA)       | 起動要求の生成とShell実行                 | `ShellLaunchService.Start`                                |
+| ディレクトリ展開スレッド (STA)   | 親フォルダーの起動要求の生成とShell実行   | `ShellLaunchService.OpenDirectory`                        |
 | アイコン読込スレッド (STA)       | `AsyncIconLoader`による非同期アイコン取得 | 用途別STAワーカー + リトライ（最大2回）                   |
 | 環境変数置換スレッド             | 文字列の存在確認・置換値の計算            | `ApplicationHostForm.RequestEnvironmentReplacement`で生成 |
-| スケジューラー実行スレッド (STA) | `SchedulerPresenter.ExecuteItemTasks`     | アイテムごとに1本 (後述の直列化)                          |
+| スケジューラー実行スレッド (STA) | `SchedulerTaskRunner.ExecuteItemTasks`    | `StaThreadRunner`                                         |
 | フックコールバック               | キーボード/マウスフックのイベント通知     | `SafeBeginInvoke`でUIスレッドへ配送                       |
 
 スケジューラーの予定実行は`SchedulerRunCoordinator`経由で開始し、同じアイテムの実行スレッドは同時に1本までとする。
@@ -31,6 +31,8 @@ Shell API（`ShellExecuteEx`・`SHGetFileInfo`等）はCOMのSTA（Single-Thread
 `Task.Run`（ThreadPool/MTA）からの呼び出しは禁止する。
 新規`Thread`を生成する場合は、生成直後に`SetApartmentState(ApartmentState.STA)`を呼ぶ。
 コマンド実行・ディレクトリ展開・アイコン読込・スケジューラータスク実行はすべて専用STAスレッドで動かす。
+起動要求は`LaunchRequestBuilder`で作り、`ShellLaunchService`から`ProcessLauncher`へ渡す。
+スケジューラーは専用STA上の`ExecuteOnSta`で起動処理の完了を待ち、次のタスクへ進む。
 表示範囲が限定される用途に限り「Shell APIのUIスレッド同期呼び出し例外」節でUIスレッド同期呼び出しを許容する。
 
 ## Shell APIのUIスレッド同期呼び出し例外

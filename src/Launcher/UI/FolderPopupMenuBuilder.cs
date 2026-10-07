@@ -1,3 +1,4 @@
+using Launcher.Core;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Launcher.Infrastructure;
@@ -202,16 +203,8 @@ public sealed class FolderPopupMenuBuilder : IDisposable
         // 親メニューが完全に閉じた後に Shell 呼び出しを実行する
         UiThreadDispatcher.SafeBeginInvoke(ownerControl, () =>
         {
-            try
-            {
-                ProcessLauncher.Start(new ShellProcessStartInfo(path));
-            }
-            catch (Win32Exception ex)
-            {
-                MessageBox.Show(ownerControl,
-                    $"開けませんでした: {ex.Message}", "エラー",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            ShellLaunchService.Start(ownerControl,
+                () => LaunchRequestBuilder.Create(path, owner: ownerHwnd));
         });
     }
 

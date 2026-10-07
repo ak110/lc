@@ -41,8 +41,8 @@ model: sonnet
 - 新規`Thread`生成時、`SetApartmentState(ApartmentState.STA)`を生成直後に呼んでいるか
 - `async/await`周辺で`ConfigureAwait(false)`の有無により、UIスレッドへ戻れずShell APIがMTAで実行されるリスクが無いか
 - アイコン読み込み・コマンド実行・ディレクトリ展開・スケジューラータスク実行が、既存の専用STAスレッドで実行する仕組みを踏襲しているか。
-  既存の仕組みは`AsyncIconLoader`／`CommandLauncherForm.ExecuteCommand`／
-  `CommandLauncherForm.OpenDirectory`／`SchedulerPresenter.ExecuteItemTasks`が担う
+  アイコンは`AsyncIconLoader`、起動は`ShellLaunchService`、タスク列は`SchedulerTaskRunner`が担う。
+  デバッグ時も同じ起動処理を使い、各呼び出し元が直接`ProcessLauncher.Start`を呼ばないことを確認する
 
 ### B. Win32 フックコールバック（[.claude/rules/win32-interop.md](../rules/win32-interop.md)）
 

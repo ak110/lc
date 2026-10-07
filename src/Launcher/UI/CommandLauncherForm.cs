@@ -694,86 +694,18 @@ public partial class CommandLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// Command.OpenDirectory
-    /// </summary>
     private void OpenDirectory(Command command)
     {
-        Thread thread = new Thread(OpenDirectoryThread);
-        thread.IsBackground = true;
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start(command);
-    }
-    private void OpenDirectoryThread(object? arg)
-    {
-        Command cmd = (Command)arg!;
-        cmd.OpenDirectory(ownerForm.Config);
+        ShellLaunchService.OpenDirectory(this, command, ownerForm.Config);
     }
 
-    sealed class ExecuteParams
-    {
-        public Command Command;
-        public string Input;
-        public IntPtr Handle;
-        public ExecuteParams(Command command, string text, IntPtr handle)
-        {
-            Command = command;
-            Input = text;
-            Handle = handle;
-        }
-    }
-    /// <summary>
-    /// コマンドを実行する。
-    /// </summary>
     private void ExecuteCommand(Command command, string input)
     {
         DiagnosticLog.Info("Command.Execute", $"name={command.Name}");
-#if DEBUG
-        ExecuteThread(new ExecuteParams(command, input, Handle));
-#else
-        Thread thread = new Thread(ExecuteThread);
-        thread.IsBackground = true;
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start(new ExecuteParams(command, input, Handle));
-#endif
-    }
-
-    /// <summary>
-    /// コマンド実行スレッド本体。DEBUGビルドではUIスレッド同期呼び出し、Releaseビルドでは専用STAスレッド上で実行される。
-    /// STA制約は`.claude/rules/threading.md`を参照する。
-    /// </summary>
-    private void ExecuteThread(object? args)
-    {
-        try
-        {
-            ExecuteParams ep = (ExecuteParams)args!;
-            ep.Command.Execute(ep.Input,
-                ownerForm.Config, ep.Handle);
-        }
-        catch (Win32Exception e) when (e.NativeErrorCode == 1223)
-        {
-            // ERROR_CANCELLED: ユーザーが UAC ダイアログ等をキャンセルした場合は無視する
-        }
-        catch (Win32Exception e)
-        {
-            ErrorMessageBox(e);
-        }
-        catch (IOException e)
-        {
-            ErrorMessageBox(e);
-        }
-        catch (InvalidOperationException e)
-        {
-            ErrorMessageBox(e);
-        }
-    }
-
-    /// <summary>
-    /// 例外をUIスレッドの共通通知へ配送する。
-    /// </summary>
-    private void ErrorMessageBox(Exception e)
-    {
-        UiThreadDispatcher.SafeBeginInvoke(this, () => ErrorReporter.Instance.OnException(e));
+        var snapshot = command.Clone();
+        var config = ownerForm.Config.Clone();
+        var handle = Handle;
+        ShellLaunchService.Start(this, () => snapshot.Execute(input, config, handle, NativeMethods.IsUserAnAdmin()));
     }
 
     /// <summary>

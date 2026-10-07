@@ -149,7 +149,7 @@ public partial class SchedulerItemForm : Form
             SleepTimeMs = (int)numSleepTime.Value,
             Tasks = FormsHelper.GetArray<SchedulerTask>(listBoxTasks),
         };
-        SchedulerPresenter.ExecuteItemTasks(item, showBalloonTip, showMessageBox);
+        SchedulerTaskRunner.ExecuteItemTasks(this, item, showBalloonTip, showMessageBox);
     }
 
     private void listBoxTasks_DoubleClick(object? sender, EventArgs e)

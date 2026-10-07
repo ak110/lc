@@ -38,7 +38,7 @@ public sealed class ConfigTests
     public void デフォルト値_ProcessPriority()
     {
         var config = new Config();
-        config.ProcessPriority.Should().Be(3);
+        config.ProcessPriority.Should().Be(ProcessPriorityLevel.Normal);
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public sealed class ConfigTests
             Debug = true,
             IconDoubleClick = TrayIconAction.ShowConfig,
             ItemDoubleClick = ItemAction.OpenDirectory,
-            ProcessPriority = 1,
+            ProcessPriority = ProcessPriorityLevel.High,
             HideFirst = true,
             HotKey = "Ctrl+Alt+L",
             OpenDirByFiler = false,

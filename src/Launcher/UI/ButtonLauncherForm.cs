@@ -378,28 +378,14 @@ public partial class ButtonLauncherForm : Form
         if (entry is null || entry.IsEmpty) return;
 
         Command command = entry.Clone();
-        var config = owner.Config;
+        var config = owner.Config.Clone();
         IntPtr windowHandle = Handle;
-        StaThreadRunner.Start(() =>
-        {
-            try
+        ShellLaunchService.Start(this,
+            () => command.Execute("", config, windowHandle, NativeMethods.IsUserAnAdmin()),
+            () =>
             {
-                // ShellExecuteExのhwndに自身のハンドルを渡し、現在のモニターでアプリを起動させる
-                command.Execute("", config, windowHandle);
-                DiagnosticLog.Info("Button.Execute", $"row={pos.Row} col={pos.Col}");
-                UiThreadDispatcher.SafeBeginInvoke(this, () =>
-                {
-                    if (!Data.IsLocked)
-                    {
-                        Hide();
-                    }
-                });
-            }
-            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException or InvalidOperationException)
-            {
-                ShowOperationError("Button.Execute", "実行に失敗しました", ex);
-            }
-        });
+                if (!Data.IsLocked) Hide();
+            });
     }
 
     /// <summary>
@@ -549,27 +535,7 @@ public partial class ButtonLauncherForm : Form
         var entry = tabData?.GetButton(pos.Row, pos.Col);
         if (entry is null || entry.IsEmpty) return;
 
-        Command command = entry.Clone();
-        var config = owner.Config;
-        StaThreadRunner.Start(() =>
-        {
-            try
-            {
-                command.OpenDirectory(config);
-            }
-            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException or InvalidOperationException)
-            {
-                ShowOperationError("Button.OpenDirectory", "フォルダーを開けませんでした", ex);
-            }
-        });
-    }
-
-    private void ShowOperationError(string category, string message, Exception exception)
-    {
-        DiagnosticLog.Error(category, exception);
-        UiThreadDispatcher.SafeBeginInvoke(this, () =>
-            MessageBox.Show(this, $"{message}: {exception.Message}", "エラー",
-                MessageBoxButtons.OK, MessageBoxIcon.Error));
+        ShellLaunchService.OpenDirectory(this, entry, owner.Config);
     }
 
     private void ButtonMenu_AssignFromCommand(object? sender, EventArgs e)

@@ -1,11 +1,10 @@
 using Launcher.Infrastructure;
-using Launcher.Win32;
 
 namespace Launcher.Core;
 
 /// <summary>
 /// 管理者権限への昇格方法に応じた <see cref="ShellProcessStartInfo"/> の加工ロジック。
-/// 副作用ある <see cref="Command.Execute"/> から、テスト容易性のために分離した。
+/// 起動要求の生成時に適用する。
 /// </summary>
 public static class AdminElevationApplier
 {

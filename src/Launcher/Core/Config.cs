@@ -14,7 +14,7 @@ public sealed class Config : ConfigStore, ICloneable
 
     public TrayIconAction IconDoubleClick { get; set; } = TrayIconAction.ShowHide;
     public ItemAction ItemDoubleClick { get; set; } = ItemAction.Execute;
-    public int ProcessPriority { get; set; } = 3;
+    public ProcessPriorityLevel ProcessPriority { get; set; } = ProcessPriorityLevel.Normal;
     public bool HideFirst { get; set; }
 
     public string HotKey { get; set; } = "Win+Space";
@@ -129,7 +129,7 @@ public sealed class Config : ConfigStore, ICloneable
             itemDblClick = 0;
         }
         data.ItemDoubleClick = (ItemAction)itemDblClick;
-        data.ProcessPriority = reader.Num("ProcessPriority");
+        data.ProcessPriority = (ProcessPriorityLevel)reader.Num("ProcessPriority");
         data.HideFirst = reader.Bool("HideFirst");
 
         data.HotKey = reader.Indirect("HotKey");

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Launcher.Core;
+using Launcher.UI;
 using Xunit;
 
 namespace Launcher.Tests;
@@ -31,8 +32,9 @@ public sealed class SchedulerPresenterTests
         };
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        SchedulerPresenter.ExecuteItemTasks(
-            item,
+        using var owner = new Control();
+        SchedulerTaskRunner.ExecuteItemTasks(
+            owner, item,
             (_, message) =>
             {
                 events.Enqueue("balloon");

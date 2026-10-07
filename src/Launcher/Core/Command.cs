@@ -80,120 +80,40 @@ public class Command : ICloneable, IComparable<Command>, IComparable
 
     #endregion
 
-    /// <summary>
-    /// 親ディレクトリを開く。
-    /// </summary>
-    public void OpenDirectory(Config config)
+    /// <summary>親フォルダーを開く要求を作る。パスの解決はWindows側が担う。</summary>
+    public ShellProcessStartInfo? OpenDirectory(Config config, string? resolvedPath, IntPtr owner = default)
     {
-        string? path = FileHelper.ResolveCommandPath(FileName);
+        string? path = resolvedPath;
         if (File.Exists(path) || Directory.Exists(path))
         {
-            var info = new ProcessStartInfo();
-            info.FileName = PathHelper.PathNormalize(config.OpenParentFiler);
-            info.Arguments = Environment.ExpandEnvironmentVariables(
-                $"{config.OpenParentFilerParam1}{path}{config.OpenParentFilerParam2}");
-            using Process? p = Process.Start(info);
+            return LaunchRequestBuilder.Create(config.OpenParentFiler,
+                $"{config.OpenParentFilerParam1}{path}{config.OpenParentFilerParam2}", owner: owner);
         }
-        else
+        while (!string.IsNullOrEmpty(path))
         {
-            while (!string.IsNullOrEmpty(path))
-            {
-                path = Path.GetDirectoryName(path);
-                if (path is not null && Directory.Exists(path))
-                {
-                    InnerOpenExistsDirectory(config, path);
-                    break;
-                }
-            }
+            path = Path.GetDirectoryName(path);
+            if (path is not null && Directory.Exists(path))
+                return config.OpenDirByFiler
+                    ? LaunchRequestBuilder.Create(config.Filer, path, path, owner: owner)
+                    : LaunchRequestBuilder.Create(path, owner: owner);
         }
+        return null;
     }
 
-    private static void InnerOpenExistsDirectory(Config config, string path)
+    /// <summary>コマンドの起動要求を作る。実行と権限の照会は呼び出し側が担う。</summary>
+    public ShellProcessStartInfo Execute(string input, Config config, IntPtr owner, bool isAdministrator)
     {
-        var info = new ProcessStartInfo();
-        if (config.OpenDirByFiler)
+        string? args = "";
+        if (!string.IsNullOrEmpty(input)) ParseInput(input, config, out _, out args);
+        var info = LaunchRequestBuilder.Create(FileName, $"{Param} {args}", WorkDir, Show, Priority, owner);
+        if (config.OpenDirByFiler && Directory.Exists(info.FileName))
         {
+            info.Arguments = info.FileName;
             info.FileName = PathHelper.PathNormalize(config.Filer);
-            info.Arguments = path;
-            using Process? p = Process.Start(info);
         }
-        else
-        {
-            info.FileName = path;
-            using Process? p = Process.Start(info);
-        }
-    }
-
-    /// <summary>
-    /// コマンドの実行
-    /// </summary>
-    public void Execute(string input, Config config, IntPtr owner)
-    {
-        string? args;
-        if (string.IsNullOrEmpty(input))
-        {
-            args = "";
-        }
-        else
-        {
-            string commandName;
-            ParseInput(input, config, out commandName, out args);
-        }
-
-        string fileName = PathHelper.PathNormalize(FileName);
-        string? workDir;
-        if (string.IsNullOrEmpty(WorkDir))
-        {
-            if (Directory.Exists(fileName))
-            {
-                workDir = fileName;
-            }
-            else
-            {
-                string? dir = Path.GetDirectoryName(fileName);
-                if (!string.IsNullOrEmpty(dir) &&
-                    Directory.Exists(dir))
-                {
-                    workDir = dir;
-                }
-                else
-                {
-                    workDir = null; // 未指定とする
-                }
-            }
-        }
-        else
-        {
-            workDir = PathHelper.PathNormalize(WorkDir);
-        }
-
-        string param;
-        if (config.OpenDirByFiler && Directory.Exists(fileName))
-        {
-            // フォルダをファイラで開く
-            param = fileName;
-            fileName = PathHelper.PathNormalize(config.Filer);
-        }
-        else
-        {
-            // 通常処理
-            param = Environment.ExpandEnvironmentVariables($"{Param} {args}");
-        }
-
-        var info = new ShellProcessStartInfo();
-        info.FileName = fileName;
-        info.Arguments = param;
-        info.WorkingDirectory = workDir;
-        info.CreateNoWindow = false;
-        info.ErrorDialog = true;
-        info.ErrorDialogParentHandle = owner;
-        if (RunAsAdmin && !NativeMethods.IsUserAnAdmin())
-        {
+        if (RunAsAdmin && !isAdministrator)
             AdminElevationApplier.Apply(info, config.RunAsAdminType, config.RunAsCommandLine, config.VECmdPath);
-        }
-
-        info.WindowStyle = ProcessLauncher.ToWindowStyle(Show);
-        ProcessLauncher.Start(info, ProcessLauncher.ToPriorityClass(Priority));
+        return info;
     }
 
     // 後方互換性のためのレガシーフォーマット読み込み用

@@ -4,58 +4,12 @@ using Launcher.Infrastructure;
 
 namespace Launcher.Win32;
 
-public enum ShellProcessWindowStyle
-{
-    Normal,
-    Minimized,
-    Maximized,
-    NoActivate,             // 非アクティブ
-    MinimizedNoActivate,    // 最小化非アクティブ
-    Hidden,
-}
-
-public sealed class ShellProcessStartInfo
-{
-    public string? Arguments { get; set; }
-    public string? FileName { get; set; }
-    public string? Verb { get; set; }
-    public string? WorkingDirectory { get; set; }
-    public ShellProcessWindowStyle WindowStyle { get; set; } = ShellProcessWindowStyle.Normal;
-    public bool CreateNoWindow { get; set; }
-    public bool ErrorDialog { get; set; } = true;
-    public IntPtr ErrorDialogParentHandle { get; set; }
-
-    public ShellProcessStartInfo()
-    {
-    }
-    public ShellProcessStartInfo(string fileName)
-    {
-        FileName = fileName;
-    }
-    public ShellProcessStartInfo(string fileName, string arguments)
-    {
-        FileName = fileName;
-        Arguments = arguments;
-    }
-}
-
 /// <summary>
 /// .NET の ShellExecuteEx() ラッパーは WindowStyle 周辺の挙動が要件に合わないため、独自に実装する。
 /// .NET のインターフェースにおおむね準拠するが、拡張機能は省略している。
 /// </summary>
 public static class ProcessLauncher
 {
-    internal static ShellProcessWindowStyle ToWindowStyle(WindowStyle style) => style switch
-    {
-        WindowStyle.Normal => ShellProcessWindowStyle.Normal,
-        WindowStyle.Minimized => ShellProcessWindowStyle.Minimized,
-        WindowStyle.Maximized => ShellProcessWindowStyle.Maximized,
-        WindowStyle.NoActivate => ShellProcessWindowStyle.NoActivate,
-        WindowStyle.MinimizedNoActivate => ShellProcessWindowStyle.MinimizedNoActivate,
-        WindowStyle.Hidden => ShellProcessWindowStyle.Hidden,
-        _ => ShellProcessWindowStyle.Normal,
-    };
-
     internal static System.Diagnostics.ProcessPriorityClass ToPriorityClass(ProcessPriorityLevel level) => level switch
     {
         ProcessPriorityLevel.RealTime => System.Diagnostics.ProcessPriorityClass.RealTime,
@@ -67,27 +21,14 @@ public static class ProcessLauncher
         _ => System.Diagnostics.ProcessPriorityClass.Normal,
     };
 
-    public static void Start(ShellProcessStartInfo info)
-    {
-        IntPtr hProcess = InnerStart(info);
-        CloseHandle(hProcess);
-    }
-
-    public static void Start(ShellProcessStartInfo info, System.Diagnostics.ProcessPriorityClass priority)
+    internal static void Start(ShellProcessStartInfo info)
     {
         IntPtr hProcess = InnerStart(info);
         try
         {
-            uint priorityValue = priority switch
-            {
-                System.Diagnostics.ProcessPriorityClass.RealTime => REALTIME_PRIORITY_CLASS,
-                System.Diagnostics.ProcessPriorityClass.High => HIGH_PRIORITY_CLASS,
-                System.Diagnostics.ProcessPriorityClass.AboveNormal => ABOVE_NORMAL_PRIORITY_CLASS,
-                System.Diagnostics.ProcessPriorityClass.Normal => NORMAL_PRIORITY_CLASS,
-                System.Diagnostics.ProcessPriorityClass.BelowNormal => BELOW_NORMAL_PRIORITY_CLASS,
-                System.Diagnostics.ProcessPriorityClass.Idle => IDLE_PRIORITY_CLASS,
-                _ => NORMAL_PRIORITY_CLASS,
-            };
+            if (hProcess == IntPtr.Zero) return;
+            var priority = ToPriorityClass(info.Priority);
+            uint priorityValue = (uint)priority;
             if (!SetPriorityClass(hProcess, priorityValue))
             {
                 // プロセスは起動済みのため優先度設定失敗を例外扱いにしない。
@@ -124,12 +65,12 @@ public static class ProcessLauncher
         shinfo.lpDirectory = info.WorkingDirectory;
         shinfo.nShow = info.WindowStyle switch
         {
-            ShellProcessWindowStyle.Normal => SW_SHOWNORMAL,
-            ShellProcessWindowStyle.Minimized => SW_SHOWMINIMIZED,
-            ShellProcessWindowStyle.Maximized => SW_SHOWMAXIMIZED,
-            ShellProcessWindowStyle.NoActivate => SW_SHOWNOACTIVATE,
-            ShellProcessWindowStyle.MinimizedNoActivate => SW_SHOWMINNOACTIVE,
-            ShellProcessWindowStyle.Hidden => SW_HIDE,
+            WindowStyle.Normal => SW_SHOWNORMAL,
+            WindowStyle.Minimized => SW_SHOWMINIMIZED,
+            WindowStyle.Maximized => SW_SHOWMAXIMIZED,
+            WindowStyle.NoActivate => SW_SHOWNOACTIVATE,
+            WindowStyle.MinimizedNoActivate => SW_SHOWMINNOACTIVE,
+            WindowStyle.Hidden => SW_HIDE,
             _ => SW_SHOWNORMAL,
         };
         shinfo.hInstApp = IntPtr.Zero;

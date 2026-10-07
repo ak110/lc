@@ -56,7 +56,7 @@ WinFormsのメッセージループを維持するために常駐フォームが
 CommandLauncherFormは表示/非表示を繰り返すため、この役割を分離している。
 また、スケジューラーのタイマー（30秒間隔）を管理し、スケジュール条件に合致したタスクの自動実行も制御する。
 予定実行の開始・保留・完了はアイテムの識別子（`SchedulerItem.Id`）ごとに`SchedulerRunCoordinator`で管理する。
-`SchedulerPresenter.ExecuteItemTasks`はタスク列（タスク間の待機を含む）の完了時に完了通知を呼び、
+`SchedulerTaskRunner.ExecuteItemTasks`はタスク列（タスク間の待機を含む）の完了時に完了通知を呼び、
 ApplicationHostFormは`UiThreadDispatcher.SafeBeginInvoke`でUIスレッドへ配送して実行状態を解放する。
 実行中に到来した同じアイテムの予定は1件の保留にまとめ、完了後に最新の確定設定で1回実行する。
 
@@ -71,13 +71,14 @@ RELOADはcmd.cfgだけを読み、一覧実体を維持してランチャーと�
 
 スケジューラーはファイル実行に加え、メッセージ表示タスクをサポートする。
 
-| 種類       | 説明                                                        |
-| ---------- | ----------------------------------------------------------- |
-| Execute    | ShellExecuteExでプログラムを起動する                        |
-| BalloonTip | タスクトレイのバルーン通知でメッセージを表示する (自動消去) |
-| MessageBox | `NotificationForm`をモーダル表示する (OKボタンで手動消去)   |
+| 種類       | 説明                                                         |
+| ---------- | ------------------------------------------------------------ |
+| Execute    | `LaunchRequestBuilder`の要求を`ShellLaunchService`で起動する |
+| BalloonTip | タスクトレイのバルーン通知でメッセージを表示する (自動消去)  |
+| MessageBox | `NotificationForm`をモーダル表示する (OKボタンで手動消去)    |
 
-Core層 (SchedulerPresenter) はUI依存を持たない。
+`SchedulerTaskExecutor`はファイルタスクの起動要求を返す。
+`SchedulerTaskRunner`は専用STAでタスク列を実行し、ファイル起動を`ShellLaunchService.ExecuteOnSta`へ渡す。
 BalloonTip/MessageBoxの表示はデリゲート経由でUI層 (ApplicationHostForm) に委譲する。
 MessageBoxは`Invoke`（同期呼び出し）でダイアログが閉じるまで後続タスクをブロックする。
 BalloonTipは`UiThreadDispatcher.SafeBeginInvoke`で非同期に実行する。
@@ -124,5 +125,6 @@ ReplaceEnvListに関する挙動上の注意は`.claude/skills/persistence/`に�
 マージ規則はExplorer互換（HKLM+HKCU統合、Path系のみ`;`連結、それ以外はユーザー変数優先）とする。
 
 子プロセスへの伝搬は追加実装不要である。
-`ShellExecuteEx`は呼び出し元プロセスの環境ブロックを継承するため、
+全画面の起動要求は`LaunchRequestBuilder`で環境変数を展開する。
+`ShellLaunchService`が専用STAから呼ぶ`ShellExecuteEx`は呼び出し元プロセスの環境ブロックを継承するため、
 `Environment.SetEnvironmentVariable`で更新すれば以降の起動プロセスへ新値が反映される。
