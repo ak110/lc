@@ -57,7 +57,7 @@ public static class SchedulerScheduleEvaluator
     {
         // 月日範囲チェック
         var md = new MonthDay(date.Month, date.Day);
-        if (md < schedule.WeeksStart || md > schedule.WeeksEnd)
+        if (!IsInMonthDayRange(md, schedule.WeeksStart, schedule.WeeksEnd))
             return false;
 
         // 曜日チェック ([0]=月 ... [6]=日)
@@ -85,17 +85,7 @@ public static class SchedulerScheduleEvaluator
         var start = schedule.DateIntervalStart;
         var end = schedule.DateIntervalEnd;
 
-        // 月日範囲チェック (end < start の場合はラップアラウンド: 11月～2月など)
-        bool inRange;
-        if (start <= end)
-        {
-            inRange = md >= start && md <= end;
-        }
-        else
-        {
-            inRange = md >= start || md <= end;
-        }
-        if (!inRange)
+        if (!IsInMonthDayRange(md, start, end))
             return false;
 
         // 日数間隔チェック: 開始日からの経過日数が間隔の倍数か
@@ -111,6 +101,9 @@ public static class SchedulerScheduleEvaluator
         int daysSinceStart = date.DayNumber - startDate.DayNumber;
         return daysSinceStart >= 0 && (daysSinceStart % interval) == 0;
     }
+
+    static bool IsInMonthDayRange(MonthDay value, MonthDay start, MonthDay end) =>
+        start <= end ? value >= start && value <= end : value >= start || value <= end;
 
     /// <summary>
     /// 時刻条件を判定する。rangeStart～rangeEnd の間にスケジュール時刻があるか。
