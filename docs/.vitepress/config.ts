@@ -21,6 +21,7 @@ export default defineConfig({
           { text: 'ボタン型ランチャー', link: '/guide/button-launcher' },
           { text: 'スケジューラー', link: '/guide/scheduler' },
           { text: 'メモパッド', link: '/guide/memopad' },
+          { text: '設定・タスクトレイ・通信', link: '/guide/settings' },
         ],
       },
       {

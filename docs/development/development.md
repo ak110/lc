@@ -26,20 +26,36 @@ mise install && mise run setup
 | `mise run update` | 依存パッケージの更新                                        |
 | `mise run docs`   | ドキュメントのローカルプレビュー                            |
 
-Linux環境ではドキュメントのlintのみ実行できる（`uvx --exclude-newer-package pyfltr=false pyfltr run docs/ README.md AGENTS.md`）。
+Linux環境ではドキュメントのlintのみ実行できる（`mise exec -- uvx --exclude-newer-package pyfltr=false pyfltr run docs/ README.md AGENTS.md`）。
 全チェック（`mise run test`）はWindowsのみで実行する。
 
 ## サプライチェーン攻撃対策
 
-GitHub Actionsのワークフローは`pinact`でハッシュピン留めしている（`mise run update`で更新可能）。
-NuGet・GitHub Actions・npmはdependabot（`.github/dependabot.yaml`）で週次自動更新する。
+ロック尊重・公開待機・ピン留め運用・脆弱性検知の4点を基本方針とする。
 
-## Analyzerルールの導入
+- ロック尊重: 文書・開発用のNode依存は`pnpm-lock.yaml`に従って復元する
+- 公開待機: Node依存の新しい版は`pnpm-workspace.yaml`の公開待機設定に従って採用する
+- ピン留め運用: GitHub Actionsを`pinact`でコミットのハッシュへ固定し、`mise run update`で更新する
+- 脆弱性検知: Dependabot alertsと定期監査を併用する
 
-新しいAnalyzerルールを導入する際は、まず`.editorconfig`で`none`に抑制し、
-修正完了後に`warning`へ昇格する。
-`TreatWarningsAsErrors=true`環境では`suggestion`もビルドに表れないため、
-`dotnet format --diagnostics`で対象箇所を列挙する。
+lcは実行可能なアプリとして配布され、依存の問題がエンドユーザーの実行環境へ波及するため、脆弱性を検知する仕組みを設ける。
+Dependabot alertsはGitHubの依存関係情報に基づく通知を担う。
+依存を更新しない期間にもアドバイザリが追加・変更されるため、`Audit`ワークフローを定期実行する。
+手動実行にも対応し、結果は[ActionsのAudit](https://github.com/ak110/lc/actions/workflows/audit.yaml)とSecurityのDependabot alertsで確認する。
+
+監査は`Launcher.sln`を復元し、NuGetパッケージの直接・推移依存を対象にする。
+アプリ用だけでなくAnalyzerとテスト用の依存も含む。
+文書・開発用のNode依存は`pnpm audit`で確認する。
+NuGet Auditはパッケージ依存の監査であり、配布exeへ同梱する.NETランタイム全体の脆弱性を網羅しない。
+
+NuGetの`NU1901`〜`NU1904`は脆弱性の検出、`NU1900`と`NU1905`は監査情報の取得に関する問題を示す。
+いずれも監査を失敗させるので、Actionsの診断コードとメッセージから原因を確認する。
+pnpmも脆弱性の一覧とレジストリへの接続エラーを区別して確認し、監査の失敗を「脆弱性なし」と扱わない。
+仕様は[NuGet Audit](https://learn.microsoft.com/en-us/nuget/concepts/auditing-packages)と[pnpm audit](https://pnpm.io/cli/audit)を参照。
+
+検出後は影響と修正版を確認し、依存を更新して検証する。
+Dependabot security updatesによる自動修正PRの作成は無効にし、検出への対応をその機能へ委ねない。
+`.github/dependabot.yaml`の週次のversion updatesは、NuGet・GitHub Actions・npmの新しい版を提案する別の機能として維持する。
 
 ## ドキュメントサイト運用
 
@@ -48,21 +64,27 @@ NuGet・GitHub Actions・npmはdependabot（`.github/dependabot.yaml`）で週�
 - ローカルプレビュー: `mise run docs`
 - 自動デプロイ: masterブランチへのpush時に`Docs`ワークフローが自動実行される（`docs/`配下または`package.json`の変更時のみ）
 
-## リリース手順
+## Analyzerルールの導入
 
-GitHub Actionsの `Release` ワークフローを手動実行してリリースする。
-
-```cmd
-rem リリース実行 (いずれか1つ)
-gh workflow run release.yaml --field="bump=PATCH"
-gh workflow run release.yaml --field="bump=MINOR"
-gh workflow run release.yaml --field="bump=MAJOR"
-
-rem ワークフロー完了を待ち、バージョンバンプコミットを取り込む
-for /f "usebackq" %i in (`gh run list --workflow=release.yaml -L1 --json=databaseId -q ".[0].databaseId"`) do gh run watch %i && git pull
-```
+新しいAnalyzerルールを導入する際は、まず`.editorconfig`で`none`に抑制し、
+修正完了後に`warning`へ昇格する。
+`TreatWarningsAsErrors=true`環境では`suggestion`もビルドに表れないため、
+`dotnet format --diagnostics`で対象箇所を列挙する。
 
 ## 環境制限
 
 - `dotnet-format`・`dotnet-build`・`dotnet-test`はWindowsターゲットのためLinuxでは実行不可
 - WinForms Designer.csのマルチバイト文字を含むテーブル等ではmarkdownlint MD060が発生する場合がある
+
+## リリース手順
+
+`releaser`でリリースする。
+
+```cmd
+rem リリース実行 (いずれか1つ)
+releaser patch
+releaser minor
+releaser major
+```
+
+結果の確認: <https://github.com/ak110/lc/actions>

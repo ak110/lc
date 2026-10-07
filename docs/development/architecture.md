@@ -22,7 +22,7 @@ src/Launcher/
 - Win32 — P/Invoke呼び出しを隔離するモジュール。
   Win32 APIの複雑さ（マーシャリング、リソース管理）をアプリケーション本体から遮断する。
   Shell API呼び出し（プロセス起動・アイコン取得・ショートカット操作・Shellコンテキストメニュー表示等）をここへ集約する
-- Updater — 自動更新機能。GitHub Releases APIとの通信、ZIPの展開、バッチスクリプトによる自己置換など、
+- Updater: 自動更新機能。GitHub Pages上の`version.json`の取得、ZIPの展開、バッチスクリプトによる自己置換など、
   更新特有の処理を分離する
 
 ## 主要な設計パターン

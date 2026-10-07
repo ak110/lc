@@ -1,0 +1,40 @@
+name: Audit
+
+on:
+  schedule:
+    - cron: "23 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        id: mise
+      # Windowsではシステム側のdotnetが先に見つかるため、mise管理の実体を指定する。
+      # NU1901〜NU1904は脆弱性、NU1900・NU1905は監査情報の取得不成立を示す。
+      - name: NuGetの直接・推移依存を監査
+        run: >-
+          mise exec -- "$env:LOCALAPPDATA/mise/dotnet-root/dotnet.exe"
+          restore Launcher.sln --force --no-http-cache
+          -p:NuGetAudit=true -p:NuGetAuditMode=all -p:NuGetAuditLevel=low
+          -p:TreatWarningsAsErrors=true
+      # NuGetの結果によらず文書・開発用依存も監査する。
+      - name: pnpmのロックファイルから復元
+        if: ${{ !cancelled() && steps.mise.outcome == 'success' }}
+        id: pnpm-install
+        run: mise exec -- corepack pnpm install --frozen-lockfile --ignore-scripts
+      - name: pnpm依存を監査
+        if: ${{ !cancelled() && steps.pnpm-install.outcome == 'success' }}
+        run: mise exec -- corepack pnpm audit
