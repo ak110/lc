@@ -20,18 +20,41 @@ public static class UiThreadDispatcher
     /// </summary>
     public static void SafeBeginInvoke(Control control, Action action, Action? onSkipped = null)
     {
-        if (control.IsDisposed || !control.IsHandleCreated)
+        int completed = 0;
+        EventHandler? handleDestroyed = null;
+        bool Complete()
         {
-            onSkipped?.Invoke();
+            if (Interlocked.Exchange(ref completed, 1) != 0) return false;
+            control.HandleDestroyed -= handleDestroyed;
+            return true;
+        }
+        void Skip()
+        {
+            if (Complete()) onSkipped?.Invoke();
+        }
+        handleDestroyed = (_, _) => Skip();
+        // ポストが成功してもハンドル破棄で実行されない場合があるため、完了まで追跡する。
+        control.HandleDestroyed += handleDestroyed;
+        if (control.IsDisposed || control.Disposing || !control.IsHandleCreated)
+        {
+            Skip();
             return;
         }
         try
         {
             control.BeginInvoke(new MethodInvoker(() =>
             {
+                if (!Complete()) return;
                 try
                 {
-                    action();
+                    if (control.IsDisposed || control.Disposing || !control.IsHandleCreated)
+                    {
+                        onSkipped?.Invoke();
+                    }
+                    else
+                    {
+                        action();
+                    }
                 }
 #pragma warning disable CA1031 // UI境界: 未捕捉例外はErrorReporterへ回送し、Application.ThreadExceptionと同扱いにする
                 catch (Exception ex)
@@ -44,7 +67,7 @@ public static class UiThreadDispatcher
         catch (InvalidOperationException)
         {
             // ガード後にハンドルが破棄された場合のレース。onSkippedへフォールバックする
-            onSkipped?.Invoke();
+            Skip();
         }
     }
 }

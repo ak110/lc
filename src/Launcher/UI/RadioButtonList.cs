@@ -13,6 +13,20 @@ public partial class RadioButtonList : UserControl
     object lockObject = new();
     int selectedIndex;
     List<RadioButton> items = [];
+    int columnCount = 1;
+
+    /// <summary>行ごとに左から並べる列数。</summary>
+    [DefaultValue(1)]
+    public int ColumnCount
+    {
+        get => columnCount;
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
+            columnCount = value;
+            UpdateLayout();
+        }
+    }
 
     public RadioButtonList()
     {
@@ -130,17 +144,26 @@ public partial class RadioButtonList : UserControl
         lock (lockObject)
         {
             Controls.Clear();
-            int maxWidth = 8, lastBottom = 0;
-            foreach (RadioButton r in items)
+            int[] widths = new int[columnCount];
+            int rowHeight = 0;
+            for (int i = 0; i < items.Count; i++)
             {
-                r.TabIndex = Controls.Count;
-                r.Location = new Point(0, lastBottom);
-                Controls.Add(r);
-                lastBottom = r.Bottom;
-                if (maxWidth < r.Right) maxWidth = r.Right;
+                var r = items[i];
+                widths[i % columnCount] = Math.Max(widths[i % columnCount], r.PreferredSize.Width);
+                rowHeight = Math.Max(rowHeight, r.PreferredSize.Height);
             }
-            if (lastBottom <= 0) lastBottom = 8;
-            ClientSize = new Size(maxWidth, lastBottom);
+            int x = 0;
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (i % columnCount == 0) x = 0;
+                var r = items[i];
+                r.TabIndex = i;
+                r.Location = new Point(x, i / columnCount * rowHeight);
+                Controls.Add(r);
+                x += widths[i % columnCount] + 4;
+            }
+            ClientSize = new Size(Math.Max(8, widths.Sum() + (columnCount - 1) * 4),
+                Math.Max(8, (items.Count + columnCount - 1) / columnCount * rowHeight));
             PerformLayout();
         }
     }

@@ -17,8 +17,8 @@ public partial class EditCommandForm : Form
         textBox2.Text = v.FileName;
         textBox3.Text = v.Param;
         textBox4.Text = v.WorkDir ?? "";
-        new Radios(groupBox1, 6).Value = (int)v.Show;
-        new Radios(groupBox2, 6).Value = (int)v.Priority;
+        launchOptions.WindowStyle = v.Show;
+        launchOptions.Priority = v.Priority;
         checkBox1.Checked = v.RunAsAdmin;
     }
 
@@ -28,29 +28,14 @@ public partial class EditCommandForm : Form
         v.FileName = textBox2.Text;
         v.Param = textBox3.Text;
         v.WorkDir = textBox4.Text;
-        v.Show = (WindowStyle)new Radios(groupBox1, 6).Value;
-        v.Priority = (ProcessPriorityLevel)new Radios(groupBox2, 6).Value;
+        v.Show = launchOptions.WindowStyle;
+        v.Priority = launchOptions.Priority;
         v.RunAsAdmin = checkBox1.Checked;
     }
 
     private void button1_Click(object? sender, EventArgs e)
     {
-        // PATH解決済みパスをダイアログの起点に設定する。
-        // bare name (例: "notepad.exe") をアイコン表示と同じ解決順で扱い、操作時の挙動を揃える。
-        string resolved = FileHelper.ResolveCommandPath(textBox2.Text);
-        if (File.Exists(resolved))
-        {
-            openFileDialog1.FileName = resolved;
-            string? dir = Path.GetDirectoryName(resolved);
-            if (!string.IsNullOrEmpty(dir))
-            {
-                openFileDialog1.InitialDirectory = dir;
-            }
-        }
-        if (openFileDialog1.ShowDialog(this) == DialogResult.OK)
-        {
-            textBox2.Text = openFileDialog1.FileName;
-        }
+        CommandFileBrowser.Browse(this, textBox2, openFileDialog1);
     }
 
     private void button2_Click(object? sender, EventArgs e)

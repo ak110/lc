@@ -80,11 +80,27 @@ RELOADはcmd.cfgだけを読み、一覧実体を維持してランチャーと�
 Core層 (SchedulerPresenter) はUI依存を持たない。
 BalloonTip/MessageBoxの表示はデリゲート経由でUI層 (ApplicationHostForm) に委譲する。
 MessageBoxは`Invoke`（同期呼び出し）でダイアログが閉じるまで後続タスクをブロックする。
-BalloonTipはBeginInvoke（非同期）で実行する。
+BalloonTipは`UiThreadDispatcher.SafeBeginInvoke`で非同期に実行する。
 
 ### 通知ダイアログの追跡とowner選定
 
 実装上の不変条件は`.claude/skills/notification-dialog/`に記載している。
+
+想定外の例外は`ErrorReporter`でログへ記録し、表示中のフォームを所有者とする`ErrorReporterForm`で通知する。
+所有者は`ApplicationHostForm.GetVisibleOwner`で表示時に選ぶ。
+フックからの通知はログ出力も含めてUIへ非同期に配送し、コールバック内で待機しない。
+
+### UIへの配送とフォーム間の共通処理
+
+UIへの非同期配送は`UiThreadDispatcher.SafeBeginInvoke`へ集約する。
+配送先の破棄・ハンドル未作成・配送後のハンドル破棄では、処理の代わりに解放用のコールバックを1回呼ぶ。
+ボタン・コマンド・管理一覧・フォルダーメニューは`IconReceiver`でアイコンを受け取り、採用時も破棄時も元の`Icon`を解放する。
+アクティブ化の再入は`WindowHelper.ActivateForce`の内部で防ぐ。
+
+保存位置の復元とカーソル中心の配置は`FormsHelper`で作業領域内へ補正する。
+タブ名の入力は`InputDialog`、タブの当たり判定とホイール切替は`TabControlHelper`を使う。
+コマンド編集と予定タスク編集は`LaunchOptionsControl`で表示形式・優先度を選び、`CommandFileBrowser`で参照ボタンの処理を共有する。
+最前面の親から子ダイアログへの伝播は`FormsHelper.ShowDialogOver`が担う。
 
 ## フック管理
 

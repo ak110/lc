@@ -556,15 +556,7 @@ public partial class MemoForm : Form
     {
         // カーソル直下のタブを検出し、見つかればSelectedIndexへ反映する
         var pos = tabControl1.PointToClient(Cursor.Position);
-        int hit = -1;
-        for (int i = 0; i < tabControl1.TabCount; i++)
-        {
-            if (tabControl1.GetTabRect(i).Contains(pos))
-            {
-                hit = i;
-                break;
-            }
-        }
+        int hit = TabControlHelper.HitTest(tabControl1, pos);
         if (hit >= 0)
         {
             tabControl1.SelectedIndex = hit;
@@ -614,7 +606,7 @@ public partial class MemoForm : Form
 
     void AddTab()
     {
-        string? name = ShowInputDialog("タブ名を入力してください:", "新しいタブ", $"メモ{Data.Tabs.Count + 1}");
+        string? name = InputDialog.Prompt(this, "タブ名を入力してください:", "新しいタブ", $"メモ{Data.Tabs.Count + 1}");
         if (name is null) return;
 
         AddTabWithName(name);
@@ -643,7 +635,7 @@ public partial class MemoForm : Form
         if (page is null) return;
 
         var tab = (MemoTab)page.Tag!;
-        string? name = ShowInputDialog("新しいタブ名:", "タブ名の変更", tab.Name);
+        string? name = InputDialog.Prompt(this, "新しいタブ名:", "タブ名の変更", tab.Name);
         if (name is null) return;
 
         tab.Name = name;
@@ -724,7 +716,7 @@ public partial class MemoForm : Form
     void TabControl1_MouseDoubleClick(object? sender, MouseEventArgs e)
     {
         if (e.Button != MouseButtons.Left) return;
-        if (HitTestTab(e.Location) >= 0) return;
+        if (TabControlHelper.HitTest(tabControl1, e.Location) >= 0) return;
         AddTabWithDefaultName();
     }
 
@@ -734,35 +726,15 @@ public partial class MemoForm : Form
     void TabControl1_MouseUp(object? sender, MouseEventArgs e)
     {
         if (e.Button != MouseButtons.Middle) return;
-        int hit = HitTestTab(e.Location);
+        int hit = TabControlHelper.HitTest(tabControl1, e.Location);
         if (hit < 0) return;
         tabControl1.SelectedIndex = hit;
         CloseCurrentTab();
     }
 
-    int HitTestTab(Point pos)
-    {
-        for (int i = 0; i < tabControl1.TabCount; i++)
-        {
-            if (tabControl1.GetTabRect(i).Contains(pos)) return i;
-        }
-        return -1;
-    }
-
     void TabControl1_MouseWheel(object? sender, MouseEventArgs e)
     {
-        int count = tabControl1.TabPages.Count;
-        if (count <= 1) return;
-
-        int index = tabControl1.SelectedIndex;
-        if (e.Delta > 0)
-        {
-            tabControl1.SelectedIndex = (index - 1 + count) % count;
-        }
-        else if (e.Delta < 0)
-        {
-            tabControl1.SelectedIndex = (index + 1) % count;
-        }
+        TabControlHelper.SelectByWheel(tabControl1, e.Delta);
     }
 
     #endregion
@@ -906,33 +878,6 @@ public partial class MemoForm : Form
     #endregion
 
     #region ヘルパー
-
-    /// <summary>
-    /// 簡易入力ダイアログ。タブ名入力に使う。
-    /// </summary>
-    string? ShowInputDialog(string prompt, string title, string defaultValue)
-    {
-        using var form = new Form
-        {
-            Text = title,
-            ClientSize = new Size(300, 100),
-            FormBorderStyle = FormBorderStyle.FixedDialog,
-            StartPosition = FormStartPosition.CenterParent,
-            MaximizeBox = false,
-            MinimizeBox = false,
-        };
-
-        var label = new Label { Text = prompt, Left = 8, Top = 8, Width = 280 };
-        var textBox = new TextBox { Text = defaultValue, Left = 8, Top = 32, Width = 280 };
-        var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Left = 120, Top = 64, Width = 75 };
-        var cancel = new Button { Text = "キャンセル", DialogResult = DialogResult.Cancel, Left = 200, Top = 64, Width = 75 };
-
-        form.Controls.AddRange(new Control[] { label, textBox, ok, cancel });
-        form.AcceptButton = ok;
-        form.CancelButton = cancel;
-
-        return form.ShowDialogOver(this) == DialogResult.OK ? textBox.Text : null;
-    }
 
     protected override void Dispose(bool disposing)
     {

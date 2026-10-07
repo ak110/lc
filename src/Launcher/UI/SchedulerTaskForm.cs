@@ -1,5 +1,4 @@
 using Launcher.Core;
-using Launcher.Infrastructure;
 
 namespace Launcher.UI;
 
@@ -16,8 +15,8 @@ public partial class SchedulerTaskForm : Form
         comboBoxType.SelectedIndex = (int)v.Type;
         textBoxFileName.Text = v.FileName;
         textBoxParam.Text = v.Param;
-        new Radios(groupBoxShow, 6).Value = (int)v.Show;
-        new Radios(groupBoxPriority, 6).Value = (int)v.Priority;
+        launchOptions.WindowStyle = v.Show;
+        launchOptions.Priority = v.Priority;
         textBoxMessage.Text = v.Message;
         UpdateControlVisibility();
     }
@@ -28,29 +27,14 @@ public partial class SchedulerTaskForm : Form
         v.Type = (SchedulerTaskType)comboBoxType.SelectedIndex;
         v.FileName = textBoxFileName.Text;
         v.Param = textBoxParam.Text;
-        v.Show = (WindowStyle)new Radios(groupBoxShow, 6).Value;
-        v.Priority = (ProcessPriorityLevel)new Radios(groupBoxPriority, 6).Value;
+        v.Show = launchOptions.WindowStyle;
+        v.Priority = launchOptions.Priority;
         v.Message = textBoxMessage.Text;
     }
 
     private void buttonBrowse_Click(object? sender, EventArgs e)
     {
-        // PATH解決済みパスをダイアログの起点に設定する。
-        // bare name (例: "notepad.exe") をアイコン表示と同じ解決順で扱い、操作時の挙動を揃える。
-        string resolved = FileHelper.ResolveCommandPath(textBoxFileName.Text);
-        if (File.Exists(resolved))
-        {
-            openFileDialog1.FileName = resolved;
-            string? dir = Path.GetDirectoryName(resolved);
-            if (!string.IsNullOrEmpty(dir))
-            {
-                openFileDialog1.InitialDirectory = dir;
-            }
-        }
-        if (openFileDialog1.ShowDialog(this) == DialogResult.OK)
-        {
-            textBoxFileName.Text = openFileDialog1.FileName;
-        }
+        CommandFileBrowser.Browse(this, textBoxFileName, openFileDialog1);
     }
 
     private void comboBoxType_SelectedIndexChanged(object? sender, EventArgs e)
@@ -71,8 +55,7 @@ public partial class SchedulerTaskForm : Form
         buttonBrowse.Visible = isExecute;
         label2.Visible = isExecute;
         textBoxParam.Visible = isExecute;
-        groupBoxShow.Visible = isExecute;
-        groupBoxPriority.Visible = isExecute;
+        launchOptions.Visible = isExecute;
 
         // メッセージ表示用コントロール
         labelMessage.Visible = !isExecute;

@@ -53,8 +53,8 @@ public partial class CommandLauncherForm : Form
         components.Add(saveConfigTimer);
 
         // ウィンドウの位置・サイズを設定
-        Location = ownerForm.Config.WindowPos;
         Size = ownerForm.Config.WindowSize;
+        this.SetLocationWithClip(ownerForm.Config.WindowPos);
     }
 
     /// <summary>
@@ -171,7 +171,7 @@ public partial class CommandLauncherForm : Form
 
     public void ShowWindow()
     {
-        Location = ownerForm.Config.WindowPos;
+        this.SetLocationWithClip(ownerForm.Config.WindowPos);
         WindowHelper.ActivateForce(this);
     }
 
@@ -563,58 +563,22 @@ public partial class CommandLauncherForm : Form
     /// </summary>
     void iconLoader_IconLoaded(object? sender, IconLoadedEventArgs e)
     {
-        // Invoke()にはハンドルが必要 (CreatedはShow()まで立たないのでIsHandleCreatedで判定)
-        if (!IsHandleCreated || IsDisposed)
-        {
-            e.Icon?.Dispose();
-            return;
-        }
-        try
+        IconReceiver.Receive(this, iconLoader, e, icon =>
         {
             Command command = (Command)e.Arg!;
-            Invoke(new MethodInvoker(delegate ()
+            imageList1.Images.Add(icon);
+            imageList1.Images.SetKeyName(imageList1.Images.Count - 1, command.FileName);
+            command.IconIndex = imageList1.Images.IndexOfKey(command.FileName);
+            foreach (ListViewItem item in listView1.Items)
             {
-                try
+                if (command.Equals(item.Tag))
                 {
-                    // 世代が古い結果は破棄 (Clear()後の古いリクエスト結果を無視)
-                    if (e.Generation != iconLoader.Generation) return;
-
-                    if (e.Icon is not null)
-                    {
-                        imageList1.Images.Add(command.FileName, (System.Drawing.Icon)e.Icon.Clone()!);
-                    }
-                    command.IconIndex = imageList1.Images.IndexOfKey(command.FileName);
-                    // リストビューに存在する場合はアイコンを設定する
-                    foreach (ListViewItem item in listView1.Items)
-                    {
-                        if (command.Equals(item.Tag))
-                        {
-                            item.ImageIndex = command.IconIndex;
-                            listView1.RedrawItems(item.Index, item.Index, true);
-                            break;
-                        }
-                    }
+                    item.ImageIndex = command.IconIndex;
+                    listView1.RedrawItems(item.Index, item.Index, true);
+                    break;
                 }
-                catch (InvalidOperationException ex)
-                {
-                    System.Diagnostics.Debug.WriteLine(ex.ToString());
-                }
-                catch (ArgumentException ex)
-                {
-                    System.Diagnostics.Debug.WriteLine(ex.ToString());
-                }
-                finally
-                {
-                    e.Icon?.Dispose();
-                }
-            }));
-        }
-        catch (InvalidOperationException ex)
-        {
-            // Invoke失敗 (フォームが破棄済み等。ObjectDisposedExceptionも含む)
-            e.Icon?.Dispose();
-            System.Diagnostics.Debug.WriteLine(ex.ToString());
-        }
+            }
+        });
     }
 
     #endregion
@@ -805,31 +769,11 @@ public partial class CommandLauncherForm : Form
     }
 
     /// <summary>
-    /// エラーメッセージボックスの表示
+    /// 例外をUIスレッドの共通通知へ配送する。
     /// </summary>
     private void ErrorMessageBox(Exception e)
     {
-        try
-        {
-            if (IsDisposed) return;
-            Invoke(new MethodInvoker(delegate ()
-            {
-                try
-                {
-                    string msg = ownerForm.Config.Debug ? e.ToString() : e.Message;
-                    MessageBox.Show(this, msg, "エラー",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-                catch (InvalidOperationException)
-                {
-                    // フォーム破棄済み等で表示不可 (ObjectDisposedExceptionも含む)
-                }
-            }));
-        }
-        catch (InvalidOperationException)
-        {
-            // Invoke失敗 (ObjectDisposedExceptionも含む)
-        }
+        UiThreadDispatcher.SafeBeginInvoke(this, () => ErrorReporter.Instance.OnException(e));
     }
 
     /// <summary>

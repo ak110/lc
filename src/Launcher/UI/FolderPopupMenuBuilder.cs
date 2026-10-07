@@ -187,24 +187,14 @@ public sealed class FolderPopupMenuBuilder : IDisposable
 
     void IconLoader_IconLoaded(object? sender, IconLoadedEventArgs e)
     {
-        if (e.Generation != iconLoader.Generation) { e.Icon?.Dispose(); return; }
-        // ownerControl のガードは SafeBeginInvoke 内部で行い、
-        // ガード発火時の Icon 解放は onSkipped に委ねる。
-        UiThreadDispatcher.SafeBeginInvoke(ownerControl, () =>
+        IconReceiver.Receive(ownerControl, iconLoader, e, icon =>
         {
-            try
-            {
-                if (ownerControl.IsDisposed) return;
-                if (e.Icon is null) return;
-                var item = e.Arg as ToolStripMenuItem;
-                if (item is null || item.IsDisposed) return;
-                item.Image = e.Icon.ToBitmap();
-            }
-            finally
-            {
-                e.Icon?.Dispose();
-            }
-        }, onSkipped: () => e.Icon?.Dispose());
+            var item = e.Arg as ToolStripMenuItem;
+            if (item is null || item.IsDisposed) return;
+            var previous = item.Image;
+            item.Image = icon.ToBitmap();
+            previous?.Dispose();
+        });
     }
 
     void InvokeShellExecuteDeferred(string path)

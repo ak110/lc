@@ -18,7 +18,6 @@ internal sealed class CommandSelectDialog : Form
         StartPosition = FormStartPosition.CenterParent;
         MaximizeBox = false;
         MinimizeBox = false;
-        TopMost = true;
 
         listView = new ListView
         {

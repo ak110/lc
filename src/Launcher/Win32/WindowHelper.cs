@@ -75,10 +75,25 @@ public sealed class WindowHelper
 
     #region 強制アクティブ化
 
+    static int activationInProgress;
+
     /// <summary>
     /// 強制的にアクティブにする
     /// </summary>
     public static void ActivateForce(Form form)
+    {
+        if (Interlocked.CompareExchange(ref activationInProgress, 1, 0) != 0) return;
+        try
+        {
+            ActivateCore(form);
+        }
+        finally
+        {
+            Volatile.Write(ref activationInProgress, 0);
+        }
+    }
+
+    private static void ActivateCore(Form form)
     {
         using var ati = new AttachThreadInput();
         // AttachThreadInput 後にキャプチャを解放する。
@@ -96,21 +111,19 @@ public sealed class WindowHelper
             LogSystemParametersInfoFailure("SET");
         }
 
-        Application.DoEvents();
-        form.Visible = true;
         bool topMost = form.TopMost;
-        form.TopMost = true;
-        form.BringToFront();
-        Application.DoEvents();
-        form.Focus();
-        form.Activate();
-        Application.DoEvents();
-        // アクティブ化のために一時的に TopMost=true にしたので元の値に戻す
-        form.TopMost = topMost;
-
-        if (time != 0)
+        try
         {
-            if (!SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0))
+            form.Visible = true;
+            form.TopMost = true;
+            form.BringToFront();
+            form.Focus();
+            form.Activate();
+        }
+        finally
+        {
+            if (!form.IsDisposed) form.TopMost = topMost;
+            if (time != 0 && !SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, ref time, 0))
             {
                 LogSystemParametersInfoFailure("SET");
             }

@@ -27,6 +27,7 @@ public partial class CommandManagementForm : Form
         listView1.SmallImageList = imageList;
         iconLoader.IconLoaded += IconLoader_IconLoaded;
 
+        _ = Handle;
         LoadCommands();
     }
 
@@ -65,21 +66,13 @@ public partial class CommandManagementForm : Form
 
     private void IconLoader_IconLoaded(object? sender, IconLoadedEventArgs e)
     {
-        if (e.Generation != iconLoader.Generation) return;
-        if (!IsHandleCreated) return;
-
-        BeginInvoke(() =>
+        IconReceiver.Receive(this, iconLoader, e, icon =>
         {
-            if (IsDisposed) return;
-            // BeginInvoke待機中にClear()された場合の二重チェック
-            if (e.Generation != iconLoader.Generation) return;
-            if (e.Icon is null) return;
-
             var item = (ListViewItem)e.Arg!;
             if (item.ListView is null) return;
 
             int index = imageList!.Images.Count;
-            imageList.Images.Add(e.Icon);
+            imageList.Images.Add(icon);
             item.ImageIndex = index;
         });
     }

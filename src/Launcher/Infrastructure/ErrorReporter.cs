@@ -17,6 +17,7 @@ public sealed class ErrorReporter
     public static ErrorReporter Instance => instance;
 
     Control? owner;
+    Func<IWin32Window?>? getVisibleOwner;
 
     object lockObject = new();
     bool localLock;
@@ -37,9 +38,11 @@ public sealed class ErrorReporter
     /// <summary>
     /// Ownerを設定し、破棄時の自動解除を登録する。
     /// </summary>
-    public void SetOwner(Control form)
+    public void SetOwner(Control form, Func<IWin32Window?>? getVisibleOwner = null)
     {
+        if (owner is not null) owner.Disposed -= form_Disposed;
         owner = form;
+        this.getVisibleOwner = getVisibleOwner;
         form.Disposed += form_Disposed;
     }
 
@@ -64,7 +67,9 @@ public sealed class ErrorReporter
 
     void form_Disposed(object? sender, EventArgs e)
     {
+        if (sender is Control control) control.Disposed -= form_Disposed;
         owner = null;
+        getVisibleOwner = null;
     }
 
     /// <summary>
@@ -81,6 +86,12 @@ public sealed class ErrorReporter
     /// <param name="e">例外オブジェクト</param>
     public void OnException(Exception e)
     {
+        if (owner is { IsDisposed: false, InvokeRequired: true } dispatcher)
+        {
+            UiThreadDispatcher.SafeBeginInvoke(dispatcher, () => OnException(e));
+            return;
+        }
+        DiagnosticLog.Error("UI.UnexpectedException", e);
         lock (lockObject)
         {
             if (localLock)
@@ -124,11 +135,8 @@ public sealed class ErrorReporter
     private DialogResult ShowReporterForm(Exception ex)
     {
         using var form = new ErrorReporterForm(ex);
-        if (owner is not null)
-        {
-            return form.ShowDialog(owner);
-        }
-        return form.ShowDialog();
+        var visibleOwner = getVisibleOwner is not null ? getVisibleOwner() : owner;
+        return form.ShowDialogOver(visibleOwner);
     }
 
     /// <summary>

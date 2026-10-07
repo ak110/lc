@@ -70,28 +70,8 @@ public partial class ConfigForm : Form
 
     private void buttonOk_Click(object? sender, EventArgs e)
     {
-        string key = "";
-        if (checkBox1.Checked) key += "Ctrl+";
-        if (checkBox2.Checked) key += "Alt+";
-        if (checkBox3.Checked) key += "Shift+";
-        if (checkBox4.Checked) key += "Win+";
-        config.HotKey = key + (comboBox1.SelectedItem?.ToString() ?? "");
-
-        // メモパッド用ホットキー。空項目選択時は修飾キーを無視して空文字を保存する。
-        string memoKeyName = comboBoxM.SelectedItem?.ToString() ?? "";
-        if (string.IsNullOrEmpty(memoKeyName))
-        {
-            config.MemoHotKey = "";
-        }
-        else
-        {
-            string memoKey = "";
-            if (checkBoxM1.Checked) memoKey += "Ctrl+";
-            if (checkBoxM2.Checked) memoKey += "Alt+";
-            if (checkBoxM3.Checked) memoKey += "Shift+";
-            if (checkBoxM4.Checked) memoKey += "Win+";
-            config.MemoHotKey = memoKey + memoKeyName;
-        }
+        config.HotKey = ReadHotkey(comboBox1, checkBox1, checkBox2, checkBox3, checkBox4);
+        config.MemoHotKey = ReadHotkey(comboBoxM, checkBoxM1, checkBoxM2, checkBoxM3, checkBoxM4);
 
         config.TrayIcon = checkBox5.Checked;
         config.IconDoubleClick = (TrayIconAction)radioButtonList1.SelectedIndex;
@@ -118,5 +98,19 @@ public partial class ConfigForm : Form
         {
             config.ReplaceEnv = form.ReplaceEnv;
         }
+    }
+
+    private static string ReadHotkey(ComboBox input, CheckBox ctrl, CheckBox alt, CheckBox shift, CheckBox win)
+    {
+        string name = input.SelectedItem?.ToString() ?? "";
+        if (string.IsNullOrEmpty(name)) return "";
+        var key = KeyTable.GetKey(name);
+        if (key is null) return "";
+        KeyTable.Modifiers modifiers = 0;
+        if (ctrl.Checked) modifiers |= KeyTable.Modifiers.Ctrl;
+        if (alt.Checked) modifiers |= KeyTable.Modifiers.Alt;
+        if (shift.Checked) modifiers |= KeyTable.Modifiers.Shift;
+        if (win.Checked) modifiers |= KeyTable.Modifiers.Win;
+        return KeyTable.GetKeyName(key.Value, modifiers);
     }
 }

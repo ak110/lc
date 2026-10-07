@@ -15,9 +15,6 @@ public partial class ButtonLauncherForm : Form
     readonly ContextMenuStrip tabContextMenu;
     readonly ContextMenuStrip mainMenu;
 
-    /// <summary>ShowLauncher 再入防止フラグ (DoEvents 経由の多重呼び出しを防ぐ)</summary>
-    bool showLauncherInProgress;
-
     // ボタンサイズ
     const int ButtonWidth = 64;
     const int ButtonHeight = 64;
@@ -76,15 +73,7 @@ public partial class ButtonLauncherForm : Form
             // カーソル直下のタブを検出し、見つかればSelectedIndexに反映する
             // (タブヘッダー空白部での右クリックでは見つからず、対象タブ依存の項目を無効化する)
             var pos = tabControl1.PointToClient(Cursor.Position);
-            int hitIndex = -1;
-            for (int i = 0; i < tabControl1.TabCount; i++)
-            {
-                if (tabControl1.GetTabRect(i).Contains(pos))
-                {
-                    hitIndex = i;
-                    break;
-                }
-            }
+            int hitIndex = TabControlHelper.HitTest(tabControl1, pos);
             if (hitIndex >= 0)
             {
                 tabControl1.SelectedIndex = hitIndex;
@@ -301,8 +290,6 @@ public partial class ButtonLauncherForm : Form
     /// </summary>
     public void ShowLauncher()
     {
-        if (showLauncherInProgress) return;
-        showLauncherInProgress = true;
         try
         {
             // Columns/Rowsからウィンドウサイズを計算
@@ -311,24 +298,7 @@ public partial class ButtonLauncherForm : Form
                 ButtonWidth, ButtonHeight,
                 toolStrip1.Height, tabControl1.ItemSize.Height);
 
-            // マウスカーソル中心に配置
-            var cursor = Cursor.Position;
-            int x = cursor.X - Width / 2;
-            int y = cursor.Y - Height / 2;
-
-            // 画面端クランプ
-            foreach (var screen in Screen.AllScreens)
-            {
-                if (screen.WorkingArea.Contains(cursor))
-                {
-                    var area = screen.WorkingArea;
-                    x = Math.Max(area.Left, Math.Min(x, area.Right - Width));
-                    y = Math.Max(area.Top, Math.Min(y, area.Bottom - Height));
-                    break;
-                }
-            }
-
-            Location = new Point(x, y);
+            FormsHelper.CenterOnCursor(this);
 
             // デフォルトタブに切り替え
             if (Data.DefaultTabIndex >= 0 && Data.DefaultTabIndex < tabControl1.TabPages.Count)
@@ -341,21 +311,11 @@ public partial class ButtonLauncherForm : Form
             Show();
             WindowHelper.ActivateForce(this);
         }
-        catch (InvalidOperationException ex)
+#pragma warning disable CA1031 // 表示操作の境界で想定外例外を共通の通知へ回送する
+        catch (Exception ex)
+#pragma warning restore CA1031
         {
-            DiagnosticLog.Error("Button.ShowLauncher", ex);
-            MessageBox.Show($"ボタンランチャーの表示に失敗しました:\n{ex.Message}", "エラー",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-        catch (System.ComponentModel.Win32Exception ex)
-        {
-            DiagnosticLog.Error("Button.ShowLauncher", ex);
-            MessageBox.Show($"ボタンランチャーの表示に失敗しました:\n{ex.Message}", "エラー",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-        finally
-        {
-            showLauncherInProgress = false;
+            ErrorReporter.Instance.OnException(ex);
         }
     }
 
@@ -766,17 +726,8 @@ public partial class ButtonLauncherForm : Form
         if (dragSource is null) { e.Effect = DragDropEffects.None; return; }
 
         var pt = tabControl1.PointToClient(new Point(e.X, e.Y));
-        for (int i = 0; i < tabControl1.TabCount; i++)
-        {
-            if (tabControl1.GetTabRect(i).Contains(pt))
-            {
-                if (tabControl1.SelectedIndex != i)
-                {
-                    tabControl1.SelectedIndex = i;
-                }
-                break;
-            }
-        }
+        int hit = TabControlHelper.HitTest(tabControl1, pt);
+        if (hit >= 0) tabControl1.SelectedIndex = hit;
         e.Effect = DragDropEffects.Move;
     }
 
@@ -794,7 +745,7 @@ public partial class ButtonLauncherForm : Form
 
     private void AddTab()
     {
-        string? name = ShowInputDialog("タブ名を入力してください:", "タブの追加", $"Tab{Data.Tabs.Count + 1}");
+        string? name = InputDialog.Prompt(this, "タブ名を入力してください:", "タブの追加", $"Tab{Data.Tabs.Count + 1}");
         if (name is null) return;
 
         var tab = new ButtonTab { Name = name };
@@ -815,7 +766,7 @@ public partial class ButtonLauncherForm : Form
         if (tabPage is null) return;
 
         var tabData = (ButtonTab)tabPage.Tag!;
-        string? name = ShowInputDialog("新しいタブ名:", "タブ名の変更", tabData.Name);
+        string? name = InputDialog.Prompt(this, "新しいタブ名:", "タブ名の変更", tabData.Name);
         if (name is null) return;
 
         tabData.Name = name;
@@ -876,18 +827,7 @@ public partial class ButtonLauncherForm : Form
 
     private void tabControl1_MouseWheel(object? sender, MouseEventArgs e)
     {
-        int count = tabControl1.TabPages.Count;
-        if (count <= 1) return;
-
-        int index = tabControl1.SelectedIndex;
-        if (e.Delta > 0)
-        {
-            tabControl1.SelectedIndex = (index - 1 + count) % count;
-        }
-        else if (e.Delta < 0)
-        {
-            tabControl1.SelectedIndex = (index + 1) % count;
-        }
+        TabControlHelper.SelectByWheel(tabControl1, e.Delta);
     }
 
     #endregion
@@ -896,35 +836,15 @@ public partial class ButtonLauncherForm : Form
 
     private void IconLoader_IconLoaded(object? sender, IconLoadedEventArgs e)
     {
-        if (e.Generation != iconLoader.Generation)
+        IconReceiver.Receive(this, iconLoader, e, icon =>
         {
-            e.Icon?.Dispose();
-            return;
-        }
-        if (!IsHandleCreated)
-        {
-            e.Icon?.Dispose();
-            return;
-        }
-
-        BeginInvoke(() =>
-        {
-            try
-            {
-                if (IsDisposed) return;
-                if (e.Icon is null) return;
-
-                var btn = e.Arg as Button;
-                if (btn is null || btn.IsDisposed) return;
-
-                btn.Image = e.Icon.ToBitmap();
-                // 非選択タブのボタンはInvalidate()では再描画されないため親パネル全体を対象にする
-                btn.Parent?.Invalidate(true);
-            }
-            finally
-            {
-                e.Icon?.Dispose();
-            }
+            var btn = e.Arg as Button;
+            if (btn is null || btn.IsDisposed) return;
+            var previous = btn.Image;
+            btn.Image = icon.ToBitmap();
+            previous?.Dispose();
+            // 非選択タブも再描画するため親パネル全体を対象にする。
+            btn.Parent?.Invalidate(true);
         });
     }
 
@@ -964,31 +884,6 @@ public partial class ButtonLauncherForm : Form
     private void SaveData()
     {
         Data.Save(owner.ReportSaveFailure, owner.ConfigurationBaseName);
-    }
-
-    /// <summary>
-    /// 簡易入力ダイアログ
-    /// </summary>
-    private string? ShowInputDialog(string prompt, string title, string defaultValue)
-    {
-        using var form = new Form();
-        form.Text = title;
-        form.ClientSize = new Size(300, 100);
-        form.FormBorderStyle = FormBorderStyle.FixedDialog;
-        form.StartPosition = FormStartPosition.CenterParent;
-        form.MaximizeBox = false;
-        form.MinimizeBox = false;
-
-        var label = new Label { Text = prompt, Left = 8, Top = 8, Width = 280 };
-        var textBox = new TextBox { Text = defaultValue, Left = 8, Top = 32, Width = 280 };
-        var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Left = 120, Top = 64, Width = 75 };
-        var cancel = new Button { Text = "キャンセル", DialogResult = DialogResult.Cancel, Left = 200, Top = 64, Width = 75 };
-
-        form.Controls.AddRange(new Control[] { label, textBox, ok, cancel });
-        form.AcceptButton = ok;
-        form.CancelButton = cancel;
-
-        return form.ShowDialogOver(this) == DialogResult.OK ? textBox.Text : null;
     }
 
     protected override void Dispose(bool disposing)

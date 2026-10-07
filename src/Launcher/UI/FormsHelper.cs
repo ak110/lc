@@ -23,52 +23,40 @@ public static class FormsHelper
     /// <summary>
     /// クリッピングしてフォームの位置をセット
     /// </summary>
-    public static void SetLocationWithClip(Control form, Point pos)
+    public static void SetLocationWithClip(this Control form, Point pos)
     {
-        int posR = pos.X + form.Width;
-        int posB = pos.Y + form.Height;
-        int dist = int.MaxValue;
-        var result = new Point();
+        double distance = double.MaxValue;
+        Rectangle result = form.Bounds;
         foreach (Screen screen in Screen.AllScreens)
         {
-            Rectangle wa = screen.WorkingArea;
-            var clipped = new Point();
-            if (pos.X < wa.Left)
+            var candidate = ClipBounds(pos, form.Size, screen.WorkingArea);
+            double dx = (double)candidate.X - pos.X;
+            double dy = (double)candidate.Y - pos.Y;
+            double candidateDistance = dx * dx + dy * dy;
+            if (candidateDistance < distance)
             {
-                clipped.X = wa.Left;
-            }
-            else if (wa.Right < posR)
-            {
-                clipped.X = pos.X - (posR - wa.Right);
-            }
-            else
-            {
-                clipped.X = pos.X;
-            }
-            if (pos.Y < wa.Top)
-            {
-                clipped.Y = wa.Top;
-            }
-            else if (wa.Bottom < posB)
-            {
-                clipped.Y = pos.Y - (posB - wa.Bottom);
-            }
-            else
-            {
-                clipped.Y = pos.Y;
-            }
-            int clippedDist =
-                (clipped.X - pos.X) * (clipped.X - pos.X) +
-                (clipped.Y - pos.Y) * (clipped.Y - pos.Y);
-            // 元の位置に近ければ採用
-            if (clippedDist < dist)
-            {
-                dist = clippedDist;
-                result = clipped;
+                distance = candidateDistance;
+                result = candidate;
             }
         }
-        // 移動
-        form.Location = result;
+        form.Bounds = result;
+    }
+
+    /// <summary>カーソルのある画面内で、カーソルを中心にフォームを配置する。</summary>
+    public static void CenterOnCursor(Control form)
+    {
+        Point cursor = Cursor.Position;
+        var position = new Point(cursor.X - form.Width / 2, cursor.Y - form.Height / 2);
+        form.Bounds = ClipBounds(position, form.Size, Screen.FromPoint(cursor).WorkingArea);
+    }
+
+    private static Rectangle ClipBounds(Point position, Size size, Rectangle area)
+    {
+        size = new Size(Math.Min(size.Width, area.Width), Math.Min(size.Height, area.Height));
+        return new Rectangle(
+            Math.Clamp(position.X, area.Left, area.Right - size.Width),
+            Math.Clamp(position.Y, area.Top, area.Bottom - size.Height),
+            size.Width, size.Height);
     }
 
     #region リストボックス・コンボボックスなど

@@ -7,18 +7,22 @@ paths:
 
 ## スレッディングモデル
 
-| スレッド                         | 用途                                      | 備考                                       |
-| -------------------------------- | ----------------------------------------- | ------------------------------------------ |
-| UIスレッド (STA)                 | WinFormsメッセージループ、全UI操作        | `Application.Run(ApplicationHostForm)`     |
-| コマンド実行スレッド (STA)       | `Command.Execute()`の実行                 | `CommandLauncherForm.ExecuteCommand`で生成 |
-| ディレクトリ展開スレッド (STA)   | `Command.OpenDirectory()`の実行           | `CommandLauncherForm.OpenDirectory`で生成  |
-| アイコン読込スレッド (STA)       | `AsyncIconLoader`による非同期アイコン取得 | 用途別STAワーカー + リトライ（最大2回）    |
-| 環境変数置換スレッド             | `ReplaceEnvList`のコマンド名置換          | `CommandLauncherForm.ApplyConfig`で生成    |
-| スケジューラー実行スレッド (STA) | `SchedulerPresenter.ExecuteItemTasks`     | アイテムごとに1本 (後述の直列化)           |
-| フックコールバック               | キーボード/マウスフックのイベント通知     | `BeginInvoke`でUIスレッドへディスパッチ    |
+| スレッド                         | 用途                                      | 備考                                                      |
+| -------------------------------- | ----------------------------------------- | --------------------------------------------------------- |
+| UIスレッド (STA)                 | WinFormsメッセージループ、全UI操作        | `Application.Run(ApplicationHostForm)`                    |
+| コマンド実行スレッド (STA)       | `Command.Execute()`の実行                 | `CommandLauncherForm.ExecuteCommand`で生成                |
+| ディレクトリ展開スレッド (STA)   | `Command.OpenDirectory()`の実行           | `CommandLauncherForm.OpenDirectory`で生成                 |
+| アイコン読込スレッド (STA)       | `AsyncIconLoader`による非同期アイコン取得 | 用途別STAワーカー + リトライ（最大2回）                   |
+| 環境変数置換スレッド             | 文字列の存在確認・置換値の計算            | `ApplicationHostForm.RequestEnvironmentReplacement`で生成 |
+| スケジューラー実行スレッド (STA) | `SchedulerPresenter.ExecuteItemTasks`     | アイテムごとに1本 (後述の直列化)                          |
+| フックコールバック               | キーボード/マウスフックのイベント通知     | `SafeBeginInvoke`でUIスレッドへ配送                       |
 
 スケジューラーの予定実行は`SchedulerRunCoordinator`経由で開始し、同じアイテムの実行スレッドは同時に1本までとする。
 タスク列の完了通知は`UiThreadDispatcher.SafeBeginInvoke`でUIスレッドへ配送して実行状態を解放し、配送できなければ`Release`で解放する。
+
+環境変数の置換は、起動・再読込・環境変更・設定反映から`RequestEnvironmentReplacement`へ集約する。
+UIスレッドで文字列のスナップショットを取得し、背景スレッドでは存在確認と置換値の計算だけを行う。
+結果はUIへ戻し、共有コレクションへの所属と元の値の一致を確認してから適用する。
 
 ## STAスレッド制約
 
@@ -46,21 +50,28 @@ UIスレッドはSTAアパートメントのためShell APIを呼び出せる。
 ポスト先の`MethodInvoker`内では`catch (Exception)`を必ず設けて
 `ErrorReporter.Instance.OnException(ex)`へ回送する。
 共通処理は`Launcher.Infrastructure.UiThreadDispatcher.SafeBeginInvoke`にまとめ、
-直接`Control.BeginInvoke`を呼び出す新規実装は避ける。
+既存の呼び出しを含め、UIへの非同期配送は`SafeBeginInvoke`を使う。
+直接の`Control.BeginInvoke`は同ヘルパー内部だけで使う。
+予定のメッセージ表示タスクはダイアログが閉じるまで待つ契約のため、同期の`Control.Invoke`を使う。
 `SafeBeginInvoke`は`Control.IsHandleCreated`・`Control.IsDisposed`をガードする。
 破棄済み・ハンドル未作成の場合は`action`を実行しない。
 `SafeBeginInvoke`は第3引数`onSkipped`（`Action?`型、既定値null）を受け取る。
 `onSkipped`が指定されている場合、ガード発火時に同期呼び出しする。
 リソース解放を伴う`action`を渡す場合はガード時に安全に実行できる解放処理を`onSkipped`へ登録する。
 `ContextMenuStrip.Closed`イベント配下での`menu.Dispose()`のように同期実行が不適切な処理は`onSkipped`から除外する。
-`onSkipped`は`InvalidOperationException`のレース発生時にも呼び出される。
+`onSkipped`は配送時の`InvalidOperationException`と、配送後・実行前のハンドル破棄でも呼び出される。
+処理の実行と`onSkipped`の呼び出しは、合わせて1回だけ行う。
 `onSkipped`未指定時は何もしない。
+アイコン受信には`IconReceiver.Receive`を使う。
+同処理が配送前後の世代確認、ハンドルの確認、受信した`Icon`の解放を担う。
+適用側は必要な画像をコピーし、受け取った`Icon`を保持しない。
 
 ## アイコンローダーの並行度
 
 `AsyncIconLoader`のワーカー数は用途別に固定値を指定する。
 `SHGetFileInfo`は高並行度で不安定になるため、`Environment.ProcessorCount`等の動的値は使わない。
-グリッド全体用インスタンスは8本固定とする。
+`ButtonLauncherForm`のグリッド、`CommandLauncherForm`の一覧、`CommandManagementForm`の管理一覧は各8本固定とする。
+`CommandLauncherForm`のワーカー優先度は`BelowNormal`とする。
 フォルダポップアップメニュー用のper-menu生成インスタンスは4本とする。
 `ButtonLauncherForm.Handle`の作成は`iconLoader.Load`より前に行う。
 Handle未作成時に`IconLoaded`が届くと、`BeginInvoke`が失敗してアイコンが破棄される。

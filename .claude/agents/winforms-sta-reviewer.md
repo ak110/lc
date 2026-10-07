@@ -47,14 +47,17 @@ model: sonnet
 ### B. Win32 フックコールバック（[.claude/rules/win32-interop.md](../rules/win32-interop.md)）
 
 - フックコールバック内に`MessageBox.Show`・`Thread.Sleep`・同期I/O・長時間ループが無いか
-- UI操作が`BeginInvoke`（非同期）でディスパッチされているか（`Invoke`はデッドロックの恐れあり）
+- UI操作と例外の通知が`UiThreadDispatcher.SafeBeginInvoke`で非同期に配送されているか（`Invoke`はデッドロックの恐れあり）
+- 既存の呼び出しも含め、直接の`Control.BeginInvoke`が共通ヘルパー内部だけにあるか
 - UP抑制フラグ（`suppressNextLButtonUp`／`suppressNextRButtonUp`／`suppressKeyUpVK`）を更新し忘れている箇所が無いか
 - フック解除（`UnhookWindowsHookEx`）のタイミングと、解除後にコールバックが残存しないこと
 
 ### C. アイコンローダー（[.claude/rules/threading.md](../rules/threading.md)）
 
-- ワーカー数が用途別の固定値か（グリッド全体は8本固定・per-menu用途は4本まで許容し、
-  いずれも`Environment.ProcessorCount`等の動的値に変えていないか）
+- ワーカー数が用途別の固定値か（ボタン・コマンド・管理画面は各8本、per-menu用途は4本とし、
+  `Environment.ProcessorCount`等の動的値に変えていないか）
+- コマンド一覧のワーカー優先度が`BelowNormal`か
+- 4画面の受信が`IconReceiver.Receive`を使い、古い世代・破棄済み・ハンドル未作成・配送後破棄でも受信した`Icon`を解放するか
 - `ButtonLauncherForm.Handle`の作成が`iconLoader.Load`より前か
 - 完了時の再描画が`btn.Parent?.Invalidate(true)`か
 - リトライ上限が2回のままか
@@ -86,7 +89,8 @@ model: sonnet
 
 ### G. その他
 
-- `Application.DoEvents`の追加（原則禁止、使う場合は理由コメント必須）
+- アクティブ化の再入防止が`WindowHelper.ActivateForce`の内部にあり、呼び出し側の個別フラグに依存していないか
+- アクティブ化が`Application.DoEvents`でメッセージループへ再入していないか
 - `WaitOne`／`Wait`／`.Result`でUIスレッドをブロックしていないか
 - `IDisposable`リソース（Icon・Bitmap・Stream・COMオブジェクト）の`using`または明示的Disposeが欠けていないか
 

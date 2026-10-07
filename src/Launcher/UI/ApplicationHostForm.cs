@@ -29,9 +29,6 @@ public partial class ApplicationHostForm : Form
     /// <summary>スケジューラーの予定実行の管理 (同じアイテムの重複防止と予定の集約)</summary>
     readonly SchedulerRunCoordinator schedulerRunCoordinator;
 
-    /// <summary>ShowHide 再入防止フラグ (DoEvents 経由の多重呼び出しを防ぐ)</summary>
-    bool showHideInProgress;
-
     /// <summary>現在表示中の非同期通知ダイアログの追跡リスト (全てUIスレッドから操作する)</summary>
     readonly List<Form> activeNotifications = [];
 
@@ -125,9 +122,11 @@ public partial class ApplicationHostForm : Form
         data.WindowHandle = Handle.ToInt64();
         data.Save(ReportSaveFailure, ConfigurationBaseName);
 
-        hookManager = new HookManager(() => config, () => Handle, a => BeginInvoke(a));
+        hookManager = new HookManager(() => config, () => Handle,
+            a => UiThreadDispatcher.SafeBeginInvoke(this, a));
 
         commandLauncherForm = new CommandLauncherForm(this, contextMenuStrip1);
+        ErrorReporter.Instance.SetOwner(this, GetVisibleOwner);
         commandLauncherForm.PreInitialize();
         if (!config.HideFirst)
         {
@@ -254,9 +253,7 @@ public partial class ApplicationHostForm : Form
 #pragma warning disable CA1031 // WndProcはメッセージループの最終防御ライン
                 catch (Exception ex)
                 {
-                    DiagnosticLog.Error("Host.HandleMessage", ex);
-                    MessageBox.Show($"メッセージ処理中にエラーが発生しました:\n{ex.Message}\n\n{ex.StackTrace}",
-                        "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ErrorReporter.Instance.OnException(ex);
                 }
 #pragma warning restore CA1031
             }
@@ -270,43 +267,34 @@ public partial class ApplicationHostForm : Form
     /// </summary>
     public void ShowHide()
     {
-        if (showHideInProgress) return;
-        showHideInProgress = true;
-        try
+        bool hasNotifications = HasActiveNotifications;
+
+        if (commandLauncherForm.IsDisposed)
         {
-            bool hasNotifications = HasActiveNotifications;
-
-            if (commandLauncherForm.IsDisposed)
-            {
-                HideMemoIfVisible();
-                commandLauncherForm = new CommandLauncherForm(this, contextMenuStrip1);
-                commandLauncherForm.Show(this);
-            }
-            else if (!commandLauncherForm.Visible)
-            {
-                HideMemoIfVisible();
-                commandLauncherForm.ShowWindow();
-            }
-            else if (!hasNotifications)
-            {
-                // 通常のトグル: 表示中→非表示
-                commandLauncherForm.HideWindow();
-            }
-            // 通知がある場合はHideせず、表示を維持する
-
-            // 追跡中の通知ダイアログを最前面にアクティブ化する (DoEventsを伴わない軽量版)
-            foreach (var form in activeNotifications)
-            {
-                if (!form.IsDisposed)
-                {
-                    form.Activate();
-                    form.BringToFront();
-                }
-            }
+            HideMemoIfVisible();
+            commandLauncherForm = new CommandLauncherForm(this, contextMenuStrip1);
+            commandLauncherForm.Show(this);
         }
-        finally
+        else if (!commandLauncherForm.Visible)
         {
-            showHideInProgress = false;
+            HideMemoIfVisible();
+            commandLauncherForm.ShowWindow();
+        }
+        else if (!hasNotifications)
+        {
+            // 通常のトグル: 表示中→非表示
+            commandLauncherForm.HideWindow();
+        }
+        // 通知がある場合はHideせず、表示を維持する
+
+        // 追跡中の通知ダイアログを最前面にアクティブ化する
+        foreach (var form in activeNotifications)
+        {
+            if (!form.IsDisposed)
+            {
+                form.Activate();
+                form.BringToFront();
+            }
         }
     }
 
@@ -572,7 +560,7 @@ public partial class ApplicationHostForm : Form
     {
         schedulerShowBalloonTip = (title, message) =>
         {
-            BeginInvoke(() =>
+            UiThreadDispatcher.SafeBeginInvoke(this, () =>
             {
                 // トレイアイコンが非表示の場合、一時的に表示してバルーン通知を表示する
                 bool wasVisible = notifyIcon1.Visible;
