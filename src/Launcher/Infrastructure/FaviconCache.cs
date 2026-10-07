@@ -16,10 +16,12 @@ public sealed class FaviconCache
     static readonly HttpClient _httpClient = new();
 
     readonly string _cacheDir;
+    readonly Action<string, string> warn;
 
-    public FaviconCache(string cacheDir)
+    public FaviconCache(string cacheDir, Action<string, string>? warningLogger = null)
     {
         _cacheDir = cacheDir;
+        warn = warningLogger ?? DiagnosticLog.Warn;
         Directory.CreateDirectory(cacheDir);
     }
 
@@ -68,7 +70,7 @@ public sealed class FaviconCache
         catch (Exception e)
 #pragma warning restore CA1031
         {
-            DiagnosticLog.Warn("Favicon", $"取得失敗 ({url}): {e.GetType().Name}: {e.Message}");
+            warn("Favicon", $"取得失敗: {e.GetType().Name}");
             return null;
         }
     }

@@ -4,129 +4,93 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// DiagnosticLogの主要挙動テスト。
-/// ResetForTestingで一時ディレクトリへ出力先を差し替えて実際の書き込みを検証する。
-/// </summary>
-[Collection("DiagnosticLog")]
 public sealed class DiagnosticLogTests : IDisposable
 {
-    readonly DirectoryInfo tempDir;
+    readonly DirectoryInfo tempDir = Directory.CreateTempSubdirectory("launcher-diagnosticlog-tests-");
+    readonly MutableTimeProvider clock = new();
 
-    public DiagnosticLogTests()
-    {
-        tempDir = Directory.CreateTempSubdirectory("launcher-diagnosticlog-tests-");
-        DiagnosticLog.ResetForTesting(tempDir.FullName);
-    }
+    public void Dispose() => tempDir.Delete(recursive: true);
 
-    public void Dispose()
+    [Fact]
+    public void 書き込み_日跨ぎでファイルを切り替えて保持境界より古いログだけ削除する()
     {
-        DiagnosticLog.ResetForTesting(null);
-        try { tempDir.Delete(recursive: true); }
-        catch (IOException) { }
-        catch (UnauthorizedAccessException) { }
+        var writer = new DiagnosticLogWriter(tempDir.FullName, clock);
+        writer.Info("Test", "前日");
+        var expired = Path.Combine(tempDir.FullName, "expired.log");
+        var boundary = Path.Combine(tempDir.FullName, "boundary.log");
+        File.WriteAllText(expired, "古いログ");
+        File.WriteAllText(boundary, "境界ログ");
+        clock.Now = new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero);
+        File.SetLastWriteTimeUtc(expired, clock.Now.UtcDateTime.AddDays(-7).AddSeconds(-1));
+        File.SetLastWriteTimeUtc(boundary, clock.Now.UtcDateTime.AddDays(-7));
+
+        writer.Warn("Test", "当日");
+
+        File.ReadAllText(Path.Combine(tempDir.FullName, "20260101.log")).Should().Contain("前日").And.NotContain("当日");
+        File.ReadAllText(Path.Combine(tempDir.FullName, "20260102.log")).Should().Contain("[WARN] [Test] 当日");
+        File.Exists(expired).Should().BeFalse();
+        File.ReadAllText(boundary).Should().Be("境界ログ");
     }
 
     [Fact]
-    public void CurrentLogPath_一時ディレクトリ配下の日付ログを指す()
+    public void 書き込み_毎分上限と次の窓の再開を独立インスタンスで管理する()
     {
-        var path = DiagnosticLog.CurrentLogPath;
-
-        path.Should().NotBeNull();
-        Path.GetDirectoryName(path).Should().Be(tempDir.FullName);
-        Path.GetFileName(path).Should().MatchRegex(@"^\d{8}\.log$");
+        var writer = new DiagnosticLogWriter(tempDir.FullName, clock);
+        for (var i = 0; i < 200; i++) writer.Info("Test", "記録");
+        writer.Info("Test", "上限超過");
+        var path = Path.Combine(tempDir.FullName, "20260101.log");
+        File.ReadAllLines(path).Should().HaveCount(200);
+        clock.Now = clock.Now.AddMinutes(1);
+        writer.Info("Test", "再開");
+        File.ReadAllLines(path).Should().HaveCount(201);
+        File.ReadAllText(path).Should().Contain("再開").And.NotContain("上限超過");
+        new DiagnosticLogWriter(tempDir.FullName, clock).Debug("Test", "独立");
+        File.ReadAllText(path).Should().Contain("[DEBUG] [Test] 独立");
     }
 
     [Fact]
-    public void Info_ファイルへ書き込まれる()
+    public void ファビコン失敗_URLとメッセージを保存しない()
     {
-        var marker = Guid.NewGuid().ToString("N");
-        DiagnosticLog.Info("Test", marker);
-
-        var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
-        content.Should().Contain(marker);
-        content.Should().Contain("[INFO] [Test]");
+        var writer = new DiagnosticLogWriter(tempDir.FullName, clock);
+        var cache = new FaviconCache(Path.Combine(tempDir.FullName, "favicons"), writer.Warn);
+        cache.Get("https://user:secret@[invalid/path?token=secret", true).Should().BeNull();
+        var content = File.ReadAllText(Path.Combine(tempDir.FullName, "20260101.log"));
+        content.Should().Contain("UriFormatException");
+        content.Should().NotContain("https://").And.NotContain("secret").And.NotContain("invalid");
     }
 
     [Fact]
-    public void Debug_ファイルへ書き込まれる()
+    public void 書き込み_利用不能な保存先で例外を漏らさない()
     {
-        var marker = Guid.NewGuid().ToString("N");
-        DiagnosticLog.Debug("Test", marker);
-
-        var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
-        content.Should().Contain(marker);
-        content.Should().Contain("[DEBUG] [Test]");
+        var blocked = Path.Combine(tempDir.FullName, "file");
+        File.WriteAllText(blocked, "ファイル");
+        var write = () => new DiagnosticLogWriter(blocked, clock).Error("Test", "失敗");
+        write.Should().NotThrow();
+        new DiagnosticLogWriter(null, clock).Info("Test", "無効");
     }
 
     [Fact]
-    public void Warn_ファイルへ書き込まれる()
+    public void Error_例外型とメッセージとスタックを保存する()
     {
-        var marker = Guid.NewGuid().ToString("N");
-        DiagnosticLog.Warn("Test", marker);
-
-        var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
-        content.Should().Contain(marker);
-        content.Should().Contain("[WARN] [Test]");
-    }
-
-    [Fact]
-    public void Error_メッセージ版がファイルへ書き込まれる()
-    {
-        var marker = Guid.NewGuid().ToString("N");
-        DiagnosticLog.Error("Test", marker);
-
-        var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
-        content.Should().Contain(marker);
-        content.Should().Contain("[ERROR] [Test]");
-    }
-
-    [Fact]
-    public void Error_例外情報がログに含まれる()
-    {
-        var marker = Guid.NewGuid().ToString("N");
-        Exception thrown;
+        var writer = new DiagnosticLogWriter(tempDir.FullName, clock);
         try
         {
-            throw new InvalidOperationException($"marker-{marker}");
+            throw new InvalidOperationException("診断対象");
         }
         catch (InvalidOperationException ex)
         {
-            thrown = ex;
+            writer.Error("Test", ex);
         }
-        DiagnosticLog.Error("Test", thrown);
-
-        var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
-        content.Should().Contain("[ERROR] [Test]");
-        content.Should().Contain($"marker-{marker}");
-        content.Should().Contain("InvalidOperationException");
-        content.Should().Contain(nameof(Error_例外情報がログに含まれる));
+        var content = File.ReadAllText(Path.Combine(tempDir.FullName, "20260101.log"));
+        content.Should().Contain("[ERROR] [Test]").And.Contain("InvalidOperationException");
+        content.Should().Contain("診断対象").And.Contain(nameof(Error_例外型とメッセージとスタックを保存する));
     }
 
-    [Fact]
-    public void ResetForTesting_nullを渡すと利用不能状態になる()
+    sealed class MutableTimeProvider : TimeProvider
     {
-        DiagnosticLog.ResetForTesting(null);
-
-        DiagnosticLog.CurrentLogPath.Should().BeNull();
-        // 利用不能状態でもInfo呼び出し自体は例外を送出しない(no-opフォールバック)
-        DiagnosticLog.Info("Test", "unreachable");
-    }
-
-    [Fact]
-    public void PerMinuteLimit到達時は書き込みがスキップされる()
-    {
-        const int perMinuteLimit = 200;
-        for (var i = 0; i < perMinuteLimit; i++)
-        {
-            DiagnosticLog.Info("Test", "fill");
-        }
-
-        var marker = Guid.NewGuid().ToString("N");
-        DiagnosticLog.Info("Test", marker);
-
-        var content = File.ReadAllText(DiagnosticLog.CurrentLogPath!);
-        content.Should().NotContain(marker);
+        public DateTimeOffset Now { get; set; } = new(2026, 1, 1, 23, 58, 0, TimeSpan.Zero);
+        public override DateTimeOffset GetUtcNow() => Now;
+        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
     }
 
     [Fact]

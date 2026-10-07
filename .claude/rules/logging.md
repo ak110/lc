@@ -45,7 +45,9 @@ OS由来のメッセージ（`Win32Exception`を引数なしまたは`(int error
 
 `DiagnosticLog`の実装仕様は以下の通り。
 
-- ログファイル配置は`Application.ExecutablePath`親ディレクトリ配下の`logs/`とする
+- ログファイル配置は`Environment.ProcessPath`親ディレクトリ配下の`logs/`とする
 - 書き込みは`FileOptions.WriteThrough`＋`Flush(flushToDisk: true)`で即時ディスク反映する
 - 1分あたりの書き込み行数を制限しログ肥大化を防ぐ
-- 保持期間は日付ローテーションで7日
+- `DiagnosticLogWriter.GetLogFileName`が書き込みごとに現在のローカル日付からファイル名を決める
+- 初回と日付が変わった最初の書き込みで古いログを削除する。`IsExpired`が最終更新時刻と現在時刻をUTCで比較し、7日より古いファイルだけを削除する
+- 保存先と`TimeProvider`は`DiagnosticLogWriter`が保持し、静的APIは共通のインスタンスへ委ねる

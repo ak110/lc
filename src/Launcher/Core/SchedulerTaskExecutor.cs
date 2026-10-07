@@ -48,7 +48,7 @@ public static class SchedulerTaskExecutor
 #pragma warning disable CA1031 // パス解析エラーは無視して workDir=null で続行
         catch (Exception ex)
         {
-            DiagnosticLog.Warn("Scheduler.Task", $"作業ディレクトリ取得失敗: {ex.GetType().Name}: {ex.Message}");
+            DiagnosticLog.Warn("Scheduler.Task", $"作業ディレクトリ取得失敗: {ex.GetType().Name}");
         }
 #pragma warning restore CA1031
 
