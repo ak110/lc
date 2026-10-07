@@ -289,10 +289,7 @@ public sealed class SchedulerData : ConfigStore
         return changed;
     }
 
-    public void Serialize()
-    {
-        Serialize(".sch.cfg");
-    }
+    public bool Save(Action<ConfigSaveFailure> notify, string? baseName = null) => Store.Save(this, notify, baseName);
 
     public static ConfigLoadResult<SchedulerData> Load(string? baseName = null) => Store.Load(baseName);
 

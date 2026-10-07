@@ -118,7 +118,7 @@ public sealed class ReplaceEnvListTests
         cmd.WorkDir.Should().Be("%SystemRoot%");
     }
 
-    // --- Replace(CommandList): 複数コマンドの一括置換 ---
+    // --- 取得・計算・適用による複数コマンドの一括置換 ---
 
     [Fact]
     public void Replace_CommandListの全コマンドが処理される()
@@ -130,7 +130,9 @@ public sealed class ReplaceEnvListTests
         list.Commands.Add(new Command { Name = "cmd1", FileName = systemRoot });
         list.Commands.Add(new Command { Name = "cmd2", FileName = @"Z:\nonexistent" });
 
-        envList.Replace(list);
+        var scheduler = new SchedulerData();
+        var batch = EnvironmentReplacementBatch.Capture(list, scheduler);
+        batch.Apply(list, scheduler, envList.Calculate(batch.Values)).Should().BeFalse();
 
         list.Commands[0].FileName.Should().Be("%SystemRoot%");
         list.Commands[1].FileName.Should().Be(@"Z:\nonexistent");

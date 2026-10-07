@@ -47,7 +47,7 @@ public partial class CommandLauncherForm : Form
         saveConfigTimer.Tick += (s, e) =>
         {
             saveConfigTimer.Stop();
-            ownerForm.Config.Serialize();
+            ownerForm.Config.Save(ownerForm.ReportSaveFailure, ownerForm.ConfigurationBaseName);
         };
         components ??= new Container();
         components.Add(saveConfigTimer);
@@ -108,19 +108,12 @@ public partial class CommandLauncherForm : Form
     /// <summary>
     /// デバウンスタイマーによる遅延保存が残っていたら即座に保存する。
     /// </summary>
-    private void FlushPendingSave()
+    public void FlushPendingSave()
     {
         if (saveConfigTimer.Enabled)
         {
             saveConfigTimer.Stop();
-            try
-            {
-                ownerForm.Config.Serialize();
-            }
-            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
-            {
-                DiagnosticLog.Error("Config.Save", ex);
-            }
+            ownerForm.Config.Save(ownerForm.ReportSaveFailure, ownerForm.ConfigurationBaseName);
         }
     }
 
@@ -147,8 +140,7 @@ public partial class CommandLauncherForm : Form
         ReloadIcons();
 
         // ReplaceEnv
-        ReplaceEnvList.StartBackgroundReplace(
-            ownerForm.Config.ReplaceEnv, rep => rep.Replace(ownerForm.CommandList));
+        ownerForm.RequestEnvironmentReplacement();
     }
 
     /// <summary>
@@ -518,7 +510,7 @@ public partial class CommandLauncherForm : Form
             using var form = new EditCommandForm(command);
             if (form.ShowDialogOver(this) == DialogResult.OK)
             {
-                ownerForm.CommandList.Serialize(".cmd.cfg");
+                ownerForm.SaveEditedCommand(command);
                 ApplyConfig();
                 textBox1.Clear(); // 入力欄をクリアする。
             }
@@ -536,7 +528,7 @@ public partial class CommandLauncherForm : Form
                 MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK)
             {
                 ownerForm.CommandList.Commands.Remove(command);
-                ownerForm.CommandList.Serialize(".cmd.cfg");
+                ownerForm.CommandList.Save(ownerForm.ReportSaveFailure, ownerForm.ConfigurationBaseName);
                 listView1.Items.Remove(removeItem);
                 textBox1.Clear();
             }
@@ -555,7 +547,7 @@ public partial class CommandLauncherForm : Form
             {
                 new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(command);
                 ownerForm.CommandList.Add(command);
-                ownerForm.CommandList.Serialize(".cmd.cfg");
+                ownerForm.CommandList.Save(ownerForm.ReportSaveFailure, ownerForm.ConfigurationBaseName);
                 ApplyConfig();
                 textBox1_TextChanged(this, EventArgs.Empty);
             }
@@ -701,7 +693,7 @@ public partial class CommandLauncherForm : Form
                     {
                         new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(command);
                         ownerForm.CommandList.Add(command);
-                        ownerForm.CommandList.Serialize(".cmd.cfg");
+                        ownerForm.CommandList.Save(ownerForm.ReportSaveFailure, ownerForm.ConfigurationBaseName);
                         ApplyConfig();
                         textBox1.Clear();
                     }
@@ -713,8 +705,7 @@ public partial class CommandLauncherForm : Form
                     using EditCommandForm form = new EditCommandForm(result.TargetCommand!);
                     if (form.ShowDialogOver(this) == DialogResult.OK)
                     {
-                        new ReplaceEnvList(ownerForm.Config.ReplaceEnv).Replace(result.TargetCommand!);
-                        ownerForm.CommandList.Serialize(".cmd.cfg");
+                        ownerForm.SaveEditedCommand(result.TargetCommand!);
                         ApplyConfig();
                         textBox1.Clear();
                     }

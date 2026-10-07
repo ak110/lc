@@ -33,7 +33,13 @@ static class Program
     {
         try
         {
-            Data data = Data.Deserialize();
+            var result = Data.Load();
+            if (result.Status == ConfigLoadStatus.Failed)
+            {
+                Console.Error.WriteLine($"{label}: 実行状態のファイルを読み込めませんでした。");
+                return;
+            }
+            Data data = result.Value;
             WindowHelper window =
                 new WindowHelper(checked((IntPtr)data.WindowHandle));
             if (window.PostMessage(message, wParam, lParam))
@@ -110,14 +116,15 @@ static class Program
                 using var form = new EditCommandForm(command);
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    var result = CommandList.AddAndSave(".cmd.cfg", command);
-                    if (result.Status == ConfigLoadStatus.Failed)
-                    {
-                        // 読めない一覧へ追加して保存すると、既存のコマンドが失われる
-                        MessageBox.Show(
+                    bool saved = CommandList.AddAndSave(command,
+                        failure => MessageBox.Show(failure.Message, AppVersion.Title,
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning),
+                        result => MessageBox.Show(
                             $"コマンド一覧({result.Kind})を読み込めないため、コマンドを追加しませんでした。\r\n原因: {result.Error?.Message}\r\n\r\n"
                                 + "らんちゃを起動すると、読込失敗の通知からバックアップを使って復元できます。",
-                            AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning));
+                    if (!saved)
+                    {
                         exit = true;
                         continue;
                     }

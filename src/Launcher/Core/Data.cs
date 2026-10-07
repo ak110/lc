@@ -1,5 +1,3 @@
-using System.IO;
-using System.Xml;
 using Launcher.Infrastructure;
 
 namespace Launcher.Core;
@@ -16,33 +14,14 @@ public sealed class Data : ConfigStore
     /// <summary>
     /// 書き込み
     /// </summary>
-    public void Serialize()
-    {
-        Serialize(".dat");
-    }
+    public bool Save(Action<ConfigSaveFailure> notify, string? baseName = null) => Store.Save(this, notify, baseName);
 
     /// <summary>
     /// 読み込み
     /// </summary>
-    public static Data Deserialize()
-    {
-        try
-        {
-            return Deserialize<Data>(".dat");
-        }
-        catch (InvalidOperationException)
-        {
-            return new Data();
-        }
-        catch (XmlException)
-        {
-            return new Data();
-        }
-        catch (IOException)
-        {
-            return new Data();
-        }
-    }
+    public static ConfigLoadResult<Data> Load(string? baseName = null) => Store.Load(baseName);
+
+    public static ConfigFile<Data> Store { get; } = new(".dat", protectOriginal: false);
 
     #endregion
 }

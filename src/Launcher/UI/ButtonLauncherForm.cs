@@ -963,7 +963,7 @@ public partial class ButtonLauncherForm : Form
 
     private void SaveData()
     {
-        Data.Serialize();
+        Data.Save(owner.ReportSaveFailure, owner.ConfigurationBaseName);
     }
 
     /// <summary>

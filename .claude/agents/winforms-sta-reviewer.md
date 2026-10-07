@@ -62,10 +62,14 @@ model: sonnet
 ### D. ConfigStore（[.claude/skills/persistence/SKILL.md](../skills/persistence/SKILL.md)）
 
 - 新規プロパティが正しいクラスに属しているか
-  - 静的設定 → `Config`／`CommandList`／`ButtonLauncherData`／`SchedulerData`のいずれか（`*.cfg`）
+  - 静的設定 → `Config`／`CommandList`／`ButtonLauncherData`／`SchedulerData`／`MemoData`のいずれか（`*.cfg`）
   - 頻繁に更新されるランタイムデータ → `Data`（`*.dat`）
 - XMLシリアライズ対象のコレクションプロパティに初期化子（`= new List<...> { ... }`）が付いていないか
-- 保存処理が原子的書き込み（一時ファイル→`File.Move`）を経由しているか
+- 6種類の読込と保存が`ConfigFile<T>`を経由し、保存停止・書込失敗の通知を呼び出し元で重複させていないか
+- cfgの原本保護とdatの保護対象外を維持し、本体・バックアップ・復元が同じ原子保存を使うか
+- UI所有の共有一覧を背景で書き換えず、文字列の取得・背景計算・UIでの条件付き適用に分けているか
+- cmd.cfg再読込で一覧実体を保持し、古い編集参照による保存を防いでいるか
+- 通常終了と更新終了が共通の停止・最終保存を呼び、datのWindowHandleを消去するか
 
 ### E. Presenter パターン（`docs/development/architecture.md`）
 

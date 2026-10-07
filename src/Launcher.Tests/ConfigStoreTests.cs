@@ -102,16 +102,17 @@ public sealed class ConfigStoreTests
     // --- ファイル経由のラウンドトリップ ---
 
     [Fact]
-    public void SerializeToFile_DeserializeFromFileのラウンドトリップ()
+    public void 保存窓口を通したファイルのラウンドトリップ()
     {
         var original = new CommandList();
         original.Commands.Add(new Command { Name = "test", FileName = "test.exe" });
 
-        var tmpFile = Path.GetTempFileName();
+        var baseName = Path.Combine(Path.GetTempPath(), "lc_store_" + Guid.NewGuid().ToString("N"));
+        var store = new ConfigFile<CommandList>(".cmd.cfg");
         try
         {
-            original.SerializeToFile(tmpFile);
-            var restored = ConfigStore.DeserializeFromFile<CommandList>(tmpFile);
+            store.Save(original, _ => Assert.Fail("保存に失敗した"), baseName).Should().BeTrue();
+            var restored = store.Load(baseName).Value;
 
             restored.Commands.Should().HaveCount(1);
             restored.Commands[0].Name.Should().Be("test");
@@ -119,7 +120,8 @@ public sealed class ConfigStoreTests
         }
         finally
         {
-            File.Delete(tmpFile);
+            File.Delete(store.FileName(baseName));
+            File.Delete(store.FileName(baseName) + ".bak");
         }
     }
 

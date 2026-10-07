@@ -22,10 +22,7 @@ public sealed class ButtonLauncherData : ConfigStore
     /// <summary>
     /// 書き込み
     /// </summary>
-    public void Serialize()
-    {
-        Serialize(".btns.cfg");
-    }
+    public bool Save(Action<ConfigSaveFailure> notify, string? baseName = null) => Store.Save(this, notify, baseName);
 
     /// <summary>
     /// 読み込み

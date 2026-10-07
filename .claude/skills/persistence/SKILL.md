@@ -11,8 +11,9 @@ description: >
 
 ## 設定ファイル一覧
 
-すべてXMLシリアライズで、アプリケーションと同じディレクトリに保存される。
-基底クラス `ConfigStore` がシリアライズ/デシリアライズを提供する。
+すべてXMLシリアライズで、保存先を指定しない場合はアプリケーションと同じディレクトリに保存される。
+`ApplicationHostForm`の`baseName`引数で保存先のベース名を指定でき、読込・保存・再読込・終了保存に共通して使う。
+基底クラス`ConfigStore`がXML変換と原子的な置換を提供し、6種類とも`ConfigFile<T>`で読み書きする。
 
 | ファイル            | 内容                                            |
 | ------------------- | ----------------------------------------------- |
@@ -31,20 +32,26 @@ ConfigStoreは原子的なファイル保存（一時ファイルに書き込み
 
 ## 読込失敗時の保存停止とバックアップ
 
-`*.cfg`の5種は各型の`Load()`（内部は`ConfigFile<T>.Load`）で読み、結果を`ConfigLoadStatus`の成功・初回の不在・失敗に分ける。
+各型の`Load()`（内部は`ConfigFile<T>.Load`）で読み、結果を`ConfigLoadStatus`の成功・初回の不在・失敗に分ける。
 読込例外を空の新規データへ変換して返す実装を置かない。
 空データを保存すると、読めなかった原本を利用者のデータごと上書きするためである。
 
 - 本体とバックアップがどちらも無い場合だけ初回として扱い、保存を許す
-- 本体を読めない場合と、本体が無くバックアップだけある場合は失敗とし、`ConfigFileState`がそのファイルへの保存を止める。
-  保存は`ConfigSaveBlockedException`（`IOException`の派生）で失敗する
-- 保存停止の判定は`ConfigStore.SerializeToFile`の中で行う。呼出元ごとに判定を書かない
+- cfgの本体を読めない場合と、本体が無くバックアップだけある場合は失敗とし、窓口が所有する`ConfigFileState`が保存を止める
+- 保存は各型の`Save`から`ConfigFile<T>.Save`を呼び、成否を返すとともに、保存停止と書込失敗を区別して通知する
+- 失敗通知はファイル・種類ごとに保存成功まで1回とし、呼び出し元は窓口から渡された通知だけを表示する
+- 読込の案内と復元判断は`ConfigLoadInteraction.Accept`を使い、表示はUI側へ委ねる
 - バックアップは`<ファイル名>.bak`の1世代とし、正常な読込の直後と、保存で本体を置換する直前に更新する。
   直前の本体が最後の正常な読込・保存から外部で変わっていて読めない場合は、`.bak`を更新せず`<ファイル名>.broken-<日時>`へ保全する。
   `.bak`の作成と保全に失敗したら本体を置換しない
 - 復元（`ConfigFile<T>.RestoreFromBackup`）は`.bak`を読めることを確かめ、本体を`.broken-<日時>`へ移してから置換し、保存を再開する
 - 旧形式（`キー = 値`の行）として受理するのは、XMLとして読めずXMLの開始で始まらない内容に限る。破損したXMLを空の旧形式として成功扱いしない
-- `らんちゃ.dat`は`ConfigFile<T>`の対象外とし、従来どおり保存停止もバックアップも行わない
+- `らんちゃ.dat`も共通の窓口を使うが、`ProtectOriginal`を無効にして保存停止とバックアップの対象から外す
+
+「送る」からの登録は`CommandList.AddAndSave`が読込から保存までを排他し、成功した場合だけProgramがRELOADを送る。
+`SchedulerRunCoordinator.EnsureIds`は保存の失敗後に予定実行を止め、保存の再試行に成功してから再開する。
+通常終了と更新の強制終了は`ApplicationHostForm.PrepareShutdown`を呼ぶ。
+タイマー停止とフック解除の後、メモと設定の遅延保存を確定し、datの`WindowHandle`を消去する。
 
 ## XMLシリアライザの初期化子禁止
 
@@ -55,11 +62,17 @@ XMLシリアライズ対象プロパティのコレクションに値付き初�
 `XmlSerializer`は既存インスタンスへAddする方式のため、nullだとデシリアライズ時にAddが失敗する。
 `ButtonLauncherData`・`MemoData`はこの空初期化子で正しく往復する。
 
-## ReplaceEnvListの排他は静的
+## 共有データの所有と環境変数の置換
 
-`ReplaceEnvList`は呼び出しごとに新規インスタンスが作成されるため、ロックは`static`で保持する。
-このロックがあるため、`CommandLauncherForm.ApplyConfig`の背景スレッドと環境変数変更の背景スレッドは、
-同じ`Command`や`SchedulerTask`を同時には書き換えない。
+`ApplicationHostForm`が共有一覧をUIスレッドで所有する。
+再読込はcmd.cfgだけを対象とし、`CommandList.ReplaceContents`で一覧実体を保持して表示を更新する。
+同じ定義のCommand参照を保ち、再読込で失われた編集参照は`SaveEditedCommand`で検出する。
+ボタンと予定の共有実体は再読込で差し替えない。
+
+一括置換は`EnvironmentReplacementBatch.Capture`で文字列をUI側で取得し、`ReplaceEnvList.Calculate`が背景で計算する。
+UIへ戻ってから`Apply`で所属と元の値が一致する対象だけを更新し、計算中の追加・変更は次の計算へ送る。
+背景スレッドへ共有一覧を渡して書き換えない。
+共有前の単一Commandは同期の`Replace`で置換してよい。
 
 ## ReplaceEnvListの片方向圧縮
 

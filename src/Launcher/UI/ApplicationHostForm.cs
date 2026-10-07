@@ -19,6 +19,12 @@ public partial class ApplicationHostForm : Form
     CommandLauncherForm commandLauncherForm;
     ButtonLauncherForm? buttonLauncherForm;
     MemoForm? memoForm;
+    bool shuttingDown;
+    bool replacementRunning;
+    bool replacementRequested;
+
+    /// <summary>コマンドの再読込・編集後に、参照を保持する画面へ再構築を通知する。</summary>
+    public event EventHandler? CommandsChanged;
 
     /// <summary>スケジューラーの予定実行の管理 (同じアイテムの重複防止と予定の集約)</summary>
     readonly SchedulerRunCoordinator schedulerRunCoordinator;
@@ -73,7 +79,7 @@ public partial class ApplicationHostForm : Form
             return buttonLauncherForm;
         if (memoForm is { IsDisposed: false, Visible: true })
             return memoForm;
-        if (!commandLauncherForm.IsDisposed && commandLauncherForm.Visible)
+        if (commandLauncherForm is { IsDisposed: false, Visible: true })
             return commandLauncherForm;
 
         // ConfigForm など launcher 内のモーダル表示中フォームを owner に使う。
@@ -85,8 +91,12 @@ public partial class ApplicationHostForm : Form
         return null;
     }
 
-    public ApplicationHostForm()
+    /// <summary>設定とランタイムデータを読み書きする共通のベース名。</summary>
+    public string? ConfigurationBaseName { get; }
+
+    public ApplicationHostForm(string? baseName = null)
     {
+        ConfigurationBaseName = baseName;
         InitializeComponent();
         Visible = false;
 
@@ -96,24 +106,24 @@ public partial class ApplicationHostForm : Form
 
         // 設定ファイルの読み込み
         // 読めないファイルは通知し、復元しなければ初期値で起動する (そのファイルへの保存は止まる)
-        var configResult = Config.Load();
+        var configResult = Config.Load(baseName);
         config = AcceptLoadResult(configResult, Config.Store, configResult.Value);
-        var commandResult = CommandList.Load(".cmd.cfg");
-        CommandList = AcceptLoadResult(commandResult, CommandList.Store(".cmd.cfg"), commandResult.Value);
-        var buttonResult = ButtonLauncherData.Load();
+        var commandResult = CommandList.Load(baseName);
+        CommandList = AcceptLoadResult(commandResult, CommandList.Store, commandResult.Value);
+        var buttonResult = ButtonLauncherData.Load(baseName);
         ButtonLauncherData = AcceptLoadResult(buttonResult, ButtonLauncherData.Store, buttonResult.Value);
-        var memoResult = MemoData.Load();
+        var memoResult = MemoData.Load(baseName);
         MemoData = AcceptLoadResult(memoResult, MemoData.Store, memoResult.Value);
-        var schedulerResult = SchedulerData.Load();
+        var schedulerResult = SchedulerData.Load(baseName);
         schedulerData = AcceptLoadResult(schedulerResult, SchedulerData.Store, schedulerResult.Value);
-        new ReplaceEnvList(config.ReplaceEnv).Replace(schedulerData);
-        try { data = Data.Deserialize(); } catch (IOException) { } catch (InvalidOperationException) { }
+        var dataResult = Data.Load(baseName);
+        data = AcceptLoadResult(dataResult, Data.Store, dataResult.Value);
 
         notifyIcon1.Text = Infrastructure.AppVersion.Title;
         notifyIcon1.Visible = config.TrayIcon;
 
         data.WindowHandle = Handle.ToInt64();
-        data.Serialize();
+        data.Save(ReportSaveFailure, ConfigurationBaseName);
 
         hookManager = new HookManager(() => config, () => Handle, a => BeginInvoke(a));
 
@@ -158,13 +168,29 @@ public partial class ApplicationHostForm : Form
             e.Cancel = true;
             return;
         }
+        PrepareShutdown();
+    }
+
+    /// <summary>通常終了と更新の強制終了に共通する停止・最終保存。UIスレッドで呼ぶ。</summary>
+    public void PrepareShutdown()
+    {
+        if (shuttingDown) return;
+        shuttingDown = true;
         schedulerTimer.Stop();
+        envChangeDebounceTimer.Stop();
         schedulerRunCoordinator.Shutdown();
         hookManager.Unregister();
         notifyIcon1.Dispose();
 
+        // メモ内容のデバウンス保存が残っていれば最終保存する
+        if (memoForm is { IsDisposed: false })
+        {
+            memoForm.FlushPendingSave();
+        }
+        IfCommandLauncherFormAlive(form => form.FlushPendingSave());
+
         data.WindowHandle = 0;
-        data.Serialize();
+        data.Save(ReportSaveFailure, ConfigurationBaseName);
     }
 
     /// <summary>未保存のメモを保存し、失敗したら内容を失う操作の続行を利用者に確認する。</summary>
@@ -314,14 +340,10 @@ public partial class ApplicationHostForm : Form
     {
         var stopwatch = Stopwatch.StartNew();
         // 読めないファイルは通知し、復元しなければ保持中のデータを使い続ける
-        CommandList = AcceptLoadResult(CommandList.Load(".cmd.cfg"), CommandList.Store(".cmd.cfg"), CommandList);
-        ButtonLauncherData = AcceptLoadResult(ButtonLauncherData.Load(), ButtonLauncherData.Store, ButtonLauncherData);
-        schedulerData = AcceptLoadResult(SchedulerData.Load(), SchedulerData.Store, schedulerData);
-        schedulerRunCoordinator.ItemsChanged();
-        EnsureSchedulerIds();
-        var data = schedulerData;
-        ReplaceEnvList.StartBackgroundReplace(config.ReplaceEnv, rep => rep.Replace(data));
+        CommandList.ReplaceContents(AcceptLoadResult(CommandList.Load(ConfigurationBaseName), CommandList.Store, CommandList));
+        RefreshCommandLauncherFormCommandList();
         IfCommandLauncherFormAlive(form => form.ApplyConfig());
+        RequestEnvironmentReplacement();
         DiagnosticLog.Info("Host.Reload", $"elapsed={stopwatch.ElapsedMilliseconds}ms");
     }
 
@@ -329,50 +351,33 @@ public partial class ApplicationHostForm : Form
     /// 読込結果を受け取る。失敗していれば通知し、バックアップがあれば復元を選べるようにする。
     /// 復元したらそのデータを、復元しなければ<paramref name="fallback"/>を返す。
     /// </summary>
-    static T AcceptLoadResult<T>(ConfigLoadResult<T> result, ConfigFile<T> store, T fallback)
+    T AcceptLoadResult<T>(ConfigLoadResult<T> result, ConfigFile<T> store, T fallback)
         where T : ConfigStore, new()
     {
-        if (result.BackupError is { } backupError)
+        return ConfigLoadInteraction.Accept(result, store, fallback, notice =>
+            MessageBox.Show(notice.Message, AppVersion.Title,
+                notice.ConfirmRestore ? MessageBoxButtons.YesNo : MessageBoxButtons.OK,
+                MessageBoxIcon.Warning) == DialogResult.Yes, ConfigurationBaseName);
+    }
+
+    /// <summary>保存窓口が重複を抑止した失敗を、表示中の画面を親にして通知する。</summary>
+    public void ReportSaveFailure(ConfigSaveFailure failure) => MessageBox.Show(
+        GetVisibleOwner(), failure.Message, AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+    /// <summary>編集先が再読込で失われた場合は、古い参照だけを保存して成功扱いにしない。</summary>
+    public bool SaveEditedCommand(Command command)
+    {
+        if (!CommandList.Commands.Contains(command))
         {
-            DiagnosticLog.Warn("Config.Backup", $"バックアップ作成失敗を通知: {result.Kind}");
-            MessageBox.Show(
-                $"設定ファイル({result.Kind})のバックアップ(.bak)を作成できませんでした。\r\n原因: {backupError.Message}\r\n\r\n"
-                    + "読み込んだ内容はそのまま使えますが、バックアップを作成できるまで、このファイルへの保存は失敗します。\r\n"
-                    + "らんちゃのフォルダーへ書き込める状態にしてください。",
-                AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        }
-        if (result.Status != ConfigLoadStatus.Failed)
-        {
-            return result.Value;
-        }
-        string text = $"設定ファイル({result.Kind})を読み込めませんでした。\r\n原因: {result.Error?.Message}\r\n\r\n"
-            + "原本を上書きしないよう、このファイルへの保存を停止しています。";
-        if (!result.BackupAvailable)
-        {
-            MessageBox.Show(text + "\r\nファイルを直してから再起動してください。", AppVersion.Title,
+            MessageBox.Show(GetVisibleOwner(), "編集中のコマンドが再読込で変更または削除されました。\r\n"
+                + "一覧からコマンドを選び直して編集してください。", AppVersion.Title,
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return fallback;
+            return false;
         }
-        var answer = MessageBox.Show(
-            text + "\r\n\r\n前回正常に読み込めた内容のバックアップから復元しますか？\r\n"
-                + "(読み込めなかったファイルは「.broken-日時」を付けた名前で残します)",
-            AppVersion.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-        if (answer != DialogResult.Yes)
-        {
-            return fallback;
-        }
-        try
-        {
-            return store.RestoreFromBackup();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
-            or InvalidOperationException or InvalidDataException or System.Xml.XmlException)
-        {
-            DiagnosticLog.Warn("Config.Restore", $"復元失敗: {result.Kind} {ex.GetType().Name}");
-            MessageBox.Show($"復元できませんでした。保存の停止は続きます。\r\n原因: {ex.Message}", AppVersion.Title,
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-            return fallback;
-        }
+        bool saved = CommandList.Save(ReportSaveFailure, ConfigurationBaseName);
+        RefreshCommandLauncherFormCommandList();
+        RequestEnvironmentReplacement();
+        return saved;
     }
 
     #region メニューなど
@@ -415,6 +420,7 @@ public partial class ApplicationHostForm : Form
     public void RefreshCommandLauncherFormCommandList()
     {
         IfCommandLauncherFormAlive(form => form.RefreshCommandList());
+        CommandsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -426,7 +432,7 @@ public partial class ApplicationHostForm : Form
         if (form.ShowDialogOver(GetVisibleOwner()) == DialogResult.OK)
         {
             config = form.Config;
-            config.Serialize();
+            config.Save(ReportSaveFailure, ConfigurationBaseName);
 
             // ボタンランチャーのColumns/Rows変更を検出して反映
             bool gridChanged = form.ButtonColumns != ButtonLauncherData.Columns
@@ -435,7 +441,7 @@ public partial class ApplicationHostForm : Form
             {
                 ButtonLauncherData.Columns = form.ButtonColumns;
                 ButtonLauncherData.Rows = form.ButtonRows;
-                ButtonLauncherData.Serialize();
+                ButtonLauncherData.Save(ReportSaveFailure, ConfigurationBaseName);
                 buttonLauncherForm?.ApplyGridSize();
             }
 
@@ -477,7 +483,7 @@ public partial class ApplicationHostForm : Form
             }
 
             if (!ConfirmPendingMemoSave("更新")) return;
-            using var form = new UpdateForm(release!);
+            using var form = new UpdateForm(release!, PrepareShutdown);
             form.ShowDialogOver(GetVisibleOwner());
             // UpdateForm 内でバッチ起動と Environment.Exit() を実行するため、ここに到達するのはキャンセル時のみ。
         }
@@ -516,10 +522,11 @@ public partial class ApplicationHostForm : Form
         using var form = new SchedulerConfigForm(schedulerData, schedulerShowBalloonTip, schedulerShowMessageBox);
         if (form.ShowDialogOver(GetVisibleOwner()) == DialogResult.OK)
         {
-            schedulerData = form.Value;
+            schedulerData.Items = form.Value.Items;
             schedulerRunCoordinator.ItemsChanged();
             EnsureSchedulerIds();
-            schedulerData.Serialize();
+            schedulerData.Save(ReportSaveFailure, ConfigurationBaseName);
+            RequestEnvironmentReplacement();
         }
     }
 
@@ -641,7 +648,7 @@ public partial class ApplicationHostForm : Form
         }
         // 実行対象の有無によらずLastCheckTimeを前進させ、同じ予定を二重に数えない
         data.SchedulerLastCheckTime = now;
-        data.Serialize();
+        data.Save(ReportSaveFailure, ConfigurationBaseName);
     }
 
     /// <summary>
@@ -659,13 +666,10 @@ public partial class ApplicationHostForm : Form
     /// </summary>
     private void EnsureSchedulerIds()
     {
-        if (!schedulerRunCoordinator.EnsureIds(schedulerData, schedulerData.Serialize))
-        {
-            MessageBox.Show(
-                "スケジューラー設定(.sch.cfg)へアイテムの識別子を保存できなかったため、スケジューラーの予定実行を停止しています。\r\n"
-                    + "ファイルを書き込める状態にしてから、らんちゃを再起動してください。",
-                AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        }
+        schedulerRunCoordinator.EnsureIds(schedulerData, () => schedulerData.Save(failure =>
+            MessageBox.Show(GetVisibleOwner(), failure.Message
+                + "\r\n識別子を保存できないため、スケジューラーの予定実行を停止しています。",
+                AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning), ConfigurationBaseName));
     }
 
     /// <summary>
@@ -691,23 +695,33 @@ public partial class ApplicationHostForm : Form
         }
         if (!changed) return;
 
-        // ReplaceEnvList 側は static ロックで直列化される。
-        ReplaceEnvList.StartBackgroundReplace(config.ReplaceEnv, rep =>
+        RequestEnvironmentReplacement();
+    }
+
+    /// <summary>一括置換を要求する。取得と適用はUIで行い、処理中の要求は次の計算へまとめる。</summary>
+    public void RequestEnvironmentReplacement()
+    {
+        if (shuttingDown) return;
+        if (replacementRunning)
         {
-            rep.Replace(CommandList);
-            rep.Replace(schedulerData);
-            try
+            replacementRequested = true;
+            return;
+        }
+        replacementRunning = true;
+        replacementRequested = false;
+        var batch = EnvironmentReplacementBatch.Capture(CommandList, schedulerData);
+        ReplaceEnvList.StartBackgroundReplace(config.ReplaceEnv, batch.Values, results =>
+            UiThreadDispatcher.SafeBeginInvoke(this, () =>
+        {
+            replacementRunning = false;
+            if (shuttingDown) return;
+            bool changedWhileRunning = batch.Apply(CommandList, schedulerData, results);
+            RefreshCommandLauncherFormCommandList();
+            if (replacementRequested || changedWhileRunning)
             {
-                BeginInvoke(() =>
-                {
-                    IfCommandLauncherFormAlive(form => form.RefreshCommandList());
-                });
+                RequestEnvironmentReplacement();
             }
-            catch (InvalidOperationException)
-            {
-                // フォーム破棄済み (ObjectDisposedException を含む)
-            }
-        });
+        }));
     }
 
     private void ApplyConfig()

@@ -1,5 +1,4 @@
 using System.Text;
-using System.Xml;
 
 namespace Launcher.Infrastructure;
 
@@ -57,24 +56,120 @@ public sealed class ConfigSaveBlockedException : IOException
 }
 
 /// <summary>
-/// 1種類の保存データの読込・復元を担う。読込の状態・直前の正常な内容はファイルごとに
-/// <see cref="ConfigFileState"/>へ記録し、保存時の判定 (<see cref="ConfigStore.SerializeToFile"/>) と共有する。
+/// 1種類の保存データの読込・保存・復元と、失敗通知の重複抑止を担う。
 /// </summary>
 public sealed class ConfigFile<T> where T : ConfigStore, new()
 {
     readonly string ext;
     readonly Func<byte[], T?>? legacyParser;
+    readonly Dictionary<string, ConfigFileState> states = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>原本の保護とバックアップを行うか。ランタイムデータでは無効にする。</summary>
+    public bool ProtectOriginal { get; }
 
     /// <param name="ext">拡張子。1文字目は <c>.</c></param>
     /// <param name="legacyParser">旧形式の読込。旧形式と判定できない内容では呼ばれない</param>
-    public ConfigFile(string ext, Func<byte[], T?>? legacyParser = null)
+    public ConfigFile(string ext, Func<byte[], T?>? legacyParser = null, bool protectOriginal = true)
     {
         this.ext = ext;
         this.legacyParser = legacyParser;
+        ProtectOriginal = protectOriginal;
     }
 
     /// <summary>対象ファイルの完全パス</summary>
     public string FileName(string? baseName = null) => (baseName ?? ConfigStore.DefaultBaseName) + ext;
+
+    ConfigFileState State(string fileName)
+    {
+        lock (states)
+        {
+            if (!states.TryGetValue(fileName, out var state))
+            {
+                state = new ConfigFileState();
+                states.Add(fileName, state);
+            }
+            return state;
+        }
+    }
+
+    /// <summary>保存の成否を返す。同じファイルの同じ失敗は、保存が成功するまで1回だけ通知する。</summary>
+    public bool Save(T value, Action<ConfigSaveFailure> notify, string? baseName = null)
+    {
+        string fileName = FileName(baseName);
+        ConfigSaveFailure? failure = null;
+        try
+        {
+            using var mutex = ConfigStore.Lock(fileName);
+            var state = State(fileName);
+            if (ProtectOriginal)
+            {
+                // 未読込の保存も既存原本の検査を通す。
+                if (!state.LoadAttempted)
+                {
+                    Load(baseName);
+                }
+                state.BeforeReplace(fileName, bytes => Parse(bytes));
+            }
+            byte[] content = value.SerializeToBytes();
+            ConfigStore.WriteAtomic(fileName, content);
+            state.LastGood = content;
+            lock (state.NotifiedFailures) state.NotifiedFailures.Clear();
+            return true;
+        }
+        catch (Exception ex) when (ConfigFailure.IsSave(ex))
+        {
+            failure = RecordFailure(fileName, ex);
+        }
+        // 通知のモーダルループへ入る前にファイルの排他を解放する。
+        if (failure is not null)
+        {
+            notify(failure);
+        }
+        return false;
+    }
+
+    /// <summary>別プロセスの更新を失わないよう、読込・変更・保存を同じ排他の下で行う。</summary>
+    public bool ModifyAndSave(Action<T> modify, Action<ConfigSaveFailure> notify,
+        Action<ConfigLoadResult<T>> loadFailed, string? baseName = null)
+    {
+        string fileName = FileName(baseName);
+        ConfigLoadResult<T>? rejected = null;
+        ConfigSaveFailure? failure = null;
+        bool saved = false;
+        try
+        {
+            using var mutex = ConfigStore.Lock(fileName);
+            var result = Load(baseName);
+            if (result.Status == ConfigLoadStatus.Failed)
+            {
+                rejected = result;
+            }
+            else
+            {
+                modify(result.Value);
+                saved = Save(result.Value, value => failure = value, baseName);
+            }
+        }
+        catch (Exception ex) when (ConfigFailure.IsSave(ex))
+        {
+            failure = RecordFailure(fileName, ex);
+        }
+        // モーダル通知はプロセス間排他を解放した後に行う。
+        if (rejected is not null) loadFailed(rejected);
+        if (failure is not null) notify(failure);
+        return saved;
+    }
+
+    ConfigSaveFailure? RecordFailure(string fileName, Exception error)
+    {
+        var kind = error is ConfigSaveBlockedException ? ConfigSaveFailureKind.Blocked : ConfigSaveFailureKind.Write;
+        DiagnosticLog.Warn("Config.Save", $"保存失敗: {ext} {kind} {error.GetType().Name}");
+        var notified = State(fileName).NotifiedFailures;
+        lock (notified)
+        {
+            return notified.Add(kind) ? new ConfigSaveFailure(ext, kind) : null;
+        }
+    }
 
     /// <summary>
     /// 読み込む。成功したらその内容でバックアップを更新する。失敗したファイルへの保存は以後止まる。
@@ -82,19 +177,35 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
     public ConfigLoadResult<T> Load(string? baseName = null)
     {
         string fileName = FileName(baseName);
+        try
+        {
+            return LoadCore(baseName);
+        }
+        catch (Exception ex) when (ConfigFailure.IsRead(ex))
+        {
+            State(fileName).MarkFailed();
+            DiagnosticLog.Warn("Config.Load", $"読込失敗: {ext} {ex.GetType().Name}");
+            return new(new T(), ConfigLoadStatus.Failed, fileName,
+                ProtectOriginal && File.Exists(ConfigFileState.BackupName(fileName)), ex);
+        }
+    }
+
+    ConfigLoadResult<T> LoadCore(string? baseName)
+    {
+        string fileName = FileName(baseName);
         string backupName = ConfigFileState.BackupName(fileName);
         using var mutex = ConfigStore.Lock(fileName);
 
         if (!File.Exists(fileName))
         {
-            if (File.Exists(backupName))
+            if (ProtectOriginal && File.Exists(backupName))
             {
                 // 本体だけが消えた状態は初回と区別し、バックアップを上書きさせない
-                ConfigFileState.MarkFailed(fileName, Parse);
+                State(fileName).MarkFailed();
                 DiagnosticLog.Warn("Config.Load", $"本体が無くバックアップだけがある: {ConfigFileState.KindOf(fileName)}");
                 return new(new T(), ConfigLoadStatus.Failed, fileName, true, new FileNotFoundException("本体が見つからない"));
             }
-            ConfigFileState.MarkLoaded(fileName, null, Parse);
+            State(fileName).MarkLoaded(null);
             return new(new T(), ConfigLoadStatus.NotFound, fileName, false, null);
         }
 
@@ -105,20 +216,22 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
             bytes = File.ReadAllBytes(fileName);
             value = Parse(bytes);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException
-            or InvalidDataException or XmlException or FormatException or IndexOutOfRangeException or KeyNotFoundException)
+        catch (Exception ex) when (ConfigFailure.IsRead(ex))
         {
-            ConfigFileState.MarkFailed(fileName, Parse);
+            State(fileName).MarkFailed();
             DiagnosticLog.Warn("Config.Load", $"読込失敗: {ConfigFileState.KindOf(fileName)} {ex.GetType().Name}");
-            return new(new T(), ConfigLoadStatus.Failed, fileName, File.Exists(backupName), ex);
+            return new(new T(), ConfigLoadStatus.Failed, fileName, ProtectOriginal && File.Exists(backupName), ex);
         }
 
-        ConfigFileState.MarkLoaded(fileName, bytes, Parse);
+        State(fileName).MarkLoaded(bytes);
         try
         {
-            ConfigFileState.WriteAtomic(backupName, bytes);
+            if (ProtectOriginal)
+            {
+                ConfigStore.WriteAtomic(backupName, bytes);
+            }
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ConfigFailure.IsSave(ex))
         {
             // バックアップを作成できなくても読めたデータは使える。利用者へは結果の BackupError で通知させる
             DiagnosticLog.Warn("Config.Backup", $"バックアップ更新失敗: {ConfigFileState.KindOf(fileName)} {ex.GetType().Name}");
@@ -141,8 +254,8 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         {
             File.Move(fileName, ConfigFileState.BrokenName(fileName));
         }
-        ConfigFileState.WriteAtomic(fileName, bytes);
-        ConfigFileState.MarkLoaded(fileName, bytes, Parse);
+        ConfigStore.WriteAtomic(fileName, bytes);
+        State(fileName).MarkLoaded(bytes);
         DiagnosticLog.Info("Config.Restore", $"バックアップから復元: {ConfigFileState.KindOf(fileName)}");
         return value;
     }
@@ -154,7 +267,7 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
             using var stream = new MemoryStream(bytes);
             return ConfigStore.DeserializeFromStream<T>(stream);
         }
-        catch (Exception ex) when (ex is InvalidOperationException or XmlException)
+        catch (Exception ex) when (ConfigFailure.IsXml(ex))
         {
             if (legacyParser is null || !IsLegacyText(bytes))
             {
@@ -181,17 +294,12 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
 /// <summary>
 /// 保存データのファイルごとの読込状態。保存の可否と、保存前にバックアップへ写してよい内容かの判定に使う。
 /// </summary>
-public static class ConfigFileState
+public sealed class ConfigFileState
 {
-    sealed class Entry
-    {
-        public bool Blocked;
-        public byte[]? LastGood;
-        public required Func<byte[], object> Validate;
-    }
-
-    static readonly object lockObject = new();
-    static readonly Dictionary<string, Entry> entries = new(StringComparer.OrdinalIgnoreCase);
+    internal bool LoadAttempted { get; private set; }
+    bool blocked;
+    internal byte[]? LastGood { get; set; }
+    internal HashSet<ConfigSaveFailureKind> NotifiedFailures { get; } = [];
 
     /// <summary>バックアップのファイル名</summary>
     public static string BackupName(string fileName) => fileName + ".bak";
@@ -208,50 +316,28 @@ public static class ConfigFileState
         return dot < 0 ? name : name[dot..];
     }
 
-    internal static void MarkLoaded<T>(string fileName, byte[]? content, Func<byte[], T> validate)
-        where T : notnull
+    internal void MarkLoaded(byte[]? content)
     {
-        lock (lockObject)
-        {
-            entries[fileName] = new Entry { Blocked = false, LastGood = content, Validate = b => validate(b) };
-        }
+        LoadAttempted = true;
+        blocked = false;
+        LastGood = content;
     }
 
-    internal static void MarkFailed<T>(string fileName, Func<byte[], T> validate)
-        where T : notnull
+    internal void MarkFailed()
     {
-        lock (lockObject)
-        {
-            entries[fileName] = new Entry { Blocked = true, LastGood = null, Validate = b => validate(b) };
-        }
-    }
-
-    /// <summary>そのファイルへの保存が止まっているか</summary>
-    public static bool IsBlocked(string fileName)
-    {
-        lock (lockObject)
-        {
-            return entries.TryGetValue(fileName, out var entry) && entry.Blocked;
-        }
+        LoadAttempted = true;
+        blocked = true;
+        LastGood = null;
     }
 
     /// <summary>
     /// 保存で本体を置換する前の処理。保存停止中なら例外を送出する。直前の本体が正常なら
     /// バックアップへ写し、外部で壊れていれば別名へ保全する。どちらかに失敗したら例外を送出し、本体を置換させない。
-    /// <see cref="ConfigFile{T}"/>で読み込んでいないファイル (らんちゃ.datなど) は何もしない。
+    /// ランタイムデータの保存では呼ばない。
     /// </summary>
-    internal static void BeforeReplace(string fileName)
+    internal void BeforeReplace(string fileName, Func<byte[], object> validate)
     {
-        Entry? entry;
-        lock (lockObject)
-        {
-            entries.TryGetValue(fileName, out entry);
-        }
-        if (entry is null)
-        {
-            return;
-        }
-        if (entry.Blocked)
+        if (blocked)
         {
             throw new ConfigSaveBlockedException(
                 $"設定ファイル({KindOf(fileName)})を読み込めなかったため、原本の上書きを防ぐために保存を停止しています。" +
@@ -262,26 +348,25 @@ public static class ConfigFileState
             return;
         }
         byte[] current = File.ReadAllBytes(fileName);
-        if (entry.LastGood is { } lastGood && current.AsSpan().SequenceEqual(lastGood))
+        if (LastGood is { } lastGood && current.AsSpan().SequenceEqual(lastGood))
         {
-            WriteAtomic(BackupName(fileName), current);
+            ConfigStore.WriteAtomic(BackupName(fileName), current);
             return;
         }
         // 最後の正常な読込・保存から外部で変わった本体は、読めるときだけバックアップへ写す
         bool valid;
         try
         {
-            entry.Validate(current);
+            validate(current);
             valid = true;
         }
-        catch (Exception ex) when (ex is InvalidOperationException or XmlException or InvalidDataException
-            or FormatException or IndexOutOfRangeException or KeyNotFoundException)
+        catch (Exception ex) when (ConfigFailure.IsRead(ex))
         {
             valid = false;
         }
         if (valid)
         {
-            WriteAtomic(BackupName(fileName), current);
+            ConfigStore.WriteAtomic(BackupName(fileName), current);
         }
         else
         {
@@ -290,32 +375,4 @@ public static class ConfigFileState
         }
     }
 
-    internal static void AfterReplace(string fileName, byte[] content)
-    {
-        lock (lockObject)
-        {
-            if (entries.TryGetValue(fileName, out var entry))
-            {
-                entry.LastGood = content;
-            }
-        }
-    }
-
-    /// <summary>
-    /// 一時ファイルへ書いてから置換する。
-    /// </summary>
-    internal static void WriteAtomic(string fileName, byte[] content)
-    {
-        string tmp = fileName + ".tmp";
-        File.WriteAllBytes(tmp, content);
-        try
-        {
-            File.Move(tmp, fileName, true);
-        }
-        catch
-        {
-            IoFailureHandler.IgnoreIoErrors(() => File.Delete(tmp));
-            throw;
-        }
-    }
 }

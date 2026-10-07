@@ -169,13 +169,19 @@ public sealed class SchedulerRunCoordinatorTests
         var item = new SchedulerItem { Name = "旧版の設定" };
         data.Items.Add(item);
 
-        coordinator.EnsureIds(data, () => throw new IOException("保存失敗")).Should().BeFalse();
+        coordinator.EnsureIds(data, () =>
+        {
+            // 保存失敗の通知がモーダルループを回しても予定を開始しない。
+            coordinator.Request(item);
+            started.Should().BeEmpty();
+            return false;
+        }).Should().BeFalse();
         coordinator.Request(item);
         started.Should().BeEmpty();
 
         // 書き込める状態で再試行すると予定実行を再開する
         int saved = 0;
-        coordinator.EnsureIds(data, () => saved++).Should().BeTrue();
+        coordinator.EnsureIds(data, () => { saved++; return true; }).Should().BeTrue();
         saved.Should().Be(1);
         coordinator.Request(item);
         started.Should().ContainSingle();
@@ -186,11 +192,11 @@ public sealed class SchedulerRunCoordinatorTests
     {
         AddItem("a");
         int saved = 0;
-        coordinator.EnsureIds(data, () => saved++).Should().BeTrue();
+        coordinator.EnsureIds(data, () => { saved++; return true; }).Should().BeTrue();
         saved.Should().Be(0);
 
         data.Items.Add(new SchedulerItem { Name = "旧版" });
-        coordinator.EnsureIds(data, () => saved++).Should().BeTrue();
+        coordinator.EnsureIds(data, () => { saved++; return true; }).Should().BeTrue();
         saved.Should().Be(1);
     }
 }

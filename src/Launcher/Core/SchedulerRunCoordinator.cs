@@ -41,7 +41,7 @@ public sealed class SchedulerRunCoordinator
     /// 識別子の無いアイテムへ識別子を補い、補った場合と前回の保存に失敗していた場合は保存する。
     /// 保存できなければ、識別子を設定変更をまたいで追跡できないため予定実行を止めて false を返す。
     /// </summary>
-    public bool EnsureIds(SchedulerData data, Action save)
+    public bool EnsureIds(SchedulerData data, Func<bool> save)
     {
         bool changed = data.EnsureIds();
         lock (lockObject)
@@ -50,18 +50,12 @@ public sealed class SchedulerRunCoordinator
             {
                 return true;
             }
+            // 保存失敗の通知中はモーダルループから予定が届くため、保存の前に停止する。
+            idsUnsaved = true;
         }
-        try
+        if (!save())
         {
-            save();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            DiagnosticLog.Warn("Scheduler.EnsureIds", $"識別子の保存失敗: {ex.GetType().Name}");
-            lock (lockObject)
-            {
-                idsUnsaved = true;
-            }
+            DiagnosticLog.Warn("Scheduler.EnsureIds", "識別子を保存できないため予定実行を停止");
             return false;
         }
         lock (lockObject)

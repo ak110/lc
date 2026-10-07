@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Xml.Serialization;
 
 namespace Launcher.Infrastructure;
@@ -8,8 +7,6 @@ namespace Launcher.Infrastructure;
 /// </summary>
 public class ConfigStore
 {
-    static readonly object lockObject = new();
-
     /// <summary>
     /// 既定のディレクトリパス＋拡張子を除いたベースファイル名を取得する。
     /// </summary>
@@ -21,50 +18,27 @@ public class ConfigStore
         }
     }
 
-    /// <summary>
-    /// オブジェクトを保存
-    /// </summary>
-    /// <param name="ext">拡張子。１文字目は . にしておく。</param>
-    protected void Serialize(string ext)
+    internal byte[] SerializeToBytes()
     {
-        Serialize(ext, DefaultBaseName);
+        using var buffer = new MemoryStream();
+        new XmlSerializer(GetType()).Serialize(buffer, this);
+        return buffer.ToArray();
     }
 
-    /// <summary>
-    /// オブジェクトを保存
-    /// </summary>
-    /// <param name="baseName">ディレクトリパス＋拡張子を除いたベースファイル名</param>
-    /// <param name="ext">拡張子。１文字目は . にしておく。</param>
-    protected void Serialize(string ext, string baseName)
+    // 本体、バックアップ、復元で同じ再試行と一時ファイルの後始末を使う。
+    internal static void WriteAtomic(string fileName, byte[] content)
     {
-        Debug.Assert(ext[0] == '.');
-        string fileName = baseName + ext;
-        SerializeToFile(fileName);
-    }
-
-    /// <summary>
-    /// オブジェクトを保存
-    /// </summary>
-    /// <param name="fileName">保存するファイル名</param>
-    public void SerializeToFile(string fileName)
-    {
-        using var mutex = Lock(fileName);
-        byte[] content;
-        using (var buffer = new MemoryStream())
+        string temporary = fileName + ".tmp";
+        try
         {
-            XmlSerializer s = new XmlSerializer(GetType());
-            s.Serialize(buffer, this);
-            content = buffer.ToArray();
+            File.WriteAllBytes(temporary, content);
+            MoveFileWithRetry(temporary, fileName);
         }
-        // ConfigFileで読み込んだファイルは、保存停止の判定と直前の本体の退避を置換より先に行う
-        ConfigFileState.BeforeReplace(fileName);
-        string tmpFileName = fileName + ".tmp";
-        File.WriteAllBytes(tmpFileName, content);
-        // 同一ボリューム上のMoveは原子的なリネーム(MoveFileEx)になるため、
-        // 書き込み途中のクラッシュでファイルが破損するリスクを回避できる。
-        // 外部プロセス(アンチウイルス等)による一時的なファイルロックに備えてリトライする。
-        MoveFileWithRetry(tmpFileName, fileName);
-        ConfigFileState.AfterReplace(fileName, content);
+        catch
+        {
+            IoFailureHandler.IgnoreIoErrors(() => File.Delete(temporary));
+            throw;
+        }
     }
 
     /// <summary>
@@ -107,29 +81,6 @@ public class ConfigStore
     }
 
     /// <summary>
-    /// オブジェクトを復元
-    /// </summary>
-    /// <param name="ext">拡張子。１文字目は . にしておく。</param>
-    /// <returns>復元されたデータ</returns>
-    protected static T Deserialize<T>(string ext)
-    {
-        return Deserialize<T>(ext, DefaultBaseName);
-    }
-
-    /// <summary>
-    /// オブジェクトを復元
-    /// </summary>
-    /// <param name="baseName">ディレクトリパス＋拡張子を除いたベースファイル名</param>
-    /// <param name="ext">拡張子。１文字目は . にしておく。</param>
-    /// <returns>復元されたデータ</returns>
-    protected static T Deserialize<T>(string ext, string baseName)
-    {
-        Debug.Assert(ext[0] == '.');
-        string fileName = baseName + ext;
-        return DeserializeFromFile<T>(fileName);
-    }
-
-    /// <summary>
     /// ファイルからオブジェクトを復元
     /// </summary>
     public static T DeserializeFromFile<T>(string fileName)
@@ -162,17 +113,25 @@ public class ConfigStore
 
     internal static IDisposable Lock(string fileName)
     {
-        lock (lockObject)
+        string mutexName = fileName.ToLowerInvariant().Replace('\\', '/');
+        var mutex = new Mutex(false, mutexName);
+        try
         {
-            string mutexName = fileName.ToLower().Replace('\\', '/');
-            var mutex = new Mutex(false, mutexName);
             if (!mutex.WaitOne(30000))
             {
-                mutex.Close();
                 throw new TimeoutException("設定ファイルのロック取得がタイムアウトした");
             }
-            return new MutexLock(mutex);
         }
+        catch (AbandonedMutexException)
+        {
+            // 前のプロセスが異常終了しても、このスレッドが取得した排他の下で原本を検査する。
+        }
+        catch
+        {
+            mutex.Dispose();
+            throw;
+        }
+        return new MutexLock(mutex);
     }
 
     /// <summary>

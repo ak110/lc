@@ -7,11 +7,6 @@ namespace Launcher.Core;
 /// </summary>
 public sealed class ReplaceEnvList
 {
-    // 置換時のスレッドセーフ用ロック。
-    // 複数スレッド (CommandLauncherForm.ApplyConfig の背景スレッド、環境変数変更時の Refresh 等)
-    // から同じ Command / SchedulerTask インスタンスを並行更新する可能性があるため、
-    // ReplaceEnvList インスタンス間でも排他する必要があり static にしている。
-    static readonly object lockObj = new();
     List<KeyValuePair<string, string>> vars = [];
 
     public ReplaceEnvList(List<string> list)
@@ -31,19 +26,23 @@ public sealed class ReplaceEnvList
     }
 
     /// <summary>
-    /// 一括置換を背景スレッドで実行する。
+    /// 取得済みの文字列の置換を背景スレッドで計算する。
     /// 置換は<see cref="InnerReplace"/>でパスの実在を確認するため、
     /// 切断済みのネットワークドライブやリムーバブルメディアが対象に含まれると
     /// 1件あたり数十秒ブロックする。
     /// 複数のコマンドやタスクをまとめて置換する呼び出しは、
-    /// 実行文脈を呼び出し側で判断せず、本メソッドを通してUIスレッドの占有を避ける。
-    /// 単一の<see cref="Command"/>だけを置換する呼び出しは対象外とする。
+    /// 本メソッドを通してUIスレッドの占有を避ける。完了通知も背景スレッドから呼ぶため、
+    /// 共有データへの適用は所有者がUIスレッドへ配送する。
     /// </summary>
     /// <param name="names">置換対象の環境変数名</param>
-    /// <param name="apply">生成した置換器へ適用する一括置換</param>
-    public static void StartBackgroundReplace(List<string> names, Action<ReplaceEnvList> apply)
+    /// <param name="values">UIスレッドで取得したパスの文字列</param>
+    /// <param name="completed">計算結果の通知</param>
+    public static void StartBackgroundReplace(List<string> names, IReadOnlyList<string?> values,
+        Action<IReadOnlyList<string?>> completed)
     {
-        var thread = new Thread(() => apply(new ReplaceEnvList(names)))
+        var namesCopy = names.ToList();
+        var valuesCopy = values.ToArray();
+        var thread = new Thread(() => completed(new ReplaceEnvList(namesCopy).Calculate(valuesCopy)))
         {
             IsBackground = true,
             Priority = ThreadPriority.Lowest,
@@ -52,78 +51,24 @@ public sealed class ReplaceEnvList
     }
 
     /// <summary>
-    /// 置換処理
+    /// 共有データに触れず、パスの置換結果を計算する。
     /// </summary>
-    public void Replace(CommandList commandList)
-    {
-        try
-        {
-            foreach (Command command in commandList.Commands)
-            {
-                Replace(command);
-            }
-        }
-        catch (InvalidOperationException)
-        {
-            // イテレーション中にコレクションが変更された場合を無視する
-        }
-    }
+    public IReadOnlyList<string?> Calculate(IReadOnlyList<string?> values) => values.Select(InnerReplace).ToArray();
 
     /// <summary>
-    /// スケジューラーデータの置換処理
-    /// </summary>
-    public void Replace(SchedulerData schedulerData)
-    {
-        try
-        {
-            foreach (var item in schedulerData.Items)
-            {
-                foreach (var task in item.Tasks)
-                {
-                    Replace(task);
-                }
-            }
-        }
-        catch (InvalidOperationException)
-        {
-        }
-    }
-
-    /// <summary>
-    /// スケジューラータスクの置換処理
-    /// </summary>
-    public void Replace(SchedulerTask task)
-    {
-        lock (lockObj)
-        {
-            string? rep = InnerReplace(task.FileName);
-            if (!string.IsNullOrEmpty(rep))
-            {
-                task.FileName = rep;
-            }
-        }
-    }
-
-    /// <summary>
-    /// コマンドの置換処理
+    /// 共有前の単一コマンドを同期置換する。
     /// </summary>
     public void Replace(Command command)
     {
-        // 読み取り→置換→書き込みを一貫して行うためメソッド全体をロック
-        lock (lockObj)
+        string? rep = InnerReplace(command.FileName);
+        if (!string.IsNullOrEmpty(rep))
         {
-            // パスを置換
-            string? rep = InnerReplace(command.FileName);
-            if (!string.IsNullOrEmpty(rep))
-            {
-                command.FileName = rep;
-            }
-            // 作業フォルダを置換
-            string? repDir = InnerReplace(command.WorkDir);
-            if (!string.IsNullOrEmpty(repDir))
-            {
-                command.WorkDir = repDir;
-            }
+            command.FileName = rep;
+        }
+        string? repDir = InnerReplace(command.WorkDir);
+        if (!string.IsNullOrEmpty(repDir))
+        {
+            command.WorkDir = repDir;
         }
     }
 

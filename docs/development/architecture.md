@@ -39,8 +39,12 @@ ConfigStoreを継承するクラスはXMLシリアライズで永続化される
 対象はConfig・CommandList・ButtonLauncherData・SchedulerData・Data・MemoDataである。
 ConfigStoreは原子的なファイル保存（一時ファイルに書き込み後File.Moveで置換）を提供し、
 保存中のクラッシュによるデータ破損を防止する。
-Data以外の5種は`ConfigFile<T>`で読み込み、読込結果を成功・初回の不在・失敗に分ける。
-失敗したファイルへの保存は止め、読込と保存のたびに直前の正常な内容を`.bak`へ1世代残し、失敗の通知から復元できるようにする。
+6種類とも`ConfigFile<T>`で読み書きし、読込結果を成功・初回の不在・失敗に分ける。
+cfgは失敗したファイルへの保存を止め、直前の正常な内容を`.bak`へ1世代残し、失敗の通知から復元できるようにする。
+datは保存停止とバックアップの対象から外す。
+保存は成否を返し、保存停止と書込失敗をファイル・種類ごとに成功まで1回通知する。
+読込状態は各窓口が所有し、本体・バックアップ・復元の書き込みには同じ原子保存を使う。
+保存先は`ApplicationHostForm`の`baseName`引数で受け取り、省略時は実行ファイルと同じ場所を使う。
 不変条件は`.claude/skills/persistence/`に記載している。
 
 ### ApplicationHostFormによるIPCハブ
@@ -55,6 +59,13 @@ CommandLauncherFormは表示/非表示を繰り返すため、この役割を分
 `SchedulerPresenter.ExecuteItemTasks`はタスク列（タスク間の待機を含む）の完了時に完了通知を呼び、
 ApplicationHostFormは`UiThreadDispatcher.SafeBeginInvoke`でUIスレッドへ配送して実行状態を解放する。
 実行中に到来した同じアイテムの予定は1件の保留にまとめ、完了後に最新の確定設定で1回実行する。
+
+共有データの変更はUIスレッドで行う。
+RELOADはcmd.cfgだけを読み、一覧実体を維持してランチャーと管理画面を更新する。
+同じ定義のCommand参照は保持し、定義変更や削除で一覧から外れた編集参照の保存は止める。
+ボタンと予定の共有実体は再読込で差し替えない。
+通常終了と更新終了は共通の`PrepareShutdown`でタイマーとフックを止める。
+続けてメモと設定の遅延保存を確定し、datのWindowHandleを消去する。
 
 ### スケジューラータスクの種類
 
@@ -89,7 +100,9 @@ BalloonTipはBeginInvoke（非同期）で実行する。
 `EnvironmentRefresher`（`Win32/`）がレジストリから環境変数を再読込し、現プロセスの環境ブロックを差分更新する。
 `ApplicationHostForm.WndProc`が`WM_SETTINGCHANGE`（`lParam == "Environment"`）を受信する。
 500msのデバウンスを経て`EnvironmentRefresher.Refresh()`を呼び、
-その後`ReplaceEnvList`を`CommandList`と`SchedulerData`に背景スレッドで再適用する。
+その後UIスレッドでコマンドと予定のパス文字列を取得し、背景スレッドでは置換結果だけを計算する。
+UIへ戻り、取得時と所属・値が一致する対象へ結果を適用する。
+計算中に追加・変更された対象は次の処理で取り込む。
 ReplaceEnvListに関する挙動上の注意は`.claude/skills/persistence/`に記載している。
 
 マージ規則はExplorer互換（HKLM+HKCU統合、Path系のみ`;`連結、それ以外はユーザー変数優先）とする。

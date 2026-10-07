@@ -16,6 +16,7 @@ public partial class CommandManagementForm : Form
     {
         InitializeComponent();
         this.owner = owner;
+        owner.CommandsChanged += Owner_CommandsChanged;
 
         // アイコン表示の設定
         imageList = new ImageList
@@ -59,6 +60,8 @@ public partial class CommandManagementForm : Form
         listView1.EndUpdate();
         UpdateButtonState();
     }
+
+    private void Owner_CommandsChanged(object? sender, EventArgs e) => LoadCommands();
 
     private void IconLoader_IconLoaded(object? sender, IconLoadedEventArgs e)
     {
@@ -116,12 +119,7 @@ public partial class CommandManagementForm : Form
         using var form = new EditCommandForm(cmd);
         if (form.ShowDialogOver(this) == DialogResult.OK)
         {
-            // EditCommandFormが直接cmdを更新するので、表示を更新
-            item.Text = cmd.Name ?? "";
-            item.SubItems[1].Text = cmd.FileName ?? "";
-            item.SubItems[2].Text = cmd.Param ?? "";
-            item.SubItems[3].Text = cmd.WorkDir ?? "";
-            SaveAndApply();
+            owner.SaveEditedCommand(cmd);
         }
     }
 
@@ -158,7 +156,7 @@ public partial class CommandManagementForm : Form
 
     private void SaveAndApply()
     {
-        owner.CommandList.Serialize(".cmd.cfg");
+        owner.CommandList.Save(owner.ReportSaveFailure, owner.ConfigurationBaseName);
         // CommandLauncherFormのコマンド一覧だけ更新 (アイコン再読込は不要)
         owner.RefreshCommandLauncherFormCommandList();
     }
@@ -167,6 +165,7 @@ public partial class CommandManagementForm : Form
     {
         if (disposing)
         {
+            owner.CommandsChanged -= Owner_CommandsChanged;
             iconLoader.Dispose();
             components?.Dispose();
         }

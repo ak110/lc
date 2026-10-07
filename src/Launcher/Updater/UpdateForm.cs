@@ -13,10 +13,12 @@ public sealed class UpdateForm : Form
     private Button buttonLater = null!;
 
     private readonly GitHubRelease _release;
+    private readonly Action prepareShutdown;
 
-    public UpdateForm(GitHubRelease release)
+    public UpdateForm(GitHubRelease release, Action prepareShutdown)
     {
         _release = release;
+        this.prepareShutdown = prepareShutdown;
         InitializeComponents();
         labelMessage.Text = $"新しいバージョン {release.TagName} が利用可能です。";
     }
@@ -37,6 +39,7 @@ public sealed class UpdateForm : Form
                 }
             });
             await UpdatePerformer.PerformUpdateAsync(_release, progress);
+            prepareShutdown();
             // バッチが起動された。プロセスを即座に終了してバッチに再起動を任せる。
             // Application.Exit()ではなくEnvironment.Exit()を使う。
             // Application.Exit()はモーダルダイアログ内から呼ぶとハングする場合がある。

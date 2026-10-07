@@ -30,10 +30,7 @@ public sealed class MemoData : ConfigStore
     /// <summary>
     /// 書き込み
     /// </summary>
-    public void Serialize()
-    {
-        Serialize(".memo.cfg");
-    }
+    public bool Save(Action<ConfigSaveFailure> notify, string? baseName = null) => Store.Save(this, notify, baseName);
 
     /// <summary>
     /// 読み込み

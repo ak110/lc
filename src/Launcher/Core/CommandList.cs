@@ -1,5 +1,4 @@
-using System.IO;
-using System.Xml;
+using System.Diagnostics;
 using Launcher.Infrastructure;
 
 namespace Launcher.Core;
@@ -16,6 +15,28 @@ public sealed class CommandList : ConfigStore, ICloneable
     {
         get { return Commands.Count; }
     }
+
+    /// <summary>
+    /// 一覧の実体を保って再読込を反映する。同じ定義のコマンドは参照も保ち、
+    /// 再読込中に開いている編集ダイアログが元のコマンドへ編集を確定できるようにする。
+    /// </summary>
+    public void ReplaceContents(CommandList loaded)
+    {
+        if (ReferenceEquals(this, loaded)) return;
+        var retained = Commands.GroupBy(Definition)
+            .ToDictionary(group => group.Key, group => new Queue<Command>(group));
+        var replacements = loaded.Commands.Select(command =>
+            retained.TryGetValue(Definition(command), out var matches) && matches.TryDequeue(out var existing)
+                ? existing : command).ToList();
+        Commands.Clear();
+        Commands.AddRange(replacements);
+    }
+
+    static (string Name, string File, string Param, string Directory, WindowStyle Show,
+        ProcessPriorityLevel Priority, bool Admin) Definition(Command command) =>
+        (command.Name, Environment.ExpandEnvironmentVariables(command.FileName), command.Param,
+            Environment.ExpandEnvironmentVariables(command.WorkDir ?? string.Empty),
+            command.Show, command.Priority, command.RunAsAdmin);
 
     /// <summary>
     /// 複製の作成
@@ -41,45 +62,29 @@ public sealed class CommandList : ConfigStore, ICloneable
     /// <summary>
     /// 書き込み
     /// </summary>
-    public new void Serialize(string ext)
-    {
-        SerializeTo(ext, null);
-    }
-
-    /// <summary>
-    /// 書き込み (保存先のベースファイル名を指定する)
-    /// </summary>
-    public void SerializeTo(string ext, string? baseName)
+    public bool Save(Action<ConfigSaveFailure> notify, string? baseName = null)
     {
         Commands.Sort();
-        SerializeToFile(Store(ext).FileName(baseName));
+        return Store.Save(this, notify, baseName);
     }
 
     /// <summary>
     /// 保存済みの一覧へコマンドを追加して保存する (「送る」からの登録)。
-    /// 一覧を読み込めない場合は追加も保存もせず、その読込結果を返す。
+    /// 一覧を読み込めない場合は追加も保存もせず、読込結果を通知してfalseを返す。
     /// </summary>
-    public static ConfigLoadResult<CommandList> AddAndSave(string ext, Command command, string? baseName = null)
-    {
-        var result = Load(ext, baseName);
-        if (result.Status == ConfigLoadStatus.Failed)
-        {
-            return result;
-        }
-        result.Value.Add(command);
-        result.Value.SerializeTo(ext, baseName);
-        return result;
-    }
+    public static bool AddAndSave(Command command, Action<ConfigSaveFailure> notify,
+        Action<ConfigLoadResult<CommandList>> loadFailed, string? baseName = null)
+        => Store.ModifyAndSave(list => list.Add(command), notify, loadFailed, baseName);
 
     /// <summary>
     /// 読み込み
     /// </summary>
-    public static ConfigLoadResult<CommandList> Load(string ext, string? baseName = null) => Store(ext).Load(baseName);
+    public static ConfigLoadResult<CommandList> Load(string? baseName = null) => Store.Load(baseName);
 
     /// <summary>
     /// 保存データの読込・復元。XMLとして読めない旧形式のコマンド一覧も読む
     /// </summary>
-    public static ConfigFile<CommandList> Store(string ext) => new(ext, LoadLegacy);
+    public static ConfigFile<CommandList> Store { get; } = new(".cmd.cfg", LoadLegacy);
 
     static CommandList LoadLegacy(byte[] content)
     {
