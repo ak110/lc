@@ -95,19 +95,12 @@ public static class Hook
 
     public static readonly IntPtr WM_LBUTTONDOWN = new IntPtr(0x0201);
     public static readonly IntPtr WM_LBUTTONUP = new IntPtr(0x0202);
-    public static readonly IntPtr WM_MOUSEMOVE = new IntPtr(0x0200);
-    public static readonly IntPtr WM_MOUSEWHEEL = new IntPtr(0x020a);
     public static readonly IntPtr WM_RBUTTONDOWN = new IntPtr(0x0204);
     public static readonly IntPtr WM_RBUTTONUP = new IntPtr(0x0205);
     public static readonly IntPtr WM_KEYDOWN = new IntPtr(0x0100);
     public static readonly IntPtr WM_KEYUP = new IntPtr(0x0101);
-    public static readonly IntPtr WM_CHAR = new IntPtr(0x0102);
-    public static readonly IntPtr WM_DEADCHAR = new IntPtr(0x0103);
     public static readonly IntPtr WM_SYSKEYDOWN = new IntPtr(0x0104);
     public static readonly IntPtr WM_SYSKEYUP = new IntPtr(0x0105);
-    public static readonly IntPtr WM_SYSCHAR = new IntPtr(0x0106);
-    public static readonly IntPtr WM_SYSDEADCHAR = new IntPtr(0x0107);
-    public static readonly IntPtr WM_UNICHAR = new IntPtr(0x0109);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct POINT

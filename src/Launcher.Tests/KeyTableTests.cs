@@ -10,32 +10,6 @@ namespace Launcher.Tests;
 /// </summary>
 public sealed class KeyTableTests
 {
-    // --- VKeyToKeys / KeysToVKey 往復変換 ---
-
-    [Theory]
-    [InlineData(SystemKeys.A, KeyTable.Keys.A)]
-    [InlineData(SystemKeys.Z, KeyTable.Keys.Z)]
-    [InlineData(SystemKeys.D0, KeyTable.Keys.D0)]
-    [InlineData(SystemKeys.D9, KeyTable.Keys.D9)]
-    [InlineData(SystemKeys.F1, KeyTable.Keys.F1)]
-    [InlineData(SystemKeys.F12, KeyTable.Keys.F12)]
-    [InlineData(SystemKeys.Escape, KeyTable.Keys.Escape)]
-    [InlineData(SystemKeys.Enter, KeyTable.Keys.Enter)]
-    [InlineData(SystemKeys.Space, KeyTable.Keys.Space)]
-    [InlineData(SystemKeys.NumPad0, KeyTable.Keys.Num0)]
-    [InlineData(SystemKeys.Add, KeyTable.Keys.NumAdd)]
-    [InlineData(SystemKeys.Subtract, KeyTable.Keys.NumSub)]
-    [InlineData(SystemKeys.Multiply, KeyTable.Keys.NumMul)]
-    [InlineData(SystemKeys.Divide, KeyTable.Keys.NumDiv)]
-    [InlineData(SystemKeys.Left, KeyTable.Keys.Left)]
-    [InlineData(SystemKeys.Right, KeyTable.Keys.Right)]
-    [InlineData(SystemKeys.Up, KeyTable.Keys.Up)]
-    [InlineData(SystemKeys.Down, KeyTable.Keys.Down)]
-    public void VKeyToKeys_仮想キーコードから独自キーコードに変換できる(SystemKeys vkey, KeyTable.Keys expected)
-    {
-        KeyTable.VKeyToKeys(vkey).Should().Be(expected);
-    }
-
     [Theory]
     [InlineData(KeyTable.Keys.A, SystemKeys.A)]
     [InlineData(KeyTable.Keys.Enter, SystemKeys.Enter)]
@@ -44,12 +18,6 @@ public sealed class KeyTableTests
     public void KeysToVKey_独自キーコードから仮想キーコードに変換できる(KeyTable.Keys key, SystemKeys expected)
     {
         KeyTable.KeysToVKey(key).Should().Be(expected);
-    }
-
-    [Fact]
-    public void VKeyToKeys_未登録キーはnullを返す()
-    {
-        KeyTable.VKeyToKeys(SystemKeys.LWin).Should().BeNull();
     }
 
     [Fact]
@@ -162,17 +130,6 @@ public sealed class KeyTableTests
 
     // GetKeyWithModifiers_不正なキー名のテストは省略 (Debug.Failがテストホストで例外になるため)
 
-    // --- GetVKey ---
-
-    [Fact]
-    public void GetVKey_キー名から仮想キーコードと修飾キーを返す()
-    {
-        var (vkey, mods) = KeyTable.GetVKey("Ctrl+A");
-
-        vkey.Should().Be(SystemKeys.A);
-        mods.Should().Be(KeyTable.Modifiers.Ctrl);
-    }
-
     // --- GetKeyNames ---
 
     [Fact]
@@ -224,20 +181,4 @@ public sealed class KeyTableTests
         }
     }
 
-    // --- キーボードキーの仮想キーコード往復変換 ---
-
-    [Fact]
-    public void キーボードキーの仮想キーコード往復変換が正しい()
-    {
-        // マウスキーを除くキーボードキーのみ
-        for (int i = 0; i < (int)KeyTable.Keys.LClick; i++)
-        {
-            var key = (KeyTable.Keys)i;
-            var vkey = KeyTable.KeysToVKey(key);
-            vkey.Should().NotBe(SystemKeys.None, $"キー {key} の仮想キーコード変換が失敗");
-
-            var roundTrip = KeyTable.VKeyToKeys(vkey);
-            roundTrip.Should().Be(key, $"キー {key} の往復変換が一致しない");
-        }
-    }
 }

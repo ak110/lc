@@ -6,7 +6,6 @@ namespace Launcher.Infrastructure;
 /// <summary>
 /// シリアライズ可能なクラスの基底クラス。
 /// </summary>
-[Serializable]
 public class ConfigStore
 {
     static readonly object lockObject = new();

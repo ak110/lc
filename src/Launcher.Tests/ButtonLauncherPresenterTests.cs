@@ -60,48 +60,6 @@ public sealed class ButtonLauncherPresenterTests
 
     #endregion
 
-    #region CalculateGridSize
-
-    [Fact]
-    public void CalculateGridSize_基本的な計算()
-    {
-        // 640x480のクライアント領域、ツールバー25px、タブヘッダー21px、ボタン64x64
-        var result = ButtonLauncherPresenter.CalculateGridSize(640, 480, 25, 21, 64, 64);
-
-        result.Columns.Should().Be(10); // 640 / 64
-        result.Rows.Should().Be(6);     // (480 - 25 - 21) / 64 = 434 / 64 = 6
-    }
-
-    [Fact]
-    public void CalculateGridSize_最小値は1()
-    {
-        var result = ButtonLauncherPresenter.CalculateGridSize(30, 50, 25, 21, 64, 64);
-
-        result.Columns.Should().Be(1);
-        result.Rows.Should().Be(1);
-    }
-
-    [Fact]
-    public void CalculateGridSize_端数を破棄()
-    {
-        // 130 / 64 = 2.03 → 2
-        var result = ButtonLauncherPresenter.CalculateGridSize(130, 200, 10, 10, 64, 64);
-
-        result.Columns.Should().Be(2);
-        result.Rows.Should().Be(2); // (200 - 10 - 10) / 64 = 180 / 64 = 2
-    }
-
-    [Fact]
-    public void CalculateGridSize_高さからツールバーとタブを差し引く()
-    {
-        // ツールバー40px、タブ30px → 有効高さ = 500 - 40 - 30 = 430
-        var result = ButtonLauncherPresenter.CalculateGridSize(640, 500, 40, 30, 64, 64);
-
-        result.Rows.Should().Be(6); // 430 / 64 = 6
-    }
-
-    #endregion
-
     #region DragDropState
 
     [Fact]

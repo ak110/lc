@@ -41,6 +41,9 @@ roslynator_null_check_style = pattern_matching
 
 # === 有効化する重要なルール ===
 
+# 未使用usingをビルドでも検出する
+dotnet_diagnostic.IDE0005.severity = warning
+
 # Dispose関連 (リソースリーク防止)
 dotnet_diagnostic.CA1816.severity = warning
 dotnet_diagnostic.CA2000.severity = warning

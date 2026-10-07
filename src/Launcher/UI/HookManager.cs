@@ -52,7 +52,7 @@ sealed class HookManager
     /// <summary>
     /// 物理修飾キー状態は、フック側判定用に注入と独立して追跡する。
     /// <see cref="InjectHotkeyModifierKeyUps"/>が呼ぶ<see cref="keybd_event"/>はOSの修飾キー論理状態を
-    /// 「解放」に更新するため、<see cref="KeyTable.GetModifiers"/>や<see cref="KeyTable.GetModifiersAsync"/>由来の判定では
+    /// 「解放」に更新するため、OSの論理状態に基づく判定では
     /// Ctrl+Shift+Mなどのホットキーを修飾キー保持のまま連打した際に2回目以降が不発となる。
     /// 低レベルフックが受け取るイベントのうち自プロセスの注入（<see cref="HookManagerInjectionMarker"/>）だけを
     /// 除外して<see cref="physicalKeys"/>・<see cref="physicalModifiers"/>へ反映し、ホットキー判定はこの物理状態を用いる。

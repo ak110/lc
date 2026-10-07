@@ -31,7 +31,6 @@ public enum ScheduleDateType
 /// <summary>
 /// 時:分を表す値型
 /// </summary>
-[Serializable]
 public struct HourMinute : IComparable<HourMinute>, IEquatable<HourMinute>, ICloneable
 {
     public int Hour { get; set; }
@@ -62,7 +61,6 @@ public struct HourMinute : IComparable<HourMinute>, IEquatable<HourMinute>, IClo
 /// <summary>
 /// 月/日を表す値型
 /// </summary>
-[Serializable]
 public struct MonthDay : IComparable<MonthDay>, IEquatable<MonthDay>
 {
     public int Month { get; set; }
@@ -109,7 +107,6 @@ public enum SchedulerTaskType
 /// <summary>
 /// スケジューラーのタスク
 /// </summary>
-[Serializable]
 public sealed class SchedulerTask : ICloneable
 {
     public bool Enable { get; set; } = true;
@@ -142,7 +139,6 @@ public sealed class SchedulerTask : ICloneable
 /// <summary>
 /// スケジュール条件 (いつ実行するかの定義)
 /// </summary>
-[Serializable]
 public sealed class Schedule : ICloneable
 {
     public bool Enable { get; set; } = true;
@@ -220,7 +216,6 @@ public sealed class Schedule : ICloneable
 /// <summary>
 /// スケジューラーのアイテム (スケジュール条件+タスクのセット)
 /// </summary>
-[Serializable]
 public sealed class SchedulerItem : ICloneable
 {
     /// <summary>

@@ -17,17 +17,6 @@ public static class ShellContextMenuInvoker
     const uint CMF_EXPLORE = 0x00000004;
     const uint TPM_RETURNCMD = 0x0100;
 
-    // AV発生ステージ特定後にtrueへ切り替えて代替経路を有効化する。
-    // static readonlyとしJITのコンパイル時定数畳み込みを避け、CS0162（到達不能コード）を発生させない。
-    // フィールド初期化子の既定値(false)はフォーマッターが冗長として除去するため、静的コンストラクターで代入する。
-    // 詳細は.claude/rules/win32-interop.md「AccessViolationクラッシュの診断」節を参照。
-    static readonly bool UseShellItemPath;
-
-    static ShellContextMenuInvoker()
-    {
-        UseShellItemPath = false;
-    }
-
     /// <summary>
     /// pathのShellコンテキストメニューをscreenLocationに表示し、選択項目を実行する。
     /// 呼び出し前に、親のContextMenuStrip等のWinFormsメニューモーダルループを
@@ -40,11 +29,6 @@ public static class ShellContextMenuInvoker
     /// <exception cref="ExternalException">Shell拡張実装の失敗</exception>
     public static void Show(string path, IntPtr ownerHwnd, Point screenLocation)
     {
-        if (UseShellItemPath)
-        {
-            ShellItemContextMenuInvoker.Show(path, ownerHwnd, screenLocation);
-            return;
-        }
         ShellNamespaceHelper.BindToParent(path, out var parent, out var childPidl, out var fullPidl);
         object? contextMenuObj = null;
         try
@@ -82,12 +66,10 @@ public static class ShellContextMenuInvoker
     /// contextMenuObjから取得したIContextMenuに対し、
     /// CreatePopupMenu→QueryContextMenu→MenuMessageForwarder→TrackPopupMenuEx→InvokeCommandの
     /// 共通シーケンスを実行する。
-    /// IShellFolderチェーン経由（<see cref="Show"/>）とIShellItem経由
-    /// （<see cref="ShellItemContextMenuInvoker.Show"/>）の双方から呼ばれるSSOT実装。
     /// 呼び出し元はcontextMenuObjの解放（<see cref="Marshal.ReleaseComObject(object)"/>）を
     /// 自身のfinallyブロックで行う。
     /// </summary>
-    internal static void ShowContextMenu(
+    static void ShowContextMenu(
         object contextMenuObj, IntPtr ownerHwnd, Point screenLocation)
     {
         var contextMenu = (IContextMenu)contextMenuObj;

@@ -31,9 +31,7 @@ public sealed class SingleInstance : IDisposable
     /// </summary>
     private static string GetMutexName()
     {
-        //string moduleFileName = Application.ExecutablePath;
         string moduleFileName = Environment.ProcessPath!;
-        //moduleFileName = Path.GetFullPath(Environment.ExpandEnvironmentVariables(moduleFileName));
         string mutexName = moduleFileName.ToLower().Replace('\\', '/');
         return mutexName;
     }

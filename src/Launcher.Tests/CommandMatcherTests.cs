@@ -164,24 +164,6 @@ public sealed class CommandMatcherTests
         len.Should().Be(0);
     }
 
-    // --- ParseInputNotMatch ---
-
-    [Fact]
-    public void ParseInputNotMatch_スペースで分離()
-    {
-        CommandMatcher.ParseInputNotMatch("cmd args here", out string commandName, out string? arguments);
-        commandName.Should().Be("cmd");
-        arguments.Should().Be("args here");
-    }
-
-    [Fact]
-    public void ParseInputNotMatch_スペースなし()
-    {
-        CommandMatcher.ParseInputNotMatch("cmd", out string commandName, out string? arguments);
-        commandName.Should().Be("cmd");
-        arguments.Should().BeNull();
-    }
-
     // --- 部分一致の回帰テスト (旧Command静的コンストラクタの検証を置換) ---
 
     [Fact]

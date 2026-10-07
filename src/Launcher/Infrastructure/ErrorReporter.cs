@@ -62,14 +62,6 @@ public sealed class ErrorReporter
         Application.ThreadException += Application_ThreadException;
     }
 
-    /// <summary>
-    /// 例外ハンドラを登録解除する。
-    /// </summary>
-    public void UnRegister()
-    {
-        Application.ThreadException -= Application_ThreadException;
-    }
-
     void form_Disposed(object? sender, EventArgs e)
     {
         owner = null;

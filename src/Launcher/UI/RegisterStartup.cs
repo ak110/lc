@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using Launcher.Infrastructure;
 using Launcher.Win32;
@@ -114,10 +113,7 @@ public partial class RegisterStartup : UserControl
         using var link = new ShellLink();
         link.TargetPath = Environment.ProcessPath!;
         link.Arguments = "";
-        //link.WorkingDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
         link.Description = "";
-        //link.IconFile = Process.GetCurrentProcess().MainModule.FileName;
-        //link.IconIndex = 0;
         link.Save(file);
     }
 

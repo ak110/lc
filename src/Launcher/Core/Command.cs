@@ -6,7 +6,6 @@ using Launcher.Win32;
 
 namespace Launcher.Core;
 
-[Serializable]
 public class Command : ICloneable, IComparable<Command>, IComparable
 {
     /// <summary>

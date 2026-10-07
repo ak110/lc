@@ -1,5 +1,4 @@
 using System.Text;
-using Launcher.Infrastructure;
 using SystemKeys = System.Windows.Forms.Keys;
 
 namespace Launcher.Win32;
@@ -259,33 +258,6 @@ public static class KeyTable
     }
 
     /// <summary>
-    /// キーの名前からOSの仮想キーコードの取得
-    /// 低速のため注意。
-    /// </summary>
-    public static (SystemKeys Key, Modifiers Modifiers) GetVKey(string str)
-    {
-        var p = GetKeyWithModifiers(str);
-        SystemKeys n = p.Key.HasValue ? KeysToVKey(p.Key.Value) : SystemKeys.None;
-        return (n, p.Modifiers);
-    }
-
-    /// <summary>
-    /// OSの仮想キーコードからKeysへの変換。失敗時null。
-    /// </summary>
-    public static Keys? VKeyToKeys(SystemKeys vkey)
-    {
-        Keys key;
-        if (vkeyToKeys.TryGetValue(vkey, out key))
-        {
-            return key;
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
     /// KeysからOSの仮想キーコードへの変換。失敗時None。
     /// 低速のため注意。
     /// </summary>
@@ -310,40 +282,4 @@ public static class KeyTable
         return SystemKeys.None;
     }
 
-    /// <summary>
-    /// 現在の修飾キー状態を取得(現在のスレッドに属する窓がある場合)
-    /// </summary>
-    public static Modifiers GetModifiers()
-    {
-        Modifiers n = 0;
-        if (GetKeyState(SystemKeys.ControlKey) < 0) { n = Modifiers.Ctrl; }
-        if (GetKeyState(SystemKeys.Menu) < 0) { n |= Modifiers.Alt; }
-        if (GetKeyState(SystemKeys.ShiftKey) < 0) { n |= Modifiers.Shift; }
-        if (GetKeyState(SystemKeys.LWin) < 0 || GetKeyState(SystemKeys.RWin) < 0)
-        {
-            n |= Modifiers.Win;
-        }
-        return n;
-    }
-    /// <summary>
-    /// 現在の修飾キー状態を取得(別スレッド用)
-    /// </summary>
-    public static Modifiers GetModifiersAsync()
-    {
-        Modifiers n = 0;
-        if (GetAsyncKeyState(SystemKeys.ControlKey) < 0) { n = Modifiers.Ctrl; }
-        if (GetAsyncKeyState(SystemKeys.Menu) < 0) { n |= Modifiers.Alt; }
-        if (GetAsyncKeyState(SystemKeys.ShiftKey) < 0) { n |= Modifiers.Shift; }
-        if (GetAsyncKeyState(SystemKeys.LWin) < 0 || GetAsyncKeyState(SystemKeys.RWin) < 0)
-        {
-            n |= Modifiers.Win;
-        }
-        return n;
-    }
-
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
-    extern static short GetKeyState(SystemKeys vKey);
-
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
-    extern static short GetAsyncKeyState(SystemKeys vKey);
 }

@@ -14,8 +14,10 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- リビルド時のファイルロック警告は環境依存のため除外 -->
-    <NoWarn>MSB3061;MSB3101</NoWarn>
+    <!-- XMLコメントの充足はIDE0005による未使用using検出とは分ける -->
+    <NoWarn>$(NoWarn);MSB3061;MSB3101;CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Roslynator.Analyzers">

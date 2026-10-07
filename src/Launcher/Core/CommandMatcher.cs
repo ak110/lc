@@ -110,21 +110,4 @@ public static class CommandMatcher
         return false;
     }
 
-    /// <summary>
-    /// 入力文字列をコマンド名と引数に分ける (マッチしない場合用)
-    /// </summary>
-    public static void ParseInputNotMatch(string input, out string commandName, out string? arguments)
-    {
-        int n = input.IndexOf(' ');
-        if (0 <= n)
-        {
-            commandName = input.Substring(0, n);
-            arguments = input.Substring(n + 1).TrimStart();
-        }
-        else
-        {
-            commandName = input;
-            arguments = null;
-        }
-    }
 }

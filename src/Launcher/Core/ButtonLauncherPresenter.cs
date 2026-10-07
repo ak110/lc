@@ -4,32 +4,10 @@ namespace Launcher.Core;
 
 /// <summary>
 /// ButtonLauncherFormのビジネスロジックを担当するPresenter。
-/// グリッドサイズ計算、D&D状態管理、ボタンスワップロジックを集約する。
+/// ウィンドウサイズ計算、D&D状態管理、ボタンスワップロジックを集約する。
 /// </summary>
 public static class ButtonLauncherPresenter
 {
-    /// <summary>グリッドサイズ (列数・行数)</summary>
-    public record GridSize(int Columns, int Rows);
-
-    /// <summary>
-    /// クライアント領域とボタンサイズからグリッドの列数・行数を計算する。
-    /// </summary>
-    /// <param name="clientWidth">クライアント領域の幅</param>
-    /// <param name="clientHeight">クライアント領域の高さ</param>
-    /// <param name="toolStripHeight">ツールストリップの高さ</param>
-    /// <param name="tabHeaderHeight">タブヘッダーの高さ</param>
-    /// <param name="buttonWidth">ボタンの幅</param>
-    /// <param name="buttonHeight">ボタンの高さ</param>
-    public static GridSize CalculateGridSize(
-        int clientWidth, int clientHeight,
-        int toolStripHeight, int tabHeaderHeight,
-        int buttonWidth, int buttonHeight)
-    {
-        int cols = Math.Max(1, clientWidth / buttonWidth);
-        int rows = Math.Max(1, (clientHeight - toolStripHeight - tabHeaderHeight) / buttonHeight);
-        return new GridSize(cols, rows);
-    }
-
     /// <summary>
     /// 列数・行数からウィンドウのクライアントサイズを計算する。
     /// </summary>

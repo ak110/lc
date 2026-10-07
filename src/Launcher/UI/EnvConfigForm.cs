@@ -1,5 +1,4 @@
 using System.IO;
-using Launcher.Infrastructure;
 
 namespace Launcher.UI;
 
@@ -22,15 +21,10 @@ public partial class EnvConfigForm : Form
         foreach (System.Collections.DictionaryEntry p in Environment.GetEnvironmentVariables())
         {
             string? value = p.Value?.ToString();
-            //try { value = FileName.GetFullPath(value); } catch { }
             if (value is not null && (Directory.Exists(value) || File.Exists(value)))
             {
                 string? name = p.Key?.ToString();
-                if (name is not null && this.replaceEnv.Contains(name))
-                {
-                    //listBox2.Items.Add(name);
-                }
-                else if (name is not null)
+                if (name is not null && !this.replaceEnv.Contains(name))
                 {
                     listBox1.Items.Add(name);
                 }

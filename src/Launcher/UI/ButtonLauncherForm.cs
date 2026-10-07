@@ -949,22 +949,6 @@ public partial class ButtonLauncherForm : Form
         return tabControl1.SelectedTab?.Tag as ButtonTab;
     }
 
-    private void RebuildCurrentTab()
-    {
-        RebuildTab(tabControl1.SelectedTab);
-    }
-
-    /// <summary>
-    /// 指定タブページのグリッドを再構築
-    /// </summary>
-    private void RebuildTab(TabPage? tabPage)
-    {
-        if (tabPage is null) return;
-        iconLoader.Clear();
-        var tabData = (ButtonTab)tabPage.Tag!;
-        BuildGrid(tabPage, tabData);
-    }
-
     /// <summary>
     /// ButtonTabに対応するTabPageを検索
     /// </summary>
