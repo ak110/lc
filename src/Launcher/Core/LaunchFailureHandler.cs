@@ -16,13 +16,11 @@ public static class LaunchFailureHandler
         {
             return false;
         }
-#pragma warning disable CA1031 // 起動ワーカーの最終境界で例外をログとUI通知へ渡す
-        catch (Exception ex)
+        catch (Exception ex) when (ex is Win32Exception or IOException or InvalidOperationException)
         {
             log(ex);
             notify(ex);
             return false;
         }
-#pragma warning restore CA1031
     }
 }

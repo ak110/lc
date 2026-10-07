@@ -6,4 +6,8 @@
     <AssemblyName>らんちゃ</AssemblyName>
     <ApplicationIcon>icon1.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Core/**/*.cs;Infrastructure/Config*.cs;Infrastructure/LegacyConfigReader.cs;Infrastructure/IoFailureHandler.cs;Infrastructure/PathHelper.cs;Infrastructure/AppVersion.cs;Infrastructure/DiagnosticLog*.cs" />
+    <ProjectReference Include="../Launcher.Core/Launcher.Core.csproj" />
+  </ItemGroup>
 </Project>

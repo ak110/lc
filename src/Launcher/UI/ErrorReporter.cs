@@ -1,8 +1,7 @@
 using System.Text;
-using System.Windows.Forms;
-using Launcher.UI;
+using Launcher.Infrastructure;
 
-namespace Launcher.Infrastructure;
+namespace Launcher.UI;
 
 /// <summary>
 /// エラー報告処理。

@@ -20,7 +20,7 @@ public static class ShellNamespaceHelper
     public static void BindToParent(
         string path, out IShellFolder parent, out IntPtr childPidl, out IntPtr fullPidl)
     {
-        int hr = SHParseDisplayName(path, IntPtr.Zero, out fullPidl, 0, out _);
+        int hr = NativeMethods.SHParseDisplayName(path, IntPtr.Zero, out fullPidl, 0, out _);
         if (hr != 0 || fullPidl == IntPtr.Zero)
         {
             throw new Win32Exception(hr, "SHParseDisplayName failed");
@@ -35,9 +35,6 @@ public static class ShellNamespaceHelper
         }
     }
 
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    static extern int SHParseDisplayName(
-        string pszName, IntPtr pbc, out IntPtr ppidl, uint sfgaoIn, out uint psfgaoOut);
 
     [DllImport("shell32.dll")]
     static extern int SHBindToParent(

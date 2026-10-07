@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.IO;
 using Launcher.Infrastructure;
 
 namespace Launcher.Win32;

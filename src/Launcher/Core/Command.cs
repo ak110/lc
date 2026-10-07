@@ -1,13 +1,25 @@
-using System.Diagnostics;
-using System.IO;
 using System.Xml.Serialization;
 using Launcher.Infrastructure;
-using Launcher.Win32;
 
 namespace Launcher.Core;
 
 public class Command : ICloneable, IComparable<Command>, IComparable
 {
+    public Command() { }
+
+    /// <summary>派生型へ変換するときも、コマンドの全プロパティを引き継ぐ。</summary>
+    protected Command(Command source)
+    {
+        foreach (var property in CopyProperties)
+            property.SetValue(this, property.GetValue(source));
+    }
+
+    // 公開プロパティの追加を派生型への変換にも自動で反映する。
+    private static readonly System.Reflection.PropertyInfo[] CopyProperties = typeof(Command)
+        .GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
+        .Where(property => property.CanRead && property.CanWrite && property.GetIndexParameters().Length == 0)
+        .ToArray();
+
     /// <summary>
     /// コマンド名
     /// </summary>
@@ -80,8 +92,8 @@ public class Command : ICloneable, IComparable<Command>, IComparable
 
     #endregion
 
-    /// <summary>親フォルダーを開く要求を作る。パスの解決はWindows側が担う。</summary>
-    public ShellProcessStartInfo? OpenDirectory(Config config, string? resolvedPath, IntPtr owner = default)
+    /// <summary>親フォルダーを開く要求を作成する。パスの解決はWindows側が担う。</summary>
+    public static ShellProcessStartInfo? OpenDirectory(Config config, string? resolvedPath, IntPtr owner = default)
     {
         string? path = resolvedPath;
         if (File.Exists(path) || Directory.Exists(path))
@@ -100,7 +112,7 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         return null;
     }
 
-    /// <summary>コマンドの起動要求を作る。実行と権限の照会は呼び出し側が担う。</summary>
+    /// <summary>コマンドの起動要求を作成する。実行と権限の照会は呼び出し側が担う。</summary>
     public ShellProcessStartInfo Execute(string input, Config config, IntPtr owner, bool isAdministrator)
     {
         string? args = "";
@@ -168,50 +180,4 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         return CommandMatcher.GetMatchScore(Name, input, config);
     }
 
-    /// <summary>
-    /// 指定されたファイルからコマンドの初期値を生成する。
-    /// </summary>
-    public static Command FromFile(string file)
-    {
-        file = PathHelper.PathNormalize(file);
-        var command = new Command();
-        if (string.Equals(Path.GetExtension(file), ".lnk", StringComparison.OrdinalIgnoreCase))
-        {
-            // lnk
-            try
-            {
-                using var link = new ShellLink(file);
-                string targetPath = PathHelper.PathNormalize(link.TargetPath);
-                string workingDirectory = PathHelper.PathNormalize(link.WorkingDirectory);
-                command.Name = Path.GetFileNameWithoutExtension(targetPath);
-                command.FileName = targetPath;
-                command.Param = link.Arguments ?? string.Empty;
-                command.WorkDir =
-                    PathHelper.EqualsPath(
-                    Path.GetDirectoryName(targetPath) ?? string.Empty,
-                    workingDirectory) &&
-                    2 <= workingDirectory.Length &&
-                    workingDirectory[1] == ':' ? null : workingDirectory;
-                command.Show = link.DisplayMode switch
-                {
-                    ShellLink.ShellLinkDisplayMode.Maximized => WindowStyle.Maximized,
-                    ShellLink.ShellLinkDisplayMode.Minimized => WindowStyle.Minimized,
-                    _ => WindowStyle.Normal,
-                };
-                return command;
-            }
-            catch (IOException)
-            {
-                // エラー時はそのまま↓へ。
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
-                // ShellLinkのCOM操作失敗時もそのまま↓へ。
-            }
-        }
-        // lnk以外
-        command.Name = Path.GetFileNameWithoutExtension(file);
-        command.FileName = file;
-        return command;
-    }
 }

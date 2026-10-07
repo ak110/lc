@@ -26,22 +26,33 @@ public static class ShellLaunchService
         var snapshot = command.Clone();
         var settings = config.Clone();
         var handle = owner.Handle;
-        return Start(owner, () => snapshot.OpenDirectory(settings,
+        return Start(owner, () => Command.OpenDirectory(settings,
             FileHelper.ResolveCommandPath(snapshot.FileName), handle));
     }
 
     /// <summary>タスク列を実行中の専用STAから、起動が終わるまで同期実行する。</summary>
     public static bool ExecuteOnSta(Control owner, Func<ShellProcessStartInfo?> createRequest)
     {
-        return LaunchFailureHandler.Execute(() =>
+        try
         {
-            if (Thread.CurrentThread.GetApartmentState() != ApartmentState.STA || !Thread.CurrentThread.IsBackground)
-                throw new InvalidOperationException("起動処理は専用STAスレッドで実行してください。");
-            var request = createRequest();
-            if (request is not null) ProcessLauncher.Start(request);
-        }, ex => DiagnosticLog.Warn("Shell.Execute", $"起動失敗: {ex.GetType().Name}"),
-        ex => UiThreadDispatcher.SafeBeginInvoke(owner, () =>
-            MessageBox.Show(owner, $"起動できませんでした。対象と起動設定を確認してください。\n{ex.Message}",
-                AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Error)));
+            return LaunchFailureHandler.Execute(() =>
+            {
+                if (Thread.CurrentThread.GetApartmentState() != ApartmentState.STA || !Thread.CurrentThread.IsBackground)
+                    throw new InvalidOperationException("起動処理は専用STAスレッドで実行してください。");
+                var request = createRequest();
+                if (request is not null) ProcessLauncher.Start(request);
+            }, ex => DiagnosticLog.Warn("Shell.Execute", $"起動失敗: {ex.GetType().Name}"),
+            ex => UiThreadDispatcher.SafeBeginInvoke(owner, () =>
+                MessageBox.Show(owner, $"起動できませんでした。対象と起動設定を確認してください。\n{ex.Message}",
+                    AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Error)));
+        }
+#pragma warning disable CA1031 // 専用STA境界の想定外例外を共通レポーターへ配送する
+        catch (Exception ex)
+        {
+            DiagnosticLog.Error("Shell.Execute", ex);
+            UiThreadDispatcher.SafeBeginInvoke(owner, () => ErrorReporter.Instance.OnException(ex));
+            return false;
+        }
+#pragma warning restore CA1031
     }
 }

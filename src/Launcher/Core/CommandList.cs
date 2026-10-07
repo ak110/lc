@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Launcher.Infrastructure;
 
 namespace Launcher.Core;

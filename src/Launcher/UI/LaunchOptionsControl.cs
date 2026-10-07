@@ -17,17 +17,22 @@ public sealed class LaunchOptionsControl : UserControl
         var priorityGroup = new GroupBox { Text = "優先度(&P)", Location = new Point(0, 80), Size = new Size(240, 72), TabIndex = 1 };
         windowStyles = new RadioButtonList
         {
-            Name = "windowStyles", Location = new Point(12, 24), ColumnCount = 3,
+            Name = "windowStyles",
+            Location = new Point(12, 24),
+            ColumnCount = 3,
             StringItems = ["通常", "最小化", "最大化", "非ｱｸﾃｨﾌﾞ", "最小化非ｱｸﾃｨﾌﾞ", "非表示"],
         };
         priorities = new RadioButtonList
         {
-            Name = "priorities", Location = new Point(12, 24), ColumnCount = 3,
+            Name = "priorities",
+            Location = new Point(12, 24),
+            ColumnCount = 3,
             StringItems = ["最高", "高", "通常以上", "通常", "通常以下", "低"],
         };
         showGroup.Controls.Add(windowStyles);
         priorityGroup.Controls.Add(priorities);
-        Controls.AddRange([showGroup, priorityGroup]);
+        Controls.Add(showGroup);
+        Controls.Add(priorityGroup);
     }
 
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]

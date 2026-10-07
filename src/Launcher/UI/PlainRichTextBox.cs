@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using System.Text;
+using Launcher.Core;
 using Launcher.Win32;
 
 namespace Launcher.UI;
@@ -18,28 +18,8 @@ public sealed class PlainRichTextBox : RichTextBox
     // 取り消し上限。十分大きい値を設定し、実用上は無制限とする。
     const int UndoLimit = 1000000;
 
-    // インデント幅 (半角スペース数)
-    internal const int IndentWidth = 2;
-
-    readonly Func<bool> containsClipboardText;
-    readonly Func<string> getClipboardText;
-    readonly Action<string> setClipboardText;
-
-    public PlainRichTextBox() : this(
-        () => Clipboard.ContainsText(),
-        () => Clipboard.GetText(),
-        text => Clipboard.SetText(text))
+    public PlainRichTextBox()
     {
-    }
-
-    PlainRichTextBox(
-        Func<bool> containsClipboardText,
-        Func<string> getClipboardText,
-        Action<string> setClipboardText)
-    {
-        this.containsClipboardText = containsClipboardText;
-        this.getClipboardText = getClipboardText;
-        this.setClipboardText = setClipboardText;
         Multiline = true;
         WordWrap = true;
         AcceptsTab = true;
@@ -105,14 +85,14 @@ public sealed class PlainRichTextBox : RichTextBox
     {
         if (!IsHandleCreated) return;
         int pad = Math.Max(1, Font.Height / 2);
-        var rect = new RECT
+        var rect = new NativeMethods.RECT
         {
             Left = pad,
             Top = pad,
             Right = Math.Max(pad + 1, ClientSize.Width - pad),
             Bottom = Math.Max(pad + 1, ClientSize.Height - pad),
         };
-        SendMessageRect(Handle, EM_SETRECT, IntPtr.Zero, ref rect);
+        NativeMethods.SendMessageRect(Handle, EM_SETRECT, IntPtr.Zero, ref rect);
     }
 
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -161,9 +141,9 @@ public sealed class PlainRichTextBox : RichTextBox
     {
         try
         {
-            if (containsClipboardText())
+            if (Clipboard.ContainsText())
             {
-                SelectedText = getClipboardText();
+                SelectedText = Clipboard.GetText();
             }
         }
         catch (ExternalException)
@@ -181,7 +161,7 @@ public sealed class PlainRichTextBox : RichTextBox
 
         try
         {
-            setClipboardText(SelectedText);
+            Clipboard.SetText(SelectedText);
         }
         catch (ExternalException)
         {
@@ -202,7 +182,7 @@ public sealed class PlainRichTextBox : RichTextBox
         string text = Text;
         if (!ContainsLineBreak(text, selStart, selLength)) return false;
 
-        string replaced = ComputeIndentReplacement(
+        string replaced = TextIndentation.ComputeIndentReplacement(
             text, selStart, selLength, dedent,
             out int regionStart, out int regionLength, out int newSelLength);
 
@@ -225,75 +205,7 @@ public sealed class PlainRichTextBox : RichTextBox
         return false;
     }
 
-    /// <summary>
-    /// 選択範囲を行単位へ拡張し、インデントを加減した置換文字列と新しい選択範囲を算出する。
-    /// </summary>
-    internal static string ComputeIndentReplacement(
-        string text, int selStart, int selLength, bool dedent,
-        out int regionStart, out int regionLength, out int newSelLength)
-    {
-        int selEnd = selStart + selLength;
-
-        // 行頭まで拡張
-        int lineStart = selStart;
-        while (lineStart > 0 && text[lineStart - 1] != '\n') lineStart--;
-
-        // 行末まで拡張。ただし選択が改行直後 (次行冒頭) で終わる場合はその行を含めない。
-        int regionEnd;
-        if (selEnd > selStart && selEnd <= text.Length && text[selEnd - 1] == '\n')
-        {
-            regionEnd = selEnd;
-        }
-        else
-        {
-            regionEnd = selEnd;
-            while (regionEnd < text.Length && text[regionEnd] != '\n') regionEnd++;
-        }
-
-        regionStart = lineStart;
-        regionLength = regionEnd - lineStart;
-
-        string segment = text.Substring(regionStart, regionLength);
-        // \nで分割し、末尾が\nなら末尾の空要素は変換対象外 (次行冒頭)
-        string[] lines = segment.Split('\n');
-        int transformCount = segment.EndsWith('\n') ? lines.Length - 1 : lines.Length;
-
-        string indent = new(' ', IndentWidth);
-        var sb = new StringBuilder(segment.Length + transformCount * IndentWidth);
-        for (int i = 0; i < lines.Length; i++)
-        {
-            string line = lines[i];
-            if (i < transformCount)
-            {
-                if (dedent)
-                {
-                    int remove = 0;
-                    while (remove < IndentWidth && remove < line.Length && line[remove] == ' ')
-                    {
-                        remove++;
-                    }
-                    if (remove > 0) line = line[remove..];
-                }
-                else
-                {
-                    // \rを除いた実質が空行なら追加しない
-                    string trimmed = line.TrimEnd('\r');
-                    if (trimmed.Length > 0)
-                    {
-                        line = indent + line;
-                    }
-                }
-            }
-            sb.Append(line);
-            if (i < lines.Length - 1) sb.Append('\n');
-        }
-
-        string replaced = sb.ToString();
-        newSelLength = replaced.Length;
-        return replaced;
-    }
-
-    #region P/Invoke
+    #region RichEditメッセージ
 
     const int EM_SETRECT = 0x00B3;
 
@@ -301,21 +213,6 @@ public sealed class PlainRichTextBox : RichTextBox
     const int IMF_AUTOFONT = 0x0002;
     const int IMF_AUTOFONTSIZEADJUST = 0x0010;
     const int IMF_DUALFONT = 0x0080;
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct RECT
-    {
-        public int Left;
-        public int Top;
-        public int Right;
-        public int Bottom;
-    }
-
-    [DllImport("user32.dll", CharSet = CharSet.Auto)]
-    static extern int SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, ref RECT lParam);
-
-    static int SendMessageRect(IntPtr hWnd, int Msg, IntPtr wParam, ref RECT lParam)
-        => SendMessage(hWnd, Msg, wParam, ref lParam);
 
     #endregion
 }

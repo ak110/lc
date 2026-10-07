@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.Xml.Serialization;
 using FluentAssertions;
 using Launcher.Core;

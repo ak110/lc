@@ -4,7 +4,6 @@ using Launcher.Core;
 using Launcher.Infrastructure;
 using Launcher.Updater;
 using Launcher.Win32;
-using Microsoft.Win32;
 using Process = System.Diagnostics.Process;
 
 namespace Launcher.UI;
@@ -122,8 +121,14 @@ public partial class ApplicationHostForm : Form
         data.WindowHandle = Handle.ToInt64();
         data.Save(ReportSaveFailure, ConfigurationBaseName);
 
+        // Control作成時にWinFormsが登録するコンテキストは専用の配送用HWNDを持つ。
+        // ホストのHWND取得が失敗しても、そのホストへBeginInvokeせずに報告を届ける。
+        var uiContext = (WindowsFormsSynchronizationContext)SynchronizationContext.Current!;
         hookManager = new HookManager(() => config, () => Handle,
-            a => UiThreadDispatcher.SafeBeginInvoke(this, a));
+            a => UiThreadDispatcher.SafeBeginInvoke(uiContext, this, () =>
+            {
+                if (!shuttingDown) a();
+            }));
 
         commandLauncherForm = new CommandLauncherForm(this, contextMenuStrip1);
         ErrorReporter.Instance.SetOwner(this, GetVisibleOwner);
@@ -221,30 +226,30 @@ public partial class ApplicationHostForm : Form
                 envChangeDebounceTimer.Start();
             }
         }
-        if (m.Msg == Program.WM_APPMSG)
+        if (m.Msg == ResidentMessages.WM_APPMSG)
         {
-            if (m.WParam == Program.WM_APPMSG_WPARAM)
+            if (m.WParam == ResidentMessages.WM_APPMSG_WPARAM)
             {
                 try
                 {
-                    if (m.LParam == Program.WM_APPMSG_SHOWHIDE)
+                    if (m.LParam == ResidentMessages.WM_APPMSG_SHOWHIDE)
                     {
                         ShowHide();
                     }
-                    else if (m.LParam == Program.WM_APPMSG_RELOAD)
+                    else if (m.LParam == ResidentMessages.WM_APPMSG_RELOAD)
                     {
                         Reload();
                     }
-                    else if (m.LParam == Program.WM_APPMSG_RESTART)
+                    else if (m.LParam == ResidentMessages.WM_APPMSG_RESTART)
                     {
                         Restart();
                     }
-                    else if (m.LParam == Program.WM_APPMSG_SHOWBUTTONLAUNCHER)
+                    else if (m.LParam == ResidentMessages.WM_APPMSG_SHOWBUTTONLAUNCHER)
                     {
                         HideMemoIfVisible();
                         buttonLauncherForm?.ShowLauncher();
                     }
-                    else if (m.LParam == Program.WM_APPMSG_SHOWMEMO)
+                    else if (m.LParam == ResidentMessages.WM_APPMSG_SHOWMEMO)
                     {
                         ShowHideMemo();
                     }
@@ -613,7 +618,7 @@ public partial class ApplicationHostForm : Form
     {
         var now = DateTime.Now;
         // 別アイテムは並行して開始する。実行中のアイテムへの予定は保留にまとめ、完了後に1回実行する
-        foreach (var item in SchedulerPresenter.GetItemsToRun(schedulerData, data.SchedulerLastCheckTime, now))
+        foreach (var item in SchedulerScheduleEvaluator.GetItemsToRun(schedulerData, data.SchedulerLastCheckTime, now))
         {
             schedulerRunCoordinator.Request(item);
         }
@@ -702,8 +707,8 @@ public partial class ApplicationHostForm : Form
             process.PriorityClass = ProcessLauncher.ToPriorityClass(config.ProcessPriority);
         // ホットキー (ランチャー用・メモパッド用の2組)
         hookManager.UpdateHotkeys(
-            (config.HotKey, Program.WM_APPMSG_SHOWHIDE),
-            (config.MemoHotKey, Program.WM_APPMSG_SHOWMEMO));
+            (config.HotKey, ResidentMessages.WM_APPMSG_SHOWHIDE),
+            (config.MemoHotKey, ResidentMessages.WM_APPMSG_SHOWMEMO));
 
         // ボタンランチャーの生成・破棄
         bool enabled = config.ButtonLauncherActivation != Core.ButtonLauncherActivation.Disabled;

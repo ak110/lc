@@ -44,6 +44,7 @@ public sealed class SchedulerNotificationTests
         using var timer = new System.Windows.Forms.Timer { Interval = 10 };
         var elapsed = Stopwatch.StartNew();
         var observed = new List<string>();
+        var handled = new HashSet<NotificationForm>();
         bool overlapping = false;
         bool ownerMatches = true;
         bool topMost = true;
@@ -56,18 +57,19 @@ public sealed class SchedulerNotificationTests
             launcher.ShowWindow();
             timer.Tick += (_, _) =>
             {
-                var notifications = Application.OpenForms.OfType<NotificationForm>().ToArray();
+                var notifications = Application.OpenForms.OfType<NotificationForm>().Where(form => form.Visible).ToArray();
                 overlapping |= notifications.Length > 1;
                 foreach (var notification in notifications)
                 {
+                    // ShowHideのアクティブ化でtimerが再入しても、同じ画面の確定を重ねない。
+                    if (!handled.Add(notification)) continue;
                     tracking &= host.HasActiveNotifications;
                     ownerMatches &= ReferenceEquals(notification.Owner, launcher);
                     topMost &= notification.TopMost;
                     host.ShowHide();
                     launcherVisible &= launcher.Visible;
                     observed.Add(notification.Controls.Find("labelMessage", true).Single().Text);
-                    notification.DialogResult = DialogResult.OK;
-                    notification.Close();
+                    notification.AcceptButton!.PerformClick();
                 }
                 if (observed.Count >= 2 && !host.HasActiveNotifications)
                     context.ExitThread();

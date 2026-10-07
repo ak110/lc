@@ -1,6 +1,4 @@
 using System.ComponentModel;
-using System.IO;
-using Launcher.Infrastructure;
 using Launcher.Win32;
 
 namespace Launcher.UI;

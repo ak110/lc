@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using Launcher.Infrastructure;
 
 namespace Launcher.UI;
 

@@ -10,19 +10,22 @@ public sealed class AttachThreadInput : IDisposable
     /// <summary>
     /// スレッドID
     /// </summary>
-    int foreground, current;
+    uint foreground, current;
+    bool attached;
 
     /// <summary>
     /// アタッチ。
     /// </summary>
     public AttachThreadInput()
     {
-        foreground = GetWindowThreadProcessId(GetForegroundWindow(), IntPtr.Zero);
+        foreground = NativeMethods.GetWindowThreadProcessId(NativeMethods.GetForegroundWindow(), out _);
         current = GetCurrentThreadId();
-        if (current != foreground)
+        // 前景が切り替わる途中にはウィンドウが無く、接続先のスレッドIDも0になる。
+        if (foreground != 0 && current != foreground)
         {
-            bool result = AttachThreadInput_(current, foreground, true);
-            System.Diagnostics.Debug.Assert(result, new System.ComponentModel.Win32Exception().Message);
+            attached = AttachThreadInput_(current, foreground, true);
+            // 別desktopや入力キューの終了などで接続できない場合も通常の表示処理を続ける。
+            if (!attached) System.Diagnostics.Debug.WriteLine(new System.ComponentModel.Win32Exception().Message);
         }
     }
 
@@ -32,27 +35,24 @@ public sealed class AttachThreadInput : IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        if (current != foreground)
+        if (attached)
         {
+            attached = false;
             bool result = AttachThreadInput_(current, foreground, false);
-            System.Diagnostics.Debug.Assert(result, new System.ComponentModel.Win32Exception().Message);
+            if (!result) System.Diagnostics.Debug.WriteLine(new System.ComponentModel.Win32Exception().Message);
         }
     }
 
     #region WinAPI
 
     [DllImport("kernel32.dll")]
-    extern static int GetCurrentThreadId();
+    extern static uint GetCurrentThreadId();
 
-    [DllImport("user32.dll")]
-    extern static int GetWindowThreadProcessId(IntPtr hWnd, IntPtr ProcessId);
 
-    [DllImport("user32.dll")]
-    extern static IntPtr GetForegroundWindow();
 
     [DllImport("user32.dll", EntryPoint = "AttachThreadInput", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    extern static bool AttachThreadInput_(int idAttach, int idAttachTo, [MarshalAs(UnmanagedType.Bool)] bool fAttach);
+    extern static bool AttachThreadInput_(uint idAttach, uint idAttachTo, [MarshalAs(UnmanagedType.Bool)] bool fAttach);
 
     #endregion
 }

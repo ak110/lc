@@ -6,7 +6,7 @@ using Xunit;
 namespace Launcher.Tests;
 
 /// <summary>
-/// スケジューラーのオーケストレーション層 (<see cref="SchedulerPresenter"/>) のテスト。
+/// スケジューラーの実行順序と公開された発火判定のテスト。
 /// 日付条件判定の単体は <see cref="SchedulerScheduleEvaluatorTests"/>、
 /// 単一タスク実行は <see cref="SchedulerTaskExecutorTests"/> を参照。
 /// </summary>
@@ -65,7 +65,7 @@ public sealed class SchedulerPresenterTests
         var last = new DateTime(2025, 6, 16, 9, 0, 0);
         var now = new DateTime(2025, 6, 16, 10, 0, 0);
 
-        SchedulerPresenter.IsScheduleActive(schedule, now, last).Should().BeTrue();
+        SchedulerScheduleEvaluator.IsScheduleActive(schedule, now, last).Should().BeTrue();
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public sealed class SchedulerPresenterTests
         var last = new DateTime(2025, 6, 16, 9, 0, 0);
         var now = new DateTime(2025, 6, 16, 10, 0, 0);
 
-        SchedulerPresenter.IsScheduleActive(schedule, now, last).Should().BeFalse();
+        SchedulerScheduleEvaluator.IsScheduleActive(schedule, now, last).Should().BeFalse();
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public sealed class SchedulerPresenterTests
         var last = new DateTime(2025, 6, 16, 9, 0, 0);
         var now = new DateTime(2025, 6, 16, 10, 0, 0);
 
-        SchedulerPresenter.IsScheduleActive(schedule, now, last).Should().BeFalse();
+        SchedulerScheduleEvaluator.IsScheduleActive(schedule, now, last).Should().BeFalse();
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public sealed class SchedulerPresenterTests
         var last = new DateTime(2025, 6, 16, 9, 0, 0);
         var now = new DateTime(2025, 6, 16, 10, 0, 0);
 
-        SchedulerPresenter.IsScheduleActive(schedule, now, last).Should().BeTrue();
+        SchedulerScheduleEvaluator.IsScheduleActive(schedule, now, last).Should().BeTrue();
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class SchedulerPresenterTests
         var last = new DateTime(2025, 6, 16, 9, 0, 0);
         var now = new DateTime(2025, 6, 16, 10, 0, 0);
 
-        SchedulerPresenter.IsScheduleActive(schedule, now, last).Should().BeFalse();
+        SchedulerScheduleEvaluator.IsScheduleActive(schedule, now, last).Should().BeFalse();
     }
 
     #endregion
@@ -121,7 +121,7 @@ public sealed class SchedulerPresenterTests
         var now = new DateTime(2025, 6, 16, 9, 35, 0);
 
         // 9:30 が last(9:25) < t <= now(9:35) に該当
-        SchedulerPresenter.IsScheduleActive(schedule, now, last).Should().BeTrue();
+        SchedulerScheduleEvaluator.IsScheduleActive(schedule, now, last).Should().BeTrue();
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public sealed class SchedulerPresenterTests
         var last = new DateTime(2025, 6, 16, 13, 0, 0);
         var now = new DateTime(2025, 6, 16, 14, 0, 0);
 
-        SchedulerPresenter.IsScheduleActive(schedule, now, last).Should().BeFalse();
+        SchedulerScheduleEvaluator.IsScheduleActive(schedule, now, last).Should().BeFalse();
     }
 
     #endregion
@@ -151,7 +151,7 @@ public sealed class SchedulerPresenterTests
         var now = new DateTime(2025, 6, 17, 8, 0, 0);    // 火曜 08:00
 
         // 月曜23:00が検出されるべき
-        SchedulerPresenter.IsScheduleActive(schedule, now, last).Should().BeTrue();
+        SchedulerScheduleEvaluator.IsScheduleActive(schedule, now, last).Should().BeTrue();
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public sealed class SchedulerPresenterTests
         var last = new DateTime(2025, 6, 16, 9, 0, 0);
         var now = new DateTime(2025, 6, 16, 10, 0, 0);
 
-        SchedulerPresenter.IsScheduleActive(schedule, now, last).Should().BeFalse();
+        SchedulerScheduleEvaluator.IsScheduleActive(schedule, now, last).Should().BeFalse();
     }
 
     #endregion
@@ -180,7 +180,7 @@ public sealed class SchedulerPresenterTests
             Tasks = [new SchedulerTask { FileName = "test.exe" }],
         };
 
-        SchedulerPresenter.ShouldItemRun(item, Monday0900.AddHours(1), Monday0900).Should().BeFalse();
+        SchedulerScheduleEvaluator.ShouldItemRun(item, Monday0900.AddHours(1), Monday0900).Should().BeFalse();
     }
 
     [Fact]
@@ -193,7 +193,7 @@ public sealed class SchedulerPresenterTests
             Tasks = [new SchedulerTask { FileName = "test.exe" }],
         };
 
-        SchedulerPresenter.ShouldItemRun(item, Monday0900.AddHours(1), Monday0900).Should().BeTrue();
+        SchedulerScheduleEvaluator.ShouldItemRun(item, Monday0900.AddHours(1), Monday0900).Should().BeTrue();
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public sealed class SchedulerPresenterTests
             Tasks = [new SchedulerTask { FileName = "test.exe" }],
         };
 
-        SchedulerPresenter.ShouldItemRun(item, Monday0900.AddHours(1), Monday0900).Should().BeTrue();
+        SchedulerScheduleEvaluator.ShouldItemRun(item, Monday0900.AddHours(1), Monday0900).Should().BeTrue();
     }
 
     #endregion
@@ -247,7 +247,7 @@ public sealed class SchedulerPresenterTests
         };
 
         var now = Monday0900.AddHours(1);
-        var result = SchedulerPresenter.GetItemsToRun(data, lastCheckTime, now);
+        var result = SchedulerScheduleEvaluator.GetItemsToRun(data, lastCheckTime, now);
 
         result.Should().HaveCount(1);
         result[0].Name.Should().Be("マッチ");

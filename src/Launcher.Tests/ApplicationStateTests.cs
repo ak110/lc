@@ -78,7 +78,7 @@ public sealed class ApplicationStateTests
     }
 
     [Fact]
-    public void 終了準備でメモと設定の遅延保存を確定しウィンドウハンドルを消す()
+    public void 終了準備でメモと設定の遅延保存を確定しウィンドウハンドルを削除する()
     {
         RunWithHost((host, baseName) =>
         {
@@ -132,7 +132,9 @@ public sealed class ApplicationStateTests
                     host.Close();
                 }
             }
+#pragma warning disable CA1031 // STAで発生したテスト失敗を呼び出し元へ再送出する
             catch (Exception error)
+#pragma warning restore CA1031
             {
                 failure = ExceptionDispatchInfo.Capture(error);
             }

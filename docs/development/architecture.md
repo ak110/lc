@@ -3,35 +3,54 @@
 ## モジュール構成
 
 ```text
-src/Launcher/
-├── Core/           ドメインモデル・ビジネスロジック
-├── Infrastructure/ 基盤ユーティリティ
-├── UI/             WinFormsフォーム群
-├── Win32/          Win32 API連携
-└── Updater/        自動更新機能
+src/
+├── Launcher.Core/  WinFormsを参照しないクラスライブラリのプロジェクト
+├── Launcher/       Coreライブラリを参照するWindowsアプリのプロジェクト
+│   ├── Core/           ドメインモデル・判断処理（Coreライブラリへリンク）
+│   ├── Infrastructure/ 保存・ログ等の共通部品とアプリの基盤
+│   ├── UI/             フォーム・UI配送・例外表示・起動の調整
+│   ├── Win32/          P/Invoke・Shell・Windows固有のファイル操作
+│   └── Updater/        自動更新機能
+└── Launcher.Tests/ アプリとCoreの自動テスト
 ```
 
 ### モジュール分割の設計意図
 
-- Core — UIフレームワーク（WinForms）に依存しない純粋なドメインモデルとロジックを置く。
-  テスト容易性と関心の分離が目的である
-- Infrastructure — アプリケーション基盤。シリアライズ・パス操作・ファイル操作など、
-  ドメインやUIに属さない横断的関心事を集約する。PathHelperはパス文字列操作のみ、
-  FileHelperはファイル・ディレクトリ操作と役割を分離している
-- UI — WinFormsに依存するフォーム群。ロジックはPresenterに委譲し、フォーム自体は表示と入力の橋渡しに徹する
+- Coreはドメインモデルと判断処理を置く。`Launcher.Core.csproj`は`net10.0`を対象とし、
+  WinFormsやアプリのプロジェクトを参照しないため、UI・Win32への参照を加えるとビルドが失敗する。
+  コマンドの修飾キーは中立な`InputModifiers`で受け取る
+- Infrastructureのうち`ConfigFile`・`ConfigStore`・`LegacyConfigReader`・`IoFailureHandler`・
+  `PathHelper`・`AppVersion`・`DiagnosticLog`はCoreライブラリでコンパイルする。
+  STAの起動、単一起動の管理、ファビコンとHTTPの共有接続はアプリ側でコンパイルする。
+  ソースの配置を維持しつつ、各プロジェクトのコンパイル対象を分けている
+- UIはフォーム、`UiThreadDispatcher`による配送、`ErrorReporter`による例外表示、
+  `AppBase`による起動と終了の処理を持つ。判断はCoreの型へ委譲する
 - Win32 — P/Invoke呼び出しを隔離するモジュール。
   Win32 APIの複雑さ（マーシャリング、リソース管理）をアプリケーション本体から遮断する。
   Shell API呼び出し（プロセス起動・アイコン取得・ショートカット操作・Shellコンテキストメニュー表示等）をここへ集約する
-- Updater: 自動更新機能。GitHub Pages上の`version.json`の取得、ZIPの展開、バッチスクリプトによる自己置換など、
+- Windows固有のパス解決は`FileHelper`、自然順のフォルダー列挙は`FolderEntryEnumerator`、
+  ショートカットからのコマンド生成は`CommandFactory`が担う。
+  P/Invoke宣言の所属は`CoreArchitectureTests`で確かめ、複数箇所から使う宣言は`NativeMethods`へ集める
+- Updater: 自動更新機能。GitHub Pagesの`version.json`取得、ZIPの展開、バッチスクリプトによる自己置換など、
   更新特有の処理を分離する
+
+`SharedHttpClient`はファビコンと更新処理の接続を共有し、更新要求のUser-Agentを1か所で設定する。
+各要求と応答は呼び出し側で破棄し、共有クライアントはアプリの生存中保持する。
+発行対象は`Launcher.csproj`を維持し、Coreの参照アセンブリも単一exeへ含める。
 
 ## 主要な設計パターン
 
 ### Presenterパターン
 
-CommandLauncherPresenter / ButtonLauncherPresenter / SchedulerPresenter / MemoPresenterがUIロジックを担当する。
-WinFormsのフォームクラスはイベントハンドラとコントロール操作のみを持ち、判断ロジックはPresenterに委譲する。
-UIロジックをWinFormsから分離してテスト可能にする設計である。
+`CommandLauncherPresenter`・`ButtonLauncherPresenter`・`MemoPresenter`は表示と操作の判断を担う。
+メモの検索と置換は`MemoSearch`、インデントは`TextIndentation`、フック入力の状態遷移は`HookInputState`へ分ける。
+予定の走査と日付・時刻の判定は`SchedulerScheduleEvaluator`へ集約し、
+UI側の`SchedulerTaskRunner`が専用STA上でタスク列を実行する。
+ドラッグと長押しの状態は`DragDropState`・`LongPressOperationState`がそれぞれ独立したファイルで管理する。
+
+判断処理は公開型から直接テストし、画面の動作は通常の公開操作からテストする。
+lc自身の非公開メンバーの反射呼び出しや、テストのための可視性変更は使わない。
+`ConfigTests`は省略時の値と複製、`ConfigStoreTests`は往復、`SerializationTests`は旧形式の互換をテストする。
 
 ### ConfigStore継承による永続化
 
@@ -51,6 +70,7 @@ datは保存停止とバックアップの対象から外す。
 
 ApplicationHostFormは不可視の常駐フォームで、アプリケーション全体のハブとして機能する。
 WM_APPMSGによるプロセス間通信（/close、/restart等のコマンドライン引数の処理）を受け付ける。
+メッセージの値と送信処理は`ResidentMessages`を送受信側で共有する。
 加えて、子フォーム（CommandLauncherForm、ButtonLauncherForm、MemoForm）のライフサイクルを管理する。
 WinFormsのメッセージループを維持するために常駐フォームが必要であり、
 CommandLauncherFormは表示/非表示を繰り返すため、この役割を分離している。
@@ -105,9 +125,9 @@ UIへの非同期配送は`UiThreadDispatcher.SafeBeginInvoke`へ集約する。
 
 ## フック管理
 
-`HookManager`がグローバルキーボード/マウスフックの状態管理を一元的に担当する。
-マウスフックはボタン押下状態（`lbuttonDown`/`rbuttonDown`）を追跡し、
-設定されたトリガー（左右同時押し等）を検知する。
+`HookManager`はWindowsのフックイベントを`HookInputState`への入力へ変換する。
+`HookInputState`は左右の物理修飾キー、ホットキーのリピート抑止、マウスボタンの押下順序を追跡する。
+自プロセスが注入したキー解放は物理状態を変えず、実際のキー解放まで修飾キーを保持する。
 
 コールバック内で守るべき実装上の不変条件（即時return・UP抑制フラグ更新など）は
 `.claude/rules/win32-interop.md`に記載している。

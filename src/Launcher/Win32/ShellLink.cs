@@ -1,7 +1,5 @@
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows.Forms;
 using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
 using UCOMIPersistFile = System.Runtime.InteropServices.ComTypes.IPersistFile;
 

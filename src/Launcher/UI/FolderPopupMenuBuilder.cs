@@ -1,6 +1,5 @@
-using Launcher.Core;
-using System.ComponentModel;
 using System.Runtime.InteropServices;
+using Launcher.Core;
 using Launcher.Infrastructure;
 using Launcher.Win32;
 

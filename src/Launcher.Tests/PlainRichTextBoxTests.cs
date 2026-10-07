@@ -1,240 +1,209 @@
-using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using FluentAssertions;
+using Launcher.Core;
 using Launcher.UI;
 using Launcher.Win32;
 using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// PlainRichTextBoxのプレーンテキスト入出力を検証する。
-/// </summary>
+[CollectionDefinition("Clipboard", DisableParallelization = true)]
+public sealed class ClipboardTestsCollection { }
+
+/// <summary>通常のコントロール入口と実クリップボードからプレーンテキスト入出力を検査する。</summary>
+[Collection("Clipboard")]
 public sealed class PlainRichTextBoxTests
 {
     [Theory]
-    [InlineData(Keys.Control | Keys.V)]
-    [InlineData(Keys.Shift | Keys.Insert)]
-    public void ProcessCmdKey_貼り付けショートカットはプレーンテキストを挿入する(Keys keyData) =>
-        RunInSta(() =>
-        {
-            int containsCount = 0;
-            int getCount = 0;
-            int setCount = 0;
-            using var control = CreateControl(
-                () =>
-                {
-                    containsCount++;
-                    return true;
-                },
-                () =>
-                {
-                    getCount++;
-                    return "plain";
-                },
-                _ => setCount++);
-            control.Text = "before after";
-            control.Select(7, 5);
-
-            bool handled = InvokeProcessCmdKey(control, keyData);
-
-            handled.Should().BeTrue();
-            control.Text.Should().Be("before plain");
-            containsCount.Should().Be(1);
-            getCount.Should().Be(1);
-            setCount.Should().Be(0);
-        });
-
-    [Theory]
-    [InlineData(Keys.Control | Keys.C)]
-    [InlineData(Keys.Control | Keys.Insert)]
-    public void ProcessCmdKey_コピーショートカットは選択文字列だけを書き込む(Keys keyData) =>
-        RunInSta(() =>
-        {
-            int containsCount = 0;
-            int getCount = 0;
-            int setCount = 0;
-            string? copiedText = null;
-            using var control = CreateControl(
-                () =>
-                {
-                    containsCount++;
-                    return true;
-                },
-                () =>
-                {
-                    getCount++;
-                    return "unused";
-                },
-                text =>
-                {
-                    setCount++;
-                    copiedText = text;
-                });
-            control.Text = "before after";
-            control.Select(7, 5);
-
-            bool handled = InvokeProcessCmdKey(control, keyData);
-
-            handled.Should().BeTrue();
-            setCount.Should().Be(1);
-            copiedText.Should().Be("after");
-            containsCount.Should().Be(0);
-            getCount.Should().Be(0);
-            control.Text.Should().Be("before after");
-            control.SelectionStart.Should().Be(7);
-            control.SelectionLength.Should().Be(5);
-        });
-
-    [Fact]
-    public void WndProc_WM_PASTEはプレーンテキストを挿入する() =>
-        RunInSta(() =>
-        {
-            int containsCount = 0;
-            int getCount = 0;
-            using var control = CreateControl(
-                () =>
-                {
-                    containsCount++;
-                    return true;
-                },
-                () =>
-                {
-                    getCount++;
-                    return "plain";
-                },
-                _ => throw new InvalidOperationException());
-            control.Text = "before after";
-            control.Select(7, 5);
-
-            InvokeWndProc(control, WM.WM_PASTE);
-
-            control.Text.Should().Be("before plain");
-            containsCount.Should().Be(1);
-            getCount.Should().Be(1);
-        });
-
-    [Fact]
-    public void WndProc_WM_COPYは選択文字列だけを書き込む() =>
-        RunInSta(() =>
-        {
-            int setCount = 0;
-            string? copiedText = null;
-            using var control = CreateControl(
-                () => throw new InvalidOperationException(),
-                () => throw new InvalidOperationException(),
-                text =>
-                {
-                    setCount++;
-                    copiedText = text;
-                });
-            control.Text = "before after";
-            control.Select(7, 5);
-
-            InvokeWndProc(control, WM.WM_COPY);
-
-            setCount.Should().Be(1);
-            copiedText.Should().Be("after");
-            control.Text.Should().Be("before after");
-            control.SelectionStart.Should().Be(7);
-            control.SelectionLength.Should().Be(5);
-        });
-
-    [Fact]
-    public void WndProc_WM_COPYで空選択ならクリップボードを変更しない() =>
-        RunInSta(() =>
-        {
-            int setCount = 0;
-            using var control = CreateControl(
-                () => throw new InvalidOperationException(),
-                () => throw new InvalidOperationException(),
-                _ => setCount++);
-            control.Text = "before";
-            control.Select(3, 0);
-
-            InvokeWndProc(control, WM.WM_COPY);
-
-            setCount.Should().Be(0);
-            control.Text.Should().Be("before");
-            control.SelectionStart.Should().Be(3);
-            control.SelectionLength.Should().Be(0);
-        });
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void 貼り付けは書式を除去して選択箇所を置換する(int route) => RunWithClipboard(() =>
+    {
+        var data = new DataObject();
+        data.SetData(DataFormats.UnicodeText, "plain");
+        data.SetData(DataFormats.Rtf, @"{\rtf1\ansi\b plain}");
+        Clipboard.SetDataObject(data, true);
+        using var form = new Form();
+        using var control = new PlainRichTextBox { Text = "before after" };
+        form.Controls.Add(control);
+        form.Show();
+        control.Select(7, 5);
+        Paste(control, route);
+        control.Text.Should().Be("before plain");
+        control.Select(7, 5);
+        using var font = control.SelectionFont;
+        font.Should().NotBeNull();
+        font!.Bold.Should().BeFalse();
+    });
 
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(2)]
-    public void 貼り付け経路_クリップボード競合時は文書と選択範囲を変更しない(int route) =>
-        RunInSta(() =>
-        {
-            using var control = CreateControl(
-                () => true,
-                () => throw new ExternalException("クリップボード競合"),
-                _ => throw new InvalidOperationException());
-            control.Text = "before after";
-            control.Select(7, 5);
-
-            Action act = () => InvokePasteRoute(control, route);
-
-            act.Should().NotThrow();
-            control.Text.Should().Be("before after");
-            control.SelectionStart.Should().Be(7);
-            control.SelectionLength.Should().Be(5);
-        });
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    public void コピー経路_クリップボード競合時は文書と選択範囲を変更しない(int route) =>
-        RunInSta(() =>
-        {
-            using var control = CreateControl(
-                () => throw new InvalidOperationException(),
-                () => throw new InvalidOperationException(),
-                _ => throw new ExternalException("クリップボード競合"));
-            control.Text = "before after";
-            control.Select(7, 5);
-
-            Action act = () => InvokeCopyRoute(control, route);
-
-            act.Should().NotThrow();
-            control.Text.Should().Be("before after");
-            control.SelectionStart.Should().Be(7);
-            control.SelectionLength.Should().Be(5);
-        });
+    [InlineData(3)]
+    public void コピーは選択文字列だけをプレーンテキストで格納する(int route) => RunWithClipboard(() =>
+    {
+        using var form = new Form();
+        using var control = new PlainRichTextBox { Text = "before after" };
+        form.Controls.Add(control);
+        form.Show();
+        control.Select(7, 5);
+        Copy(control, route);
+        Clipboard.GetText().Should().Be("after");
+        Clipboard.ContainsData(DataFormats.Rtf).Should().BeFalse();
+        control.Text.Should().Be("before after");
+        control.SelectionStart.Should().Be(7);
+        control.SelectionLength.Should().Be(5);
+    });
 
     [Fact]
-    public void ProcessCmdKey_通常文字キーは基底処理へ委ねる() =>
-        RunInSta(() =>
+    public void 空選択のコピーはクリップボードを変更しない() => RunWithClipboard(() =>
+    {
+        Clipboard.SetText("before");
+        using var control = new PlainRichTextBox { Text = "document" };
+        control.Select(3, 0);
+        new WindowHelper(control.Handle).SendMessage(WM.WM_COPY, IntPtr.Zero, IntPtr.Zero);
+        Clipboard.GetText().Should().Be("before");
+    });
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void クリップボード競合時は文書と選択範囲を変更しない(bool copy) => RunWithClipboard(() =>
+    {
+        Clipboard.SetText("plain");
+        using var control = new PlainRichTextBox { Text = "before after" };
+        control.Select(7, 5);
+        _ = control.Handle;
+        WithLockedClipboard(() =>
         {
-            int clipboardOperationCount = 0;
-            using var control = CreateControl(
-                () =>
-                {
-                    clipboardOperationCount++;
-                    return true;
-                },
-                () =>
-                {
-                    clipboardOperationCount++;
-                    return "unused";
-                },
-                _ => clipboardOperationCount++);
-
-            bool handled = InvokeProcessCmdKey(control, Keys.A);
-
-            handled.Should().BeFalse();
-            clipboardOperationCount.Should().Be(0);
+            Action act = () => new WindowHelper(control.Handle).SendMessage(
+                copy ? WM.WM_COPY : WM.WM_PASTE, IntPtr.Zero, IntPtr.Zero);
+            act.Should().NotThrow();
+            control.Text.Should().Be("before after");
+            control.SelectionStart.Should().Be(7);
+            control.SelectionLength.Should().Be(5);
         });
+    });
+
+    static void Paste(PlainRichTextBox control, int route)
+    {
+        control.Focus();
+        switch (route)
+        {
+            case 0: PreProcessShortcut(control, Keys.Control | Keys.V); break;
+            case 1: PreProcessShortcut(control, Keys.Shift | Keys.Insert); break;
+            case 2: control.Paste(); break;
+            default: new WindowHelper(control.Handle).SendMessage(WM.WM_PASTE, IntPtr.Zero, IntPtr.Zero); break;
+        }
+    }
+
+    static void Copy(PlainRichTextBox control, int route)
+    {
+        control.Focus();
+        switch (route)
+        {
+            case 0: PreProcessShortcut(control, Keys.Control | Keys.C); break;
+            case 1: PreProcessShortcut(control, Keys.Control | Keys.Insert); break;
+            case 2: control.Copy(); break;
+            default: new WindowHelper(control.Handle).SendMessage(WM.WM_COPY, IntPtr.Zero, IntPtr.Zero); break;
+        }
+    }
+
+    static void PreProcessShortcut(Control control, Keys keys)
+    {
+        // 通常の入力前処理へ送り、キー状態はこのSTAだけで変更して元へ戻す。
+        // SendKeysは前景の別アプリへ届きうるため、受入対象のコントロールへ限定する。
+        var original = new byte[256];
+        GetKeyboardState(original).Should().BeTrue();
+        var state = new byte[256];
+        if ((keys & Keys.Control) != 0) state[(int)Keys.ControlKey] = 0x80;
+        if ((keys & Keys.Shift) != 0) state[(int)Keys.ShiftKey] = 0x80;
+        try
+        {
+            SetKeyboardState(state).Should().BeTrue();
+            var message = Message.Create(control.Handle, 0x0100, (nint)(keys & Keys.KeyCode), nint.Zero);
+            control.PreProcessMessage(ref message).Should().BeTrue();
+        }
+        finally
+        {
+            SetKeyboardState(original).Should().BeTrue();
+        }
+    }
+
+    static void WithLockedClipboard(Action action)
+    {
+        using var ready = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        bool locked = false;
+        int lockError = 0;
+        var thread = new Thread(() =>
+        {
+            using var owner = new Form();
+            for (int attempt = 0; attempt < 100 && !locked; attempt++)
+            {
+                locked = OpenClipboard(owner.Handle);
+                if (!locked)
+                {
+                    lockError = Marshal.GetLastPInvokeError();
+                    Thread.Sleep(10);
+                }
+            }
+            ready.Set();
+            try { release.Wait(TimeSpan.FromSeconds(10)); }
+            finally { if (locked) CloseClipboard(); }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        try
+        {
+            ready.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
+            locked.Should().BeTrue("競合の受入試験にはclipboardの取得が必要。Win32 error={0}", lockError);
+            action();
+        }
+        finally
+        {
+            release.Set();
+            thread.Join();
+        }
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool OpenClipboard(IntPtr owner);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool CloseClipboard();
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool GetKeyboardState([Out] byte[] state);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool SetKeyboardState(byte[] state);
+
+    static void RunWithClipboard(Action action) => RunInSta(() =>
+    {
+        var original = Clipboard.GetDataObject();
+        try { action(); }
+        finally
+        {
+            if (original is not null) Clipboard.SetDataObject(original, true);
+            else Clipboard.Clear();
+        }
+    });
 
     [Fact]
     public void ComputeIndentReplacement_複数行選択の全行を2スペースインデントする()
     {
         string text = "aaa\nbbb\nccc";
         // 1行目末尾から3行目途中までを選択 (改行をまたぐ)
-        string replaced = InvokeComputeIndent(text, selStart: 2, selLength: 7, dedent: false,
+        string replaced = TextIndentation.ComputeIndentReplacement(text, selStart: 2, selLength: 7, dedent: false,
             out int regionStart, out int regionLength, out int newSelLength);
 
         regionStart.Should().Be(0);
@@ -247,7 +216,7 @@ public sealed class PlainRichTextBoxTests
     public void ComputeIndentReplacement_空行にはインデントを追加しない()
     {
         string text = "aaa\n\nbbb";
-        string replaced = InvokeComputeIndent(text, selStart: 0, selLength: text.Length, dedent: false,
+        string replaced = TextIndentation.ComputeIndentReplacement(text, selStart: 0, selLength: text.Length, dedent: false,
             out _, out _, out _);
         replaced.Should().Be("  aaa\n\n  bbb");
     }
@@ -256,7 +225,7 @@ public sealed class PlainRichTextBoxTests
     public void ComputeIndentReplacement_Dedentは行頭スペースを最大2つ除去する()
     {
         string text = "    aaa\n bbb\nccc";
-        string replaced = InvokeComputeIndent(text, selStart: 0, selLength: text.Length, dedent: true,
+        string replaced = TextIndentation.ComputeIndentReplacement(text, selStart: 0, selLength: text.Length, dedent: true,
             out _, out _, out _);
         replaced.Should().Be("  aaa\nbbb\nccc");
     }
@@ -266,7 +235,7 @@ public sealed class PlainRichTextBoxTests
     {
         string text = "aaa\nbbb\nccc";
         // "aaa\n"だけを選択 (SelectionStart=0, Length=4)
-        string replaced = InvokeComputeIndent(text, selStart: 0, selLength: 4, dedent: false,
+        string replaced = TextIndentation.ComputeIndentReplacement(text, selStart: 0, selLength: 4, dedent: false,
             out int regionStart, out int regionLength, out _);
         regionStart.Should().Be(0);
         regionLength.Should().Be(4);
@@ -279,7 +248,7 @@ public sealed class PlainRichTextBoxTests
         {
             using var font = new Font("Consolas", 11f);
             using var form = new Form();
-            using var control = CreateControl(() => false, () => string.Empty, _ => { });
+            using var control = new PlainRichTextBox();
             form.Controls.Add(control);
             control.ApplyFont(font);
             form.Show();
@@ -300,80 +269,6 @@ public sealed class PlainRichTextBoxTests
                 form.Close();
             }
         });
-
-    static string InvokeComputeIndent(string text, int selStart, int selLength, bool dedent,
-        out int regionStart, out int regionLength, out int newSelLength)
-    {
-        var method = typeof(PlainRichTextBox).GetMethod(
-            "ComputeIndentReplacement", BindingFlags.Static | BindingFlags.NonPublic)!;
-        object?[] args = [text, selStart, selLength, dedent, 0, 0, 0];
-        string result = (string)method.Invoke(null, args)!;
-        regionStart = (int)args[4]!;
-        regionLength = (int)args[5]!;
-        newSelLength = (int)args[6]!;
-        return result;
-    }
-
-    static PlainRichTextBox CreateControl(
-        Func<bool> containsText,
-        Func<string> getText,
-        Action<string> setText)
-    {
-        var constructor = typeof(PlainRichTextBox).GetConstructor(
-            BindingFlags.Instance | BindingFlags.NonPublic,
-            binder: null,
-            [typeof(Func<bool>), typeof(Func<string>), typeof(Action<string>)],
-            modifiers: null)!;
-        return (PlainRichTextBox)constructor.Invoke([containsText, getText, setText]);
-    }
-
-    static bool InvokeProcessCmdKey(PlainRichTextBox control, Keys keyData)
-    {
-        var method = typeof(PlainRichTextBox).GetMethod(
-            "ProcessCmdKey", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        object?[] arguments = [Message.Create(IntPtr.Zero, 0, IntPtr.Zero, IntPtr.Zero), keyData];
-        return (bool)method.Invoke(control, arguments)!;
-    }
-
-    static void InvokeWndProc(PlainRichTextBox control, int message)
-    {
-        var method = typeof(PlainRichTextBox).GetMethod(
-            "WndProc", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        object?[] arguments = [Message.Create(IntPtr.Zero, message, IntPtr.Zero, IntPtr.Zero)];
-        method.Invoke(control, arguments);
-    }
-
-    static void InvokePasteRoute(PlainRichTextBox control, int route)
-    {
-        if (route == 0)
-        {
-            InvokeProcessCmdKey(control, Keys.Control | Keys.V).Should().BeTrue();
-        }
-        else if (route == 1)
-        {
-            InvokeProcessCmdKey(control, Keys.Shift | Keys.Insert).Should().BeTrue();
-        }
-        else
-        {
-            InvokeWndProc(control, WM.WM_PASTE);
-        }
-    }
-
-    static void InvokeCopyRoute(PlainRichTextBox control, int route)
-    {
-        if (route == 0)
-        {
-            InvokeProcessCmdKey(control, Keys.Control | Keys.C).Should().BeTrue();
-        }
-        else if (route == 1)
-        {
-            InvokeProcessCmdKey(control, Keys.Control | Keys.Insert).Should().BeTrue();
-        }
-        else
-        {
-            InvokeWndProc(control, WM.WM_COPY);
-        }
-    }
 
     static void RunInSta(Action action)
     {

@@ -1,6 +1,4 @@
-using System.Drawing;
 using FluentAssertions;
-using Launcher.Infrastructure;
 using Launcher.UI;
 using Launcher.Win32;
 using Xunit;

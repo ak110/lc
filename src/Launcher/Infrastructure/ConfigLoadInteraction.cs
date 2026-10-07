@@ -24,7 +24,7 @@ public static class ConfigLoadInteraction
         {
             show(new ConfigLoadNotice(
                 $"実行状態のファイル({result.Kind})を読み込めませんでした。初期値で続行します。\r\n"
-                + "次の保存で作り直します。繰り返す場合は、らんちゃのフォルダーの読み書き権限を確認してください。"));
+                + "次の保存で再作成します。繰り返す場合は、らんちゃのフォルダーの読み書き権限を確認してください。"));
             return fallback;
         }
         string message = $"設定ファイル({result.Kind})を読み込めませんでした。原本を保護するため保存を停止しています。";

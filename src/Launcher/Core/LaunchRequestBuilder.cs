@@ -10,11 +10,13 @@ public static class LaunchRequestBuilder
         WindowStyle windowStyle = WindowStyle.Normal,
         ProcessPriorityLevel priority = ProcessPriorityLevel.Normal, IntPtr owner = default)
     {
-        fileName = PathHelper.PathNormalize(fileName);
+        fileName = Environment.ExpandEnvironmentVariables(fileName);
+        bool isUri = Uri.TryCreate(fileName, UriKind.Absolute, out var uri) && !uri.IsFile;
+        if (!isUri) fileName = PathHelper.PathNormalize(fileName);
         string? directory = workingDirectory;
         if (string.IsNullOrEmpty(directory))
         {
-            directory = Directory.Exists(fileName) ? fileName : Path.GetDirectoryName(fileName);
+            directory = isUri ? null : Directory.Exists(fileName) ? fileName : Path.GetDirectoryName(fileName);
             if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory)) directory = null;
         }
         else

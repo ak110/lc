@@ -1,3 +1,4 @@
+using Launcher.UI;
 #nullable disable
 namespace Launcher.UI {
 	partial class ErrorReporterForm {

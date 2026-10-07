@@ -1,7 +1,7 @@
 using System.Security;
-using Launcher.Win32;
+using Launcher.Infrastructure;
 
-namespace Launcher.Infrastructure;
+namespace Launcher.Win32;
 
 /// <summary>
 /// フォルダ配下のフォルダ・ファイルを列挙するユーティリティ。

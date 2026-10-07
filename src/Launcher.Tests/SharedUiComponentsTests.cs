@@ -1,4 +1,3 @@
-using System.Drawing;
 using FluentAssertions;
 using Launcher.UI;
 using Xunit;

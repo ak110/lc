@@ -142,7 +142,7 @@ public sealed class WindowHelper
     /// 現在の前景ウィンドウのハンドルを返す。
     /// 通知表示前の前景を記録し、通知を閉じたときに復元する用途で使う。
     /// </summary>
-    public static IntPtr GetForegroundWindowHandle() => GetForegroundWindow();
+    public static IntPtr GetForegroundWindowHandle() => NativeMethods.GetForegroundWindow();
 
     /// <summary>
     /// 指定ハンドルを前景ウィンドウに戻す。
@@ -156,10 +156,10 @@ public sealed class WindowHelper
 
         // 自プロセス所有のウィンドウには復元しない。
         // launcher 内のフォームへのフォーカス切替は WinForms の標準挙動に任せる。
-        _ = GetWindowThreadProcessId(hWnd, out uint pid);
+        _ = NativeMethods.GetWindowThreadProcessId(hWnd, out uint pid);
         if (pid == (uint)Environment.ProcessId) return;
 
-        _ = SetForegroundWindow(hWnd);
+        _ = NativeMethods.SetForegroundWindow(hWnd);
     }
 
     [DllImport("user32.dll")]
@@ -174,19 +174,12 @@ public sealed class WindowHelper
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool SystemParametersInfo(int uiAction, int uiParam, ref int pvParam, int fWinIni);
 
-    [DllImport("user32.dll")]
-    static extern IntPtr GetForegroundWindow();
 
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    static extern bool SetForegroundWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool IsWindow(IntPtr hWnd);
 
-    [DllImport("user32.dll")]
-    static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
     const int SPI_GETFOREGROUNDLOCKTIMEOUT = 0x2000;
     const int SPI_SETFOREGROUNDLOCKTIMEOUT = 0x2001;
@@ -223,13 +216,11 @@ public sealed class WindowHelper
         {
             throw new NullReferenceException("送信先ウィンドウが存在しない");
         }
-        return SendMessage(hwnd, Msg, wParam, lParam);
+        return unchecked((int)NativeMethods.SendMessage(hwnd, Msg, wParam, lParam));
     }
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool PostMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
 
-    [DllImport("user32.dll")]
-    static extern int SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
 }

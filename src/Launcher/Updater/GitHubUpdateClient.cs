@@ -1,5 +1,5 @@
-using System.Net.Http;
 using System.Text.Json;
+using Launcher.Infrastructure;
 
 namespace Launcher.Updater;
 
@@ -10,19 +10,13 @@ public static class GitHubUpdateClient
 {
     private const string VersionUrl = "https://ak110.github.io/lc/version.json";
 
-    private static readonly HttpClient _httpClient = new()
-    {
-        DefaultRequestHeaders = {
-            { "User-Agent", "Launcher-UpdateClient" },
-        },
-    };
-
     /// <summary>
     /// 最新リリース情報を取得
     /// </summary>
     public static async Task<GitHubRelease?> GetLatestReleaseAsync()
     {
-        var response = await _httpClient.GetAsync(VersionUrl).ConfigureAwait(false);
+        using var request = SharedHttpClient.CreateUpdateRequest(VersionUrl);
+        using var response = await SharedHttpClient.Instance.SendAsync(request).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);

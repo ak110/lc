@@ -1,6 +1,3 @@
-using System.Drawing;
-using System.IO;
-using System.Xml;
 using System.Xml.Serialization;
 using Launcher.Infrastructure;
 
@@ -71,6 +68,10 @@ public sealed class ButtonTab
 /// </summary>
 public sealed class ButtonEntry : Command
 {
+    public ButtonEntry() { }
+
+    private ButtonEntry(Command source) : base(source) { }
+
     public int Row { get; set; }
     public int Col { get; set; }
 
@@ -85,17 +86,10 @@ public sealed class ButtonEntry : Command
     /// </summary>
     public static ButtonEntry FromCommand(Command cmd, int row, int col)
     {
-        var entry = new ButtonEntry
+        var entry = new ButtonEntry(cmd)
         {
             Row = row,
             Col = col,
-            Name = cmd.Name,
-            FileName = cmd.FileName,
-            Param = cmd.Param,
-            WorkDir = cmd.WorkDir,
-            Show = cmd.Show,
-            Priority = cmd.Priority,
-            RunAsAdmin = cmd.RunAsAdmin,
         };
         return entry;
     }

@@ -86,7 +86,7 @@ public partial class CommandLauncherForm : Form
     {
         if (e.CloseReason != CloseReason.FormOwnerClosing)
         {
-            if (ownerForm.Config.CloseButton == CloseButtonBehavior.Close)
+            if (ownerForm.Config.CloseButton == CloseButtonBehavior.Hide)
             {
                 HideWindow();
                 e.Cancel = true;
@@ -398,9 +398,9 @@ public partial class CommandLauncherForm : Form
         switch (ownerForm.Config.ItemDoubleClick)
         {
             case ItemAction.Execute: 実行RToolStripMenuItem_Click(this, EventArgs.Empty); break;
-            case ItemAction.EditConfig: フォルダを開くFToolStripMenuItem_Click(this, EventArgs.Empty); break;
-            case ItemAction.OpenDirectory: 設定CToolStripMenuItem1_Click(this, EventArgs.Empty); break;
-            case ItemAction.None: 削除DToolStripMenuItem_Click(this, EventArgs.Empty); break;
+            case ItemAction.OpenDirectory: フォルダを開くFToolStripMenuItem_Click(this, EventArgs.Empty); break;
+            case ItemAction.EditCommand: 設定CToolStripMenuItem1_Click(this, EventArgs.Empty); break;
+            case ItemAction.Delete: 削除DToolStripMenuItem_Click(this, EventArgs.Empty); break;
         }
     }
 
@@ -623,7 +623,7 @@ public partial class CommandLauncherForm : Form
     /// </summary>
     private void UpdateButtonText()
     {
-        var texts = CommandLauncherPresenter.GetButtonTexts(state, lastFocus, ModifierKeys);
+        var texts = CommandLauncherPresenter.GetButtonTexts(state, lastFocus, GetInputModifiers());
         button1.Text = texts.Button1Text;
         button2.Text = texts.Button2Text;
     }
@@ -640,7 +640,7 @@ public partial class CommandLauncherForm : Form
             ? (Command)listView1.SelectedItems[0].Tag! : null;
 
         var result = CommandLauncherPresenter.DetermineAction(
-            state, lastFocus, firstCommand, selectedCommand, ModifierKeys);
+            state, lastFocus, firstCommand, selectedCommand, GetInputModifiers());
 
         switch (result.Action)
         {
@@ -697,6 +697,15 @@ public partial class CommandLauncherForm : Form
     private void OpenDirectory(Command command)
     {
         ShellLaunchService.OpenDirectory(this, command, ownerForm.Config);
+    }
+
+    private static InputModifiers GetInputModifiers()
+    {
+        var result = InputModifiers.None;
+        if (ModifierKeys.HasFlag(Keys.Shift)) result |= InputModifiers.Shift;
+        if (ModifierKeys.HasFlag(Keys.Control)) result |= InputModifiers.Control;
+        if (ModifierKeys.HasFlag(Keys.Alt)) result |= InputModifiers.Alt;
+        return result;
     }
 
     private void ExecuteCommand(Command command, string input)

@@ -17,7 +17,10 @@ public sealed class InputDialog : Form
         input = new TextBox { Text = value, Left = 8, Top = 32, Width = 280, TabIndex = 1 };
         var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Left = 120, Top = 64, Width = 75, TabIndex = 2 };
         var cancel = new Button { Text = "キャンセル", DialogResult = DialogResult.Cancel, Left = 200, Top = 64, Width = 75, TabIndex = 3 };
-        Controls.AddRange([label, input, ok, cancel]);
+        Controls.Add(label);
+        Controls.Add(input);
+        Controls.Add(ok);
+        Controls.Add(cancel);
         AcceptButton = ok;
         CancelButton = cancel;
         ActiveControl = input;

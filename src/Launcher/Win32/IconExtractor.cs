@@ -1,4 +1,3 @@
-using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Launcher.Win32;
@@ -39,7 +38,7 @@ public static class IconExtractor
     /// <exception cref="FileLoadException">読み込み失敗</exception>
     public static System.Drawing.Icon ExtractIconByShellNamespace(string displayName, bool small)
     {
-        int hr = SHParseDisplayName(displayName, IntPtr.Zero, out IntPtr pidl, 0, out _);
+        int hr = NativeMethods.SHParseDisplayName(displayName, IntPtr.Zero, out IntPtr pidl, 0, out _);
         if (hr != 0 || pidl == IntPtr.Zero)
         {
             throw new FileLoadException(displayName + " の PIDL 取得に失敗した");
@@ -125,9 +124,6 @@ public static class IconExtractor
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, EntryPoint = "SHGetFileInfo")]
     static extern IntPtr SHGetFileInfoPidl(IntPtr pszPath, int dwFileAttributes, ref SHFILEINFO psfi, int cbSizeFileInfo, int uFlags);
 
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    static extern int SHParseDisplayName(
-        string pszName, IntPtr pbc, out IntPtr ppidl, uint sfgaoIn, out uint psfgaoOut);
 
     [DllImport("ole32.dll")]
     static extern void CoTaskMemFree(IntPtr pv);

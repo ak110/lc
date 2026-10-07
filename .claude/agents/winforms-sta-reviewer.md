@@ -49,7 +49,7 @@ model: sonnet
 - フックコールバック内に`MessageBox.Show`・`Thread.Sleep`・同期I/O・長時間ループが無いか
 - UI操作と例外の通知が`UiThreadDispatcher.SafeBeginInvoke`で非同期に配送されているか（`Invoke`はデッドロックの恐れあり）
 - 既存の呼び出しも含め、直接の`Control.BeginInvoke`が共通ヘルパー内部だけにあるか
-- UP抑制フラグ（`suppressNextLButtonUp`／`suppressNextRButtonUp`／`suppressKeyUpVK`）を更新し忘れている箇所が無いか
+- `HookInputState`が押下と解放を追跡し、トリガーのUP抑止を1回で消費しているか
 - フック解除（`UnhookWindowsHookEx`）のタイミングと、解除後にコールバックが残存しないこと
 
 ### C. アイコンローダー（[.claude/rules/threading.md](../rules/threading.md)）
@@ -76,8 +76,12 @@ model: sonnet
 
 ### E. Presenter パターン（`docs/development/architecture.md`）
 
-- WinFormsフォームクラスに判断ロジックが直接書かれていないか（Presenterへ委譲）
-- Core層（`src/Launcher/Core/`）にWinForms依存（`System.Windows.Forms`）が混入していないか
+- WinFormsフォームの検索・置換・入力状態・予定の判定を、Coreの公開型へ委譲しているか。
+  `MemoSearch`・`TextIndentation`・`HookInputState`・`SchedulerScheduleEvaluator`と各Presenterを使う
+- `Launcher.Core.csproj`がWinForms・Win32・UIを参照せず、逆向きの依存をプロジェクト参照へ加えていないか。
+  Coreの禁止参照はビルド、P/Invokeの所属は`CoreArchitectureTests`で検出する。
+  同じアプリプロジェクト内のUIとWin32の責務は差分と呼び出し元を読んで確認する
+- テストがlc自身の非公開メンバーを反射で呼ばず、テスト専用の可視性変更や`InternalsVisibleTo`を加えていないか
 - スケジューラーのUI連携で、`MessageBox`系は`Invoke`、`BalloonTip`系は`BeginInvoke`になっているか
 
 ### F. 通知ダイアログ（[.claude/skills/notification-dialog/SKILL.md](../skills/notification-dialog/SKILL.md)）

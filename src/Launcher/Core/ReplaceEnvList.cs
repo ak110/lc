@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace Launcher.Core;
 
 /// <summary>

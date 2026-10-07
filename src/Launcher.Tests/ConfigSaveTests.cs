@@ -68,7 +68,7 @@ public sealed class ConfigSaveTests : IDisposable
     }
 
     [Fact]
-    public void 実行状態は破損読込後も保存できバックアップを作らない()
+    public void 実行状態は破損読込後も保存できバックアップを作成しない()
     {
         string baseName = Path.Combine(directory, "data");
         var store = new ConfigFile<Data>(".dat", protectOriginal: false);

@@ -97,7 +97,7 @@ public sealed class FolderPopupMenuBuilderTests
     }
 
     [Fact]
-    public void Build_ContextMenuStripのClosedイベントでiconLoaderが破棄される()
+    public void Build_ContextMenuStripのClosedイベントでメニューを遅延破棄する()
     {
         using var form = new Form();
         _ = form.Handle;
@@ -108,32 +108,18 @@ public sealed class FolderPopupMenuBuilderTests
             File.WriteAllText(Path.Combine(tempDir.FullName, "a.txt"), "");
 
             var menu = builder.Build(tempDir.FullName);
-            // Closed イベント発火前は iconLoader は未破棄
-            GetIconLoaderDisposed(builder).Should().BeFalse();
+            menu.IsDisposed.Should().BeFalse();
 
             RaiseClosed(menu);
             Application.DoEvents(); // SafeBeginInvoke経由でポストされたDisposeを処理する
 
-            // Closed 発火後は SafeBeginInvoke 経由で builder.Dispose が呼ばれ iconLoader も破棄される
-            GetIconLoaderDisposed(builder).Should().BeTrue();
+            menu.IsDisposed.Should().BeTrue();
         }
         finally
         {
             builder.Dispose();
             tempDir.Delete(recursive: true);
         }
-    }
-
-    /// <summary>
-    /// FolderPopupMenuBuilder が保持する AsyncIconLoader の IsDisposed を
-    /// リフレクション経由で取得する。単体テスト検証のみで使用する。
-    /// </summary>
-    static bool GetIconLoaderDisposed(FolderPopupMenuBuilder builder)
-    {
-        var iconLoaderField = typeof(FolderPopupMenuBuilder).GetField(
-            "iconLoader", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        var iconLoader = (Launcher.Win32.AsyncIconLoader)iconLoaderField.GetValue(builder)!;
-        return iconLoader.IsDisposed;
     }
 
     /// <summary>

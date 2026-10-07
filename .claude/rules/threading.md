@@ -31,7 +31,7 @@ Shell API（`ShellExecuteEx`・`SHGetFileInfo`等）はCOMのSTA（Single-Thread
 `Task.Run`（ThreadPool/MTA）からの呼び出しは禁止する。
 新規`Thread`を生成する場合は、生成直後に`SetApartmentState(ApartmentState.STA)`を呼ぶ。
 コマンド実行・ディレクトリ展開・アイコン読込・スケジューラータスク実行はすべて専用STAスレッドで動かす。
-起動要求は`LaunchRequestBuilder`で作り、`ShellLaunchService`から`ProcessLauncher`へ渡す。
+起動要求は`LaunchRequestBuilder`で作成し、`ShellLaunchService`から`ProcessLauncher`へ渡す。
 スケジューラーは専用STA上の`ExecuteOnSta`で起動処理の完了を待ち、次のタスクへ進む。
 表示範囲が限定される用途に限り「Shell APIのUIスレッド同期呼び出し例外」節でUIスレッド同期呼び出しを許容する。
 
@@ -51,7 +51,7 @@ UIスレッドはSTAアパートメントのためShell APIを呼び出せる。
 `Application.ThreadException`まで届かない場合がある（.NET/OSバージョン依存）。
 ポスト先の`MethodInvoker`内では`catch (Exception)`を必ず設けて
 `ErrorReporter.Instance.OnException(ex)`へ回送する。
-共通処理は`Launcher.Infrastructure.UiThreadDispatcher.SafeBeginInvoke`にまとめ、
+共通処理は`Launcher.UI.UiThreadDispatcher.SafeBeginInvoke`にまとめ、
 既存の呼び出しを含め、UIへの非同期配送は`SafeBeginInvoke`を使う。
 直接の`Control.BeginInvoke`は同ヘルパー内部だけで使う。
 予定のメッセージ表示タスクはダイアログが閉じるまで待つ契約のため、同期の`Control.Invoke`を使う。
@@ -64,6 +64,11 @@ UIスレッドはSTAアパートメントのためShell APIを呼び出せる。
 `onSkipped`は配送時の`InvalidOperationException`と、配送後・実行前のハンドル破棄でも呼び出される。
 処理の実行と`onSkipped`の呼び出しは、合わせて1回だけ行う。
 `onSkipped`未指定時は何もしない。
+フック内のハンドル取得失敗を報告するときは、ホストのハンドルに依存しない
+`SafeBeginInvoke(WindowsFormsSynchronizationContext, Control, Action)`を使う。
+UIスレッドでControl作成後の同期コンテキストを保持し、WinFormsの配送用HWNDへポストする。
+このオーバーロードはフォームのハンドル有無を条件にせず、破棄後と終了開始後は報告処理を実行しない。
+UIスレッド終了時の配送失敗はログへ残し、フック内で同期の報告画面を表示しない。
 アイコン受信には`IconReceiver.Receive`を使う。
 同処理が配送前後の世代確認、ハンドルの確認、受信した`Icon`の解放を担う。
 適用側は必要な画像をコピーし、受け取った`Icon`を保持しない。

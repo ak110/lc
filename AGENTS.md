@@ -25,6 +25,9 @@ Windows用アプリケーションランチャー（C#/.NET WinForms）。
 
 実装上の不変条件はトピック別に規約ファイルとして分離している。
 
+- Coreライブラリ（`src/Launcher.Core/Launcher.Core.csproj`）はWinForms・UI・Win32を参照しない。
+  テストのために本体の可視性を緩和せず、判断処理を公開の純粋な型へ分けて通常の呼び出しでテストする。
+  `InternalsVisibleTo`は使わない。UI動作は公開された操作からテストする
 - スレッディング（`.claude/rules/threading.md`）:
   STAスレッド制約、スレッドモデル一覧、アイコンローダー並行度。
   C#ソース（`src/**/*.cs`）編集時に自動ロードされる

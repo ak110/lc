@@ -1,7 +1,4 @@
-using System.Drawing;
-using System.IO;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Serialization;
 using Launcher.Infrastructure;
@@ -34,7 +31,7 @@ public sealed class Config : ConfigStore, ICloneable
     public bool TrayIcon { get; set; } = true;
     public List<string> ReplaceEnv { get; set; } = new List<string>();
 
-    public CloseButtonBehavior CloseButton { get; set; } = CloseButtonBehavior.Hide;
+    public CloseButtonBehavior CloseButton { get; set; } = CloseButtonBehavior.Exit;
     public bool WindowNoResize { get; set; }
     public bool WindowTopMost { get; set; }
     public bool WindowHideNoActive { get; set; } = true;
@@ -144,7 +141,7 @@ public sealed class Config : ConfigStore, ICloneable
         data.TrayIcon = reader.Bool("TrayIcon");
         data.ReplaceEnv = [.. reader.Indirect("ReplaceEnv").Split('%')];
 
-        data.CloseButton = reader.Bool("WindowNoClose") ? CloseButtonBehavior.Disabled : CloseButtonBehavior.Hide;
+        data.CloseButton = reader.Bool("WindowNoClose") ? CloseButtonBehavior.Disabled : CloseButtonBehavior.Exit;
         data.WindowNoResize = reader.Bool("WindowNoResize");
         data.WindowTopMost = reader.Bool("WindowTopMost");
         data.WindowHideNoActive = reader.Bool("WindowHideNoActive");

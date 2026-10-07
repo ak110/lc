@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
-using System.Net.Http;
 using System.Text;
+using Launcher.Infrastructure;
 
 namespace Launcher.Updater;
 
@@ -26,13 +26,6 @@ public sealed record UpdateBatchOptions
 /// </summary>
 public static class UpdatePerformer
 {
-    private static readonly HttpClient _httpClient = new()
-    {
-        DefaultRequestHeaders = {
-            { "User-Agent", "Launcher-UpdateClient" },
-        },
-    };
-
     /// <summary>
     /// 更新を実行する。ZIP のダウンロード、展開、バッチスクリプトの生成・起動の順に処理する。
     /// この処理の完了はバッチの開始であり、更新の完了ではない。置換の成否の通知と失敗時の復旧はバッチが担う。
@@ -56,7 +49,8 @@ public static class UpdatePerformer
         {
             // ZIP をダウンロードする。
             progress?.Report("ダウンロード中...");
-            using (var response = await _httpClient.GetAsync(release.DownloadUrl).ConfigureAwait(false))
+            using var request = SharedHttpClient.CreateUpdateRequest(release.DownloadUrl);
+            using (var response = await SharedHttpClient.Instance.SendAsync(request).ConfigureAwait(false))
             {
                 response.EnsureSuccessStatusCode();
                 using var fs = new FileStream(zipPath, FileMode.Create);

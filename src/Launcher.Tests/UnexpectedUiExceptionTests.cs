@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using FluentAssertions;
@@ -14,7 +13,7 @@ namespace Launcher.Tests;
 public sealed class UnexpectedUiExceptionTests
 {
     [Fact]
-    public void WndProcの表示処理例外はログと可視owner付き報告画面へ渡る() => UiAcceptance.Run(() =>
+    public void WndProcの表示処理例外はログと可視owner付き報告画面へ渡る() => Run(() =>
     {
         using var data = CreateData();
         using var host = new ApplicationHostForm(data.BaseName);
@@ -32,7 +31,7 @@ public sealed class UnexpectedUiExceptionTests
             };
             // 常駐プロセスが受け取る既存のSHOWHIDEメッセージを送る。
             ObserveReport(() => new WindowHelper(host.Handle).SendMessage(
-                0x8000, (nint)0x11747b79, (nint)0x14d94a96), launcher, marker);
+                0x8000, (nint)0x11747b79, (nint)0x14d94a96), launcher, marker, host.PrepareShutdown);
             failed.Should().BeTrue();
         }
         finally
@@ -42,7 +41,7 @@ public sealed class UnexpectedUiExceptionTests
     });
 
     [Fact]
-    public void ボタン表示の例外はログと可視owner付き報告画面へ渡る() => UiAcceptance.Run(() =>
+    public void ボタン表示の例外はログと可視owner付き報告画面へ渡る() => Run(() =>
     {
         using var data = CreateData();
         using var host = new ApplicationHostForm(data.BaseName);
@@ -58,7 +57,7 @@ public sealed class UnexpectedUiExceptionTests
                 failed = true;
                 throw new InvalidOperationException(marker);
             };
-            ObserveReport(launcher.ShowLauncher, launcher, marker);
+            ObserveReport(launcher.ShowLauncher, launcher, marker, host.PrepareShutdown);
             failed.Should().BeTrue();
         }
         finally
@@ -68,9 +67,9 @@ public sealed class UnexpectedUiExceptionTests
     });
 
     [Fact]
-    public void 実キーフックのハンドル取得例外は同期通知せずUIへ配送する() => UiAcceptance.Run(() =>
+    public void 実キーフックのハンドル取得例外は同期通知せずUIへ配送する() => Run(() =>
     {
-        using var data = CreateData();
+        using var data = CreateData("F12");
         using var host = new HandleFailureHost(data.BaseName);
         try
         {
@@ -81,9 +80,9 @@ public sealed class UnexpectedUiExceptionTests
             host.FailNextHandleCreation(marker);
             ObserveReport(() =>
             {
-                keybd_event(0x87, 0, 0, nint.Zero); // F24
-                keybd_event(0x87, 0, 2, nint.Zero);
-            }, launcher, marker);
+                keybd_event(0x7B, 0, 0, nint.Zero); // 設定で選択できるF12
+                keybd_event(0x7B, 0, 2, nint.Zero);
+            }, launcher, marker, host.PrepareShutdown);
             host.FailureRaised.Should().BeTrue();
         }
         finally
@@ -92,29 +91,38 @@ public sealed class UnexpectedUiExceptionTests
         }
     });
 
-    static UiHostData CreateData() => new(new Config
+    static UiHostData CreateData(string hotKey = "") => new(new Config
     {
         TrayIcon = false,
-        HotKey = "F24",
+        HotKey = hotKey,
         WindowHideNoActive = false,
         ButtonLauncherActivation = ButtonLauncherActivation.LeftThenRight,
     });
 
     [Fact]
-    public void コマンド実行の要求生成例外は通常の起動失敗通知と分けて報告する() => UiAcceptance.Run(() =>
+    public void コマンド実行の要求生成例外は通常の起動失敗通知と分けて報告する() => Run(() =>
     {
         using var data = CreateData();
         using var host = new ApplicationHostForm(data.BaseName);
         try
         {
             var launcher = host.OwnedForms.OfType<CommandLauncherForm>().Single();
-            var command = new Command { Name = "受入コマンド", FileName = "invalid\0command.exe" };
+            // 孤立サロゲートはパス正規化のString.NormalizeでArgumentExceptionになる。
+            var command = new Command { Name = "受入コマンド", FileName = "invalid\uD800command.exe" };
             host.CommandList.Add(command);
             host.RefreshCommandLauncherFormCommandList();
             var input = (TextBox)launcher.Controls.Find("textBox1", searchAllChildren: true).Single();
-            input.Text = command.Name;
-            input.Focus();
-            ObserveReport(() => launcher.AcceptButton!.PerformClick(), launcher, "System.ArgumentException");
+            ObserveReport(() =>
+            {
+                launcher.ShowWindow();
+                launcher.Visible.Should().BeTrue();
+                input.Text = command.Name;
+                input.Focus().Should().BeTrue();
+                var execute = (Button)launcher.AcceptButton!;
+                execute.Visible.Should().BeTrue();
+                execute.Enabled.Should().BeTrue();
+                execute.PerformClick();
+            }, launcher, "System.ArgumentException", host.PrepareShutdown);
         }
         finally
         {
@@ -123,7 +131,7 @@ public sealed class UnexpectedUiExceptionTests
         }
     });
 
-    internal static void ObserveReport(Action trigger, Form expectedOwner, string marker)
+    static void ObserveReport(Action trigger, Form expectedOwner, string marker, Action shutdown)
     {
         string logDirectory = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "logs");
         var priorLogs = Directory.Exists(logDirectory)
@@ -138,9 +146,22 @@ public sealed class UnexpectedUiExceptionTests
         bool ownerMatches = false;
         bool ownerVisible = false;
         bool nativeDialog = false;
+        bool windowClassFailure = false;
         bool loggedBeforeDisplay = false;
         bool messageMatches = false;
         Exception? escaped = null;
+        bool completed = false;
+        void Complete()
+        {
+            if (completed) return;
+            completed = true;
+            // 終了処理もメッセージループ内で検査し、既定の例外ダイアログへ漏らさない。
+            try { shutdown(); }
+#pragma warning disable CA1031 // 終了処理の失敗も試験結果へ返す
+            catch (Exception ex) { escaped ??= ex; }
+#pragma warning restore CA1031
+            context.ExitThread();
+        }
         timer.Tick += (_, _) =>
         {
             if (!triggered)
@@ -148,15 +169,21 @@ public sealed class UnexpectedUiExceptionTests
                 triggered = true;
                 triggering = true;
                 try { trigger(); }
+#pragma warning disable CA1031 // メッセージループ内の失敗をループ終了後のアサーションへ返す
                 catch (Exception ex) { escaped = ex; }
+#pragma warning restore CA1031
                 finally { triggering = false; }
-                if (shown || escaped is not null) context.ExitThread();
+                if (shown || escaped is not null) Complete();
                 return;
             }
             EnumThreadWindows(GetCurrentThreadId(), (window, _) =>
             {
                 var name = new StringBuilder(256);
-                GetClassName(window, name, name.Capacity);
+                if (GetClassName(window, name, name.Capacity) == 0)
+                {
+                    windowClassFailure = true;
+                    return true;
+                }
                 if (name.ToString() == "#32770")
                 {
                     nativeDialog = true;
@@ -165,7 +192,7 @@ public sealed class UnexpectedUiExceptionTests
                 return true;
             }, nint.Zero);
             var report = Application.OpenForms.OfType<ErrorReporterForm>().SingleOrDefault();
-            if (report is not null)
+            if (report is { Visible: true })
             {
                 shown = report.Visible;
                 ownerMatches = ReferenceEquals(report.Owner, expectedOwner);
@@ -180,11 +207,11 @@ public sealed class UnexpectedUiExceptionTests
                     });
                 report.DialogResult = DialogResult.Ignore;
                 report.Close();
-                if (!triggering) context.ExitThread();
+                if (!triggering) Complete();
             }
             if (elapsed.Elapsed > TimeSpan.FromSeconds(60))
             {
-                context.ExitThread();
+                Complete();
             }
         };
         timer.Start();
@@ -196,7 +223,19 @@ public sealed class UnexpectedUiExceptionTests
         messageMatches.Should().BeTrue();
         loggedBeforeDisplay.Should().BeTrue();
         nativeDialog.Should().BeFalse();
+        windowClassFailure.Should().BeFalse();
     }
+
+    static void Run(Action action) => UiAcceptance.Run(() =>
+    {
+        // Program.MainのAppBase.Initializeと同じUI例外配送をこのSTAへ登録する。
+        // テストはホストだけを構築するため、起動時の登録と試験後の解除を明示する。
+        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException, threadScope: true);
+        ThreadExceptionEventHandler handler = (_, e) => ErrorReporter.Instance.OnException(e.Exception);
+        Application.ThreadException += handler;
+        try { action(); }
+        finally { Application.ThreadException -= handler; }
+    });
 
     sealed class HandleFailureHost(string baseName) : ApplicationHostForm(baseName)
     {
@@ -209,14 +248,21 @@ public sealed class UnexpectedUiExceptionTests
             failureMessage = message;
         }
 
-        protected override void OnHandleCreated(EventArgs e)
+        protected override CreateParams CreateParams
         {
-            base.OnHandleCreated(e);
-            if (failureMessage is null) return;
-            string message = failureMessage;
-            failureMessage = null;
-            FailureRaised = true;
-            throw new InvalidOperationException(message);
+            get
+            {
+                // NativeWindow.Callback内へ投げるとWinFormsのJIT処理に捕捉される。
+                // HWND生成前のmanaged getterで例外を発生させ、HookManagerの取得境界を検査する。
+                if (failureMessage is not null)
+                {
+                    string message = failureMessage;
+                    failureMessage = null;
+                    FailureRaised = true;
+                    throw new InvalidOperationException(message);
+                }
+                return base.CreateParams;
+            }
         }
     }
 

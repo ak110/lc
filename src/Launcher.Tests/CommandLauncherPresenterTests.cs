@@ -1,4 +1,3 @@
-using System.Windows.Forms;
 using FluentAssertions;
 using Launcher.Core;
 using Xunit;
@@ -104,7 +103,7 @@ public sealed class CommandLauncherPresenterTests
     [Fact]
     public void GetButtonTexts_Empty時に設定と隠す()
     {
-        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.Empty, lastFocus: 0, Keys.None);
+        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.Empty, lastFocus: 0, InputModifiers.None);
 
         texts.Button1Text.Should().Be("設定");
         texts.Button2Text.Should().Be("隠す");
@@ -113,7 +112,7 @@ public sealed class CommandLauncherPresenterTests
     [Fact]
     public void GetButtonTexts_NoMatch時に追加と削除()
     {
-        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.NoMatch, lastFocus: 0, Keys.None);
+        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.NoMatch, lastFocus: 0, InputModifiers.None);
 
         texts.Button1Text.Should().Be("追加");
         texts.Button2Text.Should().Be("消去");
@@ -122,7 +121,7 @@ public sealed class CommandLauncherPresenterTests
     [Fact]
     public void GetButtonTexts_PrefixMatch_Ctrlでｺﾏﾝﾄﾞ()
     {
-        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.PrefixMatch, lastFocus: 0, Keys.Control);
+        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.PrefixMatch, lastFocus: 0, InputModifiers.Control);
 
         texts.Button1Text.Should().Be("ｺﾏﾝﾄﾞ");
     }
@@ -130,7 +129,7 @@ public sealed class CommandLauncherPresenterTests
     [Fact]
     public void GetButtonTexts_PrefixMatch_Shiftでﾌｫﾙﾀﾞ()
     {
-        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.PrefixMatch, lastFocus: 0, Keys.Shift);
+        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.PrefixMatch, lastFocus: 0, InputModifiers.Shift);
 
         texts.Button1Text.Should().Be("ﾌｫﾙﾀﾞ");
     }
@@ -138,7 +137,7 @@ public sealed class CommandLauncherPresenterTests
     [Fact]
     public void GetButtonTexts_PrefixMatch_デフォルトで実行()
     {
-        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.PrefixMatch, lastFocus: 0, Keys.None);
+        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.PrefixMatch, lastFocus: 0, InputModifiers.None);
 
         texts.Button1Text.Should().Be("実行");
     }
@@ -147,7 +146,7 @@ public sealed class CommandLauncherPresenterTests
     public void GetButtonTexts_リストビューフォーカス時は常に実行系()
     {
         // lastFocus=1のとき、stateがEmptyでも実行系ボタンになる
-        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.Empty, lastFocus: 1, Keys.None);
+        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.Empty, lastFocus: 1, InputModifiers.None);
 
         texts.Button1Text.Should().Be("実行");
         // button2はstateに依存 (Emptyなので「隠す」)
@@ -157,7 +156,7 @@ public sealed class CommandLauncherPresenterTests
     [Fact]
     public void GetButtonTexts_PartialMatch時は実行()
     {
-        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.PartialMatch, lastFocus: 0, Keys.None);
+        var texts = CommandLauncherPresenter.GetButtonTexts(InputState.PartialMatch, lastFocus: 0, InputModifiers.None);
 
         texts.Button1Text.Should().Be("実行");
         texts.Button2Text.Should().Be("消去");
@@ -171,7 +170,7 @@ public sealed class CommandLauncherPresenterTests
     public void DetermineAction_Empty_Focus0はShowConfig()
     {
         var result = CommandLauncherPresenter.DetermineAction(
-            InputState.Empty, lastFocus: 0, null, null, Keys.None);
+            InputState.Empty, lastFocus: 0, null, null, InputModifiers.None);
 
         result.Action.Should().Be(MainAction.ShowConfig);
         result.TargetCommand.Should().BeNull();
@@ -181,7 +180,7 @@ public sealed class CommandLauncherPresenterTests
     public void DetermineAction_コマンドなしはAddCommand()
     {
         var result = CommandLauncherPresenter.DetermineAction(
-            InputState.NoMatch, lastFocus: 0, null, null, Keys.None);
+            InputState.NoMatch, lastFocus: 0, null, null, InputModifiers.None);
 
         result.Action.Should().Be(MainAction.AddCommand);
     }
@@ -191,7 +190,7 @@ public sealed class CommandLauncherPresenterTests
     {
         var cmd = new Command { Name = "test" };
         var result = CommandLauncherPresenter.DetermineAction(
-            InputState.PrefixMatch, lastFocus: 0, cmd, null, Keys.None);
+            InputState.PrefixMatch, lastFocus: 0, cmd, null, InputModifiers.None);
 
         result.Action.Should().Be(MainAction.Execute);
         result.TargetCommand.Should().Be(cmd);
@@ -202,7 +201,7 @@ public sealed class CommandLauncherPresenterTests
     {
         var cmd = new Command { Name = "test" };
         var result = CommandLauncherPresenter.DetermineAction(
-            InputState.PrefixMatch, lastFocus: 0, cmd, null, Keys.Control);
+            InputState.PrefixMatch, lastFocus: 0, cmd, null, InputModifiers.Control);
 
         result.Action.Should().Be(MainAction.EditCommand);
         result.TargetCommand.Should().Be(cmd);
@@ -213,7 +212,7 @@ public sealed class CommandLauncherPresenterTests
     {
         var cmd = new Command { Name = "test" };
         var result = CommandLauncherPresenter.DetermineAction(
-            InputState.PrefixMatch, lastFocus: 0, cmd, null, Keys.Shift);
+            InputState.PrefixMatch, lastFocus: 0, cmd, null, InputModifiers.Shift);
 
         result.Action.Should().Be(MainAction.OpenDirectory);
         result.TargetCommand.Should().Be(cmd);
@@ -225,7 +224,7 @@ public sealed class CommandLauncherPresenterTests
         var first = new Command { Name = "first" };
         var selected = new Command { Name = "selected" };
         var result = CommandLauncherPresenter.DetermineAction(
-            InputState.PrefixMatch, lastFocus: 1, first, selected, Keys.None);
+            InputState.PrefixMatch, lastFocus: 1, first, selected, InputModifiers.None);
 
         result.Action.Should().Be(MainAction.Execute);
         result.TargetCommand.Should().Be(selected);
@@ -235,7 +234,7 @@ public sealed class CommandLauncherPresenterTests
     public void DetermineAction_リストビューフォーカス_選択なしはAddCommand()
     {
         var result = CommandLauncherPresenter.DetermineAction(
-            InputState.PrefixMatch, lastFocus: 1, null, null, Keys.None);
+            InputState.PrefixMatch, lastFocus: 1, null, null, InputModifiers.None);
 
         result.Action.Should().Be(MainAction.AddCommand);
     }

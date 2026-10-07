@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Launcher", "src\Launcher\La
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Launcher.Tests", "src\Launcher.Tests\Launcher.Tests.csproj", "{444219F0-DF4C-4425-B69F-FA160C92065F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Launcher.Core", "src\Launcher.Core\Launcher.Core.csproj", "{4D536ED9-A7E6-4E29-BAF4-361DC51F7A5B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,6 +20,10 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4D536ED9-A7E6-4E29-BAF4-361DC51F7A5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D536ED9-A7E6-4E29-BAF4-361DC51F7A5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D536ED9-A7E6-4E29-BAF4-361DC51F7A5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D536ED9-A7E6-4E29-BAF4-361DC51F7A5B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2B56ED7E-EBBA-46E1-B3D5-985F1DD88CB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2B56ED7E-EBBA-46E1-B3D5-985F1DD88CB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B56ED7E-EBBA-46E1-B3D5-985F1DD88CB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -28,6 +34,7 @@ Global
 		{444219F0-DF4C-4425-B69F-FA160C92065F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{4D536ED9-A7E6-4E29-BAF4-361DC51F7A5B} = {9005859D-E52C-4C30-A7EC-DFF618D013A3}
 		{2B56ED7E-EBBA-46E1-B3D5-985F1DD88CB5} = {9005859D-E52C-4C30-A7EC-DFF618D013A3}
 		{444219F0-DF4C-4425-B69F-FA160C92065F} = {9005859D-E52C-4C30-A7EC-DFF618D013A3}
 	EndGlobalSection

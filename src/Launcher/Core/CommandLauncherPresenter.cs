@@ -1,5 +1,3 @@
-using System.Windows.Forms;
-
 namespace Launcher.Core;
 
 /// <summary>入力欄とコマンドリストの状態</summary>
@@ -87,8 +85,8 @@ public sealed class CommandLauncherPresenter(Func<CommandList> getCommandList, F
     /// </summary>
     /// <param name="state">現在の入力状態</param>
     /// <param name="lastFocus">0=エディットボックス, 1=リストビュー</param>
-    /// <param name="modifierKeys">現在の修飾キー状態</param>
-    public static ButtonTexts GetButtonTexts(InputState state, int lastFocus, Keys modifierKeys)
+    /// <param name="modifiers">現在の修飾キー状態</param>
+    public static ButtonTexts GetButtonTexts(InputState state, int lastFocus, InputModifiers modifiers)
     {
         // リストビューにフォーカスがある場合はコマンド有無に関わらず実行系ボタン表示
         InputState? effectiveState = lastFocus == 1 ? null : state;
@@ -98,10 +96,10 @@ public sealed class CommandLauncherPresenter(Func<CommandList> getCommandList, F
         {
             InputState.Empty => "設定",
             InputState.NoMatch => "追加",
-            _ => modifierKeys switch
+            _ => modifiers switch
             {
-                Keys.Control => "ｺﾏﾝﾄﾞ",
-                Keys.Shift => "ﾌｫﾙﾀﾞ",
+                InputModifiers.Control => "ｺﾏﾝﾄﾞ",
+                InputModifiers.Shift => "ﾌｫﾙﾀﾞ",
                 _ => "実行",
             },
         };
@@ -119,11 +117,11 @@ public sealed class CommandLauncherPresenter(Func<CommandList> getCommandList, F
     /// <param name="lastFocus">0=エディットボックス, 1=リストビュー</param>
     /// <param name="firstCommand">リストビュー先頭のコマンド (存在する場合)</param>
     /// <param name="selectedCommand">リストビューで選択中のコマンド (存在する場合)</param>
-    /// <param name="modifierKeys">現在の修飾キー状態</param>
+    /// <param name="modifiers">現在の修飾キー状態</param>
     public static ButtonClickResult DetermineAction(
         InputState state, int lastFocus,
         Command? firstCommand, Command? selectedCommand,
-        Keys modifierKeys)
+        InputModifiers modifiers)
     {
         // フォーカス位置に応じてコマンドを決定
         Command? command = lastFocus == 0 ? firstCommand : selectedCommand;
@@ -139,10 +137,10 @@ public sealed class CommandLauncherPresenter(Func<CommandList> getCommandList, F
         }
 
         // コマンドありの場合、修飾キーで分岐
-        MainAction action = modifierKeys switch
+        MainAction action = modifiers switch
         {
-            Keys.Control => MainAction.EditCommand,
-            Keys.Shift => MainAction.OpenDirectory,
+            InputModifiers.Control => MainAction.EditCommand,
+            InputModifiers.Shift => MainAction.OpenDirectory,
             _ => MainAction.Execute,
         };
 

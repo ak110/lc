@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using Launcher.Win32;
 
 namespace Launcher.Infrastructure;
 
@@ -93,8 +93,8 @@ public sealed class SingleInstance : IDisposable
             {
                 if (p.MainWindowHandle != IntPtr.Zero)
                 {
-                    SetForegroundWindow(p.MainWindowHandle);
-                    BringWindowToTop(p.MainWindowHandle);
+                    NativeMethods.SetForegroundWindow(p.MainWindowHandle);
+                    NativeMethods.BringWindowToTop(p.MainWindowHandle);
                 }
             }
             finally
@@ -106,13 +106,7 @@ public sealed class SingleInstance : IDisposable
 
     #region DllImport
 
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    static extern bool SetForegroundWindow(IntPtr hWnd);
 
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    static extern bool BringWindowToTop(IntPtr hWnd);
 
     #endregion
 

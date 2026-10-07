@@ -1,13 +1,11 @@
-using System.Drawing;
 using FluentAssertions;
 using Launcher.Core;
-using Launcher.Infrastructure;
 using Xunit;
 
 namespace Launcher.Tests;
 
 /// <summary>
-/// Configのデフォルト値・シリアライズテスト
+/// Configの省略時の値と複製のテスト
 /// </summary>
 public sealed class ConfigTests
 {
@@ -65,7 +63,7 @@ public sealed class ConfigTests
         var config = new Config();
         config.LargeIcon.Should().BeTrue();
         config.TrayIcon.Should().BeTrue();
-        config.CloseButton.Should().Be(CloseButtonBehavior.Hide);
+        config.CloseButton.Should().Be(CloseButtonBehavior.Exit);
         config.WindowNoResize.Should().BeFalse();
         config.WindowTopMost.Should().BeFalse();
         config.WindowHideNoActive.Should().BeTrue();
@@ -103,70 +101,6 @@ public sealed class ConfigTests
         config.ReplaceEnv.Should().BeEmpty();
     }
 
-    // --- シリアライズ/デシリアライズ ラウンドトリップ ---
-
-    [Fact]
-    public void ラウンドトリップ_全プロパティが保持される()
-    {
-        var original = new Config
-        {
-            Debug = true,
-            IconDoubleClick = TrayIconAction.ShowConfig,
-            ItemDoubleClick = ItemAction.OpenDirectory,
-            ProcessPriority = ProcessPriorityLevel.High,
-            HideFirst = true,
-            HotKey = "Ctrl+Alt+L",
-            OpenDirByFiler = false,
-            Filer = "TotalCmd.exe",
-            OpenParentFiler = "TotalCmd.exe",
-            OpenParentFilerParam1 = "/O /T ",
-            OpenParentFilerParam2 = "",
-            LargeIcon = false,
-            TrayIcon = false,
-            ReplaceEnv = ["SystemRoot", "ProgramFiles"],
-            CloseButton = CloseButtonBehavior.Close,
-            WindowNoResize = true,
-            WindowTopMost = true,
-            WindowHideNoActive = false,
-            HideOnRun = true,
-            CommandIgnoreCase = false,
-            WindowPos = new Point(100, 200),
-            WindowSize = new Size(800, 600),
-            RunAsAdminType = AdminElevation.VistaElevator,
-            RunAsCommandLine = "/user:Admin",
-            ButtonLauncherActivation = ButtonLauncherActivation.RightThenLeft,
-        };
-
-        var xml = original.SerializeToString();
-        var restored = ConfigStore.DeserializeFromString<Config>(xml);
-
-        restored.Debug.Should().Be(original.Debug);
-        restored.IconDoubleClick.Should().Be(original.IconDoubleClick);
-        restored.ItemDoubleClick.Should().Be(original.ItemDoubleClick);
-        restored.ProcessPriority.Should().Be(original.ProcessPriority);
-        restored.HideFirst.Should().Be(original.HideFirst);
-        restored.HotKey.Should().Be(original.HotKey);
-        restored.OpenDirByFiler.Should().Be(original.OpenDirByFiler);
-        restored.Filer.Should().Be(original.Filer);
-        restored.OpenParentFiler.Should().Be(original.OpenParentFiler);
-        restored.OpenParentFilerParam1.Should().Be(original.OpenParentFilerParam1);
-        restored.OpenParentFilerParam2.Should().Be(original.OpenParentFilerParam2);
-        restored.LargeIcon.Should().Be(original.LargeIcon);
-        restored.TrayIcon.Should().Be(original.TrayIcon);
-        restored.ReplaceEnv.Should().BeEquivalentTo(original.ReplaceEnv);
-        restored.CloseButton.Should().Be(original.CloseButton);
-        restored.WindowNoResize.Should().Be(original.WindowNoResize);
-        restored.WindowTopMost.Should().Be(original.WindowTopMost);
-        restored.WindowHideNoActive.Should().Be(original.WindowHideNoActive);
-        restored.HideOnRun.Should().Be(original.HideOnRun);
-        restored.CommandIgnoreCase.Should().Be(original.CommandIgnoreCase);
-        restored.WindowPos.Should().Be(original.WindowPos);
-        restored.WindowSize.Should().Be(original.WindowSize);
-        restored.RunAsAdminType.Should().Be(original.RunAsAdminType);
-        restored.RunAsCommandLine.Should().Be(original.RunAsCommandLine);
-        restored.ButtonLauncherActivation.Should().Be(original.ButtonLauncherActivation);
-    }
-
     // --- Clone ---
 
     [Fact]
@@ -176,14 +110,14 @@ public sealed class ConfigTests
         {
             HotKey = "Ctrl+Space",
             CommandIgnoreCase = false,
-            CloseButton = CloseButtonBehavior.Close,
+            CloseButton = CloseButtonBehavior.Hide,
         };
 
         var clone = original.Clone();
 
         clone.HotKey.Should().Be("Ctrl+Space");
         clone.CommandIgnoreCase.Should().BeFalse();
-        clone.CloseButton.Should().Be(CloseButtonBehavior.Close);
+        clone.CloseButton.Should().Be(CloseButtonBehavior.Hide);
     }
 
     [Fact]

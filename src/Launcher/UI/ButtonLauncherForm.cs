@@ -247,7 +247,7 @@ public partial class ButtonLauncherForm : Form
     }
 
     /// <summary>
-    /// 指定位置のボタンの表示を更新 (D&Dスワップ時の部分更新用)
+    /// 指定位置のボタンの表示を更新 (D&amp;Dスワップ時の部分更新用)
     /// </summary>
     private void UpdateButton(TabPage? tabPage, ButtonTab tabData, int row, int col)
     {
@@ -650,7 +650,7 @@ public partial class ButtonLauncherForm : Form
             string[] files = (string[])e.Data!.GetData(DataFormats.FileDrop)!;
             if (files.Length > 0)
             {
-                var cmd = Command.FromFile(files[0]);
+                var cmd = CommandFactory.FromFile(files[0]);
                 var entry = ButtonEntry.FromCommand(cmd, pos.Row, pos.Col);
                 destTabData.SetButton(pos.Row, pos.Col, entry);
                 btn.Text = entry.Name ?? "";

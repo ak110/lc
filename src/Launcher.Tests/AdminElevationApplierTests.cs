@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Launcher.Core;
-using Launcher.Win32;
 using Xunit;
 
 namespace Launcher.Tests;

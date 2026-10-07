@@ -49,7 +49,8 @@ public static class ProcessLauncher
     {
         var shinfo = new SHELLEXECUTEINFO();
         shinfo.cbSize = Marshal.SizeOf<SHELLEXECUTEINFO>();
-        shinfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+        // 専用STAにはメッセージループが無いため、DDEを含む起動処理を完了してから戻す。
+        shinfo.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC;
         if (info.CreateNoWindow)
         {
             shinfo.fMask |= SEE_MASK_NO_CONSOLE;
@@ -120,7 +121,7 @@ public static class ProcessLauncher
     const uint SEE_MASK_HOTKEY = 0x00000020;
     const uint SEE_MASK_NOCLOSEPROCESS = 0x00000040;
     const uint SEE_MASK_CONNECTNETDRV = 0x00000080;
-    const uint SEE_MASK_FLAG_DDEWAIT = 0x00000100;
+    const uint SEE_MASK_NOASYNC = 0x00000100;
     const uint SEE_MASK_DOENVSUBST = 0x00000200;
     const uint SEE_MASK_FLAG_NO_UI = 0x00000400;
     const uint SEE_MASK_UNICODE = 0x00004000;

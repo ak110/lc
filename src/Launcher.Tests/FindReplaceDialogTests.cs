@@ -1,5 +1,3 @@
-using System.Drawing;
-using System.Reflection;
 using System.Runtime.ExceptionServices;
 using FluentAssertions;
 using Launcher.UI;
@@ -15,11 +13,12 @@ public sealed class FindReplaceDialogTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void ApplyMode_表示中のコントロールが重ならず画面内に収まる(bool replaceMode) =>
+    public void ShowOrActivate_表示中のコントロールが重ならず画面内に収まる(bool replaceMode) =>
         RunInSta(() =>
         {
-            using var dialog = new FindReplaceDialog();
-            InvokeApplyMode(dialog, replaceMode);
+            using var owner = new Form();
+            using var dialog = new FindReplaceDialog { Opacity = 0 };
+            dialog.ShowOrActivate(owner, replaceMode, null);
 
             var visible = dialog.Controls.Cast<Control>().Where(c => c.Visible).ToList();
             foreach (var control in visible)
@@ -38,11 +37,12 @@ public sealed class FindReplaceDialogTests
         });
 
     [Fact]
-    public void ApplyMode_置換モードでは検索文字列の次に置換後へタブ移動する() =>
+    public void ShowOrActivate_置換モードでは検索文字列の次に置換後へタブ移動する() =>
         RunInSta(() =>
         {
-            using var dialog = new FindReplaceDialog();
-            InvokeApplyMode(dialog, replaceMode: true);
+            using var owner = new Form();
+            using var dialog = new FindReplaceDialog { Opacity = 0 };
+            dialog.ShowOrActivate(owner, replaceMode: true, initialText: null);
 
             var order = dialog.Controls.Cast<Control>()
                 .Where(c => c.Visible && c is not Label)
@@ -54,33 +54,18 @@ public sealed class FindReplaceDialogTests
         });
 
     [Fact]
-    public void ApplyMode_検索モードでは置換関連コントロールを表示しない() =>
+    public void ShowOrActivate_検索モードでは置換関連コントロールを表示しない() =>
         RunInSta(() =>
         {
-            using var dialog = new FindReplaceDialog();
-            InvokeApplyMode(dialog, replaceMode: true);
-            InvokeApplyMode(dialog, replaceMode: false);
+            using var owner = new Form();
+            using var dialog = new FindReplaceDialog { Opacity = 0 };
+            dialog.ShowOrActivate(owner, replaceMode: true, initialText: null);
+            dialog.ShowOrActivate(owner, replaceMode: false, initialText: null);
 
             dialog.Text.Should().Be("検索");
             dialog.Controls.Cast<Control>().Count(c => c.Visible && c is TextBox).Should().Be(1);
             dialog.Controls.Cast<Control>().Count(c => c.Visible && c is Button).Should().Be(3);
         });
-
-    /// <summary>
-    /// モードを切り替えて表示する。Control.Visibleは親フォームが非表示だと常にfalseになるため、
-    /// 不透明度0で表示してから検査する。
-    /// </summary>
-    static void InvokeApplyMode(FindReplaceDialog dialog, bool replaceMode)
-    {
-        var method = typeof(FindReplaceDialog).GetMethod(
-            "ApplyMode", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        method.Invoke(dialog, new object[] { replaceMode });
-        if (!dialog.Visible)
-        {
-            dialog.Opacity = 0;
-            dialog.Show();
-        }
-    }
 
     static void RunInSta(Action action)
     {

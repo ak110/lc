@@ -1,7 +1,8 @@
 using System.Text;
+using Launcher.Infrastructure;
 using Microsoft.Win32;
 
-namespace Launcher.Infrastructure;
+namespace Launcher.Win32;
 
 /// <summary>
 /// ファイル・ディレクトリ操作のユーティリティ。
@@ -132,7 +133,7 @@ public static class FileHelper
     static string? SearchPathSingle(string fileName, string? extension)
     {
         var buffer = new StringBuilder(260);
-        int result = Win32.NativeMethods.SearchPath(
+        int result = NativeMethods.SearchPath(
             null, fileName, extension, buffer.Capacity, buffer, out _);
         if (result > 0 && result <= buffer.Capacity)
         {
@@ -142,7 +143,7 @@ public static class FileHelper
         if (result > buffer.Capacity)
         {
             buffer.EnsureCapacity(result);
-            result = Win32.NativeMethods.SearchPath(
+            result = NativeMethods.SearchPath(
                 null, fileName, extension, buffer.Capacity, buffer, out _);
             if (result > 0 && result <= buffer.Capacity)
             {

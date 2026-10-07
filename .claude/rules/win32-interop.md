@@ -13,8 +13,11 @@ UI操作は`BeginInvoke`（非同期）でUIスレッドへディスパッチす
 `Invoke`（同期）はデッドロックの恐れがある。
 コールバック内で例外情報を`DiagnosticLog`へ記録する場合は`Task.Run`で非同期化し、
 コールバック本体は即時returnする（`DiagnosticLog`の書き込みは同期I/Oのため）。
-ホットキー／マウストリガー検知時のUP抑制フラグ
-（`suppressNextLButtonUp`・`suppressNextRButtonUp`・`suppressKeyUpVK`）の更新を漏らさない。
+ホットキー／マウストリガー検知時のUP抑制と物理修飾キーの更新は、
+`Core.HookInputState`の状態遷移へ集約する。自注入の識別とOS入力の取得は`HookManager`が担う。
+
+P/Invoke宣言は`Launcher.Win32`へ置き、同じAPIの宣言を呼び出し側へ複製しない。
+複数の呼び出し側が使う宣言は`NativeMethods`へ集約する。
 
 ## モーダルダイアログのTopMost伝播
 
@@ -123,6 +126,10 @@ P/Invoke宣言に対する失敗検知に`new Win32Exception()`（引数なし�
 本節は「ShellExecuteEx失敗時のhProcess解放」節と同一原則を全P/Invoke宣言へ拡張する規範である。
 
 ## ShellExecuteEx失敗時のhProcess解放
+
+`ProcessLauncher`はメッセージループのない専用STAから起動するため、
+`SEE_MASK_NOASYNC`を設定し、DDEを含む起動処理を完了してから戻る。
+呼び出し元のUIスレッドは同期で完了を待たず、メッセージループを維持する。
 
 `SEE_MASK_NOCLOSEPROCESS`を設定した`ShellExecuteEx`は
 `false`を返して失敗した場合でも`hProcess`が非ゼロで返る場合がある。

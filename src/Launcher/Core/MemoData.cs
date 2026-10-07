@@ -1,5 +1,3 @@
-using System.Drawing;
-using System.IO;
 using System.Text;
 using System.Xml;
 using Launcher.Infrastructure;

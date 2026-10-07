@@ -1,6 +1,4 @@
-using System.Windows.Forms;
-
-namespace Launcher.Infrastructure;
+namespace Launcher.UI;
 
 /// <summary>
 /// UIスレッドへ<see cref="Control.BeginInvoke(System.Delegate)"/>で非同期ポストするヘルパー。
@@ -11,6 +9,31 @@ namespace Launcher.Infrastructure;
 /// </summary>
 public static class UiThreadDispatcher
 {
+    /// <summary>
+    /// フォームのハンドル再生成に依存せず、WinFormsのUIコンテキストへ配送する。
+    /// 終了後は実行せず、UIスレッドの終了により配送できない例外はログへ残す。
+    /// </summary>
+    public static void SafeBeginInvoke(WindowsFormsSynchronizationContext context, Control lifetime, Action action)
+    {
+        if (lifetime.IsDisposed || lifetime.Disposing) return;
+        try
+        {
+            context.Post(_ =>
+            {
+                if (lifetime.IsDisposed || lifetime.Disposing) return;
+#pragma warning disable CA1031 // UI境界: 配送した処理の未捕捉例外を通常の報告処理へ渡す
+                try { action(); }
+                catch (Exception ex) { ErrorReporter.Instance.OnException(ex); }
+#pragma warning restore CA1031
+            }, null);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // UIスレッド終了時には同期通知へ戻さない（フック内のモーダル表示を避ける）。
+            ThreadPool.QueueUserWorkItem(_ => Launcher.Infrastructure.DiagnosticLog.Error("UI.DispatchFailed", ex));
+        }
+    }
+
     /// <summary>
     /// <paramref name="control"/>のUIスレッドへ<paramref name="action"/>をポストする。
     /// controlが破棄済みまたはハンドル未作成の場合は<paramref name="onSkipped"/>を同期呼び出しする。

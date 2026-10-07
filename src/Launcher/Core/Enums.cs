@@ -34,8 +34,8 @@ public enum ProcessPriorityLevel
 public enum CloseButtonBehavior
 {
     [XmlEnum("0")] Disabled = 0,
-    [XmlEnum("1")] Close = 1,
-    [XmlEnum("2")] Hide = 2,
+    [XmlEnum("1")] Hide = 1,
+    [XmlEnum("2")] Exit = 2,
 }
 
 /// <summary>
@@ -53,9 +53,9 @@ public enum TrayIconAction
 public enum ItemAction
 {
     [XmlEnum("0")] Execute = 0,
-    [XmlEnum("1")] EditConfig = 1,
-    [XmlEnum("2")] OpenDirectory = 2,
-    [XmlEnum("3")] None = 3,
+    [XmlEnum("1")] OpenDirectory = 1,
+    [XmlEnum("2")] EditCommand = 2,
+    [XmlEnum("3")] Delete = 3,
 }
 
 /// <summary>

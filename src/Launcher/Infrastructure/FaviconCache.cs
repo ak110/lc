@@ -1,8 +1,5 @@
-using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.IO;
-using System.Net.Http;
 
 namespace Launcher.Infrastructure;
 
@@ -12,9 +9,6 @@ namespace Launcher.Infrastructure;
 /// </summary>
 public sealed class FaviconCache
 {
-    // ソケット枯渇防止のため静的シングルトンで保持する
-    static readonly HttpClient _httpClient = new();
-
     readonly string _cacheDir;
     readonly Action<string, string> warn;
 
@@ -84,7 +78,7 @@ public sealed class FaviconCache
         // 常に32pxで取得し、small要求時は呼び出し元でリサイズする
         var apiUrl = $"https://www.google.com/s2/favicons?domain={host}&sz=32";
         using var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
-        using var response = _httpClient.Send(request);
+        using var response = SharedHttpClient.Instance.Send(request);
         response.EnsureSuccessStatusCode();
         using var stream = response.Content.ReadAsStream();
         using var ms = new MemoryStream();

@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Launcher.Infrastructure;
+using Launcher.UI;
 using Xunit;
 
 namespace Launcher.Tests;

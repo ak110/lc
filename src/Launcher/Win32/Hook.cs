@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Launcher.Infrastructure;
 
 namespace Launcher.Win32;
@@ -177,6 +176,7 @@ public static class Hook
         {
             throw new Win32Exception();
         }
+        System.Diagnostics.Trace.WriteLine($"Hook.Register keyboard handle={keyHook} thread={Environment.CurrentManagedThreadId}");
         // 多重登録を防ぐため一度解除してから再登録
         AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
         AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
@@ -216,6 +216,7 @@ public static class Hook
         {
             throw new Win32Exception();
         }
+        System.Diagnostics.Trace.WriteLine($"Hook.Register mouse handle={mouseHook} thread={Environment.CurrentManagedThreadId}");
         // 多重登録を防ぐため一度解除してから再登録
         AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
         AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
@@ -229,28 +230,30 @@ public static class Hook
 
     public static void UnsetKeyHook()
     {
-        if (keyHook != IntPtr.Zero)
-        {
-            if (!UnhookWindowsHookEx(keyHook))
-            {
-                throw new Win32Exception();
-            }
-            keyHook = IntPtr.Zero;
-            keyProc = null;
-        }
+        UnsetHook(ref keyHook, "keyboard");
+        keyProc = null;
     }
 
     public static void UnsetMouseHook()
     {
-        if (mouseHook != IntPtr.Zero)
+        UnsetHook(ref mouseHook, "mouse");
+        mouseProc = null;
+    }
+
+    static void UnsetHook(ref IntPtr handle, string kind)
+    {
+        if (handle == IntPtr.Zero) return;
+        if (!UnhookWindowsHookEx(handle))
         {
-            if (!UnhookWindowsHookEx(mouseHook))
-            {
-                throw new Win32Exception();
-            }
-            mouseHook = IntPtr.Zero;
-            mouseProc = null;
+            int error = Marshal.GetLastWin32Error();
+            // OSが低レベルフックを削除した後の1404は、既に解除済みの状態を表す。
+            // その他の失敗ではハンドルとdelegateを保持し、呼出し側へ例外を返す。
+            if (error != 1404) throw new Win32Exception(error);
+            DiagnosticLog.Debug("Hook.Unregister", $"{kind} handle={handle} alreadyRemoved=true error={error}");
+            System.Diagnostics.Trace.WriteLine($"Hook.Unregister {kind} handle={handle} alreadyRemoved=true error={error}");
         }
+        else System.Diagnostics.Trace.WriteLine($"Hook.Unregister {kind} handle={handle} alreadyRemoved=false");
+        handle = IntPtr.Zero;
     }
 
     [UnmanagedFunctionPointer(CallingConvention.Winapi)]

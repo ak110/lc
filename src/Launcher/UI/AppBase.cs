@@ -1,7 +1,6 @@
 using System.Diagnostics;
-using System.Windows.Forms;
 
-namespace Launcher.Infrastructure;
+namespace Launcher.UI;
 
 /// <summary>
 /// アプリケーション起動・終了の共通処理。
