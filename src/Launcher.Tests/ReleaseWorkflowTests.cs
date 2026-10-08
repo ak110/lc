@@ -139,12 +139,9 @@ public sealed class ReleaseWorkflowTests
 
         public ProcessResult RunPrepare(string bump)
         {
-            string script = Path.Combine(root, "prepare.ps1");
             string outputPath = Path.Combine(root, "github-output.txt");
-            File.WriteAllText(script, "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n"
-                + StepScript("Prepare release"), new UTF8Encoding(true));
             File.WriteAllText(outputPath, string.Empty);
-            return Run("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script], new Dictionary<string, string>
+            return RunWorkflowScript("prepare.ps1", StepScript("Prepare release"), new Dictionary<string, string>
             {
                 ["RELEASE_BUMP"] = bump,
                 ["GITHUB_OUTPUT"] = outputPath,
@@ -153,7 +150,6 @@ public sealed class ReleaseWorkflowTests
 
         public ProcessResult Publish(bool exists, bool draft, bool hasAsset, bool failUpload)
         {
-            string script = Path.Combine(root, "publish.ps1");
             string prefix = $$"""
                 $script:exists = ${{exists.ToString().ToLowerInvariant()}}
                 $script:failUpload = ${{failUpload.ToString().ToLowerInvariant()}}
@@ -182,9 +178,19 @@ public sealed class ReleaseWorkflowTests
                 }
                 """;
             string body = StepScript("Create GitHub Release").Replace("${{ steps.version.outputs.version }}", "1.2.4", StringComparison.Ordinal);
-            File.WriteAllText(script, prefix + Environment.NewLine + body + Environment.NewLine
-                + "$script:releaseState | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 -LiteralPath 'published.json'", new UTF8Encoding(true));
-            return Run("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script]);
+            return RunWorkflowScript("publish.ps1", prefix + Environment.NewLine + body + Environment.NewLine
+                + "$script:releaseState | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 -LiteralPath 'published.json'");
+        }
+
+        ProcessResult RunWorkflowScript(string name, string body, Dictionary<string, string>? environment = null)
+        {
+            // Actionsのpwsh実行器と同じ前後処理で、本文が消費した非0終了も検出する。
+            string script = Path.Combine(root, name);
+            File.WriteAllText(script, "$ErrorActionPreference = 'Stop'\n"
+                + "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n" + body
+                + "\nif ((Test-Path -LiteralPath variable:\\LASTEXITCODE)) { exit $LASTEXITCODE }\n", new UTF8Encoding(true));
+            return Run("powershell.exe", ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command",
+                $". '{script.Replace("'", "''", StringComparison.Ordinal)}'"], environment);
         }
 
         string StepScript(string name)

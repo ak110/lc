@@ -73,7 +73,10 @@ jobs:
                 throw "タグ $candidate は別の変更に属します。対象コミットと公開済みの版を確認してください。"
               }
               $tag = $candidate
-            } elseif ($LASTEXITCODE -ne 1) {
+            } elseif ($LASTEXITCODE -eq 1) {
+              # タグ不在は初回公開の正常経路。pwshのステップ終了へ終了コード1を渡さない。
+              $LASTEXITCODE = 0
+            } else {
               throw '既存タグを照合できません。Gitの状態を確認してください。'
             }
           }
