@@ -1,11 +1,21 @@
+using System.Reflection;
 using FluentAssertions;
 using Launcher.Infrastructure;
+using Launcher.UI;
 using Xunit;
 
 namespace Launcher.Tests;
 
 public sealed class AppVersionTests
 {
+    [Fact]
+    public void 製品の版を起動ホストの版と区別して取得する()
+    {
+        string version = typeof(ApplicationHostForm).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0];
+        AppVersion.VersionString.Should().Be(version);
+    }
+
     [Fact]
     public void VersionString_ShouldNotBeNullOrEmpty()
     {

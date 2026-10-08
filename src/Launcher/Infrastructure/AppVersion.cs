@@ -18,9 +18,9 @@ public static class AppVersion
 
     static AppVersion()
     {
-        // AssemblyInformationalVersionから取得 (+commithash部分は除去)
-        var assembly = Assembly.GetEntryAssembly();
-        string? version = assembly?
+        // 起動ホストではなく製品のAssemblyInformationalVersionを読む。
+        var assembly = typeof(AppVersion).Assembly;
+        string? version = assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion;
         if (version is not null)
@@ -28,7 +28,7 @@ public static class AppVersion
             int plusIndex = version.IndexOf('+');
             if (plusIndex >= 0) version = version[..plusIndex];
         }
-        VersionString = version ?? assembly?.GetName().Version?.ToString(3) ?? "unknown";
+        VersionString = version ?? assembly.GetName().Version?.ToString(3) ?? "unknown";
         TagName = "v" + VersionString;
         Title = "らんちゃ v" + VersionString;
     }
