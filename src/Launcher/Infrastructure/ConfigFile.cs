@@ -69,6 +69,7 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
 
     /// <param name="ext">拡張子。1文字目は <c>.</c></param>
     /// <param name="legacyParser">旧形式の読込。旧形式と判定できない内容では呼ばれない</param>
+    /// <param name="protectOriginal">原本の保護とバックアップを行うか。ランタイムデータでは無効にする</param>
     public ConfigFile(string ext, Func<byte[], T?>? legacyParser = null, bool protectOriginal = true)
     {
         this.ext = ext;

@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using System.ComponentModel;
+using System.Diagnostics;
 using FluentAssertions;
 using Launcher.Win32;
 using Xunit;

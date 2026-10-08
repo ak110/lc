@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using FluentAssertions;
@@ -5,6 +6,7 @@ using Launcher.Core;
 using Launcher.UI;
 using Launcher.Win32;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Launcher.Tests;
 
@@ -13,7 +15,7 @@ public sealed class ClipboardTestsCollection { }
 
 /// <summary>通常のコントロール入口と実クリップボードからプレーンテキスト入出力を検査する。</summary>
 [Collection("Clipboard")]
-public sealed class PlainRichTextBoxTests
+public sealed class PlainRichTextBoxTests(ITestOutputHelper output)
 {
     [Theory]
     [InlineData(0)]
@@ -179,6 +181,12 @@ public sealed class PlainRichTextBoxTests
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool CloseClipboard();
 
+    [DllImport("user32.dll")]
+    static extern IntPtr GetOpenClipboardWindow();
+
+    [DllImport("user32.dll")]
+    static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool GetKeyboardState([Out] byte[] state);
@@ -187,15 +195,43 @@ public sealed class PlainRichTextBoxTests
     [return: MarshalAs(UnmanagedType.Bool)]
     static extern bool SetKeyboardState(byte[] state);
 
-    static void RunWithClipboard(Action action) => RunInSta(() =>
+    void RunWithClipboard(Action action) => RunInSta(() =>
     {
         var original = Clipboard.GetDataObject();
-        try { action(); }
+        ExceptionDispatchInfo? actionFailure = null;
+        ExceptionDispatchInfo? restoreFailure = null;
+        try
+        {
+            action();
+            output.WriteLine("Clipboard.Action completed=true");
+        }
+        catch (Exception ex) when ((actionFailure = ExceptionDispatchInfo.Capture(ex)) is not null)
+        {
+            output.WriteLine($"Clipboard.Action completed=false exception={ex.GetType().Name}");
+        }
         finally
         {
-            if (original is not null) Clipboard.SetDataObject(original, true);
-            else Clipboard.Clear();
+            long started = Stopwatch.GetTimestamp();
+            try
+            {
+                if (original is not null) Clipboard.SetDataObject(original, true);
+                else Clipboard.Clear();
+                output.WriteLine($"Clipboard.Restore completed=true elapsedMs={Stopwatch.GetElapsedTime(started).TotalMilliseconds:F0}");
+            }
+            catch (ExternalException ex) when ((restoreFailure = ExceptionDispatchInfo.Capture(ex)) is not null)
+            {
+                var window = GetOpenClipboardWindow();
+                uint processId = 0;
+                uint threadId = window == IntPtr.Zero ? 0 : GetWindowThreadProcessId(window, out processId);
+                output.WriteLine($"Clipboard.Restore completed=false hresult=0x{ex.HResult:X8} elapsedMs={Stopwatch.GetElapsedTime(started).TotalMilliseconds:F0} openWindow={window} process={processId} thread={threadId}");
+            }
         }
+        if (actionFailure is not null && restoreFailure is not null)
+        {
+            throw new AggregateException(actionFailure.SourceException, restoreFailure.SourceException);
+        }
+        actionFailure?.Throw();
+        restoreFailure?.Throw();
     });
 
     [Fact]
