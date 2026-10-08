@@ -78,13 +78,35 @@ Dependabot security updatesによる自動修正PRの作成は無効にし、検
 
 ## リリース手順
 
-`releaser`でリリースする。
+`releaser`でリリースする。これは作者の[dotfiles](https://github.com/ak110/dotfiles)が提供するコマンドであり、
+lcの`mise install`と`mise run setup`には含まれない。
+GitとGitHub CLI（`gh`）をPATHへ追加し、`gh auth login`で公開先へ書き込めるアカウントに認証する。
+GitのpushとActionsのworkflow起動ができる権限を用意する。
+GitHub CLIは[公式の導入案内](https://cli.github.com/)から導入する。
+
+未導入の環境では、lcと同じ親フォルダーへdotfilesを取得する。
+以下はlcのルートで実行するWindowsのコマンド例である。
+`uv run --project`はdotfilesの依存とコマンドを解決し、リリース対象の作業フォルダーはlcのまま保つ。
 
 ```cmd
-rem リリース実行 (いずれか1つ)
-releaser patch
-releaser minor
-releaser major
+git clone https://github.com/ak110/dotfiles.git ..\dotfiles
+uv run --project "..\dotfiles" --frozen --no-dev releaser --help
 ```
 
+dotfilesが既に別の場所にある場合は`..\dotfiles`をそのパスに置き換え、空白を含む場合も引用符で囲む。
+Pythonの必要バージョンと依存はdotfilesの`pyproject.toml`と`uv.lock`に従う。
+`--frozen`を付け、導入のためにロックファイルを更新しない。
+
+既定ブランチで未コミット変更がないことを確認し、更新種別を1つ選ぶ。
+未pushのcommitがあれば`releaser`がpushし、CI完了を待ってからリリースする。
+majorはユーザーが明示的に指定した場合だけ実行する。
+
+```cmd
+uv run --project "..\dotfiles" --frozen --no-dev releaser patch
+uv run --project "..\dotfiles" --frozen --no-dev releaser minor
+uv run --project "..\dotfiles" --frozen --no-dev releaser major
+```
+
+dotfilesのコマンドが既にPATH上にあれば、同じ処理を`releaser patch`などで実行できる。
+`releaser`はCI完了を待ち、リリースworkflowを起動・監視してローカルを同期する。
 結果の確認: <https://github.com/ak110/lc/actions>

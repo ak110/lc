@@ -69,8 +69,10 @@ XMLシリアライズ対象プロパティのコレクションに値付き初�
 同じ定義のCommand参照を保ち、再読込で失われた編集参照は`SaveEditedCommand`で検出する。
 ボタンと予定の共有実体は再読込で差し替えない。
 
-一括置換は`EnvironmentReplacementBatch.Capture`で文字列をUI側で取得し、`ReplaceEnvList.Calculate`が背景で計算する。
-UIへ戻ってから`Apply`で所属と元の値が一致する対象だけを更新し、計算中の追加・変更は次の計算へ送る。
+一括置換は`EnvironmentReplacementBatch.Capture`で文字列をUI側で取得し、`ReplaceEnvList.StartBackgroundReplace`で背景スレッドへ渡す。
+背景スレッド内では`ReplaceEnvList`のインスタンスの`Calculate`が置換結果を計算する。
+完了通知を`UiThreadDispatcher.SafeBeginInvoke`でUIへ戻し、`EnvironmentReplacementBatch.Apply`で所属と元の値が一致する対象だけを更新する。
+計算中の追加・変更は次の計算へ送る。
 背景スレッドへ共有一覧を渡して書き換えない。
 共有前の単一Commandは同期の`Replace`で置換してよい。
 

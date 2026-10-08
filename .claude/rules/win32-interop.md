@@ -9,7 +9,7 @@ paths:
 
 `SetWindowsHookEx`のコールバックはシステム全体の入力をブロックしうるため、即時に返す。
 コールバック内で`MessageBox.Show`・`Thread.Sleep`・同期I/O・長時間ループは禁止する。
-UI操作は`BeginInvoke`（非同期）でUIスレッドへディスパッチする。
+UI操作は`UiThreadDispatcher.SafeBeginInvoke`（非同期）でUIスレッドへ配送する。
 `Invoke`（同期）はデッドロックの恐れがある。
 コールバック内で例外情報を`DiagnosticLog`へ記録する場合は`Task.Run`で非同期化し、
 コールバック本体は即時returnする（`DiagnosticLog`の書き込みは同期I/Oのため）。
@@ -142,9 +142,9 @@ P/Invoke宣言に対する失敗検知に`new Win32Exception()`（引数なし�
 `ContextMenuStrip`の`Closed`イベント内で`Dispose`を同期実行すると、
 Closed発火後にWinForms内部の後始末処理（`ToolStripManager`追跡解除など）が続く。
 その処理がDisposed済みインスタンスへアクセスして`ObjectDisposedException`が発生する。
-`Closed`イベント内で`Dispose`する場合は`BeginInvoke`で次のメッセージループへ遅延する。
-遅延の呼び出し先はメニュー自身ではなく、生存中の`Control`（親フォームなど）の`BeginInvoke`を使う。
-メニュー自身の`BeginInvoke`はハンドル未作成状態で失敗する場合がある。
+`Closed`イベント内で`Dispose`する場合は`UiThreadDispatcher.SafeBeginInvoke`で次のメッセージループへ遅延する。
+配送先はメニュー自身ではなく、生存中の`Control`（親フォームなど）とする。
+メニュー自身はハンドル未作成の場合があるため、配送先に使わない。
 
 ## 子コントロールが参照するリソースの破棄順
 
