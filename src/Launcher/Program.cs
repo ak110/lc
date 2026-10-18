@@ -7,6 +7,10 @@ namespace Launcher;
 
 static class Program
 {
+    /// <summary>常駐中のらんちゃへメッセージが届かなかったときにコンソールへ出す次の操作</summary>
+    const string ResidentNotReachedNextAction =
+        "らんちゃが起動しているか（タスクマネージャーのらんちゃ.exe）を確認し、起動していなければ起動してから同じコマンドを再実行してください。";
+
     /// <summary>
     /// アプリケーションのメインエントリポイント。
     /// </summary>
@@ -22,15 +26,17 @@ static class Program
             var message = e.ExceptionObject is Exception ex
                 ? $"未処理の例外が発生しました:\n{ex.Message}\n\n{ex.StackTrace}"
                 : $"未処理の例外が発生しました:\n{e.ExceptionObject}";
+            const string logNextAction = "画面の案内に従い、らんちゃを起動し直す";
             if (e.ExceptionObject is Exception exForLog)
             {
-                DiagnosticLog.Error("App.HandleException", exForLog);
+                DiagnosticLog.Error("App.HandleException", exForLog, logNextAction);
             }
             else
             {
-                DiagnosticLog.Error("App.HandleException", message);
+                DiagnosticLog.Error("App.HandleException", message, logNextAction);
             }
-            MessageBox.Show(message, "致命的なエラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(message + "\n\nらんちゃは終了します。もう一度起動してください。\n" + ErrorReporter.ReportGuidance,
+                "致命的なエラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
         };
 
         using var app = new AppBase.Initializer();
@@ -50,7 +56,8 @@ static class Program
                     WM.WM_CLOSE, IntPtr.Zero, IntPtr.Zero,
                     "/close",
                     "終了メッセージを送信しました。",
-                    "メッセージの送信に失敗しました。");
+                    "メッセージの送信に失敗しました。",
+                    ResidentNotReachedNextAction);
                 return;
             }
             else if (args[i] == "/restart")
@@ -59,7 +66,8 @@ static class Program
                     ResidentMessages.WM_APPMSG, ResidentMessages.WM_APPMSG_WPARAM, ResidentMessages.WM_APPMSG_RESTART,
                     "/restart",
                     "再起動メッセージを送信しました。",
-                    "メッセージの送信に失敗しました。");
+                    "メッセージの送信に失敗しました。",
+                    ResidentNotReachedNextAction);
                 return;
             }
             else if (File.Exists(args[i]) || Directory.Exists(args[i]))
@@ -86,7 +94,9 @@ static class Program
                         ResidentMessages.WM_APPMSG, ResidentMessages.WM_APPMSG_WPARAM, ResidentMessages.WM_APPMSG_RELOAD,
                         "コマンド登録",
                         "リロードメッセージを送信しました。",
-                        "リロードメッセージの送信に失敗しました。");
+                        "リロードメッセージの送信に失敗しました。",
+                        "コマンドは保存済みです。常駐中のらんちゃへ反映するには、らんちゃ.exe /restart を実行して再起動してください。"
+                            + "らんちゃが起動していない場合は、次の起動時に反映されます。");
                 }
                 exit = true;
             }

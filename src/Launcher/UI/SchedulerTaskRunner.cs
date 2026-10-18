@@ -56,7 +56,7 @@ public static class SchedulerTaskRunner
 #pragma warning disable CA1031 // スケジューラータスクの例外は無視して次のタスクへ進む
             catch (Exception ex)
             {
-                DiagnosticLog.Error("Scheduler.Task", ex);
+                DiagnosticLog.Error("Scheduler.Task", ex, "このタスクを中断し、次のタスクへ進んだ。繰り返す場合は、タスクトレイの「スケジューラー設定」で該当タスクの種類と設定値を確認する");
             }
 #pragma warning restore CA1031
             Thread.Sleep(item.SleepTimeMs);

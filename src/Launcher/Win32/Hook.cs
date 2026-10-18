@@ -71,6 +71,10 @@ public sealed class MouseHookEventArgs : EventArgs
 /// </summary>
 public static class Hook
 {
+    /// <summary>フックコールバックの例外をログへ書くときの次の操作</summary>
+    const string HookFailureNextAction =
+        "この入力を通常の処理へ渡し、フックを継続した。ホットキーやマウス操作が効かなくなった場合は、タスクトレイの「再起動」でらんちゃを再起動する";
+
     public const int HC_ACTION = 0;
     public const int HC_GETNEXT = 1;
     public const int HC_SKIP = 2;
@@ -165,7 +169,7 @@ public static class Hook
             {
                 // フックコールバック内は同期I/O禁止のため非同期で書き込む。
                 // 詳細は.claude/rules/win32-interop.md「Win32フックコールバック」節を参照。
-                _ = Task.Run(() => DiagnosticLog.Error("Hook.Key", ex));
+                _ = Task.Run(() => DiagnosticLog.Error("Hook.Key", ex, HookFailureNextAction));
                 return CallNextHookEx(keyHook, nCode, wParam, ref lParam);
             }
         });
@@ -205,7 +209,7 @@ public static class Hook
             {
                 // フックコールバック内は同期I/O禁止のため非同期で書き込む。
                 // 詳細は.claude/rules/win32-interop.md「Win32フックコールバック」節を参照。
-                _ = Task.Run(() => DiagnosticLog.Error("Hook.Mouse", ex));
+                _ = Task.Run(() => DiagnosticLog.Error("Hook.Mouse", ex, HookFailureNextAction));
                 return CallNextHookEx(mouseHook, nCode, wParam, ref lParam);
             }
         });

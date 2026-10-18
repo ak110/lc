@@ -14,9 +14,9 @@ public static class DiagnosticLog
 
     public static void Debug(string category, string message) => writer.Debug(category, message);
     public static void Info(string category, string message) => writer.Info(category, message);
-    public static void Warn(string category, string message) => writer.Warn(category, message);
-    public static void Error(string category, string message) => writer.Error(category, message);
-    public static void Error(string category, Exception ex) => writer.Error(category, ex);
+    public static void Warn(string category, string message, string nextAction) => writer.Warn(category, message, nextAction);
+    public static void Error(string category, string message, string nextAction) => writer.Error(category, message, nextAction);
+    public static void Error(string category, Exception ex, string nextAction) => writer.Error(category, ex, nextAction);
 
     /// <summary>旧crash-logのログをlogsへ移し、移動先の既存ログを保護する。</summary>
     public static void MigrateLegacyDirectory(string exeDir)

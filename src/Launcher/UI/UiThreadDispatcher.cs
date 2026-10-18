@@ -30,7 +30,8 @@ public static class UiThreadDispatcher
         catch (InvalidOperationException ex)
         {
             // UIスレッド終了時には同期通知へ戻さない（フック内のモーダル表示を避ける）。
-            ThreadPool.QueueUserWorkItem(_ => Launcher.Infrastructure.DiagnosticLog.Error("UI.DispatchFailed", ex));
+            ThreadPool.QueueUserWorkItem(_ => Launcher.Infrastructure.DiagnosticLog.Error("UI.DispatchFailed", ex,
+                "らんちゃの終了中に記録された場合は対応不要。起動中に繰り返し記録され、操作が反映されない場合はらんちゃを再起動する"));
         }
     }
 

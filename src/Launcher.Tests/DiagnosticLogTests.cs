@@ -24,7 +24,7 @@ public sealed class DiagnosticLogTests : IDisposable
         File.SetLastWriteTimeUtc(expired, clock.Now.UtcDateTime.AddDays(-7).AddSeconds(-1));
         File.SetLastWriteTimeUtc(boundary, clock.Now.UtcDateTime.AddDays(-7));
 
-        writer.Warn("Test", "当日");
+        writer.Warn("Test", "当日", "対応不要");
 
         File.ReadAllText(Path.Combine(tempDir.FullName, "20260101.log")).Should().Contain("前日").And.NotContain("当日");
         File.ReadAllText(Path.Combine(tempDir.FullName, "20260102.log")).Should().Contain("[WARN] [Test] 当日");
@@ -64,13 +64,13 @@ public sealed class DiagnosticLogTests : IDisposable
     {
         var blocked = Path.Combine(tempDir.FullName, "file");
         File.WriteAllText(blocked, "ファイル");
-        var write = () => new DiagnosticLogWriter(blocked, clock).Error("Test", "失敗");
+        var write = () => new DiagnosticLogWriter(blocked, clock).Error("Test", "失敗", "対応不要");
         write.Should().NotThrow();
         new DiagnosticLogWriter(null, clock).Info("Test", "無効");
     }
 
     [Fact]
-    public void Error_例外型とメッセージとスタックを保存する()
+    public void Error_例外型とメッセージと次の操作をスタックより前の行に保存する()
     {
         var writer = new DiagnosticLogWriter(tempDir.FullName, clock);
         try
@@ -79,11 +79,23 @@ public sealed class DiagnosticLogTests : IDisposable
         }
         catch (InvalidOperationException ex)
         {
-            writer.Error("Test", ex);
+            writer.Error("Test", ex, "設定を見直して再起動する");
         }
-        var content = File.ReadAllText(Path.Combine(tempDir.FullName, "20260101.log"));
-        content.Should().Contain("[ERROR] [Test]").And.Contain("InvalidOperationException");
-        content.Should().Contain("診断対象").And.Contain(nameof(Error_例外型とメッセージとスタックを保存する));
+        var lines = File.ReadAllLines(Path.Combine(tempDir.FullName, "20260101.log"));
+        lines[0].Should().Contain("[ERROR] [Test]").And.Contain("InvalidOperationException")
+            .And.Contain("診断対象").And.EndWith("次の操作: 設定を見直して再起動する");
+        lines.Skip(1).Should().Contain(line => line.Contains(nameof(Error_例外型とメッセージと次の操作をスタックより前の行に保存する), StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void WarnとError_文面と同じ行に次の操作を書く()
+    {
+        var writer = new DiagnosticLogWriter(tempDir.FullName, clock);
+        writer.Warn("Test", "警告の事実", "対応不要（処理は継続した）");
+        writer.Error("Test", "失敗の事実", "画面の案内に従う");
+        File.ReadAllLines(Path.Combine(tempDir.FullName, "20260101.log")).Should().Equal(
+            "2026-01-01 23:58:00.000 [WARN] [Test] 警告の事実 次の操作: 対応不要（処理は継続した）",
+            "2026-01-01 23:58:00.000 [ERROR] [Test] 失敗の事実 次の操作: 画面の案内に従う");
     }
 
     sealed class MutableTimeProvider : TimeProvider

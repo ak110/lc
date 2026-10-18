@@ -16,7 +16,7 @@ public static class ResidentMessages
 
     /// <summary>
     /// 常駐プロセスへウィンドウメッセージを送信する。
-    /// 失敗（常駐プロセスなし、ハンドル無効、ファイル不在など）はstderrへ出力するだけで無視する。
+    /// 失敗（常駐プロセスなし、ハンドル無効、ファイル不在など）は、失敗の文面と次の操作をstderrへ出力するだけで無視する。
     /// </summary>
     /// <param name="message">送信メッセージID</param>
     /// <param name="wParam">wParam値</param>
@@ -24,17 +24,20 @@ public static class ResidentMessages
     /// <param name="label">ログ先頭に付けるラベル（例: "/close", "/restart", "コマンド登録"）</param>
     /// <param name="successDescription">成功時に続けて出力する説明（例: "終了メッセージを送信しました。"）</param>
     /// <param name="failureDescription">PostMessage失敗時に続けて出力する説明</param>
+    /// <param name="failureNextAction">失敗時に文面へ続けて出力する、利用者が次に行う操作</param>
 #pragma warning disable CA1031 // エントリポイントのIPC送信は失敗を無視する必要がある
     public static void TryPostMessageToResident(
         int message, IntPtr wParam, IntPtr lParam,
-        string label, string successDescription, string failureDescription)
+        string label, string successDescription, string failureDescription, string failureNextAction)
     {
+        void ReportFailure(string description) => Console.Error.WriteLine($"{label}: {description} {failureNextAction}");
+
         try
         {
             var result = Data.Load();
             if (result.Status == ConfigLoadStatus.Failed)
             {
-                Console.Error.WriteLine($"{label}: 実行状態のファイルを読み込めませんでした。");
+                ReportFailure("実行状態のファイルを読み込めませんでした。");
                 return;
             }
             Data data = result.Value;
@@ -43,11 +46,11 @@ public static class ResidentMessages
             if (window.PostMessage(message, wParam, lParam))
                 Console.WriteLine($"{label}: {successDescription}");
             else
-                Console.Error.WriteLine($"{label}: {failureDescription}");
+                ReportFailure(failureDescription);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"{label}: {ex.Message}");
+            ReportFailure(ex.Message);
         }
     }
 #pragma warning restore CA1031

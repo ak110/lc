@@ -134,7 +134,7 @@ public sealed class FindReplaceDialog : Form
             }
             catch (ArgumentException ex)
             {
-                statusLabel.Text = $"正規表現エラー: {ex.Message}";
+                statusLabel.Text = $"正規表現エラー: {ex.Message} 検索文字列を.NETの正規表現の形式に直すか、「正規表現」のチェックを外してください。";
                 return false;
             }
         }

@@ -41,7 +41,8 @@ public static class ShellLaunchService
                     throw new InvalidOperationException("起動処理は専用STAスレッドで実行してください。");
                 var request = createRequest();
                 if (request is not null) ProcessLauncher.Start(request);
-            }, ex => DiagnosticLog.Warn("Shell.Execute", $"起動失敗: {ex.GetType().Name}"),
+            }, ex => DiagnosticLog.Warn("Shell.Execute", $"起動失敗: {ex.GetType().Name}",
+                "画面の案内に従い、起動したコマンドの実行ファイル・引数・作業フォルダーを「コマンドの管理」かボタンの編集で確認する"),
             ex => UiThreadDispatcher.SafeBeginInvoke(owner, () =>
                 MessageBox.Show(owner, $"起動できませんでした。対象と起動設定を確認してください。\n{ex.Message}",
                     AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Error)));
@@ -49,7 +50,7 @@ public static class ShellLaunchService
 #pragma warning disable CA1031 // 専用STA境界の想定外例外を共通レポーターへ配送する
         catch (Exception ex)
         {
-            DiagnosticLog.Error("Shell.Execute", ex);
+            DiagnosticLog.Error("Shell.Execute", ex, "画面の案内に従う");
             UiThreadDispatcher.SafeBeginInvoke(owner, () => ErrorReporter.Instance.OnException(ex));
             return false;
         }

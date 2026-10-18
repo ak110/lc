@@ -48,13 +48,16 @@ public sealed class UpdateForm : Form
 #pragma warning disable CA1031 // 更新処理は様々な例外が発生しうる
         catch (Exception ex)
         {
-            DiagnosticLog.Error("Update", ex);
-            MessageBox.Show(this, $"更新に失敗しました: {ex.Message}\r\n\r\nインストール済みのアプリは変更していません。", "エラー",
+            DiagnosticLog.Error("Update", ex, "画面の案内に従う");
+            MessageBox.Show(this, $"更新に失敗しました: {ex.Message}\r\n\r\nインストール済みのアプリは変更していません。\r\n{RetryGuidance}", "エラー",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
             DialogResult = DialogResult.Cancel;
         }
 #pragma warning restore CA1031
     }
+
+    /// <summary>更新の確認や適用に失敗したときの再試行と代替手段の案内</summary>
+    internal const string RetryGuidance = "時間をおいてタスクトレイの「ネットワーク更新」をやり直すか、https://github.com/ak110/lc/releases から最新版のZIPをダウンロードして、らんちゃのフォルダーへ上書きで展開してください。";
 
     private void InitializeComponents()
     {

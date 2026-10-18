@@ -67,6 +67,11 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
     /// <summary>原本の保護とバックアップを行うか。ランタイムデータでは無効にする。</summary>
     public bool ProtectOriginal { get; }
 
+    /// <summary>読込失敗のログへ書く次の操作。原本を保護する設定は保存を止め、ランタイムデータは初期値で続行する</summary>
+    string ReadFailureNextAction => ProtectOriginal
+        ? "保存は停止中。画面の読込失敗の案内に従い、バックアップから復元するかファイルを直してから再起動する"
+        : "対応不要（初期値で処理を継続し、次の保存で再作成する）。繰り返す場合はらんちゃのフォルダーの読み書き権限を確認する";
+
     /// <param name="ext">拡張子。1文字目は <c>.</c></param>
     /// <param name="legacyParser">旧形式の読込。旧形式と判定できない内容では呼ばれない</param>
     /// <param name="protectOriginal">原本の保護とバックアップを行うか。ランタイムデータでは無効にする</param>
@@ -164,7 +169,7 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
     ConfigSaveFailure? RecordFailure(string fileName, Exception error)
     {
         var kind = error is ConfigSaveBlockedException ? ConfigSaveFailureKind.Blocked : ConfigSaveFailureKind.Write;
-        DiagnosticLog.Warn("Config.Save", $"保存失敗: {ext} {kind} {error.GetType().Name}");
+        DiagnosticLog.Warn("Config.Save", $"保存失敗: {ext} {kind} {error.GetType().Name}", "画面の保存失敗の案内に従う（同じ種類の失敗は最初の1回だけ画面へ通知する）");
         var notified = State(fileName).NotifiedFailures;
         lock (notified)
         {
@@ -185,7 +190,7 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         catch (Exception ex) when (ConfigFailure.IsRead(ex))
         {
             State(fileName).MarkFailed();
-            DiagnosticLog.Warn("Config.Load", $"読込失敗: {ext} {ex.GetType().Name}");
+            DiagnosticLog.Warn("Config.Load", $"読込失敗: {ext} {ex.GetType().Name}", ReadFailureNextAction);
             return new(new T(), ConfigLoadStatus.Failed, fileName,
                 ProtectOriginal && File.Exists(ConfigFileState.BackupName(fileName)), ex);
         }
@@ -203,7 +208,7 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
             {
                 // 本体だけが消えた状態は初回と区別し、バックアップを上書きさせない
                 State(fileName).MarkFailed();
-                DiagnosticLog.Warn("Config.Load", $"本体が無くバックアップだけがある: {ext}");
+                DiagnosticLog.Warn("Config.Load", $"本体が無くバックアップだけがある: {ext}", "保存は停止中。画面の読込失敗の案内に従い、バックアップから復元する");
                 return new(new T(), ConfigLoadStatus.Failed, fileName, true, new FileNotFoundException("本体が見つからない"));
             }
             State(fileName).MarkLoaded(null);
@@ -220,7 +225,7 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         catch (Exception ex) when (ConfigFailure.IsRead(ex))
         {
             State(fileName).MarkFailed();
-            DiagnosticLog.Warn("Config.Load", $"読込失敗: {ext} {ex.GetType().Name}");
+            DiagnosticLog.Warn("Config.Load", $"読込失敗: {ext} {ex.GetType().Name}", ReadFailureNextAction);
             return new(new T(), ConfigLoadStatus.Failed, fileName, ProtectOriginal && File.Exists(backupName), ex);
         }
 
@@ -235,7 +240,8 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         catch (Exception ex) when (ConfigFailure.IsSave(ex))
         {
             // バックアップを作成できなくても読めたデータは使える。利用者へは結果の BackupError で通知させる
-            DiagnosticLog.Warn("Config.Backup", $"バックアップ更新失敗: {ext} {ex.GetType().Name}");
+            DiagnosticLog.Warn("Config.Backup", $"バックアップ更新失敗: {ext} {ex.GetType().Name}",
+                "読み込んだ内容で処理を継続した。画面の案内に従い、らんちゃのフォルダーとバックアップファイル（.bak）へ書き込めるか確認する");
             return new(value, ConfigLoadStatus.Loaded, fileName, false, null) { BackupError = ex };
         }
         return new(value, ConfigLoadStatus.Loaded, fileName, false, null);
@@ -264,7 +270,8 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         catch (Exception ex) when (ConfigFailure.IsRead(ex))
         {
             // ログの種類にはファイル名から抽出した値ではなく、固定の拡張子を使う。
-            DiagnosticLog.Warn("Config.Restore", $"復元失敗: {ext} {ex.GetType().Name}");
+            DiagnosticLog.Warn("Config.Restore", $"復元失敗: {ext} {ex.GetType().Name}",
+                "保存の停止は続いている。画面の案内に従い、バックアップ（.bak）と本体の内容、フォルダーの読み書き権限を確認してから再起動する");
             throw;
         }
         DiagnosticLog.Info("Config.Restore", $"バックアップから復元: {ext}");
@@ -385,7 +392,8 @@ public sealed class ConfigFileState
         else
         {
             File.Copy(fileName, BrokenName(fileName));
-            DiagnosticLog.Warn("Config.Save", $"外部で壊れた本体を別名で保全: {ext}");
+            DiagnosticLog.Warn("Config.Save", $"外部で壊れた本体を別名で保全: {ext}",
+                "対応不要（壊れた本体を同じフォルダーへ、ファイル名の末尾に.broken-と日時を付けて保全し、保存を継続した）。保全したファイルは内容を確認して不要なら削除してよい");
         }
     }
 

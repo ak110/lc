@@ -411,7 +411,8 @@ public partial class MemoForm : Form
         }
         catch (ArgumentException ex)
         {
-            findReplaceDialog?.SetStatus($"置換エラー: {ex.Message}");
+            findReplaceDialog?.SetStatus($"置換エラー: {ex.Message} "
+                + "置換後の文字列は$1などの置換パターンと\\nなどのエスケープで書くか、「正規表現」のチェックを外して文字どおりに置換してください。");
             return;
         }
 
@@ -595,7 +596,7 @@ public partial class MemoForm : Form
 
         if (tabControl1.TabPages.Count <= 1)
         {
-            MessageBox.Show(this, "最後のタブは閉じられません。", "確認",
+            MessageBox.Show(this, "最後のタブは閉じられません。\n閉じるには、新しいタブ（Ctrl+T）を追加してから閉じてください。", "確認",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }

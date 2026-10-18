@@ -55,7 +55,8 @@ public sealed class SchedulerRunCoordinator
         }
         if (!save())
         {
-            DiagnosticLog.Warn("Scheduler.EnsureIds", "識別子を保存できないため予定実行を停止");
+            DiagnosticLog.Warn("Scheduler.EnsureIds", "識別子を保存できないため予定実行を停止",
+                "画面の保存失敗の案内に従って書き込める状態にし、タスクトレイの「スケジューラー設定」でOKを押すか、らんちゃを再起動すると予定実行を再開する");
             return false;
         }
         lock (lockObject)

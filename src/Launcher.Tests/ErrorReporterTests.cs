@@ -87,4 +87,27 @@ public sealed class ErrorReporterTests
         result.Should().Contain("InnerException ->");
         result.Should().NotContain("BaseException");
     }
+
+    [Fact]
+    public void 報告画面_続行してよいかと報告先を表示し詳細欄やボタンと重ならない() => UiAcceptance.Run(() =>
+    {
+        using var form = new ErrorReporterForm(new InvalidOperationException("想定外の失敗")) { Opacity = 0 };
+        form.Show();
+        try
+        {
+            var guidance = form.Controls.OfType<Label>().Single(label => label.Name == "guidanceLabel");
+            guidance.Visible.Should().BeTrue();
+            guidance.Text.Should().Contain("続行すると").And.Contain("「終了」または「再起動」")
+                .And.Contain("https://github.com/ak110/lc/issues").And.Contain("logs");
+            var buttons = form.Controls.OfType<Button>().Where(button => button.Visible).ToList();
+            buttons.Should().NotBeEmpty();
+            foreach (var button in buttons)
+                guidance.Bounds.IntersectsWith(button.Bounds).Should().BeFalse($"{button.Text}と案内が重ならない");
+            form.ClientRectangle.Contains(guidance.Bounds).Should().BeTrue();
+        }
+        finally
+        {
+            form.Close();
+        }
+    });
 }

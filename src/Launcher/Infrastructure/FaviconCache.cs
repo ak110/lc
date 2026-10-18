@@ -10,9 +10,9 @@ namespace Launcher.Infrastructure;
 public sealed class FaviconCache
 {
     readonly string _cacheDir;
-    readonly Action<string, string> warn;
+    readonly Action<string, string, string> warn;
 
-    public FaviconCache(string cacheDir, Action<string, string>? warningLogger = null)
+    public FaviconCache(string cacheDir, Action<string, string, string>? warningLogger = null)
     {
         _cacheDir = cacheDir;
         warn = warningLogger ?? DiagnosticLog.Warn;
@@ -64,7 +64,7 @@ public sealed class FaviconCache
         catch (Exception e)
 #pragma warning restore CA1031
         {
-            warn("Favicon", $"取得失敗: {e.GetType().Name}");
+            warn("Favicon", $"取得失敗: {e.GetType().Name}", "対応不要（アイコンなしで表示を継続した）");
             return null;
         }
     }

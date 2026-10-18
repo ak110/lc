@@ -10,6 +10,16 @@ public sealed class ErrorReporter
 {
     static readonly ErrorReporter instance = new();
 
+    /// <summary>想定外の例外の後に続行してよいかの案内。報告画面に常に表示する</summary>
+    internal const string ContinueGuidance =
+        "続行すると、保存していない編集や実行中の操作が失われることがあります。"
+        + "続行した場合も、早めに「終了」または「再起動」を選んでください。";
+
+    /// <summary>不具合の報告先と添付する診断ログの場所。報告画面と致命的なエラーの画面に表示する</summary>
+    internal const string ReportGuidance =
+        "繰り返し発生する場合は https://github.com/ak110/lc/issues へ報告し、"
+        + "らんちゃのフォルダーのlogsにある診断ログを添付してください。";
+
     /// <summary>
     /// シングルトンインスタンスを取得する。
     /// </summary>
@@ -90,7 +100,7 @@ public sealed class ErrorReporter
             UiThreadDispatcher.SafeBeginInvoke(dispatcher, () => OnException(e));
             return;
         }
-        DiagnosticLog.Error("UI.UnexpectedException", e);
+        DiagnosticLog.Error("UI.UnexpectedException", e, "画面の案内に従い、報告画面で終了・再起動・続行のいずれかを選ぶ");
         lock (lockObject)
         {
             if (localLock)

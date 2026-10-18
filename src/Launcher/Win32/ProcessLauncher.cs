@@ -36,7 +36,8 @@ public static class ProcessLauncher
                 var ex = new System.ComponentModel.Win32Exception();
                 DiagnosticLog.Warn(
                     "Process.SetPriority",
-                    $"SetPriorityClass failed (priority={priority}): {ex.GetType().Name}: {ex.Message}");
+                    $"SetPriorityClass failed (priority={priority}): {ex.GetType().Name}: {ex.Message}",
+                    "対応不要（起動したプロセスは既定の優先度で動作を継続した）");
             }
         }
         finally

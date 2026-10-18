@@ -16,7 +16,7 @@ function Invoke-NativeCommand {
     & $Command
     $exitCode = $LASTEXITCODE
     if ($exitCode -notin $AllowedExitCodes) {
-        throw "外部コマンドが終了コード $exitCode で失敗した。"
+        throw "外部コマンド「$($Command.ToString().Trim())」が終了コード $exitCode で失敗した。直前に出力されたエラーを確認して原因を取り除き、mise run updateを再実行する。"
     }
 }
 
@@ -28,7 +28,7 @@ Invoke-NativeCommand -Command { & corepack pnpm update --latest }
 $originalGithubToken = [Environment]::GetEnvironmentVariable('GITHUB_TOKEN', 'Process')
 $githubToken = ((Invoke-NativeCommand -Command { & gh auth token }) -join [Environment]::NewLine).Trim()
 if ([string]::IsNullOrWhiteSpace($githubToken)) {
-    throw 'gh auth tokenが空文字列を返したため、pinactを実行できない。'
+    throw 'gh auth tokenが空文字列を返したため、pinactを実行できない。gh auth loginでGitHubへログインしてから、mise run updateを再実行する。'
 }
 
 try {

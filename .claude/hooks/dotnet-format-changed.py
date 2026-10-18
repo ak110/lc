@@ -99,7 +99,10 @@ def main() -> None:
         )
     except FileNotFoundError as exc:
         emit_additional_context(
-            f"dotnet-format-changed hook: mise が起動できませんでした: {exc}"
+            f"dotnet-format-changed hook: mise が起動できませんでした: {exc}。"
+            "編集は反映済みで、整形だけを省いた。編集は続けてよい。"
+            "mise を導入して mise install を実行するか、"
+            f"整形を mise exec -- dotnet format Launcher.sln --include {rel_str} で手動実行する。"
         )
         return  # for type checkers
 
@@ -107,7 +110,10 @@ def main() -> None:
         emit_additional_context(
             "dotnet format が失敗しました ("
             f"file={rel_str}, exit={result.returncode}): "
-            f"{(result.stderr or result.stdout).strip()[:500]}"
+            f"{(result.stderr or result.stdout).strip()[:500]}。"
+            "編集は反映済みで、整形されていない。編集は続けてよい。"
+            f"mise exec -- dotnet format Launcher.sln --include {rel_str} を手動実行して原因を確認する。"
+            "Windows以外で復元（Restore）に失敗する場合は、環境変数 EnableWindowsTargeting=true を付けて実行する。"
         )
         return
 

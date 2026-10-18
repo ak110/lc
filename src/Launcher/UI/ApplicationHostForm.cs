@@ -480,7 +480,7 @@ public partial class ApplicationHostForm : Form
 #pragma warning disable CA1031 // ネットワーク更新は様々な例外が発生しうるため包括的にキャッチ
         catch (Exception ex)
         {
-            MessageBox.Show($"更新チェックに失敗しました。\n{ex.Message}", AppVersion.Title,
+            MessageBox.Show($"更新チェックに失敗しました。\n{ex.Message}\n\n{UpdateForm.RetryGuidance}", AppVersion.Title,
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 #pragma warning restore CA1031
@@ -644,7 +644,8 @@ public partial class ApplicationHostForm : Form
     {
         schedulerRunCoordinator.EnsureIds(schedulerData, () => schedulerData.Save(failure =>
             MessageBox.Show(GetVisibleOwner(), failure.Message
-                + "\r\n識別子を保存できないため、スケジューラーの予定実行を停止しています。",
+                + "\r\n識別子を保存できないため、スケジューラーの予定実行を停止しています。"
+                + "\r\n書き込める状態にした後、タスクトレイの「スケジューラー設定」でOKを押すか、らんちゃを再起動すると再開します。",
                 AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning), ConfigurationBaseName));
     }
 
@@ -666,7 +667,7 @@ public partial class ApplicationHostForm : Form
                                 || ex is UnauthorizedAccessException)
         {
             // レジストリの読み込みに失敗してもアプリ本体の動作は継続する。
-            DiagnosticLog.Error("Env.Reload", ex);
+            DiagnosticLog.Error("Env.Reload", ex, "対応不要（環境変数の再読込を中止し、以前の値で処理を継続した）。変更した環境変数を反映するには、タスクトレイの「再起動」でらんちゃを再起動する");
             return;
         }
         if (!changed) return;

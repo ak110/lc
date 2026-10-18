@@ -42,7 +42,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $sourceCommit = git rev-parse HEAD
-          if ($LASTEXITCODE -ne 0) { throw '起動コミットを取得できません。Gitの状態を確認してください。' }
+          if ($LASTEXITCODE -ne 0) { throw '起動コミットを取得できません。Checkoutステップのログでリポジトリを取得できたか確認し、このワークフローを再実行してください。' }
           $propsPath = 'Directory.Build.props'
           $content = [IO.File]::ReadAllText($propsPath)
           if ($content -notmatch '<Version>(\d+\.\d+\.\d+)</Version>') {
@@ -61,7 +61,7 @@ jobs:
           }
           $newVersion = "$major.$minor.$patch"
           $tags = @(git tag --points-at HEAD)
-          if ($LASTEXITCODE -ne 0) { throw 'タグを取得できません。Gitの状態を確認してください。' }
+          if ($LASTEXITCODE -ne 0) { throw 'タグを取得できません。Checkoutステップのログでタグを取得できたか（fetch-tags: true）確認し、このワークフローを再実行してください。' }
           $tag = $tags | Where-Object { $_ -eq "v$currentVersion" } | Select-Object -First 1
           if (-not $tag) {
             # GitHubの再実行は版数更新前のSHAから始まる。既に公開した子commitのタグを再利用する。
@@ -77,15 +77,15 @@ jobs:
               # タグ不在は初回公開の正常経路。pwshのステップ終了へ終了コード1を渡さない。
               $LASTEXITCODE = 0
             } else {
-              throw '既存タグを照合できません。Gitの状態を確認してください。'
+              throw '既存タグを照合できません。Checkoutステップのログでタグを取得できたか確認し、このワークフローを再実行してください。'
             }
           }
           if ($tag) {
             git checkout --detach $tag
-            if ($LASTEXITCODE -ne 0) { throw '公開済みの版を取得できません。タグの状態を確認してください。' }
+            if ($LASTEXITCODE -ne 0) { throw "公開済みの版を取得できません。タグ $tag がリモートに存在するか（git ls-remote --tags origin $tag）確認し、このワークフローを再実行してください。" }
             $newVersion = $tag.Substring(1)
             $ciCommit = git rev-parse --verify 'HEAD^'
-            if ($LASTEXITCODE -ne 0) { throw '版数更新前のコミットを取得できません。タグの履歴を確認してください。' }
+            if ($LASTEXITCODE -ne 0) { throw "版数更新前のコミットを取得できません。タグ $tag の親コミットを取得できたか（Checkoutのfetch-depth: 0）確認し、このワークフローを再実行してください。" }
             'rerun=true' >> $env:GITHUB_OUTPUT
           } else {
             $ciCommit = $sourceCommit
@@ -116,13 +116,13 @@ jobs:
             }
             if ($conclusion -and $conclusion -ne "null") {
               # 完了しているが success ではない
-              Write-Error "CI failed on this commit (status: $conclusion)."
+              Write-Error "対象コミットのCIが成功していません（status: $conclusion）。Actionsのci.yamlの実行で失敗したジョブのログを確認して修正し、CIが成功してからこのワークフローを再実行してください。"
               exit 1
             }
             Write-Host "CI still running... waiting ${intervalSec}s (attempt $i/$maxAttempts)"
             Start-Sleep -Seconds $intervalSec
           }
-          Write-Error "Timed out waiting for CI to complete (waited $($maxAttempts * $intervalSec)s)."
+          Write-Error "CIの完了を待つ上限（$($maxAttempts * $intervalSec)秒）に達しました。Actionsのci.yamlの実行が完了したことを確認してから、このワークフローを再実行してください。"
           exit 1
 
       - name: Setup tools

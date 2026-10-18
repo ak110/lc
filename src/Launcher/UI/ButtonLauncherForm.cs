@@ -754,7 +754,8 @@ public partial class ButtonLauncherForm : Form
     {
         if (tabControl1.TabPages.Count <= 1)
         {
-            MessageBox.Show(this, "最後のタブは削除できません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, "最後のタブは削除できません。\n削除するには、タブ見出しの右クリックの「タブを追加」で別のタブを追加してから削除してください。",
+                "エラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 

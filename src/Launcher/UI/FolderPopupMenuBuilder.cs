@@ -220,9 +220,10 @@ public sealed class FolderPopupMenuBuilder : IDisposable
             // ExternalException で両方をカバーできる。
             catch (ExternalException ex)
             {
-                DiagnosticLog.Error("Popup.InvokeContextMenu", ex);
+                DiagnosticLog.Error("Popup.InvokeContextMenu", ex, "画面の案内に従う");
                 MessageBox.Show(ownerControl,
-                    $"シェルメニューの表示に失敗しました: {ex.Message}", "エラー",
+                    $"シェルメニューの表示に失敗しました: {ex.Message}\n"
+                        + "もう一度右クリックするか、エクスプローラーで対象を開いて操作してください。", "エラー",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         });

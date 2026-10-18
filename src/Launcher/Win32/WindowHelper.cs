@@ -135,7 +135,8 @@ public sealed class WindowHelper
         var ex = new System.ComponentModel.Win32Exception();
         DiagnosticLog.Warn(
             "Window.SetForegroundLockTimeout",
-            $"SystemParametersInfo({operation}) failed: {ex.GetType().Name}: {ex.Message}");
+            $"SystemParametersInfo({operation}) failed: {ex.GetType().Name}: {ex.Message}",
+            "対応不要（ウィンドウの前面化を継続した）");
     }
 
     /// <summary>
