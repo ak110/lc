@@ -132,15 +132,15 @@ public sealed class UnexpectedUiExceptionTests
     });
 
     [Fact]
-    public void コマンド実行ログは実行の発生を残し表示名を含めない() => Run(() =>
+    public void コマンド実行ログに実行したコマンドの表示名を残す() => Run(() =>
     {
         using var data = CreateData();
         using var host = new ApplicationHostForm(data.BaseName);
         try
         {
             var launcher = host.OwnedForms.OfType<CommandLauncherForm>().Single();
-            // ユーザー名とホスト名を含む合成の表示名。起動は要求生成の例外で止め、実際のプロセスは起動しない。
-            var command = new Command { Name = "lcsynthuserathost" + Guid.NewGuid().ToString("N")[..8], FileName = "invalid\uD800command.exe" };
+            // 他のテストのログ行と区別できる一意の表示名。起動は要求生成の例外で止め、実際のプロセスは起動しない。
+            var command = new Command { Name = "lcsynthcommand" + Guid.NewGuid().ToString("N")[..8], FileName = "invalid\uD800command.exe" };
             host.CommandList.Add(command);
             host.RefreshCommandLauncherFormCommandList();
             var input = (TextBox)launcher.Controls.Find("textBox1", searchAllChildren: true).Single();
@@ -154,8 +154,9 @@ public sealed class UnexpectedUiExceptionTests
             }, launcher, "System.ArgumentException", host.PrepareShutdown);
 
             var lines = log.Lines();
-            lines.Should().Contain(line => line.Contains("[INFO]", StringComparison.Ordinal) && line.Contains("[Command.Execute]", StringComparison.Ordinal));
-            lines.Should().NotContain(line => line.Contains(command.Name, StringComparison.Ordinal));
+            lines.Should().Contain(line => line.Contains("[INFO]", StringComparison.Ordinal)
+                && line.Contains("[Command.Execute]", StringComparison.Ordinal)
+                && line.Contains(command.Name, StringComparison.Ordinal));
         }
         finally
         {
