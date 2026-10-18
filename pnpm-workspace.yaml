@@ -25,3 +25,10 @@ overrides:
   js-yaml: ^4.2.0
   smol-toml: ^1.9.0
   "micromark-extension-math@3.1.0>katex": 0.18.2
+patchedDependencies:
+  braces@3.0.3: patches/braces@3.0.3.patch
+# bracesのパッチでAST・入れ子配列の再帰処理を反復処理へ置き換え、スタック消費の機構を除去済み。
+# bracesの修正版が公開されるか、依存元がbracesを使わなくなったら、この監査除外を撤去する。
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vfj7-8cjw-p6xm

@@ -1,0 +1,297 @@
+diff --git a/lib/compile.js b/lib/compile.js
+index dce69beb90ece5c3b0ca234a949418f9f34eedbc..3baddd4147692e7c7bb89ce6175b60d41f3c7cd7 100644
+--- a/lib/compile.js
++++ b/lib/compile.js
+@@ -4,12 +4,11 @@ const fill = require('fill-range');
+ const utils = require('./utils');
+
+ const compile = (ast, options = {}) => {
+-  const walk = (node, parent = {}) => {
++  const visit = (node, parent) => {
+     const invalidBlock = utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+     const invalid = invalidBlock === true || invalidNode === true;
+     const prefix = options.escapeInvalid === true ? '\\' : '';
+-    let output = '';
+
+     if (node.isOpen === true) {
+       return prefix + node.value;
+@@ -45,16 +44,34 @@ const compile = (ast, options = {}) => {
+       }
+     }
+
+-    if (node.nodes) {
+-      for (const child of node.nodes) {
+-        output += walk(child, node);
++    return undefined;
++  };
++
++  // 子の結果を親へ戻す順序を、明示的なフレームで保つ。
++  const stack = [{ node: ast, parent: {}, index: 0, output: '', entered: false }];
++  while (stack.length > 0) {
++    const frame = stack[stack.length - 1];
++    if (!frame.entered) {
++      frame.entered = true;
++      const value = visit(frame.node, frame.parent);
++      if (value !== undefined) {
++        stack.pop();
++        if (stack.length === 0) return value;
++        stack[stack.length - 1].output += value;
++        continue;
+       }
+     }
+
+-    return output;
+-  };
++    if (frame.node.nodes && frame.index < frame.node.nodes.length) {
++      const child = frame.node.nodes[frame.index++];
++      stack.push({ node: child, parent: frame.node, index: 0, output: '', entered: false });
++      continue;
++    }
+
+-  return walk(ast);
++    stack.pop();
++    if (stack.length === 0) return frame.output;
++    stack[stack.length - 1].output += frame.output;
++  }
+ };
+
+ module.exports = compile;
+diff --git a/lib/expand.js b/lib/expand.js
+index 35b2c41d6afdb8f0197959e26079f266e48370d3..b02240419259c13f705be092418721a5d7305b96 100644
+--- a/lib/expand.js
++++ b/lib/expand.js
+@@ -5,35 +5,50 @@ const stringify = require('./stringify');
+ const utils = require('./utils');
+
+ const append = (queue = '', stash = '', enclose = false) => {
+-  const result = [];
+-
+-  queue = [].concat(queue);
+-  stash = [].concat(stash);
+-
+-  if (!stash.length) return queue;
+-  if (!queue.length) {
+-    return enclose ? utils.flatten(stash).map(ele => `{${ele}}`) : stash;
+-  }
+-
+-  for (const item of queue) {
+-    if (Array.isArray(item)) {
+-      for (const value of item) {
+-        result.push(append(value, stash, enclose));
+-      }
++  const frameFor = (queue = '', stash = '') => ({
++    queue: [].concat(queue), stash: [].concat(stash), result: [], i: 0, j: 0
++  });
++  const stack = [frameFor(queue, stash)];
++  while (stack.length > 0) {
++    const frame = stack[stack.length - 1];
++    let value;
++    if (!frame.stash.length) {
++      value = frame.queue;
++    } else if (!frame.queue.length) {
++      value = enclose ? utils.flatten(frame.stash).map(ele => `{${ele}}`) : frame.stash;
++    } else if (frame.i === frame.queue.length) {
++      value = utils.flatten(frame.result);
+     } else {
+-      for (let ele of stash) {
++      const item = frame.queue[frame.i];
++      if (Array.isArray(item)) {
++        if (frame.j < item.length) {
++          stack.push(frameFor(item[frame.j++], frame.stash));
++          continue;
++        }
++      } else if (frame.j < frame.stash.length) {
++        let ele = frame.stash[frame.j++];
+         if (enclose === true && typeof ele === 'string') ele = `{${ele}}`;
+-        result.push(Array.isArray(ele) ? append(item, ele, enclose) : item + ele);
++        if (Array.isArray(ele)) {
++          stack.push(frameFor(item, ele));
++        } else {
++          frame.result.push(item + ele);
++        }
++        continue;
+       }
++      frame.i++;
++      frame.j = 0;
++      continue;
+     }
++    stack.pop();
++    if (stack.length === 0) return value;
++    stack[stack.length - 1].result.push(value);
+   }
+-  return utils.flatten(result);
+ };
+
+ const expand = (ast, options = {}) => {
+   const rangeLimit = options.rangeLimit === undefined ? 1000 : options.rangeLimit;
+
+-  const walk = (node, parent = {}) => {
++  const enter = (node, parent) => {
+     node.queue = [];
+
+     let p = parent;
+@@ -80,34 +95,45 @@ const expand = (ast, options = {}) => {
+       queue = block.queue;
+     }
+
+-    for (let i = 0; i < node.nodes.length; i++) {
+-      const child = node.nodes[i];
++    return { node, q, queue, enclose, index: 0 };
++  };
+
+-      if (child.type === 'comma' && node.type === 'brace') {
+-        if (i === 1) queue.push('');
+-        queue.push('');
+-        continue;
+-      }
++  const root = enter(ast, {});
++  if (!root) return utils.flatten(undefined);
++  const stack = [root];
++  while (stack.length > 0) {
++    const frame = stack[stack.length - 1];
++    const { node, q, queue, enclose } = frame;
++    if (frame.index === node.nodes.length) {
++      stack.pop();
++      continue;
++    }
++    const i = frame.index++;
++    const child = node.nodes[i];
+
+-      if (child.type === 'close') {
+-        q.push(append(q.pop(), queue, enclose));
+-        continue;
+-      }
++    if (child.type === 'comma' && node.type === 'brace') {
++      if (i === 1) queue.push('');
++      queue.push('');
++      continue;
++    }
+
+-      if (child.value && child.type !== 'open') {
+-        queue.push(append(queue.pop(), child.value));
+-        continue;
+-      }
++    if (child.type === 'close') {
++      q.push(append(q.pop(), queue, enclose));
++      continue;
++    }
+
+-      if (child.nodes) {
+-        walk(child, node);
+-      }
++    if (child.value && child.type !== 'open') {
++      queue.push(append(queue.pop(), child.value));
++      continue;
+     }
+
+-    return queue;
+-  };
++    if (child.nodes) {
++      const next = enter(child, node);
++      if (next) stack.push(next);
++    }
++  }
+
+-  return utils.flatten(walk(ast));
++  return utils.flatten(root.queue);
+ };
+
+ module.exports = expand;
+diff --git a/lib/stringify.js b/lib/stringify.js
+index 8bcf872c31894f81a8c64d9202fd607e4fd7ea2b..7ea0ca121acc9a94f4b06ab3442c78272aad228f 100644
+--- a/lib/stringify.js
++++ b/lib/stringify.js
+@@ -3,10 +3,9 @@
+ const utils = require('./utils');
+
+ module.exports = (ast, options = {}) => {
+-  const stringify = (node, parent = {}) => {
++  const visit = (node, parent = {}) => {
+     const invalidBlock = options.escapeInvalid && utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+-    let output = '';
+
+     if (node.value) {
+       if ((invalidBlock || invalidNode) && utils.isOpenOrClose(node)) {
+@@ -15,18 +14,31 @@ module.exports = (ast, options = {}) => {
+       return node.value;
+     }
+
+-    if (node.value) {
+-      return node.value;
+-    }
++    return undefined;
++  };
+
+-    if (node.nodes) {
+-      for (const child of node.nodes) {
+-        output += stringify(child);
++  const stack = [{ node: ast, index: 0, output: '', entered: false }];
++  while (stack.length > 0) {
++    const frame = stack[stack.length - 1];
++    if (!frame.entered) {
++      frame.entered = true;
++      const value = visit(frame.node);
++      if (value !== undefined) {
++        stack.pop();
++        if (stack.length === 0) return value;
++        stack[stack.length - 1].output += value;
++        continue;
+       }
+     }
+-    return output;
+-  };
+
+-  return stringify(ast);
++    if (frame.node.nodes && frame.index < frame.node.nodes.length) {
++      stack.push({ node: frame.node.nodes[frame.index++], index: 0, output: '', entered: false });
++      continue;
++    }
++
++    stack.pop();
++    if (stack.length === 0) return frame.output;
++    stack[stack.length - 1].output += frame.output;
++  }
+ };
+
+diff --git a/lib/utils.js b/lib/utils.js
+index d19311fe044ad5157624077670dc297e8b53da49..9f39d1cf753038632ee21c5f9bd4cc1649bba0bb 100644
+--- a/lib/utils.js
++++ b/lib/utils.js
+@@ -101,22 +101,19 @@ exports.reduce = nodes => nodes.reduce((acc, node) => {
+ exports.flatten = (...args) => {
+   const result = [];
+
+-  const flat = arr => {
+-    for (let i = 0; i < arr.length; i++) {
+-      const ele = arr[i];
+-
+-      if (Array.isArray(ele)) {
+-        flat(ele);
+-        continue;
+-      }
+-
+-      if (ele !== undefined) {
+-        result.push(ele);
+-      }
++  const stack = [{ array: args, index: 0 }];
++  while (stack.length > 0) {
++    const frame = stack[stack.length - 1];
++    if (frame.index === frame.array.length) {
++      stack.pop();
++      continue;
+     }
+-    return result;
+-  };
+-
+-  flat(args);
++    const ele = frame.array[frame.index++];
++    if (Array.isArray(ele)) {
++      stack.push({ array: ele, index: 0 });
++    } else if (ele !== undefined) {
++      result.push(ele);
++    }
++  }
+   return result;
+ };
