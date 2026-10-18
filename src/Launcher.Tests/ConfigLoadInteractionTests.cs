@@ -65,6 +65,35 @@ public sealed class ConfigLoadInteractionTests : IDisposable
     }
 
     [Fact]
+    public void ドットを含むベース名で復元に失敗したら種類と型名だけのWarnを1行残す()
+    {
+        // 拡張子をテストごとに一意にし、並行する他のテストのログ行と区別する。
+        string ext = ".lc" + Guid.NewGuid().ToString("N")[..8] + ".cfg";
+        var store = new ConfigFile<Config>(ext);
+        string baseName = Path.Combine(directory, "launcher.synth-user.synth-host");
+        store.Save(new Config(), _ => Assert.Fail("初期保存の失敗"), baseName);
+        store.Load(baseName);
+        File.WriteAllText(store.FileName(baseName), "<Config>");
+        var result = store.Load(baseName);
+        var log = DiagnosticLogDelta.Start();
+
+        ConfigLoadInteraction.Accept(result, store, new Config(), notice =>
+        {
+            // 確認の回答時にバックアップを読めない内容へ変える。
+            if (notice.ConfirmRestore) File.WriteAllText(store.FileName(baseName) + ".bak", "<Config>");
+            return true;
+        }, baseName);
+
+        var restoreWarnings = log.Lines()
+            .Where(line => line.Contains("[WARN]", StringComparison.Ordinal)
+                && line.Contains("[Config.Restore]", StringComparison.Ordinal)
+                && line.Contains(ext, StringComparison.Ordinal))
+            .ToList();
+        restoreWarnings.Should().ContainSingle().Which.Should().Contain(nameof(InvalidOperationException));
+        log.Lines().Should().NotContain(line => line.Contains("synth-user", StringComparison.Ordinal) || line.Contains("synth-host", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void datの破損は復元を質問せず初期値で続行する()
     {
         var store = new ConfigFile<Data>(".dat", protectOriginal: false);

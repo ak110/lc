@@ -45,7 +45,7 @@ public static class ConfigLoadInteraction
         }
         catch (Exception ex) when (ConfigFailure.IsRead(ex))
         {
-            DiagnosticLog.Warn("Config.Restore", $"復元失敗: {result.Kind} {ex.GetType().Name}");
+            // 復元失敗のログはRestoreFromBackupが固定の拡張子で記録済み。
             show(new ConfigLoadNotice("復元できませんでした。保存の停止は続きます。\r\n"
                 + "バックアップと本体の内容、フォルダーの読み書き権限を確認してから再起動してください。"));
             return fallback;

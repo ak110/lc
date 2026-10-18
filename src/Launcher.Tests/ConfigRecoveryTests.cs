@@ -288,4 +288,35 @@ public sealed class ConfigRecoveryTests : IDisposable
         failures.Should().ContainSingle().Which.Kind.Should().Be(ConfigSaveFailureKind.Blocked);
         File.ReadAllBytes(memoFile).Should().Equal(original);
     }
+
+    [Fact]
+    public void ドットを含むベース名の障害ログはベース名の一部を残さず設定の種類を記録する()
+    {
+        // 拡張子をテストごとに一意にし、並行する他のテストのログ行と区別する。
+        string ext = ".lc" + Guid.NewGuid().ToString("N")[..8] + ".cfg";
+        var store = new ConfigFile<Config>(ext);
+        string dotted = Path.Combine(dir, "launcher.synth-user.synth-host");
+        string file = store.FileName(dotted);
+        var log = DiagnosticLogDelta.Start();
+
+        // バックアップ更新失敗（バックアップの位置をフォルダーで塞ぐ）
+        store.Save(new Config(), failures.Add, dotted).Should().BeTrue();
+        File.Delete(file + ".bak");
+        Directory.CreateDirectory(file + ".bak");
+        store.Load(dotted).BackupError.Should().NotBeNull();
+        // 読込失敗
+        File.WriteAllText(file, "<Config>");
+        store.Load(dotted).Status.Should().Be(ConfigLoadStatus.Failed);
+        // 本体が無くバックアップだけがある
+        Directory.Delete(file + ".bak");
+        File.WriteAllText(file + ".bak", "<Config/>");
+        File.Delete(file);
+        store.Load(dotted).Status.Should().Be(ConfigLoadStatus.Failed);
+
+        var lines = log.Lines().Where(line => line.Contains(ext, StringComparison.Ordinal)).ToList();
+        lines.Should().Contain(line => line.Contains("[Config.Load]", StringComparison.Ordinal) && line.Contains("読込失敗", StringComparison.Ordinal));
+        lines.Should().Contain(line => line.Contains("[Config.Load]", StringComparison.Ordinal) && line.Contains("バックアップだけ", StringComparison.Ordinal));
+        lines.Should().Contain(line => line.Contains("[Config.Backup]", StringComparison.Ordinal));
+        log.Lines().Should().NotContain(line => line.Contains("synth-user", StringComparison.Ordinal) || line.Contains("synth-host", StringComparison.Ordinal));
+    }
 }

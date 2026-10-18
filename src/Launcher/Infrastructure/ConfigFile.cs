@@ -28,7 +28,7 @@ public enum ConfigLoadStatus
 public sealed record ConfigLoadResult<T>(
     T Value, ConfigLoadStatus Status, string FileName, bool BackupAvailable, Exception? Error)
 {
-    /// <summary>ログと通知で使う拡張子部分 (例: <c>.cmd.cfg</c>)</summary>
+    /// <summary>画面の通知で使う拡張子部分 (例: <c>.cmd.cfg</c>)。ベース名にドットがあるとその一部を含むため、ログへは渡さない</summary>
     public string Kind => ConfigFileState.KindOf(FileName);
 
     /// <summary>読込には成功したが、その内容でバックアップを更新できなかった場合の原因</summary>
@@ -109,7 +109,7 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
                 {
                     Load(baseName);
                 }
-                state.BeforeReplace(fileName, bytes => Parse(bytes));
+                state.BeforeReplace(fileName, ext, bytes => Parse(bytes));
             }
             byte[] content = value.SerializeToBytes();
             ConfigStore.WriteAtomic(fileName, content);
@@ -203,7 +203,7 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
             {
                 // 本体だけが消えた状態は初回と区別し、バックアップを上書きさせない
                 State(fileName).MarkFailed();
-                DiagnosticLog.Warn("Config.Load", $"本体が無くバックアップだけがある: {ConfigFileState.KindOf(fileName)}");
+                DiagnosticLog.Warn("Config.Load", $"本体が無くバックアップだけがある: {ext}");
                 return new(new T(), ConfigLoadStatus.Failed, fileName, true, new FileNotFoundException("本体が見つからない"));
             }
             State(fileName).MarkLoaded(null);
@@ -220,7 +220,7 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         catch (Exception ex) when (ConfigFailure.IsRead(ex))
         {
             State(fileName).MarkFailed();
-            DiagnosticLog.Warn("Config.Load", $"読込失敗: {ConfigFileState.KindOf(fileName)} {ex.GetType().Name}");
+            DiagnosticLog.Warn("Config.Load", $"読込失敗: {ext} {ex.GetType().Name}");
             return new(new T(), ConfigLoadStatus.Failed, fileName, ProtectOriginal && File.Exists(backupName), ex);
         }
 
@@ -235,7 +235,7 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         catch (Exception ex) when (ConfigFailure.IsSave(ex))
         {
             // バックアップを作成できなくても読めたデータは使える。利用者へは結果の BackupError で通知させる
-            DiagnosticLog.Warn("Config.Backup", $"バックアップ更新失敗: {ConfigFileState.KindOf(fileName)} {ex.GetType().Name}");
+            DiagnosticLog.Warn("Config.Backup", $"バックアップ更新失敗: {ext} {ex.GetType().Name}");
             return new(value, ConfigLoadStatus.Loaded, fileName, false, null) { BackupError = ex };
         }
         return new(value, ConfigLoadStatus.Loaded, fileName, false, null);
@@ -249,15 +249,25 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
     {
         string fileName = FileName(baseName);
         using var mutex = ConfigStore.Lock(fileName);
-        byte[] bytes = File.ReadAllBytes(ConfigFileState.BackupName(fileName));
-        T value = Parse(bytes);
-        if (File.Exists(fileName))
+        T value;
+        try
         {
-            File.Move(fileName, ConfigFileState.BrokenName(fileName));
+            byte[] bytes = File.ReadAllBytes(ConfigFileState.BackupName(fileName));
+            value = Parse(bytes);
+            if (File.Exists(fileName))
+            {
+                File.Move(fileName, ConfigFileState.BrokenName(fileName));
+            }
+            ConfigStore.WriteAtomic(fileName, bytes);
+            State(fileName).MarkLoaded(bytes);
         }
-        ConfigStore.WriteAtomic(fileName, bytes);
-        State(fileName).MarkLoaded(bytes);
-        DiagnosticLog.Info("Config.Restore", $"バックアップから復元: {ConfigFileState.KindOf(fileName)}");
+        catch (Exception ex) when (ConfigFailure.IsRead(ex))
+        {
+            // ログの種類にはファイル名から抽出した値ではなく、固定の拡張子を使う。
+            DiagnosticLog.Warn("Config.Restore", $"復元失敗: {ext} {ex.GetType().Name}");
+            throw;
+        }
+        DiagnosticLog.Info("Config.Restore", $"バックアップから復元: {ext}");
         return value;
     }
 
@@ -309,7 +319,7 @@ public sealed class ConfigFileState
     public static string BrokenName(string fileName) =>
         fileName + ".broken-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture);
 
-    /// <summary>ログと通知で使う、ファイル名のうち最初の<c>.</c>以降 (例: <c>.cmd.cfg</c>)</summary>
+    /// <summary>画面の通知で使う、ファイル名のうち最初の<c>.</c>以降 (例: <c>.cmd.cfg</c>)。ベース名にドットがあるとその一部を含むため、ログへは渡さない</summary>
     public static string KindOf(string fileName)
     {
         string name = Path.GetFileName(fileName);
@@ -336,7 +346,10 @@ public sealed class ConfigFileState
     /// バックアップへ写し、外部で壊れていれば別名へ保全する。どちらかに失敗したら例外を送出し、本体を置換させない。
     /// ランタイムデータの保存では呼ばない。
     /// </summary>
-    internal void BeforeReplace(string fileName, Func<byte[], object> validate)
+    /// <param name="fileName">対象ファイルの完全パス</param>
+    /// <param name="ext">ログへ記録する設定の種類 (固定の拡張子)</param>
+    /// <param name="validate">本体を読めるか検査する処理</param>
+    internal void BeforeReplace(string fileName, string ext, Func<byte[], object> validate)
     {
         if (blocked)
         {
@@ -372,7 +385,7 @@ public sealed class ConfigFileState
         else
         {
             File.Copy(fileName, BrokenName(fileName));
-            DiagnosticLog.Warn("Config.Save", $"外部で壊れた本体を別名で保全: {KindOf(fileName)}");
+            DiagnosticLog.Warn("Config.Save", $"外部で壊れた本体を別名で保全: {ext}");
         }
     }
 

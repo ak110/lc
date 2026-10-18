@@ -710,7 +710,8 @@ public partial class CommandLauncherForm : Form
 
     private void ExecuteCommand(Command command, string input)
     {
-        DiagnosticLog.Info("Command.Execute", $"name={command.Name}");
+        // 表示名は自由入力でパスや個人名を含み得るため、ログへは操作の発生だけを記録する。
+        DiagnosticLog.Info("Command.Execute", "実行開始");
         var snapshot = command.Clone();
         var config = ownerForm.Config.Clone();
         var handle = Handle;
