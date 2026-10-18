@@ -63,6 +63,7 @@ Dependabot security updatesによる自動修正PRの作成は無効にし、検
 
 - ローカルプレビュー: `mise run docs`
 - 自動デプロイ: masterブランチへのpush時に`Docs`ワークフローが自動実行される（`docs/`配下または`package.json`の変更時のみ）
+  - ビルド後に全HTMLのリンク先（内部ページ・見出し・外部URL）を確かめ、リンク切れが無い場合だけ公開する。外部URLの429・5xx応答とタイムアウトは一時的な障害として失敗に数えない
 
 ## Analyzerルールの導入
 
