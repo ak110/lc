@@ -14,26 +14,7 @@ public static class TextIndentation
         string text, int selStart, int selLength, bool dedent,
         out int regionStart, out int regionLength, out int newSelLength)
     {
-        int selEnd = selStart + selLength;
-
-        // 行頭まで拡張
-        int lineStart = selStart;
-        while (lineStart > 0 && text[lineStart - 1] != '\n') lineStart--;
-
-        // 行末まで拡張。ただし選択が改行直後 (次行冒頭) で終わる場合はその行を含めない。
-        int regionEnd;
-        if (selEnd > selStart && selEnd <= text.Length && text[selEnd - 1] == '\n')
-        {
-            regionEnd = selEnd;
-        }
-        else
-        {
-            regionEnd = selEnd;
-            while (regionEnd < text.Length && text[regionEnd] != '\n') regionEnd++;
-        }
-
-        regionStart = lineStart;
-        regionLength = regionEnd - lineStart;
+        (regionStart, regionLength) = TextLines.ExpandToLines(text, selStart, selLength);
 
         string segment = text.Substring(regionStart, regionLength);
         // \nで分割し、末尾が\nなら末尾の空要素は変換対象外 (次行冒頭)

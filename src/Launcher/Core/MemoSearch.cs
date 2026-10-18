@@ -65,7 +65,7 @@ public static class MemoSearch
         if (!useRegex) return replacement;
         var options = RegexOptions.Multiline;
         if (!matchCase) options |= RegexOptions.IgnoreCase;
-        return Regex.Replace(matched, pattern, replacement, options);
+        return Regex.Replace(matched, pattern, ExpandReplacementEscapes(replacement), options);
     }
 
     public static string ReplaceAllInText(
@@ -76,11 +76,12 @@ public static class MemoSearch
             var options = RegexOptions.Multiline;
             if (!matchCase) options |= RegexOptions.IgnoreCase;
             var regex = new Regex(pattern, options);
+            string expanded = ExpandReplacementEscapes(replacement);
             int localCount = 0;
             string result = regex.Replace(text, m =>
             {
                 localCount++;
-                return m.Result(replacement);
+                return m.Result(expanded);
             });
             count = localCount;
             return result;
@@ -115,4 +116,63 @@ public static class MemoSearch
         }
     }
 
+    /// <summary>
+    /// 正規表現の置換後文字列に含まれる文字エスケープを文字へ展開し、.NETの置換パターンを返す。
+    /// 解釈するのは正規表現パターンと同じ文字エスケープ (<c>\n</c>、<c>\r</c>、<c>\t</c>、<c>\a</c>、<c>\f</c>、
+    /// <c>\v</c>、<c>\e</c>、<c>\0</c>、<c>\xHH</c>、<c>\uHHHH</c>、<c>\\</c>) で、それ以外の<c>\</c>と続く文字はそのまま残す。
+    /// エスケープから生じた<c>$</c>は<c>$$</c>へ変え、<c>$1</c>などの置換パターンとして解釈させない。
+    /// </summary>
+    static string ExpandReplacementEscapes(string replacement)
+    {
+        var sb = new StringBuilder(replacement.Length);
+        int i = 0;
+        while (i < replacement.Length)
+        {
+            char c = replacement[i];
+            if (c != '\\' || i + 1 >= replacement.Length)
+            {
+                sb.Append(c);
+                i++;
+                continue;
+            }
+            char next = replacement[i + 1];
+            char? simple = next switch
+            {
+                'n' => '\n',
+                'r' => '\r',
+                't' => '\t',
+                'a' => '\a',
+                'f' => '\f',
+                'v' => '\v',
+                'e' => '\u001B',
+                '0' => '\0',
+                '\\' => '\\',
+                _ => null,
+            };
+            int consumed = 2;
+            if (simple is null && (next == 'x' || next == 'u'))
+            {
+                int digits = next == 'x' ? 2 : 4;
+                if (i + 2 + digits <= replacement.Length
+                    && int.TryParse(replacement.AsSpan(i + 2, digits), System.Globalization.NumberStyles.AllowHexSpecifier,
+                        System.Globalization.CultureInfo.InvariantCulture, out int code))
+                {
+                    simple = (char)code;
+                    consumed = 2 + digits;
+                }
+            }
+            if (simple is char value)
+            {
+                sb.Append(value == '$' ? "$$" : value.ToString());
+                i += consumed;
+            }
+            else
+            {
+                // 解釈しないエスケープは2文字ともそのまま残す。
+                sb.Append(c).Append(next);
+                i += 2;
+            }
+        }
+        return sb.ToString();
+    }
 }

@@ -96,8 +96,8 @@ public sealed class PlainRichTextBoxTests(ITestOutputHelper output)
         control.Focus();
         switch (route)
         {
-            case 0: PreProcessShortcut(control, Keys.Control | Keys.V); break;
-            case 1: PreProcessShortcut(control, Keys.Shift | Keys.Insert); break;
+            case 0: UiAcceptance.PreProcessShortcut(control, Keys.Control | Keys.V); break;
+            case 1: UiAcceptance.PreProcessShortcut(control, Keys.Shift | Keys.Insert); break;
             case 2: control.Paste(); break;
             default: new WindowHelper(control.Handle).SendMessage(WM.WM_PASTE, IntPtr.Zero, IntPtr.Zero); break;
         }
@@ -108,31 +108,10 @@ public sealed class PlainRichTextBoxTests(ITestOutputHelper output)
         control.Focus();
         switch (route)
         {
-            case 0: PreProcessShortcut(control, Keys.Control | Keys.C); break;
-            case 1: PreProcessShortcut(control, Keys.Control | Keys.Insert); break;
+            case 0: UiAcceptance.PreProcessShortcut(control, Keys.Control | Keys.C); break;
+            case 1: UiAcceptance.PreProcessShortcut(control, Keys.Control | Keys.Insert); break;
             case 2: control.Copy(); break;
             default: new WindowHelper(control.Handle).SendMessage(WM.WM_COPY, IntPtr.Zero, IntPtr.Zero); break;
-        }
-    }
-
-    static void PreProcessShortcut(Control control, Keys keys)
-    {
-        // 通常の入力前処理へ送り、キー状態はこのSTAだけで変更して元へ戻す。
-        // SendKeysは前景の別アプリへ届きうるため、受入対象のコントロールへ限定する。
-        var original = new byte[256];
-        GetKeyboardState(original).Should().BeTrue();
-        var state = new byte[256];
-        if ((keys & Keys.Control) != 0) state[(int)Keys.ControlKey] = 0x80;
-        if ((keys & Keys.Shift) != 0) state[(int)Keys.ShiftKey] = 0x80;
-        try
-        {
-            SetKeyboardState(state).Should().BeTrue();
-            var message = Message.Create(control.Handle, 0x0100, (nint)(keys & Keys.KeyCode), nint.Zero);
-            control.PreProcessMessage(ref message).Should().BeTrue();
-        }
-        finally
-        {
-            SetKeyboardState(original).Should().BeTrue();
         }
     }
 
@@ -186,14 +165,6 @@ public sealed class PlainRichTextBoxTests(ITestOutputHelper output)
 
     [DllImport("user32.dll")]
     static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    static extern bool GetKeyboardState([Out] byte[] state);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    static extern bool SetKeyboardState(byte[] state);
 
     void RunWithClipboard(Action action) => RunInSta(() =>
     {

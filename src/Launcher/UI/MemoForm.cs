@@ -21,6 +21,23 @@ public partial class MemoForm : Form
         Name = "saveMenuItem",
         ShortcutKeys = Keys.Control | Keys.S,
     };
+    // 編集操作の3項目は選択が無いときハンドラが何もしないため、ショートカットが常に効くよう有効のまま保つ。
+    // メニューのショートカットは本文のRichEditより先に処理され、RichEditの既定のCtrl+U・Ctrl+Lの書式操作より優先される。
+    readonly ToolStripMenuItem sortLinesMenuItem = new("行のソート(&S)")
+    {
+        Name = "sortLinesMenuItem",
+        ShortcutKeys = Keys.F9,
+    };
+    readonly ToolStripMenuItem upperCaseMenuItem = new("大文字に変換(&G)")
+    {
+        Name = "upperCaseMenuItem",
+        ShortcutKeys = Keys.Control | Keys.U,
+    };
+    readonly ToolStripMenuItem lowerCaseMenuItem = new("小文字に変換(&L)")
+    {
+        Name = "lowerCaseMenuItem",
+        ShortcutKeys = Keys.Control | Keys.L,
+    };
     FindReplaceDialog? findReplaceDialog;
     bool savePending;
     bool saveFailed;
@@ -191,6 +208,11 @@ public partial class MemoForm : Form
         replaceMenuItem.Click += (s, e) => OpenFindDialog(replaceMode: true);
         findNextMenuItem.Click += (s, e) => FindNextFromDialogOrOpen(reverse: false);
         findPrevMenuItem.Click += (s, e) => FindNextFromDialogOrOpen(reverse: true);
+        sortLinesMenuItem.Click += (s, e) => SortSelectedLines();
+        upperCaseMenuItem.Click += (s, e) => ConvertSelectedCase(upper: true);
+        lowerCaseMenuItem.Click += (s, e) => ConvertSelectedCase(upper: false);
+        editMenu.DropDownItems.Add(new ToolStripSeparator());
+        editMenu.DropDownItems.AddRange([sortLinesMenuItem, upperCaseMenuItem, lowerCaseMenuItem]);
 
         editMenu.DropDownOpening += (s, e) => UpdateEditMenu();
 
@@ -235,6 +257,40 @@ public partial class MemoForm : Form
         replaceMenuItem.Enabled = hasBox;
         findNextMenuItem.Enabled = hasBox;
         findPrevMenuItem.Enabled = hasBox;
+    }
+
+    #endregion
+
+    #region 行・文字の変換
+
+    /// <summary>
+    /// 選択範囲を行単位へ拡張し、行を序数順に並べ替える。置換は1回の取り消しで元に戻せ、並べ替えた範囲を選択する。
+    /// </summary>
+    void SortSelectedLines()
+    {
+        var textBox = GetCurrentTextBox();
+        if (textBox is null || textBox.SelectionLength == 0) return;
+
+        string replaced = TextLines.ComputeSortReplacement(
+            textBox.Text, textBox.SelectionStart, textBox.SelectionLength, out int regionStart, out int regionLength);
+        textBox.Select(regionStart, regionLength);
+        textBox.SelectedText = replaced;
+        textBox.Select(regionStart, replaced.Length);
+    }
+
+    /// <summary>
+    /// 選択文字列だけを大文字または小文字へ変換し、選択を保つ。
+    /// </summary>
+    void ConvertSelectedCase(bool upper)
+    {
+        var textBox = GetCurrentTextBox();
+        if (textBox is null || textBox.SelectionLength == 0) return;
+
+        int start = textBox.SelectionStart;
+        string selected = textBox.SelectedText;
+        string converted = upper ? selected.ToUpperInvariant() : selected.ToLowerInvariant();
+        textBox.SelectedText = converted;
+        textBox.Select(start, converted.Length);
     }
 
     #endregion

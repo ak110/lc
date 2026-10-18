@@ -110,6 +110,88 @@ public sealed class MemoFormTests(ITestOutputHelper output)
         }
     });
 
+    [Fact]
+    public void 編集操作_ショートカットで行のソートと大文字小文字変換を行い1回の取り消しで戻る() => UiAcceptance.Run(() =>
+    {
+        using var data = CreateData();
+        data.Write(".memo.cfg", new MemoData { Tabs = [new MemoTab { Name = "メモ", Text = "head\nc\nB\na\ntail" }] });
+        using var host = new ApplicationHostForm(data.BaseName);
+        try
+        {
+            host.ShowHideMemo();
+            var form = host.OwnedForms.OfType<MemoForm>().Single();
+            var editor = form.Controls.OfType<TabControl>().Single().TabPages[0].Controls.OfType<PlainRichTextBox>().Single();
+            var editMenu = form.MainMenuStrip!.Items.OfType<ToolStripMenuItem>().Single(item => item.Name == "editMenu");
+            editMenu.DropDownItems.OfType<ToolStripMenuItem>().Single(item => item.Name == "sortLinesMenuItem")
+                .ShortcutKeys.Should().Be(Keys.F9);
+
+            // 選択の無いF9は何もしない。
+            editor.Select(0, 0);
+            UiAcceptance.PreProcessShortcut(editor, Keys.F9);
+            editor.Text.Should().Be("head\nc\nB\na\ntail");
+
+            // 「c」の途中から「a」の途中までを選択し、行単位で並べ替える。
+            editor.Select(6, 4);
+            UiAcceptance.PreProcessShortcut(editor, Keys.F9);
+            editor.Text.Should().Be("head\nB\na\nc\ntail");
+            (editor.SelectionStart, editor.SelectionLength).Should().Be((5, 5));
+            editor.Undo();
+            editor.Text.Should().Be("head\nc\nB\na\ntail");
+
+            editor.Select(0, 2);
+            UiAcceptance.PreProcessShortcut(editor, Keys.Control | Keys.U);
+            editor.Text.Should().Be("HEad\nc\nB\na\ntail");
+            (editor.SelectionStart, editor.SelectionLength).Should().Be((0, 2));
+
+            editor.Select(0, 4);
+            UiAcceptance.PreProcessShortcut(editor, Keys.Control | Keys.L);
+            editor.Text.Should().Be("head\nc\nB\na\ntail");
+            (editor.SelectionStart, editor.SelectionLength).Should().Be((0, 4));
+            editor.Undo();
+            editor.Text.Should().Be("HEad\nc\nB\na\ntail");
+        }
+        finally
+        {
+            foreach (var form in host.OwnedForms.OfType<MemoForm>()) form.Dispose();
+            host.PrepareShutdown();
+            host.Close();
+        }
+    });
+
+    [Theory]
+    [InlineData("置換(&R)", "x\ty\n1\\z\nx2z")]
+    [InlineData("すべて置換(&A)", "x\ty\n1\\z\nx\ty\n2\\z")]
+    public void 置換_正規表現の置換後文字列のエスケープと後方参照を本文へ反映する(string button, string expected) => UiAcceptance.Run(() =>
+    {
+        using var data = CreateData();
+        data.Write(".memo.cfg", new MemoData { Tabs = [new MemoTab { Name = "メモ", Text = "x1z\nx2z" }] });
+        using var host = new ApplicationHostForm(data.BaseName);
+        try
+        {
+            host.ShowHideMemo();
+            var form = host.OwnedForms.OfType<MemoForm>().Single();
+            var editor = form.Controls.OfType<TabControl>().Single().TabPages[0].Controls.OfType<PlainRichTextBox>().Single();
+            var editMenu = form.MainMenuStrip!.Items.OfType<ToolStripMenuItem>().Single(item => item.Name == "editMenu");
+            editMenu.DropDownItems.OfType<ToolStripMenuItem>().Single(item => item.Name == "replaceMenuItem").PerformClick();
+            var dialog = form.OwnedForms.OfType<FindReplaceDialog>().Single();
+            var boxes = dialog.Controls.OfType<TextBox>().OrderBy(box => box.TabIndex).ToList();
+            boxes[0].Text = @"x(\d)z";
+            boxes[1].Text = @"x\ty\n$1\\z";
+            dialog.Controls.OfType<CheckBox>().Single(box => box.Text == "正規表現(&E)").Checked = true;
+            editor.Select(0, 3);
+
+            dialog.Controls.OfType<Button>().Single(b => b.Text == button).PerformClick();
+
+            editor.Text.Should().Be(expected);
+        }
+        finally
+        {
+            foreach (var form in host.OwnedForms.OfType<MemoForm>()) form.Dispose();
+            host.PrepareShutdown();
+            host.Close();
+        }
+    });
+
     static UiHostData CreateData() => new(new Config
     {
         HideFirst = true,

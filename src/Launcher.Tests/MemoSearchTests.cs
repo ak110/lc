@@ -61,4 +61,25 @@ public sealed class MemoSearchTests
         MemoSearch.ReplaceAllInText(text, pattern, replacement, false, regex, out int count).Should().Be(expected);
         count.Should().Be(expectedCount);
     }
+
+    [Theory]
+    [InlineData(@"a(\d)", @"$1\n", "a1 a2", "1\n 2\n")]
+    [InlineData("a", @"\t\r\a\f\v\e\0", "a", "\t\r\a\f\v\u001B\0")]
+    [InlineData("a", @"\x41\u3042", "a", "Aあ")]
+    [InlineData("a", @"\\n", "a", @"\n")]
+    [InlineData("a", @"\x24\u00241", "a", "$$1")]
+    [InlineData("a", @"\q\x4\u30", "a", @"\q\x4\u30")]
+    [InlineData("a", "x\\", "a", "x\\")]
+    public void 正規表現の置換後文字列は文字エスケープを解釈し後方参照も働く(string pattern, string replacement, string text, string expected)
+    {
+        MemoSearch.ReplaceAllInText(text, pattern, replacement, true, true, out _).Should().Be(expected);
+    }
+
+    [Fact]
+    public void 正規表現の単一置換も置換後文字列のエスケープを解釈し文字列置換は文字どおりに使う()
+    {
+        MemoSearch.ComputeReplacement("a1", @"a(\d)", @"[$1]\t\\", true, true).Should().Be("[1]\t\\");
+        MemoSearch.ComputeReplacement("a1", "a1", @"\t", true, false).Should().Be(@"\t");
+        MemoSearch.ReplaceAllInText("a1", "a1", @"\n", true, false, out _).Should().Be(@"\n");
+    }
 }
