@@ -42,6 +42,14 @@ run_windows = [
   "git config --local commit.template .gitmessage",
 ]
 
+[tasks.setup-linux]
+description = "Linux開発環境のセットアップ（miseのツール導入とsetup）"
+# .NETの実行に要るOSのライブラリ（ICU、OpenSSLなど）は事前に導入しておく。
+run = [
+  "mise install",
+  "mise run setup",
+]
+
 [tasks.build]
 description = "リリースビルド"
 run = [
@@ -68,7 +76,11 @@ run = [
 
 [tasks.test]
 description = "全チェック実行（これを通過すればコミット可能）"
+# Linuxではテストのwin-x64 self-containedのtesthostを起動できないため、dotnet-testだけを除く。
 run = [
+  "uvx --exclude-newer-package pyfltr=false pyfltr run --disable=dotnet-test",
+]
+run_windows = [
   "uvx --exclude-newer-package pyfltr=false pyfltr run",
 ]
 

@@ -27,3 +27,19 @@ jobs:
       # pyfltrの推奨ガイドから意図して外れる個人環境向けの設定。
       # グローバルuv設定の`exclude-newer`からpyfltrだけを除外し、公開直後のpyfltrを使う（uvxはプロジェクトの`[tool.uv]`を読まないためコマンドラインで指定する）。
       - run: uvx --exclude-newer-package pyfltr=false pyfltr ci --output-format=github-annotations
+
+  test-linux:
+    # pyfltr推奨ガイドのcontainer実行から意図して外れる設定。
+    # mise経由のLinux開発環境の構築手順（mise run setup-linux）そのものを新しいcheckoutから検証するため、
+    # runnerへjdx/mise-actionで導入する。runnerは.NETの実行に要るOSのライブラリを備える。
+    runs-on: ubuntu-latest
+    env:
+      # mise等がGitHub APIを呼び出す際のレート制限（403）回避。
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+      - run: mise run setup-linux
+      # テスト実行（dotnet-test）はWindowsのtestジョブが担い、Linuxではdotnet-test以外の全チェックを実行する。
+      - run: mise run test
+      - run: mise run build

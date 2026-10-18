@@ -4,30 +4,42 @@
 
 ### 必要環境
 
-- Windows 10/11
+- Windows 10/11、またはLinux
 - mise
 - Visual Studio Code
 
+Linuxでは、.NETの実行に要るOSのライブラリ（ICU、OpenSSLなど）を事前に導入する。
+必要なライブラリはディストリビューションごとに異なるため、[.NETのLinux依存ライブラリの公式一覧](https://learn.microsoft.com/dotnet/core/install/linux-debian#dependencies)を参照する。
+
 ### 初回セットアップ
+
+Windowsでは次を実行する。
 
 ```cmd
 mise install && mise run setup
 ```
 
+Linuxでは次を実行する。miseが管理するツールの導入に続けて、`mise run setup`と同じ工程を実行する。
+
+```bash
+mise run setup-linux
+```
+
 ## 開発コマンド
 
-| コマンド          | 説明                                                        |
-| ----------------- | ----------------------------------------------------------- |
-| `mise run setup`  | 開発環境のセットアップ                                      |
-| `mise run format` | フォーマット + 軽量lint（開発時の手動実行用。自動修正あり） |
-| `mise run test`   | 全チェック実行（これを通過すればコミット可能）              |
-| `mise run build`  | リリースビルド                                              |
-| `mise run clean`  | ビルド成果物の削除                                          |
-| `mise run update` | 依存パッケージの更新                                        |
-| `mise run docs`   | ドキュメントのローカルプレビュー                            |
+| コマンド               | 説明                                                        |
+| ---------------------- | ----------------------------------------------------------- |
+| `mise run setup`       | 開発環境のセットアップ                                      |
+| `mise run setup-linux` | Linux開発環境のセットアップ（miseのツール導入とsetup）      |
+| `mise run format`      | フォーマット + 軽量lint（開発時の手動実行用。自動修正あり） |
+| `mise run test`        | 全チェック実行（これを通過すればコミット可能）              |
+| `mise run build`       | リリースビルド                                              |
+| `mise run clean`       | ビルド成果物の削除                                          |
+| `mise run update`      | 依存パッケージの更新                                        |
+| `mise run docs`        | ドキュメントのローカルプレビュー                            |
 
-Linux環境ではドキュメントのlintのみ実行できる（`mise exec -- uvx --exclude-newer-package pyfltr=false pyfltr run docs/ README.md AGENTS.md`）。
-全チェック（`mise run test`）はWindowsのみで実行する。
+Linux環境の`mise run test`は`dotnet-test`を除く全チェック（ビルド、整形、Analyzer、文書lintなど）を実行し、`mise run build`で配布用exeを作成できる。
+テスト実行（`dotnet-test`）はWindowsとWindows CIで行う。
 
 ## サプライチェーン攻撃対策
 
@@ -74,7 +86,7 @@ Dependabot security updatesによる自動修正PRの作成は無効にし、検
 
 ## 環境制限
 
-- `dotnet-format`・`dotnet-build`・`dotnet-test`はWindowsターゲットのためLinuxでは実行不可
+- Linuxでは`dotnet-test`だけを実行できない（テストはwin-x64のself-containedで出力され、そのtesthostをLinuxで起動できないため）
 - WinForms Designer.csのマルチバイト文字を含むテーブル等ではmarkdownlint MD060が発生する場合がある
 
 ## リリース手順

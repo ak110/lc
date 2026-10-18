@@ -113,7 +113,6 @@ def main() -> None:
             f"{(result.stderr or result.stdout).strip()[:500]}。"
             "編集は反映済みで、整形されていない。編集は続けてよい。"
             f"mise exec -- dotnet format Launcher.sln --include {rel_str} を手動実行して原因を確認する。"
-            "Windows以外で復元（Restore）に失敗する場合は、環境変数 EnableWindowsTargeting=true を付けて実行する。"
         )
         return
 

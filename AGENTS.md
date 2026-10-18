@@ -56,4 +56,5 @@ ConfigStore派生クラスの変更をレビューする専用エージェント
 
 ## 注意点
 
-Linux環境ではドキュメントのlintだけを実行し、全体検証はWindows CIで行う。
+Linux環境では`mise run setup-linux`で環境を構築し、`mise run test`（`dotnet-test`を除く全チェック）と`mise run build`を実行できる。
+テスト実行（`dotnet-test`）はWindows CIで行う。
