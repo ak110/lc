@@ -1,4 +1,3 @@
-using System.Xml.Serialization;
 using FluentAssertions;
 using Launcher.Core;
 using Xunit;
@@ -14,8 +13,8 @@ public sealed class MemoDataTests
     public void MemoData_ラウンドトリップでデフォルト値が保持される()
     {
         var original = new MemoData();
-        var xml = SerializeToString(original);
-        var deserialized = DeserializeFromString<MemoData>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var deserialized = XmlTestSerializer.DeserializeFromString<MemoData>(xml);
 
         deserialized.FontName.Should().Be("Consolas");
         deserialized.FontSize.Should().Be(11f);
@@ -44,8 +43,8 @@ public sealed class MemoDataTests
         original.Tabs.Add(new MemoTab { Name = "メモ", Text = "" });
         original.ClosedTabs.Add(new MemoTab { Name = "削除済み", Text = "ゴミ箱の内容" });
 
-        var xml = SerializeToString(original);
-        var deserialized = DeserializeFromString<MemoData>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var deserialized = XmlTestSerializer.DeserializeFromString<MemoData>(xml);
 
         deserialized.CurrentTabIndex.Should().Be(1);
         deserialized.ClosedTabsLimit.Should().Be(5);
@@ -68,7 +67,7 @@ public sealed class MemoDataTests
     [Fact]
     public void MemoData_要素を欠くXMLから既定値が補完される()
     {
-        var deserialized = DeserializeFromString<MemoData>("<MemoData />");
+        var deserialized = XmlTestSerializer.DeserializeFromString<MemoData>("<MemoData />");
 
         deserialized.FontName.Should().Be("Consolas");
         deserialized.FontSize.Should().Be(11f);
@@ -90,29 +89,12 @@ public sealed class MemoDataTests
         tab.Name.Should().Be("名前");
         tab.Text.Should().Be("本文\t\r\n\U0001F600後");
 
-        var xml = SerializeToString(original);
-        var deserialized = DeserializeFromString<MemoData>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var deserialized = XmlTestSerializer.DeserializeFromString<MemoData>(xml);
 
         deserialized.Tabs.Should().ContainSingle();
         deserialized.Tabs[0].Name.Should().Be("名前");
         // XMLの要素テキストはCRLFをLFへ正規化する
         deserialized.Tabs[0].Text.Should().Be("本文\t\n\U0001F600後");
-    }
-
-    // --- ヘルパー ---
-
-    private static string SerializeToString<T>(T obj)
-    {
-        using var writer = new StringWriter();
-        var serializer = new XmlSerializer(typeof(T));
-        serializer.Serialize(writer, obj);
-        return writer.ToString();
-    }
-
-    private static T DeserializeFromString<T>(string xml)
-    {
-        using var reader = new StringReader(xml);
-        var serializer = new XmlSerializer(typeof(T));
-        return (T)serializer.Deserialize(reader)!;
     }
 }

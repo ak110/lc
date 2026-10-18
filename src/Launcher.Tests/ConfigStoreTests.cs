@@ -186,17 +186,6 @@ public sealed class ConfigStoreTests
         }
     }
 
-    // --- SerializeToString が有効なXMLを返す ---
-
-    [Fact]
-    public void SerializeToString_XMLヘッダを含む文字列を返す()
-    {
-        var obj = new CommandList();
-        var xml = XmlTestSerializer.SerializeToString(obj);
-
-        xml.Should().StartWith("<?xml");
-        xml.Should().Contain("CommandList");
-    }
     // --- Command ラウンドトリップ ---
 
     [Fact]

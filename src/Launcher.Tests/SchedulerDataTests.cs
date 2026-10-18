@@ -1,4 +1,3 @@
-using System.Xml.Serialization;
 using FluentAssertions;
 using Launcher.Core;
 using Xunit;
@@ -52,8 +51,8 @@ public sealed class SchedulerDataTests
     public void SchedulerData_ラウンドトリップでデフォルト値が保持される()
     {
         var original = new SchedulerData();
-        var xml = SerializeToString(original);
-        var deserialized = DeserializeFromString<SchedulerData>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var deserialized = XmlTestSerializer.DeserializeFromString<SchedulerData>(xml);
 
         deserialized.Items.Should().BeEmpty();
     }
@@ -116,8 +115,8 @@ public sealed class SchedulerDataTests
             ],
         };
 
-        var xml = SerializeToString(original);
-        var deserialized = DeserializeFromString<SchedulerData>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var deserialized = XmlTestSerializer.DeserializeFromString<SchedulerData>(xml);
 
         deserialized.Items.Should().HaveCount(1);
 
@@ -190,8 +189,8 @@ public sealed class SchedulerDataTests
             ],
         };
 
-        var xml = SerializeToString(original);
-        var deserialized = DeserializeFromString<SchedulerData>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var deserialized = XmlTestSerializer.DeserializeFromString<SchedulerData>(xml);
 
         var tasks = deserialized.Items[0].Tasks;
         tasks.Should().HaveCount(2);
@@ -223,7 +222,7 @@ public sealed class SchedulerDataTests
             </SchedulerData>
             """;
 
-        var deserialized = DeserializeFromString<SchedulerData>(xml);
+        var deserialized = XmlTestSerializer.DeserializeFromString<SchedulerData>(xml);
         var task = deserialized.Items[0].Tasks[0];
 
         task.Type.Should().Be(SchedulerTaskType.Execute);
@@ -290,9 +289,9 @@ public sealed class SchedulerDataTests
     public void 識別子の無いアイテムへ識別子を補う()
     {
         // 旧版の設定 (Id要素なし) を読み込む
-        var xml = SerializeToString(new SchedulerData { Items = [new SchedulerItem { Name = "a" }, new SchedulerItem { Name = "b" }] })
+        var xml = XmlTestSerializer.SerializeToString(new SchedulerData { Items = [new SchedulerItem { Name = "a" }, new SchedulerItem { Name = "b" }] })
             .Replace("<Id />", "", StringComparison.Ordinal);
-        var data = DeserializeFromString<SchedulerData>(xml);
+        var data = XmlTestSerializer.DeserializeFromString<SchedulerData>(xml);
         data.Items.Should().OnlyContain(i => i.Id == "");
 
         data.EnsureIds().Should().BeTrue();
@@ -300,7 +299,7 @@ public sealed class SchedulerDataTests
         data.Items.Select(i => i.Id).Should().OnlyHaveUniqueItems();
 
         // 保存して読み直しても同じ識別子で、再度の補完は不要
-        var reloaded = DeserializeFromString<SchedulerData>(SerializeToString(data));
+        var reloaded = XmlTestSerializer.DeserializeFromString<SchedulerData>(XmlTestSerializer.SerializeToString(data));
         reloaded.Items.Select(i => i.Id).Should().Equal(data.Items.Select(i => i.Id));
         reloaded.EnsureIds().Should().BeFalse();
     }
@@ -323,21 +322,4 @@ public sealed class SchedulerDataTests
     }
 
     #endregion
-
-    // --- ヘルパー ---
-
-    private static string SerializeToString<T>(T obj)
-    {
-        using var writer = new StringWriter();
-        var serializer = new XmlSerializer(typeof(T));
-        serializer.Serialize(writer, obj);
-        return writer.ToString();
-    }
-
-    private static T DeserializeFromString<T>(string xml)
-    {
-        using var reader = new StringReader(xml);
-        var serializer = new XmlSerializer(typeof(T));
-        return (T)serializer.Deserialize(reader)!;
-    }
 }
