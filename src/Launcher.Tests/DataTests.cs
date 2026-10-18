@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Launcher.Core;
-using Launcher.Infrastructure;
 using Xunit;
 
 namespace Launcher.Tests;
@@ -15,8 +14,8 @@ public sealed class DataTests
     {
         var original = new Data();
 
-        var xml = original.SerializeToString();
-        var restored = ConfigStore.DeserializeFromString<Data>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var restored = XmlTestSerializer.DeserializeFromString<Data>(xml);
 
         restored.WindowHandle.Should().Be(0);
         restored.SchedulerLastCheckTime.Should().Be(DateTime.MinValue);
@@ -31,8 +30,8 @@ public sealed class DataTests
             SchedulerLastCheckTime = new DateTime(2025, 6, 15, 12, 0, 0),
         };
 
-        var xml = original.SerializeToString();
-        var restored = ConfigStore.DeserializeFromString<Data>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var restored = XmlTestSerializer.DeserializeFromString<Data>(xml);
 
         restored.WindowHandle.Should().Be(12345);
         restored.SchedulerLastCheckTime.Should().Be(new DateTime(2025, 6, 15, 12, 0, 0));

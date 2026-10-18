@@ -22,7 +22,7 @@ public sealed class SchedulerDataTests
         hm1.ToMinutes().Should().Be(570);
         hm2.ToMinutes().Should().Be(600);
 
-        (hm1 < hm2).Should().BeTrue();
+        hm1.CompareTo(hm2).Should().BeNegative();
         (hm1 == hm3).Should().BeTrue();
         (hm1 != hm2).Should().BeTrue();
         hm1.ToString().Should().Be("09:30");
@@ -39,7 +39,7 @@ public sealed class SchedulerDataTests
         var md2 = new MonthDay(4, 1);
         var md3 = new MonthDay(3, 15);
 
-        (md1 < md2).Should().BeTrue();
+        md1.CompareTo(md2).Should().BeNegative();
         (md1 == md3).Should().BeTrue();
         md1.ToString().Should().Be("03/15");
     }

@@ -112,9 +112,6 @@ public sealed class ShellLink : IDisposable
     // IShellLink インターフェイス
     private IShellLinkW? shellLinkW;
 
-    // カレントファイル
-    private string currentFile;
-
     // 二重 dispose を防止するフラグ
     private bool disposed;
 
@@ -188,8 +185,6 @@ public sealed class ShellLink : IDisposable
     /// <exception cref="COMException">IShellLink インターフェイスを取得できなかった場合の例外。</exception>
     public ShellLink()
     {
-        currentFile = "";
-
         try
         {
             shellLinkW = (IShellLinkW)(new ShellLinkObject());
@@ -248,14 +243,6 @@ public sealed class ShellLink : IDisposable
     #endregion
 
     #region "プロパティ"
-
-    /// <summary>
-    /// カレントファイル。
-    /// </summary>
-    public string CurrentFile
-    {
-        get { return currentFile; }
-    }
 
     /// <summary>
     /// ショートカットのリンク先。
@@ -327,58 +314,6 @@ public sealed class ShellLink : IDisposable
     }
 
     /// <summary>
-    /// アイコンのファイル。
-    /// </summary>
-    public string IconFile
-    {
-        get
-        {
-            GetIconLocation(out string iconFile, out _);
-            return iconFile;
-        }
-        set
-        {
-            GetIconLocation(out _, out int iconIndex);
-            SetIconLocation(value, iconIndex);
-        }
-    }
-
-    /// <summary>
-    /// アイコンのインデックス。
-    /// </summary>
-    public int IconIndex
-    {
-        get
-        {
-            GetIconLocation(out _, out int iconIndex);
-            return iconIndex;
-        }
-        set
-        {
-            GetIconLocation(out string iconPath, out _);
-            SetIconLocation(iconPath, value);
-        }
-    }
-
-    /// <summary>
-    /// アイコンのファイルとインデックスを取得する
-    /// </summary>
-    private void GetIconLocation(out string iconFile, out int iconIndex)
-    {
-        StringBuilder iconFileBuffer = new StringBuilder(MAX_PATH, MAX_PATH);
-        shellLinkW!.GetIconLocation(iconFileBuffer, iconFileBuffer.Capacity, out iconIndex);
-        iconFile = iconFileBuffer.ToString();
-    }
-
-    /// <summary>
-    /// アイコンのファイルとインデックスを設定する
-    /// </summary>
-    private void SetIconLocation(string iconFile, int iconIndex)
-    {
-        shellLinkW!.SetIconLocation(iconFile, iconIndex);
-    }
-
-    /// <summary>
     /// 実行時のウィンドウの大きさ。
     /// </summary>
     public ShellLinkDisplayMode DisplayMode
@@ -391,22 +326,6 @@ public sealed class ShellLink : IDisposable
         set
         {
             shellLinkW!.SetShowCmd((int)value);
-        }
-    }
-
-    /// <summary>
-    /// ホットキー。
-    /// </summary>
-    public Keys HotKey
-    {
-        get
-        {
-            shellLinkW!.GetHotkey(out ushort hotKey);
-            return (Keys)hotKey;
-        }
-        set
-        {
-            shellLinkW!.SetHotkey((ushort)value);
         }
     }
 
@@ -424,15 +343,6 @@ public sealed class ShellLink : IDisposable
     }
 
     /// <summary>
-    /// カレントファイルにショートカットを保存する。
-    /// </summary>
-    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
-    public void Save()
-    {
-        Save(currentFile);
-    }
-
-    /// <summary>
     /// 指定したファイルにショートカットを保存する。
     /// </summary>
     /// <param name="linkFile">ショートカットを保存するファイル</param>
@@ -445,9 +355,6 @@ public sealed class ShellLink : IDisposable
         if (persistFile is null) throw new COMException("IPersistFile インターフェイスを取得できなかった");
 
         persistFile.Save(linkFile, true);
-
-        // カレントファイルを保存する。
-        currentFile = linkFile;
     }
 
     /// <summary>
@@ -459,33 +366,6 @@ public sealed class ShellLink : IDisposable
     public void Load(string linkFile)
     {
         Load(linkFile, IntPtr.Zero, ShellLinkResolveFlags.SLR_ANY_MATCH | ShellLinkResolveFlags.SLR_NO_UI, 1);
-    }
-
-    /// <summary>
-    /// 指定したファイルからショートカットを読み込む。
-    /// </summary>
-    /// <param name="linkFile">ショートカットを読み込むファイル</param>
-    /// <param name="hWnd">このコードを呼び出したオーナーのウィンドウハンドル</param>
-    /// <param name="resolveFlags">ショートカット情報の解決に関する動作を表すフラグ</param>
-    /// <exception cref="FileNotFoundException">ファイルが見つからなかった場合の例外。</exception>
-    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
-    public void Load(string linkFile, IntPtr hWnd, ShellLinkResolveFlags resolveFlags)
-    {
-        Load(linkFile, hWnd, resolveFlags, 1);
-    }
-
-    /// <summary>
-    /// 指定したファイルからショートカットを読み込む。
-    /// </summary>
-    /// <param name="linkFile">ショートカットを読み込むファイル</param>
-    /// <param name="hWnd">このコードを呼び出したオーナーのウィンドウハンドル</param>
-    /// <param name="resolveFlags">ショートカット情報の解決に関する動作を表すフラグ</param>
-    /// <param name="timeOut">SLR_NO_UI を指定したときのタイムアウト値 (ミリ秒)</param>
-    /// <exception cref="FileNotFoundException">ファイルが見つからなかった場合の例外。</exception>
-    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
-    public void Load(string linkFile, IntPtr hWnd, ShellLinkResolveFlags resolveFlags, TimeSpan timeOut)
-    {
-        Load(linkFile, hWnd, resolveFlags, (int)timeOut.TotalMilliseconds);
     }
 
     /// <summary>
@@ -519,9 +399,6 @@ public sealed class ShellLink : IDisposable
 
         // ショートカットに関する情報を読み込む。
         shellLinkW!.Resolve(hWnd, flags);
-
-        // カレントファイルを指定する。
-        currentFile = linkFile;
     }
 
     #endregion

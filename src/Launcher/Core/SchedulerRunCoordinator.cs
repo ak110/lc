@@ -28,15 +28,6 @@ public sealed class SchedulerRunCoordinator
         this.start = start;
     }
 
-    /// <summary>実行中のアイテムがあるか</summary>
-    public bool IsRunning(string id)
-    {
-        lock (lockObject)
-        {
-            return running.Contains(id);
-        }
-    }
-
     /// <summary>
     /// 識別子の無いアイテムへ識別子を補い、補った場合と前回の保存に失敗していた場合は保存する。
     /// 保存できなければ、識別子を設定変更をまたいで追跡できないため予定実行を止めて false を返す。

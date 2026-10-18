@@ -94,7 +94,7 @@ public sealed class ConfigRecoveryTests : IDisposable
         loaded.Add(new Command { Name = "c", FileName = "c.exe" });
         loaded.Save(failures.Add, baseName);
 
-        var backup = ConfigStore.DeserializeFromFile<CommandList>(ConfigFileState.BackupName(CommandFile));
+        var backup = XmlTestSerializer.DeserializeFromFile<CommandList>(ConfigFileState.BackupName(CommandFile));
         Names(backup).Should().Equal("a", "b");
         Names(CommandList.Load(baseName).Value).Should().Equal("a", "b", "c");
     }
@@ -109,7 +109,7 @@ public sealed class ConfigRecoveryTests : IDisposable
         loaded.Add(new Command { Name = "b", FileName = "b.exe" });
         loaded.Save(failures.Add, baseName);
 
-        var backup = ConfigStore.DeserializeFromFile<CommandList>(ConfigFileState.BackupName(CommandFile));
+        var backup = XmlTestSerializer.DeserializeFromFile<CommandList>(ConfigFileState.BackupName(CommandFile));
         Names(backup).Should().Equal("a");
         var brokenFiles = Directory.GetFiles(dir, "らんちゃ.cmd.cfg.broken-*");
         brokenFiles.Should().ContainSingle();

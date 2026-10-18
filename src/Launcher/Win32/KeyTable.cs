@@ -261,15 +261,6 @@ public static class KeyTable
     /// KeysからOSの仮想キーコードへの変換。失敗時None。
     /// 低速のため注意。
     /// </summary>
-    public static SystemKeys KeysToVKey(Keys? key)
-    {
-        return key.HasValue ? KeysToVKey(key.Value) : SystemKeys.None;
-    }
-
-    /// <summary>
-    /// KeysからOSの仮想キーコードへの変換。失敗時None。
-    /// 低速のため注意。
-    /// </summary>
     public static SystemKeys KeysToVKey(Keys key)
     {
         foreach (KeyValuePair<SystemKeys, Keys> p in vkeyToKeys)

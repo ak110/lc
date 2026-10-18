@@ -70,16 +70,6 @@ public sealed class AsyncIconLoaderTests
     }
 
     [Fact]
-    public void ThreadPriorityがコンストラクタで設定される()
-    {
-        using var loader = new AsyncIconLoader(workerCount: 1, threadPriority: ThreadPriority.Lowest);
-        loader.ThreadPriority.Should().Be(ThreadPriority.Lowest);
-
-        using var loader2 = new AsyncIconLoader(workerCount: 1, threadPriority: ThreadPriority.Highest);
-        loader2.ThreadPriority.Should().Be(ThreadPriority.Highest);
-    }
-
-    [Fact]
     public void IconLoadedイベントに世代番号が含まれる()
     {
         using var loader = new AsyncIconLoader(workerCount: 1, extractIcon: (_, _) => null);

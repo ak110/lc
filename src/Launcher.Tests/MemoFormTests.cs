@@ -41,7 +41,7 @@ public sealed class MemoFormTests(ITestOutputHelper output)
                 status.Text.Should().Contain("未保存");
                 retry.Enabled.Should().BeTrue();
                 editor.Text.Should().Be("保存できなかった日本語の本文");
-                ConfigStore.DeserializeFromFile<MemoData>(path).Tabs[0].Text.Should().Be("保存前");
+                XmlTestSerializer.DeserializeFromFile<MemoData>(path).Tabs[0].Text.Should().Be("保存前");
                 Capture(form, readOnly ? "memo-readonly" : "memo-locked");
                 form.HideIfVisible();
                 editor.Text.Should().Be("保存できなかった日本語の本文");
@@ -54,12 +54,12 @@ public sealed class MemoFormTests(ITestOutputHelper output)
                 form.FlushPendingSave().Should().BeTrue("タイマー停止後も未保存の内容を最終保存する");
             status.Text.Should().Be("保存済み");
             retry.Enabled.Should().BeFalse();
-            ConfigStore.DeserializeFromFile<MemoData>(path).Tabs[0].Text.Should().Be("保存できなかった日本語の本文");
+            XmlTestSerializer.DeserializeFromFile<MemoData>(path).Tabs[0].Text.Should().Be("保存できなかった日本語の本文");
             Capture(form, readOnly ? "memo-readonly-restored" : "memo-locked-restored");
 
             editor.Text = "再編集した本文";
             form.FlushPendingSave().Should().BeTrue();
-            ConfigStore.DeserializeFromFile<MemoData>(path).Tabs[0].Text.Should().Be("再編集した本文");
+            XmlTestSerializer.DeserializeFromFile<MemoData>(path).Tabs[0].Text.Should().Be("再編集した本文");
         }
         finally
         {

@@ -40,17 +40,8 @@ public sealed record ConfigLoadResult<T>(
 /// </summary>
 public sealed class ConfigSaveBlockedException : IOException
 {
-    public ConfigSaveBlockedException()
-    {
-    }
-
     public ConfigSaveBlockedException(string message)
         : base(message)
-    {
-    }
-
-    public ConfigSaveBlockedException(string message, Exception innerException)
-        : base(message, innerException)
     {
     }
 }

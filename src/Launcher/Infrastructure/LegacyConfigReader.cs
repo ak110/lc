@@ -10,13 +10,6 @@ public sealed class LegacyConfigReader
     Dictionary<string, string> data = new Dictionary<string, string>();
 
     /// <summary>
-    /// ファイル名を指定して読み込む。
-    /// </summary>
-    public LegacyConfigReader(string fileName)
-        : this(File.Open(fileName, FileMode.Open, FileAccess.Read), true)
-    {
-    }
-    /// <summary>
     /// stream から読み込む。
     /// </summary>
 #pragma warning disable CA2000 // StreamReader の所有権は this() に委譲される。
@@ -56,20 +49,7 @@ public sealed class LegacyConfigReader
         get { return data.Keys; }
     }
 
-    public Dictionary<string, string>.ValueCollection Values
-    {
-        get { return data.Values; }
-    }
-
     #endregion
-
-    /// <summary>
-    /// Dictionary を直接取得できるようにする。
-    /// </summary>
-    public Dictionary<string, string> Data
-    {
-        get { return data; }
-    }
 
     /// <summary>
     /// bool 値として取得する。
@@ -84,13 +64,6 @@ public sealed class LegacyConfigReader
     public int Num(string n)
     {
         return int.Parse(data[n]);
-    }
-    /// <summary>
-    /// 倍精度浮動小数点数として取得する。
-    /// </summary>
-    public double Float(string n)
-    {
-        return double.Parse(data[n]);
     }
     /// <summary>
     /// エスケープシーケンスを展開した文字列として取得する。
@@ -133,36 +106,5 @@ public sealed class LegacyConfigReader
     public string Indirect(string n)
     {
         return data[n];
-    }
-    /// <summary>
-    /// Point として取得する。
-    /// </summary>
-    public static Point Point(string n)
-    {
-        string[] s = n.Split(',');
-        if (s.Length != 2) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗した");
-        return new Point(int.Parse(s[0].Trim()), int.Parse(s[1].Trim()));
-    }
-    /// <summary>
-    /// Size として取得する。
-    /// </summary>
-    public static Size Size(string n)
-    {
-        string[] s = n.Split(',');
-        if (s.Length != 2) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗した");
-        return new Size(int.Parse(s[0].Trim()), int.Parse(s[1].Trim()));
-    }
-    /// <summary>
-    /// Rectangle として取得する。
-    /// </summary>
-    public static Rectangle Rect(string n)
-    {
-        string[] s = n.Split(',');
-        if (s.Length != 4) throw new FileLoadException("設定ファイルの項目 '" + n + "' の自動解析に失敗した");
-        return new Rectangle(
-            int.Parse(s[0].Trim()),
-            int.Parse(s[1].Trim()),
-            int.Parse(s[2].Trim()),
-            int.Parse(s[3].Trim()));
     }
 }

@@ -30,20 +30,8 @@ public sealed class AppVersionTests
     }
 
     [Fact]
-    public void TagName_ShouldStartWithV()
-    {
-        AppVersion.TagName.Should().StartWith("v");
-    }
-
-    [Fact]
     public void Title_ShouldStartWithExpectedPrefix()
     {
         AppVersion.Title.Should().StartWith("らんちゃ v");
-    }
-
-    [Fact]
-    public void TagName_ShouldBeVPrefixedVersionString()
-    {
-        AppVersion.TagName.Should().Be("v" + AppVersion.VersionString);
     }
 }

@@ -19,10 +19,10 @@ public sealed class ConfigStoreTests
     [InlineData(5)]
     public void 既存XMLの数値優先度を同じ数値で保存する(int value)
     {
-        var config = ConfigStore.DeserializeFromString<Config>(
+        var config = XmlTestSerializer.DeserializeFromString<Config>(
             $"<Config><ProcessPriority>{value}</ProcessPriority></Config>");
         ((int)config.ProcessPriority).Should().Be(value);
-        config.SerializeToString().Should().Contain($"<ProcessPriority>{value}</ProcessPriority>");
+        XmlTestSerializer.SerializeToString(config).Should().Contain($"<ProcessPriority>{value}</ProcessPriority>");
     }
 
     [Theory]
@@ -32,9 +32,9 @@ public sealed class ConfigStoreTests
     [InlineData(ItemAction.Delete, 3)]
     public void アイテム動作は既存の数値で保存し再読込できる(ItemAction action, int value)
     {
-        var xml = new Config { ItemDoubleClick = action }.SerializeToString();
+        var xml = XmlTestSerializer.SerializeToString(new Config { ItemDoubleClick = action });
         xml.Should().Contain($"<ItemDoubleClick>{value}</ItemDoubleClick>");
-        ConfigStore.DeserializeFromString<Config>(xml).ItemDoubleClick.Should().Be(action);
+        XmlTestSerializer.DeserializeFromString<Config>(xml).ItemDoubleClick.Should().Be(action);
     }
 
     [Theory]
@@ -43,9 +43,9 @@ public sealed class ConfigStoreTests
     [InlineData(CloseButtonBehavior.Exit, 2)]
     public void 閉じる動作は既存の数値で保存し再読込できる(CloseButtonBehavior action, int value)
     {
-        var xml = new Config { CloseButton = action }.SerializeToString();
+        var xml = XmlTestSerializer.SerializeToString(new Config { CloseButton = action });
         xml.Should().Contain($"<CloseButton>{value}</CloseButton>");
-        ConfigStore.DeserializeFromString<Config>(xml).CloseButton.Should().Be(action);
+        XmlTestSerializer.DeserializeFromString<Config>(xml).CloseButton.Should().Be(action);
     }
 
     // --- CommandList を使ったラウンドトリップ ---
@@ -55,8 +55,8 @@ public sealed class ConfigStoreTests
     {
         var original = new CommandList();
 
-        var xml = original.SerializeToString();
-        var restored = ConfigStore.DeserializeFromString<CommandList>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var restored = XmlTestSerializer.DeserializeFromString<CommandList>(xml);
 
         restored.Commands.Should().BeEmpty();
         restored.Count.Should().Be(0);
@@ -82,8 +82,8 @@ public sealed class ConfigStoreTests
             FileName = @"C:\Windows\System32\cmd.exe",
         });
 
-        var xml = original.SerializeToString();
-        var restored = ConfigStore.DeserializeFromString<CommandList>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var restored = XmlTestSerializer.DeserializeFromString<CommandList>(xml);
 
         restored.Commands.Should().HaveCount(2);
         restored.Commands[0].Name.Should().Be("notepad");
@@ -130,8 +130,8 @@ public sealed class ConfigStoreTests
             ButtonLauncherActivation = ButtonLauncherActivation.RightThenLeft,
         };
 
-        var xml = original.SerializeToString();
-        var restored = ConfigStore.DeserializeFromString<Config>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var restored = XmlTestSerializer.DeserializeFromString<Config>(xml);
 
         restored.Debug.Should().Be(original.Debug);
         restored.IconDoubleClick.Should().Be(original.IconDoubleClick);
@@ -192,7 +192,7 @@ public sealed class ConfigStoreTests
     public void SerializeToString_XMLヘッダを含む文字列を返す()
     {
         var obj = new CommandList();
-        var xml = obj.SerializeToString();
+        var xml = XmlTestSerializer.SerializeToString(obj);
 
         xml.Should().StartWith("<?xml");
         xml.Should().Contain("CommandList");
@@ -213,7 +213,7 @@ public sealed class ConfigStoreTests
             RunAsAdmin = true,
         };
         var xml = SerializeXml(original);
-        var deserialized = ConfigStore.DeserializeFromString<Command>(xml);
+        var deserialized = XmlTestSerializer.DeserializeFromString<Command>(xml);
 
         deserialized.Name.Should().Be("notepad");
         deserialized.FileName.Should().Be(@"C:\Windows\notepad.exe");
@@ -234,7 +234,7 @@ public sealed class ConfigStoreTests
     {
         var original = new Config { ButtonLauncherActivation = value };
         var xml = SerializeXml(original);
-        var deserialized = ConfigStore.DeserializeFromString<Config>(xml);
+        var deserialized = XmlTestSerializer.DeserializeFromString<Config>(xml);
         deserialized.ButtonLauncherActivation.Should().Be(value);
     }
 

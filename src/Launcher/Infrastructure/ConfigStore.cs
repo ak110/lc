@@ -69,44 +69,10 @@ public class ConfigStore
     }
 
     /// <summary>
-    /// オブジェクトをXML文字列にシリアライズする。
-    /// </summary>
-    /// <returns>シリアライズされたXML文字列</returns>
-    public string SerializeToString()
-    {
-        using var stream = new StringWriter();
-        XmlSerializer s = new XmlSerializer(GetType());
-        s.Serialize(stream, this);
-        return stream.GetStringBuilder().ToString();
-    }
-
-    /// <summary>
-    /// ファイルからオブジェクトを復元
-    /// </summary>
-    public static T DeserializeFromFile<T>(string fileName)
-    {
-        using var mutex = Lock(fileName);
-        using FileStream stream = File.OpenRead(fileName);
-        return DeserializeFromStream<T>(stream);
-    }
-
-    /// <summary>
     /// ストリームからオブジェクトを復元
     /// </summary>
     public static T DeserializeFromStream<T>(Stream stream)
     {
-        XmlSerializer formatter = new XmlSerializer(typeof(T));
-        return (T)formatter.Deserialize(stream)!;
-    }
-
-    /// <summary>
-    /// XML文字列からオブジェクトをデシリアライズする。
-    /// </summary>
-    /// <param name="data">シリアライズされたXML文字列</param>
-    /// <returns>復元されたオブジェクト</returns>
-    public static T DeserializeFromString<T>(string data)
-    {
-        using var stream = new StringReader(data);
         XmlSerializer formatter = new XmlSerializer(typeof(T));
         return (T)formatter.Deserialize(stream)!;
     }

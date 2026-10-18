@@ -35,14 +35,14 @@ public sealed class SchedulerRunCoordinatorTests
         coordinator.Request(item);
         coordinator.Request(item);
         started.Should().HaveCount(1, "実行中は同じアイテムを開始しない");
-        coordinator.IsRunning(item.Id).Should().BeTrue();
 
         started[0].Completed();
         started.Should().HaveCount(2, "保留は1件にまとめて完了後に実行する");
 
         started[1].Completed();
         started.Should().HaveCount(2);
-        coordinator.IsRunning(item.Id).Should().BeFalse();
+        coordinator.Request(item);
+        started.Should().HaveCount(3, "完了で実行状態を解放し、次の予定を開始する");
     }
 
     [Fact]
@@ -152,15 +152,15 @@ public sealed class SchedulerRunCoordinatorTests
 
         // 完了通知を配送できない: 実行状態を解放し、保留は開始しない
         coordinator.Release(a.Id);
-        coordinator.IsRunning(a.Id).Should().BeFalse();
         started.Should().HaveCount(2);
+        coordinator.Request(a);
+        started.Should().HaveCount(3, "解放した実行状態は次の予定の開始を妨げない");
 
         // 終了処理中: 完了しても保留を開始しない
         coordinator.Shutdown();
         started[1].Completed();
-        coordinator.IsRunning(b.Id).Should().BeFalse();
         coordinator.Request(a);
-        started.Should().HaveCount(2);
+        started.Should().HaveCount(3);
     }
 
     [Fact]

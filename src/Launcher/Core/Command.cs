@@ -154,16 +154,6 @@ public class Command : ICloneable, IComparable<Command>, IComparable
     }
 
     /// <summary>
-    /// 入力文字列とコマンド名とを比較し、完全一致したらtrue
-    /// </summary>
-    public bool IsMatch(string input, Config config)
-    {
-        string commandName;
-        string? arguments;
-        return ParseInput(input, config, out commandName, out arguments);
-    }
-
-    /// <summary>
     /// 入力文字列を、コマンド名と引数に分ける。
     /// </summary>
     /// <returns>コマンド名が一致した場合は true。false の場合の戻り値は信頼できない。</returns>

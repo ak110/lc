@@ -13,8 +13,6 @@ public sealed class ShellProcessStartInfo
     public bool ErrorDialog { get; set; }
     public IntPtr ErrorDialogParentHandle { get; set; }
 
-    public ShellProcessStartInfo() { }
-    public ShellProcessStartInfo(string fileName) => FileName = fileName;
     public ShellProcessStartInfo(string fileName, string arguments)
     {
         FileName = fileName;

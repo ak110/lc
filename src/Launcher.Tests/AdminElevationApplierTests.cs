@@ -12,11 +12,7 @@ public sealed class AdminElevationApplierTests
     [Fact]
     public void Apply_RunAsはVerbをrunasに設定する()
     {
-        var info = new ShellProcessStartInfo
-        {
-            FileName = @"C:\app.exe",
-            Arguments = "-flag value",
-        };
+        var info = new ShellProcessStartInfo(@"C:\app.exe", "-flag value");
 
         AdminElevationApplier.Apply(info, AdminElevation.RunAs, runAsCommandLine: "/u:Admin", vECmdPath: @"C:\elev.exe");
 
@@ -28,11 +24,7 @@ public sealed class AdminElevationApplierTests
     [Fact]
     public void Apply_RunAsCommandはrunasコマンドを呼ぶ形式に変換する()
     {
-        var info = new ShellProcessStartInfo
-        {
-            FileName = @"C:\app.exe",
-            Arguments = "-flag value",
-        };
+        var info = new ShellProcessStartInfo(@"C:\app.exe", "-flag value");
 
         AdminElevationApplier.Apply(info, AdminElevation.RunAsCommand, runAsCommandLine: "/u:Admin", vECmdPath: @"C:\elev.exe");
 
@@ -44,11 +36,7 @@ public sealed class AdminElevationApplierTests
     [Fact]
     public void Apply_RunAsCommandは引数中の二重引用符をエスケープする()
     {
-        var info = new ShellProcessStartInfo
-        {
-            FileName = @"C:\app.exe",
-            Arguments = "-msg \"hello\"",
-        };
+        var info = new ShellProcessStartInfo(@"C:\app.exe", "-msg \"hello\"");
 
         AdminElevationApplier.Apply(info, AdminElevation.RunAsCommand, runAsCommandLine: "/u:Admin", vECmdPath: @"C:\elev.exe");
 
@@ -60,11 +48,7 @@ public sealed class AdminElevationApplierTests
     [Fact]
     public void Apply_VistaElevatorはエレベーターを介する形式に変換する()
     {
-        var info = new ShellProcessStartInfo
-        {
-            FileName = @"C:\app.exe",
-            Arguments = "-flag value",
-        };
+        var info = new ShellProcessStartInfo(@"C:\app.exe", "-flag value");
 
         AdminElevationApplier.Apply(info, AdminElevation.VistaElevator, runAsCommandLine: "/u:Admin", vECmdPath: @"C:\elev.exe");
 
@@ -78,11 +62,7 @@ public sealed class AdminElevationApplierTests
     public void Apply_VistaElevatorは衝突しない区切り文字を選ぶ()
     {
         // FileName/Arguments に '/' が含まれるため、次の候補 ',' が使われる。
-        var info = new ShellProcessStartInfo
-        {
-            FileName = @"C:\app/x.exe",
-            Arguments = "-url http://example",
-        };
+        var info = new ShellProcessStartInfo(@"C:\app/x.exe", "-url http://example");
 
         AdminElevationApplier.Apply(info, AdminElevation.VistaElevator, runAsCommandLine: "/u:Admin", vECmdPath: @"C:\elev.exe");
 
@@ -92,11 +72,7 @@ public sealed class AdminElevationApplierTests
     [Fact]
     public void Apply_VistaElevatorはvECmdPathを正規化する()
     {
-        var info = new ShellProcessStartInfo
-        {
-            FileName = @"C:\app.exe",
-            Arguments = "-flag",
-        };
+        var info = new ShellProcessStartInfo(@"C:\app.exe", "-flag");
 
         // PathNormalize の挙動: / を \ に置換し、末尾の \ を除去する。
         AdminElevationApplier.Apply(info, AdminElevation.VistaElevator, runAsCommandLine: "", vECmdPath: @"C:/Tools/elev.exe/");

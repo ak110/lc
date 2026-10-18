@@ -1,5 +1,3 @@
-using System.ComponentModel;
-
 namespace Launcher.UI;
 
 /// <summary>
@@ -42,16 +40,6 @@ public partial class ErrorReporterForm : Form
         textBox2.Top += shift;
         // 下端に固定したボタンは、クライアント領域の拡大に合わせて下がる。
         ClientSize += new Size(0, shift);
-    }
-
-    /// <summary>
-    /// 続行ボタンを使うかどうか
-    /// </summary>
-    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public bool UseContinue
-    {
-        get { return button5.Visible; }
-        set { button5.Visible = value; }
     }
 
     /// <summary>

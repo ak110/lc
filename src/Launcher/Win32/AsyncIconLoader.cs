@@ -78,11 +78,6 @@ public sealed class AsyncIconLoader : IDisposable
     public bool IsDisposed => disposed;
 
     /// <summary>
-    /// ワーカースレッドの優先度 (読み取り専用)。コンストラクタで設定。
-    /// </summary>
-    public ThreadPriority ThreadPriority { get; }
-
-    /// <summary>
     /// アイコン読み込み完了イベント
     /// </summary>
     public event EventHandler<IconLoadedEventArgs>? IconLoaded;
@@ -98,7 +93,6 @@ public sealed class AsyncIconLoader : IDisposable
         ThreadPriority threadPriority = ThreadPriority.Normal,
         Func<string, bool, System.Drawing.Icon?>? extractIcon = null)
     {
-        ThreadPriority = threadPriority;
         _faviconCache = new FaviconCache(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "favicons"));
         this.extractIcon = extractIcon ?? DefaultExtractIcon;
         // Dispose()とのレース回避: スレッド開始前にトークンを取得しておく

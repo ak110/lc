@@ -44,13 +44,6 @@ public sealed class LegacyConfigReaderTests
     }
 
     [Fact]
-    public void 浮動小数点を正しくパースする()
-    {
-        var reader = CreateReader("rate = 3.14");
-        reader.Float("rate").Should().BeApproximately(3.14, 0.001);
-    }
-
-    [Fact]
     public void エスケープシーケンスを正しく処理する()
     {
         // \n → 改行, \r → CR, \\ → バックスラッシュ

@@ -39,13 +39,11 @@ public sealed class MouseHookEventArgs : EventArgs
 {
     int nCode;
     IntPtr wParam;
-    Hook.MSLLHOOKSTRUCT s;
     bool handled;
-    public MouseHookEventArgs(int nCode, IntPtr wParam, Hook.MSLLHOOKSTRUCT s)
+    public MouseHookEventArgs(int nCode, IntPtr wParam)
     {
         this.nCode = nCode;
         this.wParam = wParam;
-        this.s = s;
     }
     public int HookCode
     {
@@ -59,10 +57,6 @@ public sealed class MouseHookEventArgs : EventArgs
     {
         get { return handled; }
         set { handled = value; }
-    }
-    public Hook.MSLLHOOKSTRUCT HookStruct
-    {
-        get { return s; }
     }
 }
 
@@ -196,7 +190,7 @@ public static class Hook
             try
             {
                 EventHandler<MouseHookEventArgs>? MouseHook = Hook.MouseHook;
-                MouseHookEventArgs e = new MouseHookEventArgs(nCode, wParam, lParam);
+                MouseHookEventArgs e = new MouseHookEventArgs(nCode, wParam);
                 if (MouseHook is not null)
                 {
                     MouseHook(null, e);

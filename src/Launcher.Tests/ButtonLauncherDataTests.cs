@@ -1,4 +1,3 @@
-using System.Xml.Serialization;
 using FluentAssertions;
 using Launcher.Core;
 using Xunit;
@@ -14,8 +13,8 @@ public sealed class ButtonLauncherDataTests
     public void ButtonLauncherData_ラウンドトリップでデフォルト値が保持される()
     {
         var original = new ButtonLauncherData();
-        var xml = SerializeToString(original);
-        var deserialized = DeserializeFromString<ButtonLauncherData>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var deserialized = XmlTestSerializer.DeserializeFromString<ButtonLauncherData>(xml);
 
         deserialized.DefaultTabIndex.Should().Be(0);
         deserialized.Columns.Should().Be(7);
@@ -58,8 +57,8 @@ public sealed class ButtonLauncherDataTests
         original.Tabs.Add(tab);
         original.Tabs.Add(new ButtonTab { Name = "サブ" });
 
-        var xml = SerializeToString(original);
-        var deserialized = DeserializeFromString<ButtonLauncherData>(xml);
+        var xml = XmlTestSerializer.SerializeToString(original);
+        var deserialized = XmlTestSerializer.DeserializeFromString<ButtonLauncherData>(xml);
 
         deserialized.Columns.Should().Be(5);
         deserialized.Rows.Should().Be(4);
@@ -151,20 +150,4 @@ public sealed class ButtonLauncherDataTests
         tab.Buttons.Should().BeEmpty();
     }
 
-    // --- ヘルパー ---
-
-    private static string SerializeToString<T>(T obj)
-    {
-        using var writer = new StringWriter();
-        var serializer = new XmlSerializer(typeof(T));
-        serializer.Serialize(writer, obj);
-        return writer.ToString();
-    }
-
-    private static T DeserializeFromString<T>(string xml)
-    {
-        using var reader = new StringReader(xml);
-        var serializer = new XmlSerializer(typeof(T));
-        return (T)serializer.Deserialize(reader)!;
-    }
 }

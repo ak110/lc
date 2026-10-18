@@ -20,12 +20,6 @@ public sealed class KeyTableTests
         KeyTable.KeysToVKey(key).Should().Be(expected);
     }
 
-    [Fact]
-    public void KeysToVKey_nullはNoneを返す()
-    {
-        KeyTable.KeysToVKey((KeyTable.Keys?)null).Should().Be(SystemKeys.None);
-    }
-
     // --- GetKeyName ---
 
     [Theory]

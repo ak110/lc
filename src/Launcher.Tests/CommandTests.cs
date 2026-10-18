@@ -156,7 +156,7 @@ public sealed class CommandTests
         cmd.Priority.Should().Be(ProcessPriorityLevel.Idle);
     }
 
-    // --- GetMatchScore / IsMatch ---
+    // --- GetMatchScore / ParseInput ---
 
     [Fact]
     public void GetMatchScore_先頭一致でスコアが正()
@@ -168,21 +168,21 @@ public sealed class CommandTests
     }
 
     [Fact]
-    public void IsMatch_完全一致でtrue()
+    public void ParseInput_完全一致でtrue()
     {
         var cmd = new Command { Name = "notepad" };
         var config = new Config { CommandIgnoreCase = true };
 
-        cmd.IsMatch("notepad", config).Should().BeTrue();
+        cmd.ParseInput("notepad", config, out _, out _).Should().BeTrue();
     }
 
     [Fact]
-    public void IsMatch_不完全一致でfalse()
+    public void ParseInput_不完全一致でfalse()
     {
         var cmd = new Command { Name = "notepad" };
         var config = new Config { CommandIgnoreCase = true };
 
-        cmd.IsMatch("note", config).Should().BeFalse();
+        cmd.ParseInput("note", config, out _, out _).Should().BeFalse();
     }
 
     // --- デフォルト値 ---

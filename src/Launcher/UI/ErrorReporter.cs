@@ -36,15 +36,6 @@ public sealed class ErrorReporter
     }
 
     /// <summary>
-    /// オーナーウィンドウ。
-    /// </summary>
-    public Control? Owner
-    {
-        get { return owner; }
-        set { owner = value; }
-    }
-
-    /// <summary>
     /// Ownerを設定し、破棄時の自動解除を登録する。
     /// </summary>
     public void SetOwner(Control form, Func<IWin32Window?>? getVisibleOwner = null)

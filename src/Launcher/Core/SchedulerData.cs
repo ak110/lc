@@ -47,10 +47,6 @@ public struct HourMinute : IComparable<HourMinute>, IEquatable<HourMinute>, IClo
     public override int GetHashCode() => HashCode.Combine(Hour, Minute);
     public static bool operator ==(HourMinute left, HourMinute right) => left.Equals(right);
     public static bool operator !=(HourMinute left, HourMinute right) => !left.Equals(right);
-    public static bool operator <(HourMinute left, HourMinute right) => left.CompareTo(right) < 0;
-    public static bool operator >(HourMinute left, HourMinute right) => left.CompareTo(right) > 0;
-    public static bool operator <=(HourMinute left, HourMinute right) => left.CompareTo(right) <= 0;
-    public static bool operator >=(HourMinute left, HourMinute right) => left.CompareTo(right) >= 0;
 
     public object Clone() => this;
 }
@@ -80,8 +76,6 @@ public struct MonthDay : IComparable<MonthDay>, IEquatable<MonthDay>
     public override int GetHashCode() => HashCode.Combine(Month, Day);
     public static bool operator ==(MonthDay left, MonthDay right) => left.Equals(right);
     public static bool operator !=(MonthDay left, MonthDay right) => !left.Equals(right);
-    public static bool operator <(MonthDay left, MonthDay right) => left.CompareTo(right) < 0;
-    public static bool operator >(MonthDay left, MonthDay right) => left.CompareTo(right) > 0;
     public static bool operator <=(MonthDay left, MonthDay right) => left.CompareTo(right) <= 0;
     public static bool operator >=(MonthDay left, MonthDay right) => left.CompareTo(right) >= 0;
 }

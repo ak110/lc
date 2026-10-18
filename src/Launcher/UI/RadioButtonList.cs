@@ -7,7 +7,6 @@ namespace Launcher.UI;
 /// ラジオボタンのリストを管理するコントロール。
 /// </summary>
 [DefaultProperty("Items")]
-[DefaultEvent("SelectedIndexChanged")]
 public partial class RadioButtonList : UserControl
 {
     object lockObject = new();
@@ -38,16 +37,7 @@ public partial class RadioButtonList : UserControl
         RadioButton r = (RadioButton)sender!;
         if (r.Checked)
         {
-            int index = items.IndexOf(r);
-            if (selectedIndex != index)
-            {
-                selectedIndex = index;
-                // イベントのコールバック
-                if (SelectedIndexChanged is not null)
-                {
-                    SelectedIndexChanged(this, EventArgs.Empty);
-                }
-            }
+            selectedIndex = items.IndexOf(r);
         }
     }
 
@@ -76,11 +66,6 @@ public partial class RadioButtonList : UserControl
             }
         }
     }
-
-    /// <summary>
-    /// SelectedIndex変更されたイベント
-    /// </summary>
-    public event EventHandler? SelectedIndexChanged;
 
     /// <summary>
     /// 選択された項目
@@ -224,14 +209,6 @@ public partial class RadioButtonList : UserControl
                 owner.items.Add(CreateRadioButton(item));
                 owner.UpdateLayout();
                 return owner.items.Count - 1;
-            }
-        }
-
-        public void AddRange(ObjectCollection items)
-        {
-            foreach (object v in items)
-            {
-                Add(v);
             }
         }
 

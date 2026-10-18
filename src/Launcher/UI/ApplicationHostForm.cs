@@ -400,14 +400,6 @@ public partial class ApplicationHostForm : Form
     }
 
     /// <summary>
-    /// CommandLauncherFormの表示を更新
-    /// </summary>
-    public void RefreshCommandLauncherForm()
-    {
-        IfCommandLauncherFormAlive(form => form.ApplyConfig());
-    }
-
-    /// <summary>
     /// CommandLauncherFormのコマンド一覧表示だけを更新 (アイコン再読込なし)
     /// </summary>
     public void RefreshCommandLauncherFormCommandList()
