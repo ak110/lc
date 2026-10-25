@@ -21,6 +21,14 @@ Windows用アプリケーションランチャー（C#/.NET WinForms）。
 モジュール構成・主要な設計パターン・フック管理・環境変数の自動リロードなどの
 アーキテクチャ概要は[docs/development/architecture.md](docs/development/architecture.md)を参照する。
 
+## 共通品質基準
+
+コード・設計・テスト・文書の作成と修正の前に`agent-basics:writing-standards`を起動する。
+レビューとレビュー指摘の採否の判断の前には`agent-basics:review-standards`を起動する。
+いずれも各スキルの読込表が示すreferences（C#は`references/csharp.md`など）を読む。
+本プロジェクト固有の規約（次節）と`winforms-sta-reviewer`の起動条件は、共通品質基準に加えて適用する。
+agent-basicsの導入は[開発ガイドの初回セットアップ](docs/development/development.md#初回セットアップ)を参照する。
+
 ## 実装上の不変条件・コーディング規約
 
 実装上の不変条件はトピック別に規約ファイルとして分離している。

@@ -15,6 +15,7 @@ model: sonnet
 不変条件のSSOTは`.claude/rules/`配下のトピック別ルールおよび`.claude/skills/`配下のスキル、
 アーキテクチャ概要は`docs/development/architecture.md`とする。
 一般的なC#のコーディングスタイルや命名はレビュー対象外。設計不変条件のみに集中する。
+一般的なコード品質のレビューは、メインエージェントが`agent-basics:review-standards`で別に行う。
 
 ## 入力前提
 

@@ -5,6 +5,8 @@ paths:
 
 # ログ運用ルール
 
+本書はlc固有の規約を定める。C#を含む共通の品質基準は`agent-basics:writing-standards`（`references/csharp.md`など）が定め、本書はそれに加えて適用する。
+
 ## 出力API
 
 運用ログは`Launcher.Infrastructure.DiagnosticLog`のレベル別APIを用いる。
