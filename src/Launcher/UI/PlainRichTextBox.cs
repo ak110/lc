@@ -11,7 +11,7 @@ namespace Launcher.UI;
 /// コピーは選択文字列をプレーンテキストとしてクリップボードへ格納する。
 /// 取り消し上限を大きく設定し、実用上は無制限に取り消せる。
 /// 複数行選択時のTab/Shift+Tabは行単位のインデント/アンインデントとして扱う。
-/// フォーマット矩形へ余白を設ける。
+/// 約0.5emの余白を設ける。左右はフォーマット矩形、上下は親コンテナーのPaddingで設ける。
 /// </summary>
 public sealed class PlainRichTextBox : RichTextBox
 {
@@ -78,19 +78,40 @@ public sealed class PlainRichTextBox : RichTextBox
         ApplyPadding();
     }
 
+    protected override void OnParentChanged(EventArgs e)
+    {
+        base.OnParentChanged(e);
+        ApplyPadding();
+    }
+
+    protected override void OnBackColorChanged(EventArgs e)
+    {
+        base.OnBackColorChanged(e);
+        ApplyPadding();
+    }
+
     /// <summary>
-    /// EM_SETRECTでフォーマット矩形へ内側余白 (約0.5em) を設定する。
+    /// 余白 (約0.5em) を設定する。
+    /// 左右はEM_SETRECTでフォーマット矩形を縮める。
+    /// 上下は親コンテナーのPaddingで設け、親の背景色を自身の背景色へそろえる。
+    /// RichEditはスクロール時にフォーマット矩形の外を再描画しないため、
+    /// 上下の余白をクライアント領域内に置くとスクロール前の文字の画素が余白に残る。
     /// </summary>
     void ApplyPadding()
     {
-        if (!IsHandleCreated) return;
         int pad = Math.Max(1, Font.Height / 2);
+        if (Parent is { } parent)
+        {
+            parent.Padding = new Padding(0, pad, 0, pad);
+            parent.BackColor = BackColor;
+        }
+        if (!IsHandleCreated) return;
         var rect = new NativeMethods.RECT
         {
             Left = pad,
-            Top = pad,
+            Top = 0,
             Right = Math.Max(pad + 1, ClientSize.Width - pad),
-            Bottom = Math.Max(pad + 1, ClientSize.Height - pad),
+            Bottom = ClientSize.Height,
         };
         NativeMethods.SendMessageRect(Handle, EM_SETRECT, IntPtr.Zero, ref rect);
     }

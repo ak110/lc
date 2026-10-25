@@ -192,6 +192,44 @@ public sealed class MemoFormTests(ITestOutputHelper output)
         }
     });
 
+    [Fact]
+    public void 余白_上下はタブページの余白で設けスクロールする書式矩形は左右だけを縮める() => UiAcceptance.Run(() =>
+    {
+        // RichEditはスクロール時に書式矩形の外を再描画しないため、
+        // 上下の余白を書式矩形の外に置くとスクロール前の文字の画素が余白に残る。
+        using var data = CreateData();
+        data.Write(".memo.cfg", new MemoData { Tabs = [new MemoTab { Name = "メモ", Text = string.Join("\n", Enumerable.Range(1, 200)) }] });
+        using var host = new ApplicationHostForm(data.BaseName);
+        try
+        {
+            host.ShowHideMemo();
+            var form = host.OwnedForms.OfType<MemoForm>().Single();
+            var page = form.Controls.OfType<TabControl>().Single().TabPages[0];
+            var editor = page.Controls.OfType<PlainRichTextBox>().Single();
+
+            AssertPadding(page, editor);
+            using var font = new Font(editor.Font.FontFamily, editor.Font.Size * 2);
+            editor.ApplyFont(font);
+            AssertPadding(page, editor);
+        }
+        finally
+        {
+            foreach (var form in host.OwnedForms.OfType<MemoForm>()) form.Dispose();
+            host.PrepareShutdown();
+            host.Close();
+        }
+
+        static void AssertPadding(TabPage page, PlainRichTextBox editor)
+        {
+            int pad = Math.Max(1, editor.Font.Height / 2);
+            page.Padding.Should().Be(new Padding(0, pad, 0, pad));
+            page.BackColor.Should().Be(editor.BackColor);
+            SendMessage(editor.Handle, 0x00B2, nint.Zero, out var rect); // EM_GETRECT
+            (rect.Left, rect.Top, rect.Right, rect.Bottom).Should().Be(
+                (pad, 0, editor.ClientSize.Width - pad, editor.ClientSize.Height));
+        }
+    });
+
     static UiHostData CreateData() => new(new Config
     {
         HideFirst = true,
@@ -338,6 +376,15 @@ public sealed class MemoFormTests(ITestOutputHelper output)
     }
 
     delegate bool EnumWindowCallback(nint window, nint parameter);
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct Rect
+    {
+        public int Left, Top, Right, Bottom;
+    }
+
+    [DllImport("user32.dll")]
+    static extern nint SendMessage(nint window, uint message, nint wParam, out Rect lParam);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
