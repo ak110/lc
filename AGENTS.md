@@ -66,3 +66,11 @@ ConfigStore派生クラスの変更をレビューする専用エージェント
 
 Linux環境では`mise run setup-linux`で環境を構築し、`mise run test`（`dotnet-test`を除く全チェック）と`mise run build`を実行できる。
 テスト実行（`dotnet-test`）はWindows CIで行う。
+
+`src/Launcher.Tests`にあるWindowsの通常テストは`Form.Show()`で可視のWinFormsフォームを表示するテストと`Application.Run(...)`でメッセージループを動かすテストを含む。
+これらを対話中の端末で反復すると、ユーザーの画面でフォームの開閉が起きて作業を妨げる。
+
+- 対話中のユーザー端末では、通常の検証に必要な回数だけ実行する
+- 再現率の測定などの反復実行は、一時branchをpushしてWindows CIで行う
+- 可視フォーム、モーダルダイアログ、Shell UIなど対話デスクトップへUIを表示するテストを追加した場合も同じ扱いとする
+- Linuxの`mise run test`は`dotnet-test`を除くため、この制約の対象外である
