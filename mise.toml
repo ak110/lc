@@ -1,3 +1,6 @@
+# 追跡済みのmise.lock（lockfile_version 3）を読める最低版。
+min_version = "2026.9.16"
+
 [tools]
 uv = "latest"
 dotnet = "10"
@@ -93,14 +96,17 @@ env = { CI = "true" }
 # pnpm 本体のバージョンは更新しないため、両者を組にして依存とランナーを揃える。
 # pnpm 本体を先に更新してから依存を更新することで、新しい pnpm の依存解決規則を
 # 反映した状態でロックファイルを再生成する。
+# `mise lock --bump` は `latest`・`lts`・`"10"` 指定の開発ツールを再解決して mise.lock を更新する。
 run = [
   "dotnet package update --project Launcher.sln || [ $? -eq 2 ]",
   "corepack use pnpm@latest",
   "corepack pnpm update --latest",
   "bash -c 'GITHUB_TOKEN=$(gh auth token) pinact run --update --min-age=1'",
+  "mise lock --bump",
 ]
 run_windows = [
   "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/update.ps1 \"{{ env.LOCALAPPDATA }}/mise/dotnet-root/dotnet\"",
+  "mise lock --bump",
 ]
 
 [tasks.docs]

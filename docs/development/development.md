@@ -64,7 +64,7 @@ Linux環境の`mise run test`は`dotnet-test`を除く全チェック（ビル�
 
 ロック尊重・公開待機・ピン留め運用・脆弱性検知の4点を基本方針とする。
 
-- ロック尊重: 文書・開発用のNode依存は`pnpm-lock.yaml`に従って復元する
+- ロック尊重: 文書・開発用のNode依存は`pnpm-lock.yaml`に従って復元する。miseが導入する開発ツールの版は`mise.lock`で固定し、`mise run update`の`mise lock --bump`で更新する
 - 公開待機: Node依存の新しい版は`pnpm-workspace.yaml`の公開待機設定に従って採用する
 - ピン留め運用: GitHub Actionsを`pinact`でコミットのハッシュへ固定し、`mise run update`で更新する
 - 脆弱性検知: Dependabot alertsと定期監査を併用する
