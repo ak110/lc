@@ -306,9 +306,8 @@ public partial class ButtonLauncherForm : Form
                 tabControl1.SelectedIndex = Data.DefaultTabIndex;
             }
 
-            // Hide→Show→ActivateForceの順で確実にアクティブ化
+            // マウスキャプチャの解放前に表示しないよう、表示もActivateForceへ任せる。
             Hide();
-            Show();
             WindowHelper.ActivateForce(this);
         }
 #pragma warning disable CA1031 // 表示操作の境界で想定外例外を共通の通知へ回送する
