@@ -9,18 +9,5 @@
   },
   "enabledPlugins": {
     "agent-basics@ak110-dotfiles": true
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/dotnet-format-changed.py\""
-          }
-        ]
-      }
-    ]
   }
 }
