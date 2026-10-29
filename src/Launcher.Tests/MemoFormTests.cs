@@ -158,6 +158,60 @@ public sealed class MemoFormTests(ITestOutputHelper output)
         }
     });
 
+    [Fact]
+    public void 表示メニュー_拡大縮小とCtrl0で現在タブの倍率を変更し既定に戻す() => UiAcceptance.Run(() =>
+    {
+        using var data = CreateData();
+        data.Write(".memo.cfg", new MemoData { Tabs = [new MemoTab { Name = "メモ", Text = "本文" }] });
+        using var host = new ApplicationHostForm(data.BaseName);
+        try
+        {
+            host.ShowHideMemo();
+            var form = host.OwnedForms.OfType<MemoForm>().Single();
+            var editor = form.Controls.OfType<TabControl>().Single().TabPages[0].Controls.OfType<PlainRichTextBox>().Single();
+            var viewMenu = form.MainMenuStrip!.Items.OfType<ToolStripMenuItem>().Single(item => item.Name == "viewMenu");
+            var items = viewMenu.DropDownItems.OfType<ToolStripMenuItem>().ToDictionary(item => item.Name!);
+            (items["zoomInMenuItem"].ShortcutKeyDisplayString, items["zoomOutMenuItem"].ShortcutKeyDisplayString,
+                items["zoomResetMenuItem"].ShortcutKeyDisplayString).Should().Be(("Ctrl++", "Ctrl+-", "Ctrl+0"));
+
+            items["zoomInMenuItem"].PerformClick();
+            editor.ZoomFactor.Should().BeApproximately(1.1f, 0.001f);
+            items["zoomOutMenuItem"].PerformClick();
+            items["zoomOutMenuItem"].PerformClick();
+            editor.ZoomFactor.Should().BeApproximately(0.9f, 0.001f);
+            items["zoomResetMenuItem"].PerformClick();
+            editor.ZoomFactor.Should().BeApproximately(1f, 0.001f);
+
+            // 各配列とテンキーのキーで拡大・縮小する。
+            foreach (var keys in new[] { Keys.Control | Keys.Oemplus, Keys.Control | Keys.Shift | Keys.Oemplus, Keys.Control | Keys.Add })
+            {
+                UiAcceptance.PreProcessShortcut(editor, keys);
+            }
+            editor.ZoomFactor.Should().BeApproximately(1.3f, 0.001f);
+            UiAcceptance.PreProcessShortcut(editor, Keys.Control | Keys.OemMinus);
+            UiAcceptance.PreProcessShortcut(editor, Keys.Control | Keys.Subtract);
+            editor.ZoomFactor.Should().BeApproximately(1.1f, 0.001f);
+
+            // WinFormsのキャッシュ値を既定にしてから、Ctrl+ホイールと同じくRichEditへ直接倍率を設定する。
+            // キャッシュ値と同じ値の設定を無視する経路でも、既定へ戻ることを確かめる。
+            items["zoomResetMenuItem"].PerformClick();
+            foreach (var keys in new[] { Keys.Control | Keys.D0, Keys.Control | Keys.NumPad0 })
+            {
+                SendMessage(editor.Handle, EM_SETZOOM, 3, 2);
+                UiAcceptance.PreProcessShortcut(editor, keys);
+                SendMessage(editor.Handle, EM_GETZOOM, out int numerator, out int denominator);
+                (numerator == denominator || numerator == 0).Should().BeTrue($"{keys}で既定の倍率へ戻る（{numerator}/{denominator}）");
+            }
+            editor.Text.Should().Be("本文");
+        }
+        finally
+        {
+            foreach (var form in host.OwnedForms.OfType<MemoForm>()) form.Dispose();
+            host.PrepareShutdown();
+            host.Close();
+        }
+    });
+
     [Theory]
     [InlineData("置換(&R)", "x\ty\n1\\z\nx2z")]
     [InlineData("すべて置換(&A)", "x\ty\n1\\z\nx\ty\n2\\z")]
@@ -385,6 +439,16 @@ public sealed class MemoFormTests(ITestOutputHelper output)
 
     [DllImport("user32.dll")]
     static extern nint SendMessage(nint window, uint message, nint wParam, out Rect lParam);
+
+    // RichEditの倍率メッセージ (Windows SDK 10.0.19041.0 の richedit.h)
+    const uint EM_GETZOOM = 0x04E0;
+    const uint EM_SETZOOM = 0x04E1;
+
+    [DllImport("user32.dll")]
+    static extern nint SendMessage(nint window, uint message, nint wParam, nint lParam);
+
+    [DllImport("user32.dll")]
+    static extern nint SendMessage(nint window, uint message, out int wParam, out int lParam);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

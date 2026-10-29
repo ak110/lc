@@ -36,6 +36,10 @@ namespace Launcher.UI
             this.selectAllMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.formatMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.fontMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.zoomInMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.zoomOutMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.zoomResetMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -45,7 +49,8 @@ namespace Launcher.UI
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
                 this.fileMenu,
                 this.editMenu,
-                this.formatMenu});
+                this.formatMenu,
+                this.viewMenu});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(500, 24);
@@ -198,6 +203,36 @@ namespace Launcher.UI
             this.fontMenuItem.Name = "fontMenuItem";
             this.fontMenuItem.Text = "フォント(&F)...";
             //
+            // viewMenu
+            //
+            this.viewMenu.Name = "viewMenu";
+            this.viewMenu.Text = "表示(&V)";
+            this.viewMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+                this.zoomInMenuItem,
+                this.zoomOutMenuItem,
+                this.zoomResetMenuItem});
+            //
+            // zoomInMenuItem
+            //
+            this.zoomInMenuItem.Name = "zoomInMenuItem";
+            this.zoomInMenuItem.Text = "拡大(&I)";
+            this.zoomInMenuItem.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Oemplus;
+            this.zoomInMenuItem.ShortcutKeyDisplayString = "Ctrl++";
+            //
+            // zoomOutMenuItem
+            //
+            this.zoomOutMenuItem.Name = "zoomOutMenuItem";
+            this.zoomOutMenuItem.Text = "縮小(&O)";
+            this.zoomOutMenuItem.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.OemMinus;
+            this.zoomOutMenuItem.ShortcutKeyDisplayString = "Ctrl+-";
+            //
+            // zoomResetMenuItem
+            //
+            this.zoomResetMenuItem.Name = "zoomResetMenuItem";
+            this.zoomResetMenuItem.Text = "既定の倍率に戻す(&R)";
+            this.zoomResetMenuItem.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D0;
+            this.zoomResetMenuItem.ShortcutKeyDisplayString = "Ctrl+0";
+            //
             // tabControl1
             //
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -252,5 +287,9 @@ namespace Launcher.UI
         private System.Windows.Forms.ToolStripMenuItem selectAllMenuItem;
         private System.Windows.Forms.ToolStripMenuItem formatMenu;
         private System.Windows.Forms.ToolStripMenuItem fontMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem viewMenu;
+        private System.Windows.Forms.ToolStripMenuItem zoomInMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem zoomOutMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem zoomResetMenuItem;
     }
 }

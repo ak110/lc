@@ -217,6 +217,33 @@ public partial class MemoForm : Form
         editMenu.DropDownOpening += (s, e) => UpdateEditMenu();
 
         fontMenuItem.Click += (s, e) => ChangeFont();
+
+        zoomInMenuItem.Click += (s, e) => ZoomCurrentText(zoomIn: true);
+        zoomOutMenuItem.Click += (s, e) => ZoomCurrentText(zoomIn: false);
+        zoomResetMenuItem.Click += (s, e) => ResetCurrentZoom();
+    }
+
+    /// <summary>
+    /// メニュー項目に割り当てられない拡大・縮小・リセットの別のキーを処理する。
+    /// JIS配列の「+」はShift+「;」キー（Oemplus）で入力し、テンキーの「+」「-」「0」も同じ操作として受け付ける。
+    /// </summary>
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        switch (keyData)
+        {
+            case Keys.Control | Keys.Shift | Keys.Oemplus:
+            case Keys.Control | Keys.Add:
+                ZoomCurrentText(zoomIn: true);
+                return true;
+            case Keys.Control | Keys.Subtract:
+                ZoomCurrentText(zoomIn: false);
+                return true;
+            case Keys.Control | Keys.NumPad0:
+                ResetCurrentZoom();
+                return true;
+            default:
+                return base.ProcessCmdKey(ref msg, keyData);
+        }
     }
 
     void UpdateFileMenu()
@@ -715,6 +742,36 @@ public partial class MemoForm : Form
             }
         }
         old?.Dispose();
+    }
+
+    #endregion
+
+    #region 表示倍率
+
+    /// <summary>
+    /// 現在のタブの本文を1段階拡大または縮小する。Ctrl+ホイールと同じく現在の本文だけを対象とし、倍率は保存しない。
+    /// </summary>
+    void ZoomCurrentText(bool zoomIn)
+    {
+        var textBox = GetCurrentTextBox();
+        if (textBox is null) return;
+        if (MemoZoom.Step(textBox.ZoomFactor, zoomIn) is float next)
+        {
+            textBox.ZoomFactor = next;
+        }
+    }
+
+    /// <summary>
+    /// 現在のタブの本文の倍率を既定へ戻す。
+    /// </summary>
+    void ResetCurrentZoom()
+    {
+        var textBox = GetCurrentTextBox();
+        if (textBox is null) return;
+        // ZoomFactorの設定はキャッシュ値と同じなら何もしない。Ctrl+ホイールの変更はキャッシュへ反映されないため、
+        // 取得でRichEditの現在値をキャッシュへ読み込んでから設定する。
+        _ = textBox.ZoomFactor;
+        textBox.ZoomFactor = MemoZoom.Default;
     }
 
     #endregion
