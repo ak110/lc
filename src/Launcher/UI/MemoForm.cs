@@ -749,7 +749,7 @@ public partial class MemoForm : Form
     #region 表示倍率
 
     /// <summary>
-    /// 現在のタブの本文を1段階拡大または縮小する。Ctrl+ホイールと同じく現在の本文だけを対象とし、倍率は保存しない。
+    /// Ctrl+ホイールと同じく現在のタブの本文だけを対象とし、倍率は保存しない。
     /// </summary>
     void ZoomCurrentText(bool zoomIn)
     {
@@ -761,9 +761,6 @@ public partial class MemoForm : Form
         }
     }
 
-    /// <summary>
-    /// 現在のタブの本文の倍率を既定へ戻す。
-    /// </summary>
     void ResetCurrentZoom()
     {
         var textBox = GetCurrentTextBox();

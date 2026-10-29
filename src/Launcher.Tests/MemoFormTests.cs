@@ -182,7 +182,6 @@ public sealed class MemoFormTests(ITestOutputHelper output)
             items["zoomResetMenuItem"].PerformClick();
             editor.ZoomFactor.Should().BeApproximately(1f, 0.001f);
 
-            // 各配列とテンキーのキーで拡大・縮小する。
             foreach (var keys in new[] { Keys.Control | Keys.Oemplus, Keys.Control | Keys.Shift | Keys.Oemplus, Keys.Control | Keys.Add })
             {
                 UiAcceptance.PreProcessShortcut(editor, keys);

@@ -6,7 +6,6 @@ namespace Launcher.Core;
 /// </summary>
 public static class MemoZoom
 {
-    /// <summary>既定の倍率 (100%)</summary>
     public const float Default = 1f;
 
     // 倍率を10%単位の段数で扱う。10%が1段、500%が50段に当たる。
