@@ -20,7 +20,7 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         id: mise
       # Windowsではシステム側のdotnetが先に見つかるため、mise管理の実体を指定する。
       # NU1901〜NU1904は脆弱性、NU1900・NU1905は監査情報の取得不成立を示す。
