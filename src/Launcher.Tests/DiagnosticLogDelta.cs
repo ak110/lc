@@ -2,7 +2,7 @@ namespace Launcher.Tests;
 
 /// <summary>
 /// 共通の診断ログ（実行ファイルのフォルダーの<c>logs/</c>）へ、観測開始後に追記された行を読む。
-/// 他のテストも同じログへ書くため、検査は対象を一意に識別できる値で行を絞って行う。
+/// 他のテストも同じログへ書くため、検査では対象を一意に識別できる値に一致する行だけを調べる。
 /// </summary>
 internal sealed class DiagnosticLogDelta
 {

@@ -21,7 +21,7 @@ public partial class MemoForm : Form
         Name = "saveMenuItem",
         ShortcutKeys = Keys.Control | Keys.S,
     };
-    // 編集操作の3項目は選択が無いときハンドラが何もしないため、ショートカットが常に効くよう有効のまま保つ。
+    // 編集操作の3項目は選択が無いときハンドラが何もしないため、ショートカットを常に処理できるよう有効のまま保つ。
     // メニューのショートカットは本文のRichEditより先に処理され、RichEditの既定のCtrl+U・Ctrl+Lの書式操作より優先される。
     readonly ToolStripMenuItem sortLinesMenuItem = new("行のソート(&S)")
     {

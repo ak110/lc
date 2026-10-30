@@ -67,7 +67,7 @@ public static class Hook
 {
     /// <summary>フックコールバックの例外をログへ書くときの次の操作</summary>
     const string HookFailureNextAction =
-        "この入力を通常の処理へ渡し、フックを継続した。ホットキーやマウス操作が効かなくなった場合は、タスクトレイの「再起動」でらんちゃを再起動する";
+        "この入力を通常の処理へ渡し、フックを継続した。ホットキーやマウス操作が動作しなくなった場合は、タスクトレイの「再起動」でらんちゃを再起動する";
 
     public const int HC_ACTION = 0;
     public const int HC_GETNEXT = 1;

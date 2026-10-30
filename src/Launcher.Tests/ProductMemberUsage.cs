@@ -173,7 +173,7 @@ internal static class ProductMemberUsage
                             AddReference(MetadataTokens.EntityHandle(il.ReadInt32()), used);
                             break;
                         case OperandType.InlineSwitch:
-                            // 分岐先の個数を読み終えてから、その個数分の分岐先を読み飛ばす。
+                            // 分岐先の個数を読み終えてから、その個数分の分岐先のデータ長だけ読み取り位置を進める。
                             int targets = il.ReadInt32();
                             il.Offset += targets * 4;
                             break;
