@@ -20,6 +20,8 @@ onlyBuiltDependencies:
 # 同パッケージ経由の katex だけを修正版へ override する。micromark-extension-math が修正版を要求するようになったら撤去できる。
 # markdownlint 0.42.0 が re2js を 2.8.6 固定で要求するのに対し、Dependabot アラート #61 の修正版は 2.8.7 以上である。
 # 同パッケージ経由の re2js だけを同じ 2.8 系の修正版へ override する。markdownlint が修正版を要求するようになったら撤去できる。
+# textlint の glob ^13.0.6 では GHSA-3g3m-2fjr-6pw4 と、その依存 minimatch の GHSA-g3hv-75wg-m249 が残る。
+# textlint が修正版を要求するまで glob を修正版へ override し、minimatch も修正版で解決する。
 overrides:
   vite: ^6.4.2
   esbuild: ^0.25.0
@@ -28,6 +30,7 @@ overrides:
   smol-toml: ^1.9.0
   "micromark-extension-math@3.1.0>katex": 0.18.2
   "markdownlint@0.42.0>re2js": ~2.8.7
+  "textlint@15.8.0>glob": ^14.0.2
 patchedDependencies:
   braces@3.0.3: patches/braces@3.0.3.patch
 # bracesのパッチでAST・入れ子配列の再帰処理を反復処理へ置き換え、スタック消費の機構を除去済み。
