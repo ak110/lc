@@ -22,9 +22,9 @@ function Invoke-NativeCommand {
 
 # dotnet package updateは更新対象がない場合に終了コード2を返す。
 Invoke-NativeCommand -AllowedExitCodes @(0, 2) -Command { & $Dotnet package update --project Launcher.sln }
-# pnpm本体はmise.tomlのupdateタスクがmise lock --bumpとmise installで先に更新する。
-# 更新後の版を使うため、PATHではなくmise exec経由で起動する。
-Invoke-NativeCommand -Command { & mise exec -- pnpm update --latest }
+# pnpm self-updateはpackageManagerとpnpm-lock.yaml先頭の版の記録を同時に更新する。
+Invoke-NativeCommand -Command { & pnpm self-update }
+Invoke-NativeCommand -Command { & pnpm update --latest }
 
 $originalGithubToken = [Environment]::GetEnvironmentVariable('GITHUB_TOKEN', 'Process')
 $githubToken = ((Invoke-NativeCommand -Command { & gh auth token }) -join [Environment]::NewLine).Trim()
