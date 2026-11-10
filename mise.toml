@@ -14,6 +14,8 @@ node = "lts"
 "npm:pnpm" = "latest"
 pinact = "latest"
 git-cliff = "latest"
+# actionlint がワークフローの run ステップのシェルスクリプトを確かめるために子プロセスとして起動する。
+shellcheck = "latest"
 typos = "latest"
 
 # actionlint の配布物はインストールrootへ実行ファイルと `man`・`docs` ディレクトリを
