@@ -266,4 +266,108 @@ public sealed class SchedulerRunCoordinatorTests
         coordinator.GetRunCounts().Should().Be((0, 0));
         started.Should().HaveCount(3);
     }
+
+    [Fact]
+    public void 生成した操作列の各辺でアイテムごとの実行状態が一致する()
+    {
+        var random = new Random(3974);
+        for (int trial = 0; trial < 32; trial++)
+        {
+            started.Clear();
+            data.Items.Clear();
+            var items = new[] { AddItem("a"), AddItem("b") };
+            var subject = new SchedulerRunCoordinator(() => data.Items, (item, done) => started.Add((item, done)));
+            var running = new bool[items.Length];
+            var pending = new bool[items.Length];
+            bool paused = false;
+            bool unsaved = false;
+            bool shutdown = false;
+            int shutdownStep = random.Next(30, 55);
+
+            for (int step = 0; step < 64; step++)
+            {
+                int operation = step == shutdownStep ? 8 : random.Next(8);
+                int index = random.Next(items.Length);
+                var item = items[index];
+                int before = started.Count;
+                var expectedStarts = new List<string>();
+                switch (operation)
+                {
+                    case 0:
+                        subject.Request(item);
+                        if (!paused && !unsaved && !shutdown)
+                        {
+                            if (running[index]) pending[index] = true;
+                            else ExpectStart(index);
+                        }
+                        break;
+                    case 1:
+                        if (running[index])
+                        {
+                            started.Last(run => run.Item.Id == item.Id).Completed();
+                            running[index] = false;
+                            if (!paused) Flush(index);
+                        }
+                        else subject.Completed(item.Id);
+                        break;
+                    case 2:
+                        subject.Release(item.Id);
+                        running[index] = pending[index] = false;
+                        break;
+                    case 3:
+                        subject.Pause();
+                        paused = true;
+                        break;
+                    case 4:
+                        subject.Resume();
+                        paused = false;
+                        for (int i = 0; i < items.Length; i++) Flush(i);
+                        break;
+                    case 5:
+                        item.Enable = !item.Enable;
+                        subject.ItemsChanged();
+                        for (int i = 0; i < items.Length; i++)
+                            if (!items[i].Enable) pending[i] = false;
+                        break;
+                    case 6:
+                    case 7:
+                        bool saveSucceeds = operation == 7;
+                        data.Items.Add(new SchedulerItem());
+                        subject.EnsureIds(data, () =>
+                        {
+                            subject.Request(item);
+                            started.Should().HaveCount(before);
+                            return saveSucceeds;
+                        }).Should().Be(saveSucceeds);
+                        unsaved = !saveSucceeds;
+                        break;
+                    case 8:
+                        subject.Shutdown();
+                        shutdown = true;
+                        Array.Clear(pending);
+                        break;
+                }
+
+                started.Skip(before).Select(run => run.Item.Id).Should().BeEquivalentTo(expectedStarts,
+                    "試行 {0} 手順 {1} 操作 {2}", trial, step, operation);
+                for (int i = 0; i < items.Length; i++)
+                    subject.GetRunStatus(items[i].Id).Should().Be((running[i], pending[i]),
+                        "試行 {0} 手順 {1} 操作 {2} アイテム {3}", trial, step, operation, i);
+
+                void ExpectStart(int i)
+                {
+                    expectedStarts.Add(items[i].Id);
+                    running[i] = true;
+                    pending[i] = false;
+                }
+
+                void Flush(int i)
+                {
+                    if (!pending[i] || running[i] || shutdown) return;
+                    pending[i] = false;
+                    if (!unsaved && items[i].Enable) ExpectStart(i);
+                }
+            }
+        }
+    }
 }

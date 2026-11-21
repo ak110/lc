@@ -34,6 +34,17 @@ public sealed class SchedulerRunCoordinator
         }
     }
 
+    /// <summary>指定したアイテムが実行中か、再実行が保留されているかを返す。</summary>
+    public (bool Running, bool Pending) GetRunStatus(string id)
+    {
+        lock (lockObject)
+        {
+            return items.TryGetValue(id, out var phase)
+                ? (phase != ItemPhase.Pending, phase != ItemPhase.Running)
+                : (false, false);
+        }
+    }
+
     /// <param name="getItems">最新の確定設定のアイテム一覧</param>
     /// <param name="start">アイテムの複製のタスク列を開始する。完了時に第2引数の完了通知をUIスレッドで呼ばせる</param>
     public SchedulerRunCoordinator(Func<IReadOnlyList<SchedulerItem>> getItems, Action<SchedulerItem, Action> start)

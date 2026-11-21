@@ -36,57 +36,46 @@ public static class CommandMatcher
     /// </summary>
     public static int InnerGetMatchScore(string name, string commandName, Config config, int offset)
     {
-        int result = 0;
-        for (int i = 0; ; i++)
+        if ((uint)offset > (uint)name.Length || commandName.Length > name.Length - offset)
         {
-            if (commandName.Length <= i)
-            {
-                // 入力の方が短い、または同じ長さならそこまで。
-                break;
-            }
-            else if (name.Length <= i + offset)
-            {
-                // 例えば、コマンドhogeに対して入力hoge_なら未一致扱い。
-                result = 0;
-                break;
-            }
-            else if (name[i + offset] == commandName[i])
-            {
-                result++;
-            }
-            else if (config.CommandIgnoreCase &&
-                name.AsSpan(i + offset, 1).Equals(commandName.AsSpan(i, 1), StringComparison.OrdinalIgnoreCase))
-            {
-                result++;
-            }
-            else
-            {
-                result = 0; // 違う文字入ってたら未一致。
-                break;
-            }
+            return 0;
         }
-        return result;
+
+        int end = offset + commandName.Length;
+        if (!IsCharacterBoundary(name, offset) || !IsCharacterBoundary(name, end))
+        {
+            return 0;
+        }
+
+        var comparison = config.CommandIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        return name.AsSpan(offset, commandName.Length).Equals(commandName.AsSpan(), comparison)
+            ? commandName.Length : 0;
     }
 
     /// <summary>
-    /// 先頭からの一致文字数を返す
+    /// 先頭から一致した部分のUTF-16コード単位数を返す。
     /// </summary>
     public static int GetMatchLength(string x, string y, Config config)
     {
+        var comparison = config.CommandIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         int n = Math.Min(x.Length, y.Length);
-        for (int i = 0; i < n; i++)
+        int i = 0;
+        while (i < n)
         {
-            if (x[i] != y[i])
+            int width = IsCharacterBoundary(x, i + 1) ? 1 : 2;
+            if (i + width > n || !IsCharacterBoundary(y, i + width) ||
+                !x.AsSpan(i, width).Equals(y.AsSpan(i, width), comparison))
             {
-                if (!config.CommandIgnoreCase ||
-                    !x.AsSpan(i, 1).Equals(y.AsSpan(i, 1), StringComparison.OrdinalIgnoreCase))
-                {
-                    return i;
-                }
+                break;
             }
+            i += width;
         }
-        return n;
+        return i;
     }
+
+    static bool IsCharacterBoundary(string text, int index) =>
+        index == 0 || index == text.Length ||
+        !char.IsSurrogatePair(text[index - 1], text[index]);
 
     /// <summary>
     /// 入力文字列を、コマンド名と引数に分ける。

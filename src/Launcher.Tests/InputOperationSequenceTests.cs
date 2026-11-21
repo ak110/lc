@@ -98,4 +98,140 @@ public sealed class InputOperationSequenceTests
             state.ConsumeKeyUp(65).Should().Be(!reset);
         }
     }
+
+    [Fact]
+    public void 生成したドラッグ操作列の各辺で開始元と閾値が一致する()
+    {
+        var random = new Random(3971);
+        var state = new DragDropState();
+        var entries = new[] { new ButtonEntry(), new ButtonEntry() };
+        var tabs = new[] { new ButtonTab(), new ButtonTab() };
+        var origins = new[] { new Point(0, 0), new Point(100, 0) };
+        var size = new Size(8, 8);
+        int? active = null;
+
+        for (int step = 0; step < 500; step++)
+        {
+            int operation = random.Next(4);
+            switch (operation)
+            {
+                case 0:
+                case 1:
+                    state.Start(entries[operation], tabs[operation], origins[operation]);
+                    active = operation;
+                    break;
+                case 2:
+                    state.Reset();
+                    active = null;
+                    break;
+            }
+
+            state.IsActive.Should().Be(active.HasValue, "手順 {0}", step);
+            state.DragEntry.Should().BeSameAs(active is int entry ? entries[entry] : null);
+            state.SourceTab.Should().BeSameAs(active is int tab ? tabs[tab] : null);
+            for (int probe = 0; probe < origins.Length; probe++)
+                state.ShouldBeginDrag(origins[probe], size).Should().Be(active.HasValue && active != probe);
+        }
+    }
+
+    [Fact]
+    public void 生成した長押し操作列では現行の押下だけが発火し抑止を一度返す()
+    {
+        var random = new Random(3972);
+        var state = new LongPressOperationState();
+        var ids = new List<long> { 0 };
+        long? pressing = null;
+        bool clickOwed = false;
+
+        for (int step = 0; step < 500; step++)
+        {
+            switch (random.Next(5))
+            {
+                case 0:
+                    long id = state.Begin();
+                    ids.Should().NotContain(id);
+                    ids.Add(id);
+                    pressing = id;
+                    clickOwed = false;
+                    break;
+                case 1:
+                    state.Cancel();
+                    pressing = null;
+                    break;
+                case 2:
+                case 3:
+                    long candidate = random.Next(2) == 0 ? ids[^1] : ids[random.Next(ids.Count)];
+                    bool allowed = candidate == pressing;
+                    state.TryFire(candidate).Should().Be(allowed, "手順 {0}", step);
+                    if (allowed)
+                    {
+                        pressing = null;
+                        clickOwed = true;
+                    }
+                    break;
+                case 4:
+                    state.ConsumeClickSuppression().Should().Be(clickOwed, "手順 {0}", step);
+                    clickOwed = false;
+                    break;
+            }
+        }
+        state.ConsumeClickSuppression().Should().Be(clickOwed);
+        state.ConsumeClickSuppression().Should().BeFalse();
+    }
+
+    [Fact]
+    public void 生成した入力操作列では解放の抑止を対応する押下からだけ引き継ぐ()
+    {
+        var random = new Random(3973);
+        var state = new HookInputState();
+        var held = new HashSet<bool>();
+        var releaseOwed = new HashSet<bool>();
+        int? hotkey = null;
+
+        for (int step = 0; step < 1000; step++)
+        {
+            int operation = random.Next(8);
+            bool left = random.Next(2) == 0;
+            int key = left ? 65 : 66;
+            var order = random.Next(2) == 0 ? ButtonLauncherActivation.LeftThenRight :
+                ButtonLauncherActivation.RightThenLeft;
+
+            switch (operation)
+            {
+                case 0:
+                    state.Reset();
+                    held.Clear();
+                    releaseOwed.Clear();
+                    hotkey = null;
+                    break;
+                case 1:
+                    state.ProcessMouse(left, false, ButtonLauncherActivation.Disabled).Should().Be((false, false));
+                    held.Clear();
+                    releaseOwed.Clear();
+                    break;
+                case 2:
+                case 3:
+                    bool alreadyOwed = releaseOwed.Contains(left);
+                    bool activate = !alreadyOwed && held.Contains(!left) &&
+                        left == (order == ButtonLauncherActivation.RightThenLeft);
+                    state.ProcessMouse(left, true, order).Should().Be((alreadyOwed || activate, activate), "手順 {0}", step);
+                    held.Add(left);
+                    if (activate) releaseOwed.Add(left);
+                    break;
+                case 4:
+                case 5:
+                    state.ProcessMouse(left, false, order).Should().Be((releaseOwed.Remove(left), false), "手順 {0}", step);
+                    held.Remove(left);
+                    break;
+                case 6:
+                    state.TryBeginHotkey(key).Should().Be(!hotkey.HasValue, "手順 {0}", step);
+                    hotkey ??= key;
+                    break;
+                case 7:
+                    state.ConsumeKeyUp(key).Should().Be(hotkey == key, "手順 {0}", step);
+                    if (hotkey == key) hotkey = null;
+                    break;
+            }
+        }
+    }
 }

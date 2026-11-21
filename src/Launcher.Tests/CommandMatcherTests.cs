@@ -189,4 +189,18 @@ public sealed class CommandMatcherTests
             CultureInfo.CurrentCulture = previous;
         }
     }
+
+    [Fact]
+    public void 補助平面の大小文字を一致させサロゲート対の途中では一致させない()
+    {
+        const string upper = "\U00010400";
+        const string lower = "\U00010428";
+
+        CommandMatcher.GetMatchScore(upper, lower, _config).Should().BePositive();
+        CommandMatcher.GetMatchScore("x" + upper, lower, _config).Should().BePositive();
+        CommandMatcher.GetMatchLength(upper, lower, _config).Should().Be(2);
+        CommandMatcher.GetMatchLength(upper, "\U00010429", _caseSensitiveConfig).Should().Be(0);
+        CommandMatcher.GetMatchScore(upper, upper[..1], _config).Should().Be(0);
+        CommandMatcher.GetMatchScore(upper, upper[1..], _config).Should().Be(0);
+    }
 }

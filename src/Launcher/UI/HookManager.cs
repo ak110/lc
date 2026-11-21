@@ -204,7 +204,6 @@ sealed class HookManager
         try
         {
             var config = getConfig();
-            if (config.ButtonLauncherActivation == ButtonLauncherActivation.Disabled) return;
             if (e.HookCode != Hook.HC_ACTION) return;
 
             bool left = e.WParam == Hook.WM_LBUTTONDOWN || e.WParam == Hook.WM_LBUTTONUP;
