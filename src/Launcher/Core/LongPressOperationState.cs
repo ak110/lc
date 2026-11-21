@@ -5,15 +5,17 @@ namespace Launcher.Core;
 /// </summary>
 public sealed class LongPressOperationState
 {
+    enum Phase { Idle, Pressing, SuppressClick }
+
     long currentOperationId;
-    bool suppressNextClick;
+    Phase phase;
 
     /// <summary>
     /// 新しい長押し操作を開始し、その操作を識別する値を返す。
     /// </summary>
     public long Begin()
     {
-        suppressNextClick = false;
+        phase = Phase.Pressing;
         return ++currentOperationId;
     }
 
@@ -23,7 +25,7 @@ public sealed class LongPressOperationState
     /// </summary>
     public void Cancel()
     {
-        currentOperationId++;
+        if (phase == Phase.Pressing) phase = Phase.Idle;
     }
 
     /// <summary>
@@ -31,12 +33,12 @@ public sealed class LongPressOperationState
     /// </summary>
     public bool TryFire(long operationId)
     {
-        if (operationId != currentOperationId)
+        if (phase != Phase.Pressing || operationId != currentOperationId)
         {
             return false;
         }
 
-        suppressNextClick = true;
+        phase = Phase.SuppressClick;
         return true;
     }
 
@@ -45,8 +47,8 @@ public sealed class LongPressOperationState
     /// </summary>
     public bool ConsumeClickSuppression()
     {
-        bool result = suppressNextClick;
-        suppressNextClick = false;
-        return result;
+        if (phase != Phase.SuppressClick) return false;
+        phase = Phase.Idle;
+        return true;
     }
 }

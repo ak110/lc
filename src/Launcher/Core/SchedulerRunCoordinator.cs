@@ -14,11 +14,25 @@ public sealed class SchedulerRunCoordinator
     readonly object lockObject = new();
     readonly Func<IReadOnlyList<SchedulerItem>> getItems;
     readonly Action<SchedulerItem, Action> start;
-    readonly HashSet<string> running = [];
-    readonly HashSet<string> pending = [];
-    bool paused;
-    bool shuttingDown;
-    bool idsUnsaved;
+    enum ItemPhase { Pending, Running, RunningWithPending }
+    enum ExecutionPhase { Active, Paused, Shutdown }
+    enum IdPersistence { Saved, Unsaved }
+
+    readonly Dictionary<string, ItemPhase> items = [];
+    ExecutionPhase execution;
+    IdPersistence idPersistence;
+
+    bool CanStart => execution == ExecutionPhase.Active && idPersistence == IdPersistence.Saved;
+
+    /// <summary>実行中の件数と、実行中かどうかにかかわらず保留されている件数。</summary>
+    public (int Running, int Pending) GetRunCounts()
+    {
+        lock (lockObject)
+        {
+            return (items.Values.Count(phase => phase != ItemPhase.Pending),
+                items.Values.Count(phase => phase != ItemPhase.Running));
+        }
+    }
 
     /// <param name="getItems">最新の確定設定のアイテム一覧</param>
     /// <param name="start">アイテムの複製のタスク列を開始する。完了時に第2引数の完了通知をUIスレッドで呼ばせる</param>
@@ -37,12 +51,12 @@ public sealed class SchedulerRunCoordinator
         bool changed = data.EnsureIds();
         lock (lockObject)
         {
-            if (!changed && !idsUnsaved)
+            if (!changed && idPersistence == IdPersistence.Saved)
             {
                 return true;
             }
             // 保存失敗の通知中はモーダルループから予定が届くため、保存の前に停止する。
-            idsUnsaved = true;
+            idPersistence = IdPersistence.Unsaved;
         }
         if (!save())
         {
@@ -52,7 +66,7 @@ public sealed class SchedulerRunCoordinator
         }
         lock (lockObject)
         {
-            idsUnsaved = false;
+            idPersistence = IdPersistence.Saved;
         }
         return true;
     }
@@ -64,13 +78,13 @@ public sealed class SchedulerRunCoordinator
     {
         lock (lockObject)
         {
-            if (shuttingDown || paused || idsUnsaved)
+            if (!CanStart)
             {
                 return;
             }
-            if (running.Contains(item.Id))
+            if (items.TryGetValue(item.Id, out var phase) && phase != ItemPhase.Pending)
             {
-                pending.Add(item.Id);
+                items[item.Id] = ItemPhase.RunningWithPending;
                 return;
             }
             Start(item);
@@ -84,15 +98,18 @@ public sealed class SchedulerRunCoordinator
     {
         lock (lockObject)
         {
-            running.Remove(id);
-            if (shuttingDown)
+            if (!items.TryGetValue(id, out var phase) || phase == ItemPhase.Pending)
             {
-                pending.Remove(id);
                 return;
             }
-            if (!paused)
+            if (phase == ItemPhase.RunningWithPending)
             {
+                items[id] = ItemPhase.Pending;
                 StartPending(id);
+            }
+            else
+            {
+                items.Remove(id);
             }
         }
     }
@@ -104,8 +121,7 @@ public sealed class SchedulerRunCoordinator
     {
         lock (lockObject)
         {
-            running.Remove(id);
-            pending.Remove(id);
+            items.Remove(id);
         }
     }
 
@@ -116,7 +132,7 @@ public sealed class SchedulerRunCoordinator
     {
         lock (lockObject)
         {
-            paused = true;
+            if (execution == ExecutionPhase.Active) execution = ExecutionPhase.Paused;
         }
     }
 
@@ -127,8 +143,9 @@ public sealed class SchedulerRunCoordinator
     {
         lock (lockObject)
         {
-            paused = false;
-            foreach (var id in pending.Where(id => !running.Contains(id)).ToList())
+            if (execution == ExecutionPhase.Shutdown) return;
+            execution = ExecutionPhase.Active;
+            foreach (var id in items.Keys.ToArray())
             {
                 StartPending(id);
             }
@@ -142,7 +159,10 @@ public sealed class SchedulerRunCoordinator
     {
         lock (lockObject)
         {
-            pending.RemoveWhere(id => Find(id) is not { Enable: true });
+            foreach (var id in items.Keys.ToArray())
+            {
+                if (Find(id) is not { Enable: true }) DropPending(id);
+            }
         }
     }
 
@@ -153,18 +173,30 @@ public sealed class SchedulerRunCoordinator
     {
         lock (lockObject)
         {
-            shuttingDown = true;
-            pending.Clear();
+            execution = ExecutionPhase.Shutdown;
+            foreach (var id in items.Keys.ToArray())
+            {
+                DropPending(id);
+            }
         }
+    }
+
+    void DropPending(string id)
+    {
+        if (items[id] == ItemPhase.Pending) items.Remove(id);
+        else if (items[id] == ItemPhase.RunningWithPending) items[id] = ItemPhase.Running;
     }
 
     void StartPending(string id)
     {
-        if (!pending.Remove(id))
+        if (execution != ExecutionPhase.Active ||
+            !items.TryGetValue(id, out var phase) || phase != ItemPhase.Pending)
         {
             return;
         }
-        if (Find(id) is { Enable: true } item && !idsUnsaved)
+
+        items.Remove(id);
+        if (CanStart && Find(id) is { Enable: true } item)
         {
             Start(item);
         }
@@ -173,7 +205,7 @@ public sealed class SchedulerRunCoordinator
     void Start(SchedulerItem item)
     {
         string id = item.Id;
-        running.Add(id);
+        items[id] = ItemPhase.Running;
         start(item.Clone(), () => Completed(id));
     }
 

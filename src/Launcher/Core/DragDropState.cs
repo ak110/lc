@@ -1,49 +1,27 @@
 namespace Launcher.Core;
 
-/// <summary>
-/// D&amp;D操作の状態を管理するクラス。
-/// 4つの個別フィールドを1つのクラスに凝集する。
-/// </summary>
+/// <summary>D&amp;D操作の開始元と移動量を管理する。</summary>
 public sealed class DragDropState
 {
-    /// <summary>ドラッグ中のButtonEntry</summary>
-    public ButtonEntry? DragEntry { get; private set; }
+    sealed record ActiveDrag(ButtonEntry Entry, ButtonTab SourceTab, Point StartPoint);
 
-    /// <summary>ドラッグ元のタブ</summary>
-    public ButtonTab? SourceTab { get; private set; }
+    ActiveDrag? active;
 
-    /// <summary>ドラッグ開始時のマウス位置</summary>
-    public Point DragStartPoint { get; private set; }
+    public ButtonEntry? DragEntry => active?.Entry;
+    public ButtonTab? SourceTab => active?.SourceTab;
+    public bool IsActive => active is not null;
 
-    /// <summary>D&amp;D操作がアクティブかどうか</summary>
-    public bool IsActive => DragEntry is not null;
-
-    /// <summary>
-    /// D&amp;D操作を開始する。
-    /// </summary>
     public void Start(ButtonEntry entry, ButtonTab tab, Point startPoint)
     {
-        DragEntry = entry;
-        SourceTab = tab;
-        DragStartPoint = startPoint;
+        ArgumentNullException.ThrowIfNull(entry);
+        ArgumentNullException.ThrowIfNull(tab);
+        active = new ActiveDrag(entry, tab, startPoint);
     }
 
-    /// <summary>
-    /// マウス移動量がドラッグ閾値を超えたか判定する。
-    /// </summary>
-    public bool ShouldBeginDrag(Point current, Size dragSize)
-    {
-        return Math.Abs(current.X - DragStartPoint.X) > dragSize.Width / 2 ||
-               Math.Abs(current.Y - DragStartPoint.Y) > dragSize.Height / 2;
-    }
+    public bool ShouldBeginDrag(Point current, Size dragSize) =>
+        active is { StartPoint: var start } &&
+        (Math.Abs((long)current.X - start.X) > dragSize.Width / 2 ||
+         Math.Abs((long)current.Y - start.Y) > dragSize.Height / 2);
 
-    /// <summary>
-    /// D&amp;D状態をリセットする。
-    /// </summary>
-    public void Reset()
-    {
-        DragEntry = null;
-        SourceTab = null;
-        DragStartPoint = Point.Empty;
-    }
+    public void Reset() => active = null;
 }

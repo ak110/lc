@@ -199,4 +199,71 @@ public sealed class SchedulerRunCoordinatorTests
         coordinator.EnsureIds(data, () => { saved++; return true; }).Should().BeTrue();
         saved.Should().Be(1);
     }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void 保存保護と停止をまたぐ保留と実行の遷移(bool pauseBeforeCompletion, bool releaseFirst)
+    {
+        var a = AddItem("a");
+        var b = AddItem("b");
+        coordinator.Request(a);
+        coordinator.Request(a);
+        coordinator.Request(b);
+        coordinator.Request(b);
+        coordinator.GetRunCounts().Should().Be((2, 2));
+
+        var newItem = new SchedulerItem { Name = "識別子なし" };
+        data.Items.Add(newItem);
+        coordinator.EnsureIds(data, () =>
+        {
+            coordinator.Request(newItem);
+            started.Should().HaveCount(2);
+            return false;
+        }).Should().BeFalse();
+
+        if (pauseBeforeCompletion) coordinator.Pause();
+        started[0].Completed();
+        coordinator.GetRunCounts().Should().Be((1, pauseBeforeCompletion ? 2 : 1));
+
+        // 設定変更では保留だけを破棄し、既に実行中のタスクは残す。
+        a.Enable = false;
+        coordinator.ItemsChanged();
+        coordinator.GetRunCounts().Should().Be((1, 1));
+        coordinator.Resume();
+        coordinator.Request(newItem);
+        started.Should().HaveCount(2);
+
+        coordinator.Pause();
+        coordinator.EnsureIds(data, () => true).Should().BeTrue();
+        coordinator.Request(newItem);
+        started.Should().HaveCount(2);
+        coordinator.Resume();
+        coordinator.Request(newItem);
+        coordinator.Request(newItem);
+        coordinator.GetRunCounts().Should().Be((2, 2));
+
+        coordinator.Shutdown();
+        coordinator.GetRunCounts().Should().Be((2, 0));
+        coordinator.Resume();
+        coordinator.Request(newItem);
+        started.Should().HaveCount(3);
+
+        if (releaseFirst)
+        {
+            coordinator.Release(b.Id);
+            coordinator.GetRunCounts().Should().Be((1, 0));
+            started[2].Completed();
+        }
+        else
+        {
+            started[1].Completed();
+            coordinator.GetRunCounts().Should().Be((1, 0));
+            coordinator.Release(newItem.Id);
+        }
+        coordinator.GetRunCounts().Should().Be((0, 0));
+        started.Should().HaveCount(3);
+    }
 }

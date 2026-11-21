@@ -18,12 +18,12 @@ public enum PhysicalModifierKey
 /// <summary>フック入力の状態遷移。OS照会とイベント配送は呼び出し側が担う。</summary>
 public sealed class HookInputState
 {
+    enum MouseButtonPhase { Released, Pressed, SuppressRelease }
+
     PhysicalModifierKey physicalKeys;
-    int suppressedKeyUp;
-    bool leftDown;
-    bool rightDown;
-    bool suppressLeftUp;
-    bool suppressRightUp;
+    int? pressedHotkey;
+    MouseButtonPhase leftButton;
+    MouseButtonPhase rightButton;
 
     public InputModifiers Modifiers
     {
@@ -55,57 +55,52 @@ public sealed class HookInputState
     /// <summary>一致したホットキーの初回押下だけを起動対象にする。</summary>
     public bool TryBeginHotkey(int keyCode)
     {
-        if (suppressedKeyUp != 0) return false;
-        suppressedKeyUp = keyCode;
+        if (pressedHotkey is not null) return false;
+        pressedHotkey = keyCode;
         return true;
     }
 
     public bool ConsumeKeyUp(int keyCode)
     {
-        if (suppressedKeyUp == 0 || suppressedKeyUp != keyCode) return false;
-        suppressedKeyUp = 0;
+        if (pressedHotkey != keyCode) return false;
+        pressedHotkey = null;
         return true;
     }
 
     /// <summary>左右の押下順序から、イベント抑止とランチャー表示を判定する。</summary>
     public (bool Handled, bool Activate) ProcessMouse(bool left, bool down, ButtonLauncherActivation activation)
     {
-        if (activation == ButtonLauncherActivation.Disabled) return (false, false);
-        if (left)
+        if (activation == ButtonLauncherActivation.Disabled)
         {
-            leftDown = down;
-            if (down && rightDown && activation == ButtonLauncherActivation.RightThenLeft)
-            {
-                suppressLeftUp = true;
-                return (true, true);
-            }
-            if (!down && suppressLeftUp)
-            {
-                suppressLeftUp = false;
-                return (true, false);
-            }
+            leftButton = rightButton = MouseButtonPhase.Released;
+            return (false, false);
         }
-        else
+
+        ref var button = ref (left ? ref leftButton : ref rightButton);
+        var other = left ? rightButton : leftButton;
+        if (!down)
         {
-            rightDown = down;
-            if (down && leftDown && activation == ButtonLauncherActivation.LeftThenRight)
-            {
-                suppressRightUp = true;
-                return (true, true);
-            }
-            if (!down && suppressRightUp)
-            {
-                suppressRightUp = false;
-                return (true, false);
-            }
+            bool suppress = button == MouseButtonPhase.SuppressRelease;
+            button = MouseButtonPhase.Released;
+            return (suppress, false);
         }
+
+        if (button == MouseButtonPhase.SuppressRelease) return (true, false);
+        var order = left ? ButtonLauncherActivation.RightThenLeft : ButtonLauncherActivation.LeftThenRight;
+        if (other != MouseButtonPhase.Released && activation == order)
+        {
+            button = MouseButtonPhase.SuppressRelease;
+            return (true, true);
+        }
+
+        button = MouseButtonPhase.Pressed;
         return (false, false);
     }
 
     public void Reset()
     {
         physicalKeys = PhysicalModifierKey.None;
-        suppressedKeyUp = 0;
-        leftDown = rightDown = suppressLeftUp = suppressRightUp = false;
+        pressedHotkey = null;
+        leftButton = rightButton = MouseButtonPhase.Released;
     }
 }

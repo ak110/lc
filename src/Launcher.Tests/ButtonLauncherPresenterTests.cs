@@ -83,7 +83,6 @@ public sealed class ButtonLauncherPresenterTests
         state.IsActive.Should().BeTrue();
         state.DragEntry.Should().Be(entry);
         state.SourceTab.Should().Be(tab);
-        state.DragStartPoint.Should().Be(new Point(100, 200));
     }
 
     [Fact]
