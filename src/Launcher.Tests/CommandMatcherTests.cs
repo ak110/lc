@@ -1,3 +1,4 @@
+using System.Globalization;
 using FluentAssertions;
 using Launcher.Core;
 using Xunit;
@@ -171,5 +172,21 @@ public sealed class CommandMatcherTests
     {
         int score = CommandMatcher.GetMatchScore("htdocs", "docs", _config);
         score.Should().BePositive("'htdocs'に'docs'は部分一致するべき");
+    }
+
+    [Fact]
+    public void トルコ語カルチャでも大文字小文字を無視する()
+    {
+        var previous = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("tr-TR");
+            CommandMatcher.GetMatchScore("info", "INFO", _config).Should().BePositive();
+            CommandMatcher.GetMatchLength("info", "INFO", _config).Should().Be(4);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previous;
+        }
     }
 }

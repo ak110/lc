@@ -75,12 +75,12 @@ dotnet_diagnostic.CA1715.severity = none
 dotnet_diagnostic.CA1720.severity = none
 dotnet_diagnostic.CA1711.severity = none
 
-# カルチャ指定 (デスクトップアプリで内部的な文字列操作のため低リスク)
+# カルチャ指定 (文字列の比較・変換では規則を明示する)
 dotnet_diagnostic.CA1305.severity = suggestion
-dotnet_diagnostic.CA1304.severity = suggestion
-dotnet_diagnostic.CA1311.severity = suggestion
-dotnet_diagnostic.CA1310.severity = suggestion
-dotnet_diagnostic.CA1309.severity = suggestion
+dotnet_diagnostic.CA1304.severity = warning
+dotnet_diagnostic.CA1311.severity = warning
+dotnet_diagnostic.CA1310.severity = warning
+dotnet_diagnostic.CA1309.severity = warning
 
 # ConfigureAwait (WinFormsではSynchronizationContextが必要)
 dotnet_diagnostic.CA2007.severity = none

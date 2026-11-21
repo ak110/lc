@@ -56,7 +56,7 @@ public sealed class CommandLauncherPresenter(Func<CommandList> getCommandList, F
             }
             else if (inputText.Length <= firstCommand.Name.Length &&
                 string.Compare(inputText, 0, firstCommand.Name, 0,
-                inputText.Length, config.CommandIgnoreCase) == 0)
+                inputText.Length, config.CommandIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) == 0)
             {
                 // 前方一致 → 補完処理
                 if (inputText.Length < firstCommand.Name.Length)

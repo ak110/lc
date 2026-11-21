@@ -258,7 +258,7 @@ public sealed class FolderPopupMenuBuilderTests
 
             menu.Items.Count.Should().Be(50);
             menu.Items.Cast<ToolStripItem>().Select(i => i.Text)
-                .Should().NotContain(s => s.StartsWith("(以下"));
+                .Should().NotContain(s => s.StartsWith("(以下", StringComparison.Ordinal));
         }
         finally
         {

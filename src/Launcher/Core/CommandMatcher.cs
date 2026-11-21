@@ -55,7 +55,7 @@ public static class CommandMatcher
                 result++;
             }
             else if (config.CommandIgnoreCase &&
-                char.ToLower(name[i + offset]) == char.ToLower(commandName[i]))
+                name.AsSpan(i + offset, 1).Equals(commandName.AsSpan(i, 1), StringComparison.OrdinalIgnoreCase))
             {
                 result++;
             }
@@ -79,7 +79,7 @@ public static class CommandMatcher
             if (x[i] != y[i])
             {
                 if (!config.CommandIgnoreCase ||
-                    char.ToLower(x[i]) != char.ToLower(y[i]))
+                    !x.AsSpan(i, 1).Equals(y.AsSpan(i, 1), StringComparison.OrdinalIgnoreCase))
                 {
                     return i;
                 }

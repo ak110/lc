@@ -1,3 +1,4 @@
+using System.Globalization;
 using FluentAssertions;
 using Launcher.Core;
 using Xunit;
@@ -240,4 +241,20 @@ public sealed class CommandLauncherPresenterTests
     }
 
     #endregion
+
+    [Fact]
+    public void トルコ語カルチャでも大文字小文字を無視する()
+    {
+        var previous = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("tr-TR");
+            var presenter = new CommandLauncherPresenter(() => CreateCommandList("info"), () => _config);
+            presenter.ProcessTextChange("INF").State.Should().Be(InputState.PrefixMatch);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previous;
+        }
+    }
 }

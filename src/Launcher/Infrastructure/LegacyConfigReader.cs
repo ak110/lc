@@ -28,7 +28,7 @@ public sealed class LegacyConfigReader
         {
             string? line = reader.ReadLine();
             if (line is null) break;
-            int n = line.IndexOf(" = ");
+            int n = line.IndexOf(" = ", StringComparison.Ordinal);
             if (0 <= n)
             {
                 data[line.Substring(0, n)] = line.Substring(n + 3);

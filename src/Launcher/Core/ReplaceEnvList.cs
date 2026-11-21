@@ -102,9 +102,9 @@ public sealed class ReplaceEnvList
                 s1 = p.Key;
                 s2 = p.Value;
             }
-            if (str.StartsWith(s1, StringComparison.CurrentCultureIgnoreCase))
+            if (str.StartsWith(s1, StringComparison.OrdinalIgnoreCase))
             {
-                return str.Replace(s1, s2);
+                return s2 + str[s1.Length..];
             }
         }
         // 該当なし。置換済み文字列を元に戻すケースもあるため str をそのまま返す。

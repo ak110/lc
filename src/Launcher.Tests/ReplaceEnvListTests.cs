@@ -150,4 +150,26 @@ public sealed class ReplaceEnvListTests
 
         cmd.FileName.Should().Be(@"C:\test");
     }
+
+    [Theory]
+    [InlineData(@"C:\WINDOWS", @"c:\windows", "%LC_TEST_REPLACE_PREFIX%")]
+    [InlineData(@".\", @".\.\", @"%LC_TEST_REPLACE_PREFIX%.\")]
+    public void Replace_一致した先頭だけを置換する(string prefix, string path, string expected)
+    {
+        const string name = "LC_TEST_REPLACE_PREFIX";
+        var previous = Environment.GetEnvironmentVariable(name);
+        try
+        {
+            var root = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            Environment.SetEnvironmentVariable(name, prefix == @"C:\WINDOWS" ? root.ToUpperInvariant() : prefix);
+            var cmd = new Command { FileName = path == @"c:\windows" ? root.ToLowerInvariant() : path };
+            new ReplaceEnvList([name]).Replace(cmd);
+
+            cmd.FileName.Should().Be(expected);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(name, previous);
+        }
+    }
 }
