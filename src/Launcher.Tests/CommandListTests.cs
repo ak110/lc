@@ -24,10 +24,12 @@ public sealed class CommandListTests
     public void FindMatch_空入力とnull入力で全コマンドが返る(string? input)
     {
         var list = CreateSampleList();
+        var expected = list.Commands.ToList();
 
         var result = list.FindMatch(input!, _config).ToList();
 
-        result.Should().BeEquivalentTo(list.Commands);
+        result.Should().BeEquivalentTo(expected);
+        list.Commands.Should().Equal(expected);
     }
 
     [Fact]

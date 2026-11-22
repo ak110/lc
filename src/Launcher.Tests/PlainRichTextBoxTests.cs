@@ -165,7 +165,7 @@ public sealed class PlainRichTextBoxTests(ITestOutputHelper output)
     [DllImport("user32.dll")]
     static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
 
-    void RunWithClipboard(Action action) => RunInSta(() =>
+    void RunWithClipboard(Action action) => UiAcceptance.Run(() =>
     {
         var original = Clipboard.GetDataObject();
         ExceptionDispatchInfo? actionFailure = null;
@@ -248,7 +248,7 @@ public sealed class PlainRichTextBoxTests(ITestOutputHelper output)
 
     [Fact]
     public void OnHandleCreated_ASCIIと日本語を同じフォントで表示する() =>
-        RunInSta(() =>
+        UiAcceptance.Run(() =>
         {
             using var font = new Font("Consolas", 11f);
             using var form = new Form();
@@ -273,24 +273,4 @@ public sealed class PlainRichTextBoxTests(ITestOutputHelper output)
                 form.Close();
             }
         });
-
-    static void RunInSta(Action action)
-    {
-        ExceptionDispatchInfo? exception = null;
-        var thread = new Thread(() =>
-        {
-            try
-            {
-                action();
-            }
-            catch (Exception ex) when ((exception = ExceptionDispatchInfo.Capture(ex)) is not null)
-            {
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-
-        exception?.Throw();
-    }
 }

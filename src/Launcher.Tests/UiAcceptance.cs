@@ -26,7 +26,10 @@ internal static class UiAcceptance
         thread.IsBackground = true;
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
-        thread.Join(TimeSpan.FromSeconds(60)).Should().BeTrue("UI受入の操作が終わらずSTAスレッドが残っている");
+        thread.Join(TimeSpan.FromSeconds(60)).Should().BeTrue(
+            "UI受入の操作が60秒で終わらなかった。閉じないモーダルや戻らない待機を、この試験だけを"
+            + "`dotnet test --filter`で再実行して60秒より前に取ったテストホストのダンプ（`--blame-hang --blame-hang-timeout 50s`）から調べる。"
+            + "STAスレッドは残るため、同じ実行の後続の失敗はこの失敗の影響を受けうる");
         failure?.Throw();
     }
 

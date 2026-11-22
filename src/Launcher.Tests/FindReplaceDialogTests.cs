@@ -17,6 +17,7 @@ public sealed class FindReplaceDialogTests
             dialog.ShowOrActivate(owner, replaceMode, null);
 
             var visible = dialog.Controls.Cast<Control>().Where(c => c.Visible).ToList();
+            visible.OfType<TextBox>().Should().HaveCount(replaceMode ? 2 : 1, "検査対象の入力欄が表示されている");
             foreach (var control in visible)
             {
                 dialog.ClientRectangle.Contains(control.Bounds).Should().BeTrue(
