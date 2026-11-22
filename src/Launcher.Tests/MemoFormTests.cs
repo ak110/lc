@@ -13,6 +13,30 @@ namespace Launcher.Tests;
 [Collection("UI受入")]
 public sealed class MemoFormTests(ITestOutputHelper output)
 {
+    [Fact]
+    public void 連続入力の直後にタブを切り替えて保存しても両方の本文を保持する() => UiAcceptance.Run(() =>
+    {
+        using var data = CreateData();
+        data.Write(".memo.cfg", new MemoData { Tabs = [new MemoTab(), new MemoTab()] });
+        using var host = new ApplicationHostForm(data.BaseName);
+        using var form = new MemoForm(host);
+        var tabs = form.Controls.OfType<TabControl>().Single();
+        string[] inputs = [string.Concat(Enumerable.Repeat("Ab3日本語", 80)), "別のタブ"];
+        for (int i = 0; i < inputs.Length; i++)
+        {
+            tabs.SelectedIndex = i;
+            var editor = tabs.TabPages[i].Controls.OfType<PlainRichTextBox>().Single();
+            foreach (char character in inputs[i])
+            {
+                SendMessageW(editor.Handle, 0x0102, character, 1); // WM_CHAR
+            }
+            editor.Text.Should().Be(inputs[i]);
+        }
+        form.FlushPendingSave().Should().BeTrue();
+        XmlTestSerializer.DeserializeFromFile<MemoData>(data.BaseName + ".memo.cfg")
+            .Tabs.Select(tab => tab.Text).Should().Equal(inputs);
+    });
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -445,6 +469,9 @@ public sealed class MemoFormTests(ITestOutputHelper output)
 
     [DllImport("user32.dll")]
     static extern nint SendMessage(nint window, uint message, nint wParam, nint lParam);
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    static extern nint SendMessageW(nint window, uint message, nint wParam, nint lParam);
 
     [DllImport("user32.dll")]
     static extern nint SendMessage(nint window, uint message, out int wParam, out int lParam);

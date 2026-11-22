@@ -14,6 +14,7 @@ public partial class MemoForm : Form
     readonly ApplicationHostForm owner;
     readonly ContextMenuStrip tabContextMenu;
     readonly System.Windows.Forms.Timer saveTimer;
+    readonly Dictionary<MemoTab, PlainRichTextBox> editedTabs = [];
     readonly ToolStripStatusLabel saveStatus;
     readonly ToolStripButton retrySaveButton;
     readonly ToolStripMenuItem saveMenuItem = new("保存(&S)")
@@ -512,7 +513,7 @@ public partial class MemoForm : Form
         textBox.TextChanged += (s, e) =>
         {
             if (loading) return;
-            tab.Text = textBox.Text;
+            editedTabs[tab] = textBox;
             ScheduleSave();
         };
         page.Controls.Add(textBox);
@@ -629,6 +630,7 @@ public partial class MemoForm : Form
         }
 
         var tab = Data.Tabs[index];
+        SyncEditedText();
         // 内容のあるタブを閉じる際は確認する
         if (!string.IsNullOrEmpty(tab.Text))
         {
@@ -839,10 +841,21 @@ public partial class MemoForm : Form
         return !savePending;
     }
 
+    // 編集通知中は全文を読み出さず、保存とタブを閉じる判定の直前にまとめて反映する。
+    void SyncEditedText()
+    {
+        foreach (var (tab, editor) in editedTabs)
+        {
+            tab.Text = editor.Text;
+        }
+        editedTabs.Clear();
+    }
+
     void SaveData()
     {
         savePending = true;
         saveTimer.Stop();
+        SyncEditedText();
         bool saved = Data.Save(failure =>
         {
             saveFailureKind = failure.Kind;
