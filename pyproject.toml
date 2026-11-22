@@ -9,6 +9,9 @@ dotnet = true
 js-runner = "direct"
 prettier = true
 colloquial-check = true
+comment-check = true
+# WinFormsデザイナーが編集のたびにコメントを再生成するため対象外にする。
+comment-check-exclude = ["*.Designer.cs"]
 
 extend-exclude = [
     "bin",

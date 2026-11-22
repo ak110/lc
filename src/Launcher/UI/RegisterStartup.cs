@@ -3,9 +3,6 @@ using Launcher.Win32;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// スタートアップに登録等のボタン群。
-/// </summary>
 [DefaultProperty("BaseName")]
 public partial class RegisterStartup : UserControl
 {
@@ -103,9 +100,6 @@ public partial class RegisterStartup : UserControl
         UpdateButtonValid();
     }
 
-    /// <summary>
-    /// ショートカットの作成
-    /// </summary>
     private static void CreateShortcut(string file)
     {
         using var link = new ShellLink();
@@ -115,9 +109,6 @@ public partial class RegisterStartup : UserControl
         link.Save(file);
     }
 
-    /// <summary>
-    /// ボタンの有効・無効を設定
-    /// </summary>
     private void UpdateButtonValid()
     {
         int common = -1, user = -1;

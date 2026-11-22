@@ -1,6 +1,5 @@
 namespace Launcher.Core;
 
-/// <summary>Shellで開く対象と起動条件。OS操作は含まない。</summary>
 public sealed class ShellProcessStartInfo
 {
     public string? Arguments { get; set; }

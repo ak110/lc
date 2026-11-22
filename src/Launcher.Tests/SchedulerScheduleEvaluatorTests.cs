@@ -4,11 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// スケジュール日付条件判定 (<see cref="SchedulerScheduleEvaluator"/>) のテスト。
-/// 時刻条件判定は内部ディスパッチのため、<see cref="SchedulerPresenterTests"/> の
-/// <c>SpecificTimes</c>・<c>Interval</c> region で間接的に検証する。
-/// </summary>
 public sealed class SchedulerScheduleEvaluatorTests
 {
     #region MatchesDateCondition (Weekday)
@@ -16,8 +11,8 @@ public sealed class SchedulerScheduleEvaluatorTests
     [Fact]
     public void Weekday_正しい曜日でtrue()
     {
-        var schedule = MakeWeekdaySchedule([true, false, false, false, false, false, false]); // 月曜のみ
-        var date = new DateOnly(2025, 6, 16); // 月曜
+        var schedule = MakeWeekdaySchedule([true, false, false, false, false, false, false]);
+        var date = new DateOnly(2025, 6, 16);
 
         SchedulerScheduleEvaluator.MatchesDateCondition(schedule, date).Should().BeTrue();
     }
@@ -25,8 +20,8 @@ public sealed class SchedulerScheduleEvaluatorTests
     [Fact]
     public void Weekday_誤った曜日でfalse()
     {
-        var schedule = MakeWeekdaySchedule([true, false, false, false, false, false, false]); // 月曜のみ
-        var date = new DateOnly(2025, 6, 17); // 火曜
+        var schedule = MakeWeekdaySchedule([true, false, false, false, false, false, false]);
+        var date = new DateOnly(2025, 6, 17);
 
         SchedulerScheduleEvaluator.MatchesDateCondition(schedule, date).Should().BeFalse();
     }
@@ -38,7 +33,7 @@ public sealed class SchedulerScheduleEvaluatorTests
         schedule.WeeksStart = new MonthDay(7, 1);
         schedule.WeeksEnd = new MonthDay(8, 31);
 
-        var date = new DateOnly(2025, 6, 16); // 6月は範囲外
+        var date = new DateOnly(2025, 6, 16);
         SchedulerScheduleEvaluator.MatchesDateCondition(schedule, date).Should().BeFalse();
     }
 
@@ -50,7 +45,6 @@ public sealed class SchedulerScheduleEvaluatorTests
     public void DateInterval_正しい日数間隔でtrue()
     {
         var schedule = MakeDateIntervalSchedule(new MonthDay(1, 1), new MonthDay(12, 31), 3);
-        // 2025/1/1 から3日おき: 1/1, 1/4, 1/7, ...
         var date = new DateOnly(2025, 1, 4);
         SchedulerScheduleEvaluator.MatchesDateCondition(schedule, date).Should().BeTrue();
     }
@@ -58,7 +52,6 @@ public sealed class SchedulerScheduleEvaluatorTests
     [Fact]
     public void DateInterval_年をまたぐ場合も正しく動作()
     {
-        // 12/30(開始)から2日間隔: 12/30, 1/1, 1/3。1/2はマッチしない。
         var schedule = MakeDateIntervalSchedule(new MonthDay(12, 30), new MonthDay(1, 5), 2);
         var dec30 = new DateOnly(2025, 12, 30);
         var jan1 = new DateOnly(2026, 1, 1);
@@ -106,9 +99,6 @@ public sealed class SchedulerScheduleEvaluatorTests
         SchedulerScheduleEvaluator.MatchesDateCondition(interval, date).Should().Be(expected);
     }
 
-    // --- ヘルパー ---
-
-    /// <summary>曜日指定のスケジュール (時刻は全時間帯) を作成</summary>
     private static Schedule MakeWeekdaySchedule(bool[] weekdays)
     {
         return new Schedule
@@ -123,7 +113,6 @@ public sealed class SchedulerScheduleEvaluatorTests
         };
     }
 
-    /// <summary>日数間隔のスケジュール (時刻は0:00、曜日は全日) を作成</summary>
     private static Schedule MakeDateIntervalSchedule(MonthDay start, MonthDay end, int interval)
     {
         return new Schedule

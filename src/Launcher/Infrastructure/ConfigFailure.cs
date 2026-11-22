@@ -2,7 +2,6 @@ using System.Xml;
 
 namespace Launcher.Infrastructure;
 
-/// <summary>設定ファイルの解析・入出力で扱う例外の分類。</summary>
 public static class ConfigFailure
 {
     public static bool IsXml(Exception error) => error is InvalidOperationException or XmlException;
@@ -14,14 +13,12 @@ public static class ConfigFailure
     public static bool IsSave(Exception error) => IsRead(error);
 }
 
-/// <summary>利用者へ通知する保存失敗の種類。</summary>
 public enum ConfigSaveFailureKind
 {
     Blocked,
     Write,
 }
 
-/// <summary>保存対象と、保存できなかった場合の案内。</summary>
 public sealed record ConfigSaveFailure(string FileKind, ConfigSaveFailureKind Kind)
 {
     public string Message => Kind == ConfigSaveFailureKind.Blocked

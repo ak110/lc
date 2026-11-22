@@ -7,18 +7,11 @@ public sealed class CommandList : ConfigStore, ICloneable
 {
     public List<Command> Commands { get; set; } = new List<Command>();
 
-    /// <summary>
-    /// 要素数
-    /// </summary>
     public int Count
     {
         get { return Commands.Count; }
     }
 
-    /// <summary>
-    /// 一覧の実体を保って再読込を反映する。同じ定義のコマンドは参照も保ち、
-    /// 再読込中に開いている編集ダイアログが元のコマンドへ編集を確定できるようにする。
-    /// </summary>
     public void ReplaceContents(CommandList loaded)
     {
         if (ReferenceEquals(this, loaded)) return;
@@ -37,9 +30,6 @@ public sealed class CommandList : ConfigStore, ICloneable
             Environment.ExpandEnvironmentVariables(command.WorkDir ?? string.Empty),
             command.Show, command.Priority, command.RunAsAdmin);
 
-    /// <summary>
-    /// 複製の作成
-    /// </summary>
     public CommandList Clone()
     {
         CommandList copy = (CommandList)MemberwiseClone();
@@ -58,31 +48,18 @@ public sealed class CommandList : ConfigStore, ICloneable
 
     #region Serialize/Deserialize
 
-    /// <summary>
-    /// 書き込み
-    /// </summary>
     public bool Save(Action<ConfigSaveFailure> notify, string? baseName = null)
     {
         Commands.Sort();
         return Store.Save(this, notify, baseName);
     }
 
-    /// <summary>
-    /// 保存済みの一覧へコマンドを追加して保存する (「送る」からの登録)。
-    /// 一覧を読み込めない場合は追加も保存もせず、読込結果を通知してfalseを返す。
-    /// </summary>
     public static bool AddAndSave(Command command, Action<ConfigSaveFailure> notify,
         Action<ConfigLoadResult<CommandList>> loadFailed, string? baseName = null)
         => Store.ModifyAndSave(list => list.Add(command), notify, loadFailed, baseName);
 
-    /// <summary>
-    /// 読み込み
-    /// </summary>
     public static ConfigLoadResult<CommandList> Load(string? baseName = null) => Store.Load(baseName);
 
-    /// <summary>
-    /// 保存データの読込・復元。XMLとして読めない旧形式のコマンド一覧も読む
-    /// </summary>
     public static ConfigFile<CommandList> Store { get; } = new(".cmd.cfg", LoadLegacy);
 
     static CommandList LoadLegacy(byte[] content)
@@ -93,9 +70,6 @@ public sealed class CommandList : ConfigStore, ICloneable
 
     #endregion
 
-    /// <summary>
-    /// 後方互換性のための処理
-    /// </summary>
     public static CommandList LoadFrom(LegacyConfigReader reader)
     {
         var list = new CommandList();
@@ -124,9 +98,6 @@ public sealed class CommandList : ConfigStore, ICloneable
         return list;
     }
 
-    /// <summary>
-    /// 該当しそうなコマンドをリストアップして返す。
-    /// </summary>
     public IEnumerable<Command> FindMatch(string input, Config config)
     {
         if (string.IsNullOrEmpty(input))
@@ -140,9 +111,6 @@ public sealed class CommandList : ConfigStore, ICloneable
             .Select(x => x.Command);
     }
 
-    /// <summary>
-    /// 追加
-    /// </summary>
     public void Add(Command command)
     {
         Commands.Add(command);

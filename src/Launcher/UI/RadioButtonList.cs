@@ -3,9 +3,6 @@ using System.ComponentModel;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// ラジオボタンのリストを管理するコントロール。
-/// </summary>
 [DefaultProperty("Items")]
 public partial class RadioButtonList : UserControl
 {
@@ -14,7 +11,6 @@ public partial class RadioButtonList : UserControl
     List<RadioButton> items = [];
     int columnCount = 1;
 
-    /// <summary>行ごとに左から並べる列数。</summary>
     [DefaultValue(1)]
     public int ColumnCount
     {
@@ -41,9 +37,6 @@ public partial class RadioButtonList : UserControl
         }
     }
 
-    /// <summary>
-    /// 項目のインデックス
-    /// </summary>
     [DefaultValue(0)]
     public int SelectedIndex
     {
@@ -67,9 +60,6 @@ public partial class RadioButtonList : UserControl
         }
     }
 
-    /// <summary>
-    /// 選択された項目
-    /// </summary>
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public object? SelectedItem
     {
@@ -93,9 +83,6 @@ public partial class RadioButtonList : UserControl
         }
     }
 
-    /// <summary>
-    /// 項目のリスト
-    /// </summary>
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public object?[] Items
     {
@@ -121,9 +108,6 @@ public partial class RadioButtonList : UserControl
         set { Items = value!; }
     }
 
-    /// <summary>
-    /// ラジオボタンのレイアウトを更新
-    /// </summary>
     void UpdateLayout()
     {
         lock (lockObject)
@@ -153,9 +137,6 @@ public partial class RadioButtonList : UserControl
         }
     }
 
-    /// <summary>
-    /// Itemsの型
-    /// </summary>
     [ListBindable(false)]
     public class ObjectCollection : IList, ICollection, IEnumerable
     {
@@ -262,7 +243,7 @@ public partial class RadioButtonList : UserControl
             ArgumentNullException.ThrowIfNull(item);
             lock (owner.lockObject)
             {
-#pragma warning disable CA2000 // Controls コレクションがRadioButtonのライフサイクルを管理
+#pragma warning disable CA2000
                 owner.items.Insert(index, CreateRadioButton(item));
 #pragma warning restore CA2000
                 owner.UpdateLayout();

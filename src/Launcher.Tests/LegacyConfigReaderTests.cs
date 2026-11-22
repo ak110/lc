@@ -46,7 +46,6 @@ public sealed class LegacyConfigReaderTests
     [Fact]
     public void エスケープシーケンスを正しく処理する()
     {
-        // \n → 改行, \r → CR, \\ → バックスラッシュ
         var reader = CreateReader(@"text = hello\nworld");
         reader.EscapedString("text").Should().Be("hello\nworld");
     }
@@ -75,7 +74,6 @@ public sealed class LegacyConfigReaderTests
     [Fact]
     public void 値にイコール記号を含む場合()
     {
-        // "key = a = b" → key="a = b"
         var reader = CreateReader("key = a = b");
         reader.Indirect("key").Should().Be("a = b");
     }

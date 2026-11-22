@@ -20,7 +20,6 @@ public sealed class HookLifecycleTests(ITestOutputHelper output)
         Trace.Listeners.Add(listener);
         try
         {
-            // 公開APIで実フックを登録し、所有STAを終了してOS側の解除を発生させる。
             UiAcceptance.Run(() =>
             {
                 if (mouse) Hook.SetMouseHook();

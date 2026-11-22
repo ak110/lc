@@ -5,10 +5,6 @@ using Launcher.Win32;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// メモパッドフォーム。タブで複数のプレーンテキストメモを管理する。
-/// 常に通常ウィンドウとし、最前面固定は設けない。
-/// </summary>
 public partial class MemoForm : Form
 {
     readonly ApplicationHostForm owner;
@@ -44,10 +40,8 @@ public partial class MemoForm : Form
     bool saveFailed;
     ConfigSaveFailureKind? saveFailureKind;
 
-    /// <summary>初期化・タブ再構築・ウィンドウ復元中の保存抑制ガード</summary>
     bool loading;
 
-    /// <summary>全タブへ一括適用する現在のフォント</summary>
     Font? memoFont;
 
     MemoData Data => owner.MemoData;
@@ -70,10 +64,8 @@ public partial class MemoForm : Form
         retrySaveButton.Click += (s, e) => SaveData();
         statusStrip.Items.AddRange([saveStatus, retrySaveButton]);
         Controls.Add(statusStrip);
-        // 上下のバーを先に配置し、残りの領域をタブへ割り当てる。
         Controls.SetChildIndex(statusStrip, 1);
 
-        // テキスト変更・位置/サイズ変更・タブ切替のデバウンス保存タイマー
         saveTimer = new System.Windows.Forms.Timer { Interval = 200 };
         saveTimer.Tick += (s, e) =>
         {
@@ -83,7 +75,6 @@ public partial class MemoForm : Form
         components ??= new Container();
         components.Add(saveTimer);
 
-        // タブヘッダー右クリックメニュー (内容はOpeningで動的構築)
         tabContextMenu = new ContextMenuStrip();
         tabContextMenu.Opening += TabContextMenu_Opening;
         tabControl1.ContextMenuStrip = tabContextMenu;
@@ -97,7 +88,6 @@ public partial class MemoForm : Form
 
         WireMenu();
 
-        // 表示前にハンドルを作成し、本文のフォントとウィンドウ位置を初期化する。
         _ = Handle;
 
         RestoreWindowBounds();
@@ -106,10 +96,6 @@ public partial class MemoForm : Form
 
     #region 表示・非表示
 
-    /// <summary>
-    /// 表示中なら隠し、非表示または最小化中なら表示・復元してアクティブ化する。
-    /// 最小化された状態を「非表示相当」として扱い、隠さずに復元する。
-    /// </summary>
     public void ToggleVisible()
     {
         if (Visible && WindowState != FormWindowState.Minimized)
@@ -122,9 +108,6 @@ public partial class MemoForm : Form
         }
     }
 
-    /// <summary>
-    /// 表示中なら隠す。ランチャー起動時に呼び出される。
-    /// </summary>
     public void HideIfVisible()
     {
         if (Visible)
@@ -134,10 +117,6 @@ public partial class MemoForm : Form
         }
     }
 
-    /// <summary>
-    /// メモパッドを表示してアクティブ化し、現在タブの本文へフォーカスを移す。
-    /// 最小化されていた場合は通常状態へ復元する。
-    /// </summary>
     public void ShowMemo()
     {
         if (WindowState == FormWindowState.Minimized)
@@ -149,10 +128,6 @@ public partial class MemoForm : Form
         FocusCurrentTextBox();
     }
 
-    /// <summary>
-    /// 現在選択中のタブに含まれるテキストボックスへフォーカスを移す。
-    /// タブ自体にフォーカスがあたる問題を回避するために表示直後・タブ切替後に呼ぶ。
-    /// </summary>
     void FocusCurrentTextBox()
     {
         var textBox = GetCurrentTextBox();
@@ -168,7 +143,6 @@ public partial class MemoForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        // オーナー(ApplicationHostForm)からの閉じる操作以外は非表示にするだけ
         if (e.CloseReason != CloseReason.FormOwnerClosing)
         {
             e.Cancel = true;
@@ -184,10 +158,6 @@ public partial class MemoForm : Form
 
     #region メニュー
 
-    /// <summary>
-    /// メニュー項目のハンドラを結線する。
-    /// タブ操作系メニューはDropDownOpeningで有効/無効と復元候補を更新する。
-    /// </summary>
     void WireMenu()
     {
         newTabMenuItem.Click += (s, e) => AddTab();
@@ -224,10 +194,6 @@ public partial class MemoForm : Form
         zoomResetMenuItem.Click += (s, e) => ResetCurrentZoom();
     }
 
-    /// <summary>
-    /// メニュー項目に割り当てられない拡大・縮小・リセットの別のキーを処理する。
-    /// JIS配列の「+」はShift+「;」キー（Oemplus）で入力し、テンキーの「+」「-」「0」も同じ操作として受け付ける。
-    /// </summary>
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
         switch (keyData)
@@ -252,7 +218,6 @@ public partial class MemoForm : Form
         renameTabMenuItem.Enabled = tabControl1.SelectedTab is not null;
         closeTabMenuItem.Enabled = tabControl1.TabPages.Count > 1;
 
-        // 閉じたタブを戻す (サブメニューを動的構築)
         restoreClosedTabMenuItem.DropDownItems.Clear();
         if (Data.ClosedTabs.Count == 0)
         {
@@ -291,9 +256,6 @@ public partial class MemoForm : Form
 
     #region 行・文字の変換
 
-    /// <summary>
-    /// 選択範囲を行単位へ拡張し、行を序数順に並べ替える。置換は1回の取り消しで元に戻せ、並べ替えた範囲を選択する。
-    /// </summary>
     void SortSelectedLines()
     {
         var textBox = GetCurrentTextBox();
@@ -306,9 +268,6 @@ public partial class MemoForm : Form
         textBox.Select(regionStart, replaced.Length);
     }
 
-    /// <summary>
-    /// 選択文字列だけを大文字または小文字へ変換し、選択を保つ。
-    /// </summary>
     void ConvertSelectedCase(bool upper)
     {
         var textBox = GetCurrentTextBox();
@@ -329,7 +288,6 @@ public partial class MemoForm : Form
     {
         findReplaceDialog ??= CreateFindReplaceDialog();
 
-        // 選択文字列があれば検索文字列の初期値として使う (無ければ前回の検索文字列を保持)
         string? initial = null;
         var textBox = GetCurrentTextBox();
         if (textBox is not null && textBox.SelectionLength > 0 && !textBox.SelectedText.Contains('\n'))
@@ -349,10 +307,6 @@ public partial class MemoForm : Form
         return dialog;
     }
 
-    /// <summary>
-    /// F3/Shift+F3の処理。ダイアログが保持する直前の検索条件で検索する。
-    /// 条件が無い場合と見つからなかった場合は検索ダイアログを表示して理由を示す。
-    /// </summary>
     void FindNextFromDialogOrOpen(bool reverse)
     {
         findReplaceDialog ??= CreateFindReplaceDialog();
@@ -369,9 +323,6 @@ public partial class MemoForm : Form
         }
     }
 
-    /// <summary>
-    /// 現在タブで検索して一致箇所を選択する。一致が無い場合はfalseを返す。
-    /// </summary>
     bool ExecuteFind(FindEventArgs e, bool reverse)
     {
         var textBox = GetCurrentTextBox();
@@ -391,7 +342,6 @@ public partial class MemoForm : Form
         var (matchStart, matchLength) = MemoSearch.FindMatch(text, e.Pattern, startIndex, reverse, e.MatchCase, e.UseRegex);
         if (matchStart < 0)
         {
-            // 末尾/先頭に達したら折り返して再検索
             int wrapStart = reverse ? text.Length : 0;
             (matchStart, matchLength) = MemoSearch.FindMatch(text, e.Pattern, wrapStart, reverse, e.MatchCase, e.UseRegex);
             if (matchStart < 0)
@@ -416,7 +366,6 @@ public partial class MemoForm : Form
         var textBox = GetCurrentTextBox();
         if (textBox is null) return;
 
-        // 現在選択が検索条件に一致する場合は置換し、その後次を検索する
         if (textBox.SelectionLength > 0 && MemoSearch.IsMatch(textBox.SelectedText, e.Pattern, e.MatchCase, e.UseRegex))
         {
             string replacement = MemoSearch.ComputeReplacement(textBox.SelectedText, e.Pattern, e.Replacement, e.MatchCase, e.UseRegex);
@@ -463,9 +412,6 @@ public partial class MemoForm : Form
 
     #region タブ構築
 
-    /// <summary>
-    /// データから全タブを構築する。
-    /// </summary>
     void BuildTabs()
     {
         loading = true;
@@ -496,12 +442,9 @@ public partial class MemoForm : Form
         }
     }
 
-    /// <summary>
-    /// MemoTabに対応するタブページを生成する。
-    /// </summary>
     TabPage CreateTabPage(MemoTab tab)
     {
-#pragma warning disable CA2000 // TabControlがTabPageのライフサイクルを管理
+#pragma warning disable CA2000
         var page = new TabPage(tab.Name) { Tag = tab };
 #pragma warning restore CA2000
         var textBox = new PlainRichTextBox { Text = tab.Text };
@@ -509,7 +452,6 @@ public partial class MemoForm : Form
         {
             textBox.ApplyFont(memoFont);
         }
-        // Textは初期化子で設定済みのため、ここで購読すれば初期化時のTextChangedは発生しない
         textBox.TextChanged += (s, e) =>
         {
             if (loading) return;
@@ -526,7 +468,6 @@ public partial class MemoForm : Form
 
     void TabContextMenu_Opening(object? sender, CancelEventArgs e)
     {
-        // カーソル直下のタブを検出し、見つかればSelectedIndexへ反映する
         var pos = tabControl1.PointToClient(Cursor.Position);
         int hit = TabControlHelper.HitTest(tabControl1, pos);
         if (hit >= 0)
@@ -561,9 +502,6 @@ public partial class MemoForm : Form
         tabContextMenu.Items.Add("フォント(&F)...", null, (s, ev) => ChangeFont());
     }
 
-    /// <summary>
-    /// 閉じたタブの復元メニュー用ラベルを生成する。タブ名と本文先頭を併記する。
-    /// </summary>
     static string BuildRestoreLabel(MemoTab tab)
     {
         string preview = tab.Text.Replace("\r", " ").Replace("\n", " ").Trim();
@@ -584,9 +522,6 @@ public partial class MemoForm : Form
         AddTabWithName(name);
     }
 
-    /// <summary>
-    /// デフォルト名で新しいタブを追加する。タブ余白のダブルクリックから呼ばれる。
-    /// </summary>
     void AddTabWithDefaultName() => AddTabWithName($"メモ{Data.Tabs.Count + 1}");
 
     void AddTabWithName(string name)
@@ -597,7 +532,7 @@ public partial class MemoForm : Form
         tabControl1.TabPages.Add(page);
         tabControl1.SelectedTab = page;
         Data.CurrentTabIndex = tabControl1.SelectedIndex;
-        SaveData(); // タブ増減は即時保存
+        SaveData();
         FocusCurrentTextBox();
     }
 
@@ -612,13 +547,11 @@ public partial class MemoForm : Form
 
         tab.Name = name;
         page.Text = name;
-        SaveData(); // 改名は即時保存
+        SaveData();
     }
 
     void CloseCurrentTab()
     {
-        // tabControl1.TabPagesとData.TabsはBuildTabs以降つねに同順・同数で対応する。
-        // SelectedIndexはData.Tabsのインデックスとしてそのまま利用できる。
         int index = tabControl1.SelectedIndex;
         if (index < 0) return;
 
@@ -631,7 +564,6 @@ public partial class MemoForm : Form
 
         var tab = Data.Tabs[index];
         SyncEditedText();
-        // 内容のあるタブを閉じる際は確認する
         if (!string.IsNullOrEmpty(tab.Text))
         {
             if (MessageBox.Show(this, $"タブ「{tab.Name}」を閉じますか？\n閉じたタブは元に戻せます。", "確認",
@@ -657,7 +589,7 @@ public partial class MemoForm : Form
         {
             loading = false;
         }
-        SaveData(); // タブ増減は即時保存
+        SaveData();
         FocusCurrentTextBox();
     }
 
@@ -670,7 +602,7 @@ public partial class MemoForm : Form
         var page = CreateTabPage(tab);
         tabControl1.TabPages.Add(page);
         tabControl1.SelectedTab = page;
-        SaveData(); // タブ増減は即時保存
+        SaveData();
         FocusCurrentTextBox();
     }
 
@@ -678,14 +610,10 @@ public partial class MemoForm : Form
     {
         if (loading) return;
         Data.CurrentTabIndex = tabControl1.SelectedIndex;
-        ScheduleSave(); // タブ切替はデバウンス保存
+        ScheduleSave();
         FocusCurrentTextBox();
     }
 
-    /// <summary>
-    /// タブ余白のダブルクリックでデフォルト名の新規タブを追加する。
-    /// タブ本体上のダブルクリックは無視する (改名操作と誤爆させない)。
-    /// </summary>
     void TabControl1_MouseDoubleClick(object? sender, MouseEventArgs e)
     {
         if (e.Button != MouseButtons.Left) return;
@@ -693,9 +621,6 @@ public partial class MemoForm : Form
         AddTabWithDefaultName();
     }
 
-    /// <summary>
-    /// タブヘッダのホイールクリックでそのタブを閉じる。
-    /// </summary>
     void TabControl1_MouseUp(object? sender, MouseEventArgs e)
     {
         if (e.Button != MouseButtons.Middle) return;
@@ -729,9 +654,6 @@ public partial class MemoForm : Form
         SaveData();
     }
 
-    /// <summary>
-    /// データのフォント設定を全タブへ適用する。
-    /// </summary>
     void ApplyFontFromData()
     {
         var old = memoFont;
@@ -750,9 +672,6 @@ public partial class MemoForm : Form
 
     #region 表示倍率
 
-    /// <summary>
-    /// Ctrl+ホイールと同じく現在のタブの本文だけを対象とし、倍率は保存しない。
-    /// </summary>
     void ZoomCurrentText(bool zoomIn)
     {
         var textBox = GetCurrentTextBox();
@@ -803,7 +722,7 @@ public partial class MemoForm : Form
         if (Visible && WindowState == FormWindowState.Normal)
         {
             Data.WindowPos = Location;
-            ScheduleSave(); // 位置変更はデバウンス保存
+            ScheduleSave();
         }
     }
 
@@ -813,7 +732,7 @@ public partial class MemoForm : Form
         if (Visible && WindowState == FormWindowState.Normal)
         {
             Data.WindowSize = Size;
-            ScheduleSave(); // サイズ変更はデバウンス保存
+            ScheduleSave();
         }
     }
 
@@ -829,9 +748,6 @@ public partial class MemoForm : Form
         saveTimer.Start();
     }
 
-    /// <summary>
-    /// 未保存の内容があれば即座に保存し、未保存が残っていないかを返す。
-    /// </summary>
     public bool FlushPendingSave()
     {
         if (savePending)
@@ -841,7 +757,6 @@ public partial class MemoForm : Form
         return !savePending;
     }
 
-    // 編集通知中は全文を読み出さず、保存とタブを閉じる判定の直前にまとめて反映する。
     void SyncEditedText()
     {
         foreach (var (tab, editor) in editedTabs)

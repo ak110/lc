@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// UiThreadDispatcherのテスト
-/// </summary>
 public sealed class UiThreadDispatcherTests
 {
     [Fact]
@@ -28,7 +25,7 @@ public sealed class UiThreadDispatcherTests
     public void SafeBeginInvoke_破棄済みならactionを実行せずonSkippedを呼ぶ()
     {
         var control = new Control();
-        _ = control.Handle; // ハンドル作成
+        _ = control.Handle;
         control.Dispose();
         bool actionCalled = false;
         bool onSkippedCalled = false;
@@ -56,7 +53,7 @@ public sealed class UiThreadDispatcherTests
     public void SafeBeginInvoke_ハンドル作成済みならactionをポストしonSkippedは呼ばない()
     {
         using var form = new Form();
-        _ = form.Handle; // ハンドル作成
+        _ = form.Handle;
         bool actionCalled = false;
         bool onSkippedCalled = false;
         using var completed = new ManualResetEventSlim();
@@ -67,7 +64,6 @@ public sealed class UiThreadDispatcherTests
             completed.Set();
         }, onSkipped: () => onSkippedCalled = true);
 
-        // BeginInvokeで投入されたポストをUIメッセージポンプで処理する
         Application.DoEvents();
         completed.Wait(TimeSpan.FromSeconds(1)).Should().BeTrue();
 

@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// スケジューラーデータモデルのテスト
-/// </summary>
 public sealed class SchedulerDataTests
 {
     #region HourMinute
@@ -127,7 +124,6 @@ public sealed class SchedulerDataTests
         item.Schedules.Should().HaveCount(2);
         item.Tasks.Should().HaveCount(2);
 
-        // Schedule 1: SpecificTimes + Weekday
         var sch1 = item.Schedules[0];
         sch1.Enable.Should().BeTrue();
         sch1.TimeType.Should().Be(ScheduleTimeType.SpecificTimes);
@@ -135,7 +131,6 @@ public sealed class SchedulerDataTests
         sch1.DateType.Should().Be(ScheduleDateType.Weekday);
         sch1.Weekdays.Should().Equal(true, true, true, true, true, false, false);
 
-        // Schedule 2: Interval + DateInterval
         var sch2 = item.Schedules[1];
         sch2.Enable.Should().BeFalse();
         sch2.TimeType.Should().Be(ScheduleTimeType.Interval);
@@ -147,7 +142,6 @@ public sealed class SchedulerDataTests
         sch2.DateIntervalEnd.Should().Be(new MonthDay(9, 30));
         sch2.DateIntervalDays.Should().Be(3);
 
-        // Task 1
         var task1 = item.Tasks[0];
         task1.Enable.Should().BeTrue();
         task1.FileName.Should().Be(@"C:\backup\run.bat");
@@ -155,7 +149,6 @@ public sealed class SchedulerDataTests
         task1.Show.Should().Be(WindowStyle.Hidden);
         task1.Priority.Should().Be(ProcessPriorityLevel.BelowNormal);
 
-        // Task 2
         var task2 = item.Tasks[1];
         task2.Enable.Should().BeFalse();
         task2.FileName.Should().Be("notepad.exe");
@@ -205,7 +198,6 @@ public sealed class SchedulerDataTests
     [Fact]
     public void SchedulerTask_Type未指定のXMLはExecuteにデシリアライズされる()
     {
-        // 旧バージョンのXML (Type/Message フィールドなし) との後方互換性テスト
         const string xml = """
             <?xml version="1.0" encoding="utf-16"?>
             <SchedulerData>
@@ -246,19 +238,16 @@ public sealed class SchedulerDataTests
 
         var clone = original.Clone();
 
-        // 値が同じ
         clone.Name.Should().Be("テスト");
         clone.Schedules.Should().HaveCount(1);
         clone.Tasks.Should().HaveCount(1);
 
-        // 参照が異なる (ディープコピー)
         clone.Schedules.Should().NotBeSameAs(original.Schedules);
         clone.Schedules[0].Should().NotBeSameAs(original.Schedules[0]);
         clone.Schedules[0].Times.Should().NotBeSameAs(original.Schedules[0].Times);
         clone.Tasks.Should().NotBeSameAs(original.Tasks);
         clone.Tasks[0].Should().NotBeSameAs(original.Tasks[0]);
 
-        // 変更が影響しない
         clone.Name = "変更後";
         clone.Schedules[0].Times.Add(new HourMinute(18, 0));
         clone.Tasks[0].FileName = "changed.exe";
@@ -288,7 +277,6 @@ public sealed class SchedulerDataTests
     [Fact]
     public void 識別子の無いアイテムへ識別子を補う()
     {
-        // 旧版の設定 (Id要素なし) を読み込む
         var xml = XmlTestSerializer.SerializeToString(new SchedulerData { Items = [new SchedulerItem { Name = "a" }, new SchedulerItem { Name = "b" }] })
             .Replace("<Id />", "", StringComparison.Ordinal);
         var data = XmlTestSerializer.DeserializeFromString<SchedulerData>(xml);
@@ -298,7 +286,6 @@ public sealed class SchedulerDataTests
         data.Items.Should().OnlyContain(i => i.Id != "");
         data.Items.Select(i => i.Id).Should().OnlyHaveUniqueItems();
 
-        // 保存して読み直しても同じ識別子で、再度の補完は不要
         var reloaded = XmlTestSerializer.DeserializeFromString<SchedulerData>(XmlTestSerializer.SerializeToString(data));
         reloaded.Items.Select(i => i.Id).Should().Equal(data.Items.Select(i => i.Id));
         reloaded.EnsureIds().Should().BeFalse();
@@ -314,7 +301,6 @@ public sealed class SchedulerDataTests
         copy.Id.Should().NotBe(item.Id).And.NotBeEmpty();
         copy.Name.Should().Be("a");
 
-        // 重複した識別子は補完で解消する
         var data = new SchedulerData { Items = [item, item.Clone()] };
         data.EnsureIds().Should().BeTrue();
         data.Items.Select(i => i.Id).Should().OnlyHaveUniqueItems();

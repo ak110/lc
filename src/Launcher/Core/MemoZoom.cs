@@ -8,17 +8,10 @@ public static class MemoZoom
 {
     public const float Default = 1f;
 
-    // 倍率を10%単位の段数で扱う。10%が1段、500%が50段に当たる。
     const int StepsPerUnit = 10;
     const int MinSteps = 1;
     const int MaxSteps = 50;
 
-    /// <summary>
-    /// 現在の倍率から、拡大なら次に大きい10%単位の倍率、縮小なら次に小さい10%単位の倍率を返す。
-    /// Ctrl+ホイールで10%単位から外れた倍率も、操作の方向にある最も近い10%単位へ進める。
-    /// 範囲の端で同じ方向へ操作した場合はnullを返し、倍率を変えない。
-    /// Ctrl+ホイールで範囲外に達した倍率は、範囲へ近づく方向の操作だけを受け付ける。
-    /// </summary>
     public static float? Step(float current, bool zoomIn)
     {
         // RichEditから読んだ倍率は1.1が10.9999のように段数の直前へずれるため、許容幅を持たせて段数へ換算する。

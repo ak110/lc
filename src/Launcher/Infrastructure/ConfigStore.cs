@@ -2,14 +2,8 @@ using System.Xml.Serialization;
 
 namespace Launcher.Infrastructure;
 
-/// <summary>
-/// シリアライズ可能なクラスの基底クラス。
-/// </summary>
 public class ConfigStore
 {
-    /// <summary>
-    /// 既定のディレクトリパス＋拡張子を除いたベースファイル名を取得する。
-    /// </summary>
     public static string DefaultBaseName
     {
         get
@@ -25,7 +19,6 @@ public class ConfigStore
         return buffer.ToArray();
     }
 
-    // 本体、バックアップ、復元で同じ再試行と一時ファイルの後始末を使う。
     internal static void WriteAtomic(string fileName, byte[] content)
     {
         string temporary = fileName + ".tmp";
@@ -41,9 +34,6 @@ public class ConfigStore
         }
     }
 
-    /// <summary>
-    /// リトライ付きファイル移動。最終失敗時はtmpファイルを削除してから例外を伝播する。
-    /// </summary>
     static void MoveFileWithRetry(string source, string dest)
     {
         const int maxRetries = 2;
@@ -61,16 +51,12 @@ public class ConfigStore
             }
             catch
             {
-                // 最終失敗時はtmpファイルを残さない
                 IoFailureHandler.IgnoreIoErrors(() => File.Delete(source));
                 throw;
             }
         }
     }
 
-    /// <summary>
-    /// ストリームからオブジェクトを復元
-    /// </summary>
     public static T DeserializeFromStream<T>(Stream stream)
     {
         XmlSerializer formatter = new XmlSerializer(typeof(T));
@@ -90,7 +76,6 @@ public class ConfigStore
         }
         catch (AbandonedMutexException)
         {
-            // 前のプロセスが異常終了しても、このスレッドが取得した排他の下で原本を検査する。
         }
         catch
         {
@@ -100,10 +85,6 @@ public class ConfigStore
         return new MutexLock(mutex);
     }
 
-    /// <summary>
-    /// Mutexの取得・解放を安全に行うラッパー。
-    /// ReleaseMutex()の後にClose()することで他プロセスでのAbandonedMutexExceptionを防ぐ。
-    /// </summary>
     private sealed class MutexLock : IDisposable
     {
         private Mutex? mutex;

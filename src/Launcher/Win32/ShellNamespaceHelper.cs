@@ -3,10 +3,6 @@ using System.Runtime.InteropServices;
 
 namespace Launcher.Win32;
 
-/// <summary>
-/// パスから親IShellFolder・子PIDL・絶対PIDLを取り出すヘルパー。
-/// IContextMenu取得のための共通処理を集約する。
-/// </summary>
 public static class ShellNamespaceHelper
 {
     /// <summary>

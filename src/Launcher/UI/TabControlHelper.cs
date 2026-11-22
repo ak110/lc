@@ -1,6 +1,5 @@
 namespace Launcher.UI;
 
-/// <summary>タブヘッダーの当たり判定とホイール選択を共通化する。</summary>
 public static class TabControlHelper
 {
     public static int HitTest(TabControl tabs, Point clientPosition)

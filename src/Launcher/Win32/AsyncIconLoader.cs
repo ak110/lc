@@ -3,17 +3,12 @@ using Launcher.Infrastructure;
 
 namespace Launcher.Win32;
 
-/// <summary>
-/// アイコン読み込み完了イベントの引数。
-/// 失敗時は Icon == null
-/// </summary>
 public sealed class IconLoadedEventArgs : EventArgs
 {
     public System.Drawing.Icon? Icon { get; }
     public string FileName { get; set; }
     public bool Small { get; set; }
     public object? Arg { get; }
-    /// <summary>リクエスト時の世代番号</summary>
     public int Generation { get; }
     public IconLoadedEventArgs(System.Drawing.Icon? icon, string fileName, bool small, object? arg, int generation)
     {
@@ -41,7 +36,7 @@ public sealed class IconLoadedEventArgs : EventArgs
 public sealed class AsyncIconLoader : IDisposable
 {
     const int DefaultWorkerCount = 8;
-    const int MaxRetries = 2; // 合計最大3回試行
+    const int MaxRetries = 2;
 
     readonly BlockingCollection<Request> queue = new();
     readonly CancellationTokenSource cts = new();
@@ -67,27 +62,12 @@ public sealed class AsyncIconLoader : IDisposable
         }
     }
 
-    /// <summary>
-    /// 現在の世代番号。UIスレッドから参照して古い結果を破棄するために使用。
-    /// </summary>
     public int Generation => generation;
 
-    /// <summary>
-    /// Dispose 済みかどうか。
-    /// </summary>
     public bool IsDisposed => disposed;
 
-    /// <summary>
-    /// アイコン読み込み完了イベント
-    /// </summary>
     public event EventHandler<IconLoadedEventArgs>? IconLoaded;
 
-    /// <summary>
-    /// コンストラクタ。固定数のSTAワーカースレッドを一括起動する。
-    /// </summary>
-    /// <param name="workerCount">ワーカースレッド数 (デフォルト8)</param>
-    /// <param name="threadPriority">ワーカースレッドの優先度</param>
-    /// <param name="extractIcon">アイコン抽出関数 (テスト時にモック差し替え可能)</param>
     public AsyncIconLoader(
         int workerCount = DefaultWorkerCount,
         ThreadPriority threadPriority = ThreadPriority.Normal,
@@ -95,7 +75,6 @@ public sealed class AsyncIconLoader : IDisposable
     {
         _faviconCache = new FaviconCache(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "favicons"));
         this.extractIcon = extractIcon ?? DefaultExtractIcon;
-        // Dispose()とのレース回避: スレッド開始前にトークンを取得しておく
         var token = cts.Token;
         for (int i = 0; i < workerCount; i++)
         {
@@ -125,25 +104,16 @@ public sealed class AsyncIconLoader : IDisposable
             return IconExtractor.ExtractIconByShellNamespace(normalized, small);
         }
 
-        // bare name ("control"等) をパス解決してからアイコンを取得する
         string resolved = FileHelper.ResolveExecutable(normalized);
         return IconExtractor.ExtractAssociatedIcon(resolved, small);
     }
 
-    /// <summary>
-    /// キューをクリアし、世代をインクリメントする。
-    /// ワーカースレッドは停止せず、古いリクエストの結果は世代チェックで破棄される。
-    /// </summary>
     public void Clear()
     {
         Interlocked.Increment(ref generation);
-        // キューを空にして古いリクエストの処理をスキップ
         while (queue.TryTake(out _)) { }
     }
 
-    /// <summary>
-    /// アイコン読み込みリクエストをキューに追加する。
-    /// </summary>
     public void Load(string fileName, bool small, object? arg)
     {
         if (disposed) return;
@@ -151,10 +121,6 @@ public sealed class AsyncIconLoader : IDisposable
         queue.Add(new Request(fileName, small, arg, generation));
     }
 
-    /// <summary>
-    /// STAワーカースレッドのメインループ。
-    /// GetConsumingEnumerable()でDispose/キャンセルまでブロック待機する。
-    /// </summary>
     void OnThread(CancellationToken token)
     {
         try
@@ -170,16 +136,13 @@ public sealed class AsyncIconLoader : IDisposable
 
     void ProcessRequest(Request r)
     {
-        // 世代が古ければスキップ
         if (r.Generation != generation) return;
 
-        // アイコン抽出とイベント通知を分離し、どちらの例外でもワーカースレッドが死なないようにする
         System.Drawing.Icon? icon = null;
         try
         {
             icon = extractIcon(r.FileName, r.Small);
 
-            // アイコン抽出中にClear()された場合はスキップ
             if (r.Generation != generation)
             {
                 icon?.Dispose();
@@ -195,7 +158,6 @@ public sealed class AsyncIconLoader : IDisposable
                 $"対応不要（{MaxRetries}回まで再試行し、読み込めなければアイコンなしで表示を継続する）");
             icon?.Dispose();
 
-            // リトライ: 世代がまだ有効で、リトライ回数上限未満なら再キュー
             if (r.RetryCount < MaxRetries && r.Generation == generation)
             {
                 Thread.Sleep(50);
@@ -206,12 +168,11 @@ public sealed class AsyncIconLoader : IDisposable
             icon = null;
         }
 
-        // CallEventは別のtry-catchで保護 (フォームDispose済み等のrace conditionに対応)
         try
         {
             CallEvent(r, icon);
         }
-#pragma warning disable CA1031 // ワーカースレッド保護: イベントハンドラ側の任意例外でスレッドが死なないようにする
+#pragma warning disable CA1031
         catch (Exception e)
 #pragma warning restore CA1031
         {

@@ -3,10 +3,6 @@ using System.Drawing.Imaging;
 
 namespace Launcher.Infrastructure;
 
-/// <summary>
-/// URLのファビコンを取得してディスクにキャッシュする。
-/// Google Favicon APIを使用し、キャッシュミス時のみHTTPリクエストを実行する。
-/// </summary>
 public sealed class FaviconCache
 {
     readonly string _cacheDir;
@@ -19,12 +15,6 @@ public sealed class FaviconCache
         Directory.CreateDirectory(cacheDir);
     }
 
-    /// <summary>
-    /// 指定URLのファビコンを取得する。ディスクキャッシュを確認し、キャッシュミス時はHTTPで取得する。
-    /// 失敗時はnullを返す。
-    /// </summary>
-    /// <param name="url">ファビコンを取得するURL</param>
-    /// <param name="small">true=16px、false=32px</param>
     public System.Drawing.Icon? Get(string url, bool small)
     {
         try
@@ -32,7 +22,6 @@ public sealed class FaviconCache
             var host = new Uri(url).Host;
             if (string.IsNullOrEmpty(host)) return null;
 
-            // ホスト名にファイル名として無効な文字が含まれる場合は除去する
             var safeHost = string.Concat(host.Split(Path.GetInvalidFileNameChars()));
             var cachePath = Path.Combine(_cacheDir, $"{safeHost}.png");
 
@@ -44,7 +33,6 @@ public sealed class FaviconCache
             else
             {
                 pngBytes = FetchFromApi(host);
-                // 競合書き込みに備えてIOExceptionは無視し、既存ファイルがあれば読み直す
                 try
                 {
                     File.WriteAllBytes(cachePath, pngBytes);
@@ -60,7 +48,7 @@ public sealed class FaviconCache
 
             return BitmapToIcon(pngBytes, small);
         }
-#pragma warning disable CA1031 // 呼び出し元スレッド保護: ネットワーク・IO・画像デコードなど任意の例外でnullを返す
+#pragma warning disable CA1031
         catch (Exception e)
 #pragma warning restore CA1031
         {
@@ -75,7 +63,6 @@ public sealed class FaviconCache
     /// </summary>
     static byte[] FetchFromApi(string host)
     {
-        // 常に32pxで取得し、small要求時は呼び出し元でリサイズする
         var apiUrl = $"https://www.google.com/s2/favicons?domain={host}&sz=32";
         using var request = new HttpRequestMessage(HttpMethod.Get, apiUrl);
         using var response = SharedHttpClient.Instance.Send(request);
@@ -97,7 +84,6 @@ public sealed class FaviconCache
         using var srcMs = new MemoryStream(pngBytes);
         using var src = new Bitmap(srcMs);
 
-        // srcが既に目的サイズであれば再割り当てを避ける
         if (src.Width == size && src.Height == size)
         {
             return WrapPngInIco(pngBytes, size, size);

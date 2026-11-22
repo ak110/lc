@@ -195,7 +195,6 @@ public sealed class ReleaseWorkflowTests
 
         string StepScript(string name)
         {
-            // ワークフローが実際に実行するPowerShellをローカルGitとGitHub CLIの代替応答で検証する。
             var lines = workflow.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
             int start = Array.FindIndex(lines, line => line == "      - name: " + name);
             start.Should().BeGreaterThanOrEqualTo(0);

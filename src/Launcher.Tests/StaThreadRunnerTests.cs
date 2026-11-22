@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// StaThreadRunnerのテスト
-/// </summary>
 public sealed class StaThreadRunnerTests
 {
     [Fact]

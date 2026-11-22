@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// Data のシリアライズ/デシリアライズ ラウンドトリップテスト
-/// </summary>
 public sealed class DataTests
 {
     [Fact]

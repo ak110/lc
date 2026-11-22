@@ -3,9 +3,6 @@ using Launcher.Win32;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// コマンド管理画面
-/// </summary>
 public partial class CommandManagementForm : Form
 {
     readonly ApplicationHostForm owner;
@@ -18,7 +15,6 @@ public partial class CommandManagementForm : Form
         this.owner = owner;
         owner.CommandsChanged += Owner_CommandsChanged;
 
-        // アイコン表示の設定
         imageList = new ImageList
         {
             ImageSize = new Size(16, 16),
@@ -31,9 +27,6 @@ public partial class CommandManagementForm : Form
         LoadCommands();
     }
 
-    /// <summary>
-    /// コマンドリストをListViewに表示
-    /// </summary>
     private void LoadCommands()
     {
         listView1.BeginUpdate();
@@ -52,7 +45,6 @@ public partial class CommandManagementForm : Form
             item.SubItems.Add(cmd.WorkDir ?? "");
             listView1.Items.Add(item);
 
-            // アイコン非同期読み込み
             if (!string.IsNullOrEmpty(cmd.FileName))
             {
                 iconLoader.Load(cmd.FileName, true, item);
@@ -130,7 +122,6 @@ public partial class CommandManagementForm : Form
             return;
         }
 
-        // 選択されたコマンドを削除 (全件リロードせずListViewItemを直接削除)
         List<ListViewItem> toRemove = [];
         foreach (ListViewItem item in listView1.SelectedItems)
         {
@@ -150,7 +141,6 @@ public partial class CommandManagementForm : Form
     private void SaveAndApply()
     {
         owner.CommandList.Save(owner.ReportSaveFailure, owner.ConfigurationBaseName);
-        // CommandLauncherFormのコマンド一覧だけ更新 (アイコン再読込は不要)
         owner.RefreshCommandLauncherFormCommandList();
     }
 

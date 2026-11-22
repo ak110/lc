@@ -5,14 +5,8 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// スケジューラーの実行順序と公開された発火判定のテスト。
-/// 日付条件判定の単体は <see cref="SchedulerScheduleEvaluatorTests"/>、
-/// 単一タスク実行は <see cref="SchedulerTaskExecutorTests"/> を参照。
-/// </summary>
 public sealed class SchedulerPresenterTests
 {
-    // テスト用日時: 2025年6月16日(月) を基準に使う
     private static readonly DateTime Monday0900 = new(2025, 6, 16, 9, 0, 0);
 
     [Fact]
@@ -52,7 +46,6 @@ public sealed class SchedulerPresenterTests
         Thread.Sleep(200);
         events.Should().Equal("balloon", "message", "completed");
         completedCount.Should().Be(1);
-        // 2件のタスク間待機を含めて完了する
         stopwatch.ElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(190);
     }
 
@@ -115,19 +108,16 @@ public sealed class SchedulerPresenterTests
     [Fact]
     public void Interval_範囲内の間隔時刻で発火()
     {
-        // 8:00～20:00 の間、30分間隔
         var schedule = MakeIntervalSchedule(new HourMinute(8, 0), new HourMinute(20, 0), 30);
         var last = new DateTime(2025, 6, 16, 9, 25, 0);
         var now = new DateTime(2025, 6, 16, 9, 35, 0);
 
-        // 9:30 が last(9:25) < t <= now(9:35) に該当
         SchedulerScheduleEvaluator.IsScheduleActive(schedule, now, last).Should().BeTrue();
     }
 
     [Fact]
     public void Interval_範囲外では不発火()
     {
-        // 8:00～12:00 の間、60分間隔
         var schedule = MakeIntervalSchedule(new HourMinute(8, 0), new HourMinute(12, 0), 60);
         var last = new DateTime(2025, 6, 16, 13, 0, 0);
         var now = new DateTime(2025, 6, 16, 14, 0, 0);
@@ -142,15 +132,12 @@ public sealed class SchedulerPresenterTests
     [Fact]
     public void IsScheduleActive_日をまたいだ見逃し実行を検出()
     {
-        // 月曜 23:00 に実行するスケジュール
         var schedule = MakeSpecificTimesSchedule(new HourMinute(23, 0));
-        schedule.Weekdays = [true, true, true, true, true, true, true]; // 全曜日
+        schedule.Weekdays = [true, true, true, true, true, true, true];
 
-        // アプリが月曜22:00～火曜08:00まで停止していた
-        var last = new DateTime(2025, 6, 16, 22, 0, 0);  // 月曜 22:00
-        var now = new DateTime(2025, 6, 17, 8, 0, 0);    // 火曜 08:00
+        var last = new DateTime(2025, 6, 16, 22, 0, 0);
+        var now = new DateTime(2025, 6, 17, 8, 0, 0);
 
-        // 月曜23:00が検出されるべき
         SchedulerScheduleEvaluator.IsScheduleActive(schedule, now, last).Should().BeTrue();
     }
 
@@ -204,8 +191,8 @@ public sealed class SchedulerPresenterTests
             Enable = true,
             Schedules =
             [
-                MakeSpecificTimesSchedule(new HourMinute(8, 0)),  // last(9:00)より前→不発火
-                MakeSpecificTimesSchedule(new HourMinute(9, 30)), // 範囲内→発火
+                MakeSpecificTimesSchedule(new HourMinute(8, 0)),
+                MakeSpecificTimesSchedule(new HourMinute(9, 30)),
             ],
             Tasks = [new SchedulerTask { FileName = "test.exe" }],
         };
@@ -255,9 +242,6 @@ public sealed class SchedulerPresenterTests
 
     #endregion
 
-    // --- ヘルパー ---
-
-    /// <summary>指定時刻のスケジュール (全曜日有効) を作成</summary>
     private static Schedule MakeSpecificTimesSchedule(params HourMinute[] times)
     {
         return new Schedule
@@ -272,7 +256,6 @@ public sealed class SchedulerPresenterTests
         };
     }
 
-    /// <summary>間隔ベースのスケジュール (全曜日有効) を作成</summary>
     private static Schedule MakeIntervalSchedule(HourMinute start, HourMinute end, int intervalMinutes)
     {
         return new Schedule

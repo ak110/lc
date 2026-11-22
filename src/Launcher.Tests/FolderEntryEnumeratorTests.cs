@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// FolderEntryEnumeratorのテスト
-/// </summary>
 public sealed class FolderEntryEnumeratorTests
 {
     [Fact]

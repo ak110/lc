@@ -42,14 +42,10 @@ public partial class SchedulerTaskForm : Form
         UpdateControlVisibility();
     }
 
-    /// <summary>
-    /// タスク種類に応じてコントロールの表示/非表示を切り替える。
-    /// </summary>
     private void UpdateControlVisibility()
     {
         bool isExecute = comboBoxType.SelectedIndex == (int)SchedulerTaskType.Execute;
 
-        // ファイル実行用コントロール
         label1.Visible = isExecute;
         textBoxFileName.Visible = isExecute;
         buttonBrowse.Visible = isExecute;
@@ -57,7 +53,6 @@ public partial class SchedulerTaskForm : Form
         textBoxParam.Visible = isExecute;
         launchOptions.Visible = isExecute;
 
-        // メッセージ表示用コントロール
         labelMessage.Visible = !isExecute;
         textBoxMessage.Visible = !isExecute;
     }

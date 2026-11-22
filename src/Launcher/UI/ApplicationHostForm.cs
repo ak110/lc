@@ -22,22 +22,14 @@ public partial class ApplicationHostForm : Form
     bool replacementRunning;
     bool replacementRequested;
 
-    /// <summary>コマンドの再読込・編集後に、参照を保持する画面へ再構築を通知する。</summary>
     public event EventHandler? CommandsChanged;
 
-    /// <summary>スケジューラーの予定実行の管理 (同じアイテムの重複防止と予定の集約)</summary>
     readonly SchedulerRunCoordinator schedulerRunCoordinator;
 
-    /// <summary>現在表示中の非同期通知ダイアログの追跡リスト (全てUIスレッドから操作する)</summary>
     readonly List<Form> activeNotifications = [];
 
-    /// <summary>
-    /// 非同期通知ダイアログが1つ以上表示中か。
-    /// CommandLauncherFormの auto-hide 抑制判定 (CommandLauncherForm_Deactivate/Leave) で参照する。
-    /// </summary>
     public bool HasActiveNotifications => activeNotifications.Exists(f => !f.IsDisposed);
 
-    /// <summary>環境変数変更の自動取り込み用 (WM_SETTINGCHANGE)</summary>
     readonly EnvironmentRefresher envRefresher = new();
 
     Action<string, string>? schedulerShowBalloonTip;
@@ -52,10 +44,6 @@ public partial class ApplicationHostForm : Form
     public ButtonLauncherData ButtonLauncherData { get; private set; }
     public MemoData MemoData { get; private set; }
 
-    /// <summary>
-    /// commandLauncherForm が破棄されていなければ <paramref name="action"/> を実行する。
-    /// IsDisposed ガードと操作呼び出しの繰り返しを集約する。
-    /// </summary>
     private void IfCommandLauncherFormAlive(Action<CommandLauncherForm> action)
     {
         if (!commandLauncherForm.IsDisposed)
@@ -87,7 +75,6 @@ public partial class ApplicationHostForm : Form
         return null;
     }
 
-    /// <summary>設定とランタイムデータを読み書きする共通のベース名。</summary>
     public string? ConfigurationBaseName { get; }
 
     public ApplicationHostForm(string? baseName = null)
@@ -100,8 +87,6 @@ public partial class ApplicationHostForm : Form
         foreach (Screen s in Screen.AllScreens) { screenRect = Rectangle.Union(screenRect, s.Bounds); }
         Location = new Point(screenRect.Left - Size.Width, screenRect.Top - Size.Height);
 
-        // 設定ファイルの読み込み
-        // 読めないファイルは通知し、復元しなければ初期値で起動する (そのファイルへの保存は止まる)
         var configResult = Config.Load(baseName);
         config = AcceptLoadResult(configResult, Config.Store, configResult.Value);
         var commandResult = CommandList.Load(baseName);
@@ -141,13 +126,8 @@ public partial class ApplicationHostForm : Form
         SetupSchedulerActions();
         schedulerRunCoordinator = new SchedulerRunCoordinator(() => schedulerData.Items, StartSchedulerItem);
         EnsureSchedulerIds();
-
-        // 起動時の自動更新チェックは無効化 (手動で実行する)
     }
 
-    /// <summary>
-    /// 非アクティブに表示
-    /// </summary>
     protected override bool ShowWithoutActivation
     {
         get { return true; }
@@ -175,7 +155,6 @@ public partial class ApplicationHostForm : Form
         PrepareShutdown();
     }
 
-    /// <summary>通常終了と更新の強制終了に共通する停止・最終保存。UIスレッドで呼ぶ。</summary>
     public void PrepareShutdown()
     {
         if (shuttingDown) return;
@@ -186,7 +165,6 @@ public partial class ApplicationHostForm : Form
         hookManager.Unregister();
         notifyIcon1.Dispose();
 
-        // メモ内容のデバウンス保存が残っていれば最終保存する
         if (memoForm is { IsDisposed: false })
         {
             memoForm.FlushPendingSave();
@@ -197,7 +175,6 @@ public partial class ApplicationHostForm : Form
         data.Save(ReportSaveFailure, ConfigurationBaseName);
     }
 
-    /// <summary>未保存のメモを保存し、失敗したら内容を失う操作の続行を利用者に確認する。</summary>
     private bool ConfirmPendingMemoSave(string operation)
     {
         if (memoForm is not { IsDisposed: false } || memoForm.FlushPendingSave()) return true;
@@ -210,9 +187,6 @@ public partial class ApplicationHostForm : Form
             MessageBoxDefaultButton.Button2) == DialogResult.Yes;
     }
 
-    /// <summary>
-    /// WndProc。
-    /// </summary>
     protected override void WndProc(ref Message m)
     {
         if (m.Msg == WM.WM_SETTINGCHANGE && m.LParam != IntPtr.Zero)
@@ -255,7 +229,7 @@ public partial class ApplicationHostForm : Form
                     }
                 }
                 // WndProc内の例外ハンドラ: WinFormsのメッセージループの最終防御ラインのため全例外を捕捉する
-#pragma warning disable CA1031 // WndProcはメッセージループの最終防御ライン
+#pragma warning disable CA1031
                 catch (Exception ex)
                 {
                     ErrorReporter.Instance.OnException(ex);
@@ -266,10 +240,6 @@ public partial class ApplicationHostForm : Form
         base.WndProc(ref m);
     }
 
-    /// <summary>
-    /// メインウィンドウの表示と非表示を切り替える。
-    /// 非同期通知ダイアログが表示中のときは、CommandLauncherFormをHideせず、通知Formを最前面化する。
-    /// </summary>
     public void ShowHide()
     {
         bool hasNotifications = HasActiveNotifications;
@@ -287,12 +257,9 @@ public partial class ApplicationHostForm : Form
         }
         else if (!hasNotifications)
         {
-            // 通常のトグル: 表示中→非表示
             commandLauncherForm.HideWindow();
         }
-        // 通知がある場合はHideせず、表示を維持する
 
-        // 追跡中の通知ダイアログを最前面にアクティブ化する
         foreach (var form in activeNotifications)
         {
             if (!form.IsDisposed)
@@ -303,9 +270,6 @@ public partial class ApplicationHostForm : Form
         }
     }
 
-    /// <summary>
-    /// メモパッドが表示中なら閉じる。ランチャー起動と連動して呼ばれる。
-    /// </summary>
     void HideMemoIfVisible()
     {
         if (memoForm is { IsDisposed: false })
@@ -314,9 +278,6 @@ public partial class ApplicationHostForm : Form
         }
     }
 
-    /// <summary>
-    /// メモパッドの表示と非表示を切り替える。未生成なら生成する。
-    /// </summary>
     public void ShowHideMemo()
     {
         if (memoForm is null || memoForm.IsDisposed)
@@ -326,13 +287,9 @@ public partial class ApplicationHostForm : Form
         memoForm.ToggleVisible();
     }
 
-    /// <summary>
-    /// らんちゃ.cmd.cfgのリロード
-    /// </summary>
     public void Reload()
     {
         var stopwatch = Stopwatch.StartNew();
-        // 読めないファイルは通知し、復元しなければ保持中のデータを使い続ける
         CommandList.ReplaceContents(AcceptLoadResult(CommandList.Load(ConfigurationBaseName), CommandList.Store, CommandList));
         RefreshCommandLauncherFormCommandList();
         IfCommandLauncherFormAlive(form => form.ApplyConfig());
@@ -340,10 +297,6 @@ public partial class ApplicationHostForm : Form
         DiagnosticLog.Info("Host.Reload", $"elapsed={stopwatch.ElapsedMilliseconds}ms");
     }
 
-    /// <summary>
-    /// 読込結果を受け取る。失敗していれば通知し、バックアップがあれば復元を選べるようにする。
-    /// 復元したらそのデータを、復元しなければ<paramref name="fallback"/>を返す。
-    /// </summary>
     T AcceptLoadResult<T>(ConfigLoadResult<T> result, ConfigFile<T> store, T fallback)
         where T : ConfigStore, new()
     {
@@ -353,11 +306,9 @@ public partial class ApplicationHostForm : Form
                 MessageBoxIcon.Warning) == DialogResult.Yes, ConfigurationBaseName);
     }
 
-    /// <summary>保存窓口が重複を抑止した失敗を、表示中の画面を親にして通知する。</summary>
     public void ReportSaveFailure(ConfigSaveFailure failure) => MessageBox.Show(
         GetVisibleOwner(), failure.Message, AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
-    /// <summary>編集先が再読込で失われた場合は、古い参照だけを保存して成功扱いにしない。</summary>
     public bool SaveEditedCommand(Command command)
     {
         if (!CommandList.Commands.Contains(command))
@@ -375,9 +326,6 @@ public partial class ApplicationHostForm : Form
 
     #region メニューなど
 
-    /// <summary>
-    /// アイコンがダブルクリックされた
-    /// </summary>
     private void notifyIcon1_DoubleClick(object sender, EventArgs e)
     {
         switch (config.IconDoubleClick)
@@ -399,18 +347,12 @@ public partial class ApplicationHostForm : Form
         form.ShowDialogOver(GetVisibleOwner());
     }
 
-    /// <summary>
-    /// CommandLauncherFormのコマンド一覧表示だけを更新 (アイコン再読込なし)
-    /// </summary>
     public void RefreshCommandLauncherFormCommandList()
     {
         IfCommandLauncherFormAlive(form => form.RefreshCommandList());
         CommandsChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>
-    /// コンフィグダイアログ。
-    /// </summary>
     public void ShowConfigDialog()
     {
         using var form = new ConfigForm(config, ButtonLauncherData);
@@ -419,7 +361,6 @@ public partial class ApplicationHostForm : Form
             config = form.Config;
             config.Save(ReportSaveFailure, ConfigurationBaseName);
 
-            // ボタンランチャーのColumns/Rows変更を検出して反映
             bool gridChanged = form.ButtonColumns != ButtonLauncherData.Columns
                 || form.ButtonRows != ButtonLauncherData.Rows;
             if (gridChanged)
@@ -467,9 +408,8 @@ public partial class ApplicationHostForm : Form
             if (!ConfirmPendingMemoSave("更新")) return;
             using var form = new UpdateForm(release!, PrepareShutdown);
             form.ShowDialogOver(GetVisibleOwner());
-            // UpdateForm 内でバッチ起動と Environment.Exit() を実行するため、ここに到達するのはキャンセル時のみ。
         }
-#pragma warning disable CA1031 // ネットワーク更新は様々な例外が発生しうるため包括的にキャッチ
+#pragma warning disable CA1031
         catch (Exception ex)
         {
             MessageBox.Show($"更新チェックに失敗しました。\n{ex.Message}\n\n{UpdateForm.RetryGuidance}", AppVersion.Title,
@@ -529,24 +469,18 @@ public partial class ApplicationHostForm : Form
     private void Restart()
     {
         Close();
-        // 保存失敗で終了を取り消した場合、次の通常終了に再起動を持ち越さない。
         if (IsDisposed) AppBase.SetRestart();
     }
 
-    /// <summary>
-    /// スケジューラーのメッセージ表示アクションをフィールドに設定する。
-    /// </summary>
     private void SetupSchedulerActions()
     {
         schedulerShowBalloonTip = (title, message) =>
         {
             UiThreadDispatcher.SafeBeginInvoke(this, () =>
             {
-                // トレイアイコンが非表示の場合、一時的に表示してバルーン通知を表示する
                 bool wasVisible = notifyIcon1.Visible;
                 if (!wasVisible) notifyIcon1.Visible = true;
 
-                // バルーンが閉じたらトレイアイコンの表示を元に戻す
                 if (!wasVisible)
                 {
                     notifyIcon1.BalloonTipClosed += RestoreNotifyIconVisibility;
@@ -593,9 +527,6 @@ public partial class ApplicationHostForm : Form
         };
     }
 
-    /// <summary>
-    /// バルーン通知後にトレイアイコンの表示を元の設定に戻す。
-    /// </summary>
     private void RestoreNotifyIconVisibility(object? sender, EventArgs e)
     {
         notifyIcon1.BalloonTipClosed -= RestoreNotifyIconVisibility;
@@ -603,25 +534,17 @@ public partial class ApplicationHostForm : Form
         notifyIcon1.Visible = config.TrayIcon;
     }
 
-    /// <summary>
-    /// スケジューラーのタイマーTick。スケジュール判定→タスク実行→LastCheckTime更新。
-    /// </summary>
     private void schedulerTimer_Tick(object sender, EventArgs e)
     {
         var now = DateTime.Now;
-        // 別アイテムは並行して開始する。実行中のアイテムへの予定は保留にまとめ、完了後に1回実行する
         foreach (var item in SchedulerScheduleEvaluator.GetItemsToRun(schedulerData, data.SchedulerLastCheckTime, now))
         {
             schedulerRunCoordinator.Request(item);
         }
-        // 実行対象の有無によらずLastCheckTimeを前進させ、同じ予定を二重に数えない
         data.SchedulerLastCheckTime = now;
         data.Save(ReportSaveFailure, ConfigurationBaseName);
     }
 
-    /// <summary>
-    /// 予定実行の開始。タスク列の完了をUIスレッドへ配送し、配送できなければ実行状態だけを解放する。
-    /// </summary>
     private void StartSchedulerItem(SchedulerItem item, Action onCompleted)
     {
         SchedulerTaskRunner.ExecuteItemTasks(this, item, schedulerShowBalloonTip, schedulerShowMessageBox,
@@ -629,9 +552,6 @@ public partial class ApplicationHostForm : Form
                 onSkipped: () => schedulerRunCoordinator.Release(item.Id)));
     }
 
-    /// <summary>
-    /// 識別子の無いスケジューラーアイテムへ識別子を補って保存する。保存できなければ予定実行を止めて通知する。
-    /// </summary>
     private void EnsureSchedulerIds()
     {
         if (!schedulerRunCoordinator.EnsureIds(schedulerData, () => schedulerData.Save(failure =>
@@ -662,7 +582,6 @@ public partial class ApplicationHostForm : Form
                                 || ex is System.Security.SecurityException
                                 || ex is UnauthorizedAccessException)
         {
-            // レジストリの読み込みに失敗してもアプリ本体の動作は継続する。
             DiagnosticLog.Error("Env.Reload", ex, "対応不要（環境変数の再読込を中止し、以前の値で処理を継続した）。変更した環境変数を反映するには、タスクトレイの「再起動」でらんちゃを再起動する");
             return;
         }
@@ -671,7 +590,6 @@ public partial class ApplicationHostForm : Form
         RequestEnvironmentReplacement();
     }
 
-    /// <summary>一括置換を要求する。取得と適用はUIで行い、処理中の要求は次の計算へまとめる。</summary>
     public void RequestEnvironmentReplacement()
     {
         if (shuttingDown) return;
@@ -699,15 +617,12 @@ public partial class ApplicationHostForm : Form
 
     private void ApplyConfig()
     {
-        // プロセス優先度
         using (var process = Process.GetCurrentProcess())
             process.PriorityClass = ProcessLauncher.ToPriorityClass(config.ProcessPriority);
-        // ホットキー (ランチャー用・メモパッド用の2組)
         hookManager.UpdateHotkeys(
             (config.HotKey, ResidentMessages.WM_APPMSG_SHOWHIDE),
             (config.MemoHotKey, ResidentMessages.WM_APPMSG_SHOWMEMO));
 
-        // ボタンランチャーの生成・破棄
         bool enabled = config.ButtonLauncherActivation != Core.ButtonLauncherActivation.Disabled;
         if (enabled && buttonLauncherForm is null)
         {

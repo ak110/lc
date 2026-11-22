@@ -4,10 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// 予定実行の直列化と保留の集約 (<see cref="SchedulerRunCoordinator"/>) のテスト。
-/// 開始処理を記録に差し替え、完了通知はテストから呼ぶ。
-/// </summary>
 public sealed class SchedulerRunCoordinatorTests
 {
     readonly SchedulerData data = new();
@@ -71,7 +67,6 @@ public sealed class SchedulerRunCoordinatorTests
             coordinator.Request(item);
         }
 
-        // 設定変更: 編集は同じ識別子の新しいインスタンス、無効化、削除
         var newEdited = edited.Clone();
         newEdited.Name = "編集後";
         newEdited.SleepTimeMs = 2;
@@ -150,13 +145,11 @@ public sealed class SchedulerRunCoordinatorTests
         coordinator.Request(b);
         coordinator.Request(b);
 
-        // 完了通知を配送できない: 実行状態を解放し、保留は開始しない
         coordinator.Release(a.Id);
         started.Should().HaveCount(2);
         coordinator.Request(a);
         started.Should().HaveCount(3, "解放した実行状態は次の予定の開始を妨げない");
 
-        // 終了処理中: 完了しても保留を開始しない
         coordinator.Shutdown();
         started[1].Completed();
         coordinator.Request(a);
@@ -171,7 +164,6 @@ public sealed class SchedulerRunCoordinatorTests
 
         coordinator.EnsureIds(data, () =>
         {
-            // 保存失敗の通知がモーダルループを回しても予定を開始しない。
             coordinator.Request(item);
             started.Should().BeEmpty();
             return false;
@@ -179,7 +171,6 @@ public sealed class SchedulerRunCoordinatorTests
         coordinator.Request(item);
         started.Should().BeEmpty();
 
-        // 書き込める状態で再試行すると予定実行を再開する
         int saved = 0;
         coordinator.EnsureIds(data, () => { saved++; return true; }).Should().BeTrue();
         saved.Should().Be(1);
@@ -224,7 +215,6 @@ public sealed class SchedulerRunCoordinatorTests
         if (pauseBeforeCompletion) coordinator.Pause();
         started[0].Completed();
 
-        // 設定変更では保留だけを破棄し、既に実行中のタスクは残す。
         a.Enable = false;
         coordinator.ItemsChanged();
         coordinator.Resume();

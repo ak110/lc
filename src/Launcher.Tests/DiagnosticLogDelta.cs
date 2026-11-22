@@ -18,7 +18,6 @@ internal sealed class DiagnosticLogDelta
 
     public static DiagnosticLogDelta Start() => new();
 
-    /// <summary>観測開始後に追記された全行。</summary>
     public IReadOnlyList<string> Lines()
     {
         if (!Directory.Exists(directory)) return [];

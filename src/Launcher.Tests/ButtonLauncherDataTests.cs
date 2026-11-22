@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// ButtonLauncherDataのシリアライズ・ロジックテスト
-/// </summary>
 public sealed class ButtonLauncherDataTests
 {
     [Fact]
@@ -138,13 +135,11 @@ public sealed class ButtonLauncherDataTests
         tab.GetButton(1, 2)!.Name.Should().Be("test");
         tab.Buttons.Should().HaveCount(1);
 
-        // 上書き
         var entry2 = new ButtonEntry { Name = "test2", FileName = "test2.exe" };
         tab.SetButton(1, 2, entry2);
         tab.GetButton(1, 2)!.Name.Should().Be("test2");
         tab.Buttons.Should().HaveCount(1);
 
-        // 削除
         tab.SetButton(1, 2, null);
         tab.GetButton(1, 2).Should().BeNull();
         tab.Buttons.Should().BeEmpty();

@@ -1,9 +1,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-// SDK-style csproj で自動生成される属性 (AssemblyTitle, AssemblyVersion,
-// AssemblyFileVersion, AssemblyCompany, AssemblyConfiguration, AssemblyProduct) は省略
-
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyCopyright("Copyright © 2007-2008 aki. All rights reserved.")]
 [assembly: AssemblyTrademark("")]

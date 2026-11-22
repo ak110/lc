@@ -5,9 +5,6 @@ using SystemKeys = System.Windows.Forms.Keys;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// KeyTableのテスト
-/// </summary>
 public sealed class KeyTableTests
 {
     [Theory]
@@ -19,8 +16,6 @@ public sealed class KeyTableTests
     {
         KeyTable.KeysToVKey(key).Should().Be(expected);
     }
-
-    // --- GetKeyName ---
 
     [Theory]
     [InlineData(KeyTable.Keys.A, "A")]
@@ -43,8 +38,6 @@ public sealed class KeyTableTests
         KeyTable.GetKeyName(key).Should().Be(expected);
     }
 
-    // --- GetKeyName (修飾キー付き) ---
-
     [Fact]
     public void GetKeyName_修飾キー付きの名前を返す()
     {
@@ -65,8 +58,6 @@ public sealed class KeyTableTests
         KeyTable.GetKeyName(KeyTable.Keys.E, mods).Should().Be("Win+E");
     }
 
-    // --- GetKey ---
-
     [Theory]
     [InlineData("A", KeyTable.Keys.A)]
     [InlineData("Enter", KeyTable.Keys.Enter)]
@@ -77,10 +68,6 @@ public sealed class KeyTableTests
     {
         KeyTable.GetKey(name).Should().Be(expected);
     }
-
-    // GetKey_未定義名のテストは省略 (Debug.Failがテストホストで例外になるため)
-
-    // --- GetKeyWithModifiers ---
 
     [Fact]
     public void GetKeyWithModifiers_修飾キーなしのキー名をパースできる()
@@ -110,10 +97,10 @@ public sealed class KeyTableTests
     }
 
     [Theory]
-    [InlineData("")]            // 空文字 (未割り当て)
-    [InlineData("Ctrl+")]       // 修飾キーのみ (末尾キーが空)
-    [InlineData("Ctrl+Alt+")]   // 複数修飾キーのみ
-    [InlineData("Win+")]        // Win修飾のみ
+    [InlineData("")]
+    [InlineData("Ctrl+")]
+    [InlineData("Ctrl+Alt+")]
+    [InlineData("Win+")]
     public void GetKeyWithModifiers_末尾キーが空なら未割り当てを返す(string hotKey)
     {
         var (key, mods) = KeyTable.GetKeyWithModifiers(hotKey);
@@ -122,16 +109,11 @@ public sealed class KeyTableTests
         mods.Should().Be((KeyTable.Modifiers)0);
     }
 
-    // GetKeyWithModifiers_不正なキー名のテストは省略 (Debug.Failがテストホストで例外になるため)
-
-    // --- GetKeyNames ---
-
     [Fact]
     public void GetKeyNames_マウスなしでキーボードキーのみ取得()
     {
         string[] names = KeyTable.GetKeyNames(false);
 
-        // LClickの手前までの個数
         names.Length.Should().Be((int)KeyTable.Keys.LClick);
         names.Should().Contain("A");
         names.Should().Contain("Enter");
@@ -149,8 +131,6 @@ public sealed class KeyTableTests
         names.Should().Contain("左→右クリック");
     }
 
-    // --- 全キーにキー名が登録されているか ---
-
     [Fact]
     public void 全キーコードにキー名がマッピングされている()
     {
@@ -161,8 +141,6 @@ public sealed class KeyTableTests
             name.Should().NotBeNullOrEmpty($"キー {key} にキー名が登録されていない");
         }
     }
-
-    // --- 全キー名からキーコードへの逆変換が一致するか ---
 
     [Fact]
     public void キー名からキーコードへの逆変換が正しい()

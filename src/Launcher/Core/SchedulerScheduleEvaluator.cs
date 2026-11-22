@@ -1,14 +1,7 @@
 namespace Launcher.Core;
 
-/// <summary>
-/// スケジュールの日付条件・時刻条件を判定する純粋関数群。
-/// タスクの実行とUI通知はアプリ側が担う。
-/// </summary>
 public static class SchedulerScheduleEvaluator
 {
-    /// <summary>
-    /// 実行対象のアイテムを取得する。
-    /// </summary>
     public static List<SchedulerItem> GetItemsToRun(SchedulerData data, DateTime lastCheckTime, DateTime now)
     {
         var result = new List<SchedulerItem>();
@@ -20,9 +13,6 @@ public static class SchedulerScheduleEvaluator
         return result;
     }
 
-    /// <summary>
-    /// アイテムが実行すべきか判定する。
-    /// </summary>
     public static bool ShouldItemRun(SchedulerItem item, DateTime now, DateTime last)
     {
         if (!item.Enable) return false;
@@ -34,15 +24,10 @@ public static class SchedulerScheduleEvaluator
         return false;
     }
 
-    /// <summary>
-    /// スケジュールが last～now の間に発火すべきか判定する。
-    /// last～now 間の全ての日を走査し、日付条件と時刻条件の両方を満たす時刻があるか確認する。
-    /// </summary>
     public static bool IsScheduleActive(Schedule schedule, DateTime now, DateTime last)
     {
         if (!schedule.Enable) return false;
 
-        // last～now 間の全日を走査
         var startDate = DateOnly.FromDateTime(last);
         var endDate = DateOnly.FromDateTime(now);
         for (var date = startDate; date <= endDate; date = date.AddDays(1))
@@ -54,17 +39,11 @@ public static class SchedulerScheduleEvaluator
     }
 
 
-    /// <summary>
-    /// 特定の日について、日付条件と時刻条件を組み合わせて判定する。
-    /// </summary>
     public static bool CheckDateAndTime(Schedule schedule, DateOnly date, DateTime now, DateTime last)
     {
         if (!MatchesDateCondition(schedule, date))
             return false;
 
-        // この日の有効時刻範囲を計算 (last, now でクランプ)
-        // rangeStart = last より後 (last と同じ時刻は含まない)
-        // rangeEnd = now と同じかそれより前
         var dayStart = date.ToDateTime(TimeOnly.MinValue);
         var dayEnd = date.ToDateTime(new TimeOnly(23, 59, 59));
         var effectiveStart = last > dayStart ? last : dayStart;
@@ -76,16 +55,11 @@ public static class SchedulerScheduleEvaluator
         var rangeStart = TimeOnly.FromDateTime(effectiveStart);
         var rangeEnd = TimeOnly.FromDateTime(effectiveEnd);
 
-        // lastと同じ日の場合、rangeStartはlastの時刻 (排他的: last < t)
-        // 異なる日の場合、rangeStartは00:00 (包含的: 00:00 <= t)
         bool startExclusive = DateOnly.FromDateTime(last) == date;
 
         return CheckTimeInRange(schedule, rangeStart, rangeEnd, startExclusive);
     }
 
-    /// <summary>
-    /// 日付条件に合致するか判定する。
-    /// </summary>
     public static bool MatchesDateCondition(Schedule schedule, DateOnly date)
     {
         if (schedule.DateType == ScheduleDateType.Weekday)
@@ -98,17 +72,12 @@ public static class SchedulerScheduleEvaluator
         }
     }
 
-    /// <summary>
-    /// 曜日ベースの日付条件を判定する。
-    /// </summary>
     private static bool MatchesWeekday(Schedule schedule, DateOnly date)
     {
-        // 月日範囲チェック
         var md = new MonthDay(date.Month, date.Day);
         if (!IsInMonthDayRange(md, schedule.WeeksStart, schedule.WeeksEnd))
             return false;
 
-        // 曜日チェック ([0]=月 ... [6]=日)
         int dayIndex = date.DayOfWeek switch
         {
             DayOfWeek.Monday => 0,
@@ -123,10 +92,6 @@ public static class SchedulerScheduleEvaluator
         return dayIndex >= 0 && dayIndex < schedule.Weekdays.Length && schedule.Weekdays[dayIndex];
     }
 
-    /// <summary>
-    /// 日数間隔ベースの日付条件を判定する。
-    /// DateOnly ベースの日数差分で年境界を正確に扱う。
-    /// </summary>
     private static bool MatchesDateInterval(Schedule schedule, DateOnly date)
     {
         var md = new MonthDay(date.Month, date.Day);
@@ -136,13 +101,10 @@ public static class SchedulerScheduleEvaluator
         if (!IsInMonthDayRange(md, start, end))
             return false;
 
-        // 日数間隔チェック: 開始日からの経過日数が間隔の倍数か
         int interval = schedule.DateIntervalDays;
         if (interval <= 0) interval = 1;
 
-        // 基準年は当年の開始月日
         var startDate = new DateOnly(date.Year, start.Month, Math.Min(start.Day, DateTime.DaysInMonth(date.Year, start.Month)));
-        // ラップアラウンドで開始日が未来の場合は前年基準
         if (startDate > date)
             startDate = new DateOnly(date.Year - 1, start.Month, Math.Min(start.Day, DateTime.DaysInMonth(date.Year - 1, start.Month)));
 
@@ -153,9 +115,6 @@ public static class SchedulerScheduleEvaluator
     static bool IsInMonthDayRange(MonthDay value, MonthDay start, MonthDay end) =>
         start <= end ? value >= start && value <= end : value >= start || value <= end;
 
-    /// <summary>
-    /// 時刻条件を判定する。rangeStart～rangeEnd の間にスケジュール時刻があるか。
-    /// </summary>
     private static bool CheckTimeInRange(Schedule schedule, TimeOnly rangeStart, TimeOnly rangeEnd, bool startExclusive)
     {
         if (schedule.TimeType == ScheduleTimeType.SpecificTimes)
@@ -170,10 +129,6 @@ public static class SchedulerScheduleEvaluator
         }
     }
 
-    /// <summary>
-    /// 指定時刻リストから、範囲内に含まれる時刻があるか判定する。
-    /// 条件: startExclusive ? (rangeStart &lt; t &amp;&amp; t &lt;= rangeEnd) : (rangeStart &lt;= t &amp;&amp; t &lt;= rangeEnd)
-    /// </summary>
     private static bool CheckSpecificTimes(List<HourMinute> times, TimeOnly rangeStart, TimeOnly rangeEnd, bool startExclusive)
     {
         foreach (var hm in times)
@@ -186,9 +141,6 @@ public static class SchedulerScheduleEvaluator
         return false;
     }
 
-    /// <summary>
-    /// 間隔ベースの時刻リストから、範囲内に含まれる時刻があるか判定する。
-    /// </summary>
     private static bool CheckIntervalTimes(
         HourMinute intervalStart, HourMinute intervalEnd, int intervalMinutes,
         TimeOnly rangeStart, TimeOnly rangeEnd, bool startExclusive)

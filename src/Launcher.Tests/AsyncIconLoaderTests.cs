@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// AsyncIconLoaderのスレッド管理・リトライ機構テスト
-/// </summary>
 public sealed class AsyncIconLoaderTests
 {
     [Fact]
@@ -16,13 +13,10 @@ public sealed class AsyncIconLoaderTests
         List<IconLoadedEventArgs> receivedEvents = [];
         loader.IconLoaded += (s, e) => receivedEvents.Add(e);
 
-        // Load → Clear → 再Load のサイクルが例外なく動作すること
         loader.Load("dummy.exe", true, "arg1");
         loader.Clear();
         loader.Load("dummy2.exe", false, "arg2");
         loader.Clear();
-
-        // 例外が発生しなければOK (アイコン取得自体はファイルが存在しないため失敗する可能性あり)
     }
 
     [Fact]
@@ -45,7 +39,6 @@ public sealed class AsyncIconLoaderTests
     {
         using var loader = new AsyncIconLoader(workerCount: 1);
 
-        // 連続Clearが安全であること
         loader.Clear();
         loader.Clear();
         loader.Clear();
@@ -57,7 +50,6 @@ public sealed class AsyncIconLoaderTests
         var loader = new AsyncIconLoader(workerCount: 1);
         loader.Dispose();
 
-        // Dispose 後の Load は例外を送出せずに無視されること。
         loader.Load("test.exe", true, null);
     }
 
@@ -100,7 +92,6 @@ public sealed class AsyncIconLoaderTests
         loader.Clear();
         int gen1 = loader.Generation;
 
-        // Clear後は世代が変わっているため、古いリクエストの世代と一致しない
         gen0.Should().NotBe(gen1);
     }
 
@@ -129,7 +120,7 @@ public sealed class AsyncIconLoaderTests
             extractIcon: (_, _) =>
             {
                 Interlocked.Increment(ref callCount);
-                return null; // nullだがアイコン取得自体は成功扱い
+                return null;
             });
         using var done = new ManualResetEventSlim();
         List<IconLoadedEventArgs> events = [];
@@ -156,7 +147,7 @@ public sealed class AsyncIconLoaderTests
             {
                 int count = Interlocked.Increment(ref callCount);
                 if (count == 1) throw new FileLoadException("1回目失敗");
-                return null; // 2回目は成功 (nullアイコン = 成功扱い)
+                return null;
             });
         using var done = new ManualResetEventSlim();
         List<IconLoadedEventArgs> events = [];
@@ -195,7 +186,6 @@ public sealed class AsyncIconLoaderTests
         loader.Load("test.exe", true, "arg");
         done.Wait(TimeSpan.FromSeconds(3)).Should().BeTrue("リトライ上限後にイベントが発火されるべき");
 
-        // 合計3回試行 (初回 + リトライ2回)
         callCount.Should().Be(3);
         events.Should().ContainSingle();
         events[0].Icon.Should().BeNull();
@@ -231,7 +221,6 @@ public sealed class AsyncIconLoaderTests
     [Fact]
     public void ワーカー数のカスタマイズ()
     {
-        // workerCount: 2 で正常動作すること
         using var loader = new AsyncIconLoader(
             workerCount: 2,
             extractIcon: (_, _) => null);

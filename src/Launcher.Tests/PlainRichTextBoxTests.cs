@@ -13,7 +13,6 @@ namespace Launcher.Tests;
 [CollectionDefinition("Clipboard", DisableParallelization = true)]
 public sealed class ClipboardTestsCollection { }
 
-/// <summary>通常のコントロール入口と実クリップボードからプレーンテキスト入出力を検査する。</summary>
 [Collection("Clipboard")]
 public sealed class PlainRichTextBoxTests(ITestOutputHelper output)
 {
@@ -209,7 +208,6 @@ public sealed class PlainRichTextBoxTests(ITestOutputHelper output)
     public void ComputeIndentReplacement_複数行選択の全行を2スペースインデントする()
     {
         string text = "aaa\nbbb\nccc";
-        // 1行目末尾から3行目途中までを選択 (改行をまたぐ)
         string replaced = TextIndentation.ComputeIndentReplacement(text, selStart: 2, selLength: 7, dedent: false,
             out int regionStart, out int regionLength, out int newSelLength);
 
@@ -241,7 +239,6 @@ public sealed class PlainRichTextBoxTests(ITestOutputHelper output)
     public void ComputeIndentReplacement_選択が次行冒頭で終わる場合は次行を含めない()
     {
         string text = "aaa\nbbb\nccc";
-        // "aaa\n"だけを選択 (SelectionStart=0, Length=4)
         string replaced = TextIndentation.ComputeIndentReplacement(text, selStart: 0, selLength: 4, dedent: false,
             out int regionStart, out int regionLength, out _);
         regionStart.Should().Be(0);

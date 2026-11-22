@@ -21,7 +21,7 @@ public static class UiThreadDispatcher
             context.Post(_ =>
             {
                 if (lifetime.IsDisposed || lifetime.Disposing) return;
-#pragma warning disable CA1031 // UI境界: 配送した処理の未捕捉例外を通常の報告処理へ渡す
+#pragma warning disable CA1031
                 try { action(); }
                 catch (Exception ex) { ErrorReporter.Instance.OnException(ex); }
 #pragma warning restore CA1031
@@ -29,19 +29,11 @@ public static class UiThreadDispatcher
         }
         catch (InvalidOperationException ex)
         {
-            // UIスレッド終了時には同期通知へ戻さない（フック内のモーダル表示を避ける）。
             ThreadPool.QueueUserWorkItem(_ => Launcher.Infrastructure.DiagnosticLog.Error("UI.DispatchFailed", ex,
                 "らんちゃの終了中に記録された場合は対応不要。起動中に繰り返し記録され、操作が反映されない場合はらんちゃを再起動する"));
         }
     }
 
-    /// <summary>
-    /// <paramref name="control"/>のUIスレッドへ<paramref name="action"/>をポストする。
-    /// controlが破棄済みまたはハンドル未作成の場合は<paramref name="onSkipped"/>を同期呼び出しする。
-    /// <paramref name="onSkipped"/>がnullなら何もしない。
-    /// action内の未捕捉例外は<see cref="ErrorReporter.OnException(System.Exception)"/>へ回送する。
-    /// リソース解放を伴うactionを渡す場合は、ガード発火時に同処理を実行する<paramref name="onSkipped"/>を渡す。
-    /// </summary>
     public static void SafeBeginInvoke(Control control, Action action, Action? onSkipped = null)
     {
         int completed = 0;
@@ -80,7 +72,7 @@ public static class UiThreadDispatcher
                         action();
                     }
                 }
-#pragma warning disable CA1031 // UI境界: 未捕捉例外はErrorReporterへ回送し、Application.ThreadExceptionと同扱いにする
+#pragma warning disable CA1031
                 catch (Exception ex)
 #pragma warning restore CA1031
                 {
@@ -90,7 +82,6 @@ public static class UiThreadDispatcher
         }
         catch (InvalidOperationException)
         {
-            // ガード後にハンドルが破棄された場合のレース。onSkippedへフォールバックする
             Skip();
         }
     }

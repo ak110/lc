@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// 単一スケジューラータスク実行 (<see cref="SchedulerTaskExecutor"/>) のテスト。
-/// </summary>
 public sealed class SchedulerTaskExecutorTests
 {
     [Fact]

@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// MemoPresenterのロジックテスト
-/// </summary>
 public sealed class MemoPresenterTests
 {
     [Fact]
@@ -24,9 +21,9 @@ public sealed class MemoPresenterTests
     }
 
     [Theory]
-    [InlineData(0, 2, 1)] // 現在タブより前を閉じると現在は1つ前へずれる
-    [InlineData(2, 2, 1)] // 末尾の現在タブを閉じると新末尾を選ぶ
-    [InlineData(1, 0, 0)] // 現在タブより後を閉じると現在は変わらない
+    [InlineData(0, 2, 1)]
+    [InlineData(2, 2, 1)]
+    [InlineData(1, 0, 0)]
     public void CloseTab_現在タブインデックスが補正される(int closeIndex, int currentIndex, int expected)
     {
         var data = new MemoData { CurrentTabIndex = currentIndex };
@@ -43,26 +40,23 @@ public sealed class MemoPresenterTests
     }
 
     [Theory]
-    [InlineData(9, 9)]   // 上限未満は全保持
-    [InlineData(10, 10)] // 上限ちょうどは全保持
-    [InlineData(11, 10)] // 上限超過時は最古が削除される
+    [InlineData(9, 9)]
+    [InlineData(10, 10)]
+    [InlineData(11, 10)]
     public void CloseTab_ゴミ箱の上限を超えると最古が削除される(int closeCount, int expectedTrashCount)
     {
-        var data = new MemoData(); // ClosedTabsLimit = 10 (既定)
-        // closeCount 個閉じられるよう closeCount + 1 個のタブを用意する
+        var data = new MemoData();
         for (int i = 0; i <= closeCount; i++)
         {
             data.Tabs.Add(new MemoTab { Name = $"T{i}", Text = $"本文{i}" });
         }
 
-        // 常に先頭タブを閉じる (T0, T1, ... の順で閉じる)
         for (int i = 0; i < closeCount; i++)
         {
             MemoPresenter.CloseTab(data, 0).Success.Should().BeTrue();
         }
 
         data.ClosedTabs.Should().HaveCount(expectedTrashCount);
-        // 先頭は最後に閉じたタブ (最新)
         data.ClosedTabs[0].Name.Should().Be($"T{closeCount - 1}");
     }
 
@@ -88,9 +82,9 @@ public sealed class MemoPresenterTests
     }
 
     [Theory]
-    [InlineData(-1, 0)] // 範囲下限を下回ると0へ補正
-    [InlineData(5, 2)]  // 範囲上限を上回ると末尾へ補正
-    [InlineData(1, 1)]  // 範囲内はそのまま
+    [InlineData(-1, 0)]
+    [InlineData(5, 2)]
+    [InlineData(1, 1)]
     public void ClampCurrentIndex_有効範囲へ補正する(int currentIndex, int expected)
     {
         var data = new MemoData { CurrentTabIndex = currentIndex };

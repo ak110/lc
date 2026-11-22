@@ -43,7 +43,6 @@ public partial class ConfigForm : Form
         {
             comboBox1.SelectedItem = "Space";
         }
-        // メモパッド用ホットキー。先頭の空項目で未割り当てを表す。
         comboBoxM.Items.Add("");
         comboBoxM.Items.AddRange(KeyTable.GetKeyNames(false));
         var mhk = KeyTable.GetKeyWithModifiers(config.MemoHotKey);
@@ -88,9 +87,6 @@ public partial class ConfigForm : Form
         ButtonRows = (int)numericUpDown2.Value;
     }
 
-    /// <summary>
-    /// 置換環境変数の設定ボタン
-    /// </summary>
     private void button1_Click(object? sender, EventArgs e)
     {
         using var form = new EnvConfigForm(config.ReplaceEnv);

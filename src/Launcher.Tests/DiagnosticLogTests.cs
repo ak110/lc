@@ -163,10 +163,6 @@ public sealed class DiagnosticLogTests : IDisposable
         File.ReadAllText(Path.Combine(legacy.FullName, "20260101.log")).Should().Be("old");
     }
 
-    /// <summary>
-    /// テスト用の一時ディレクトリを`using`パターンで扱うラッパー。
-    /// try/finallyでの削除処理を各テストから排除する目的で用意する。
-    /// </summary>
     sealed class TempDirectory : IDisposable
     {
         public string Path { get; }

@@ -3,31 +3,18 @@ using Launcher.Infrastructure;
 
 namespace Launcher.Core;
 
-// --- Enums ---
-
-/// <summary>
-/// スケジュールの時刻指定方法
-/// </summary>
 public enum ScheduleTimeType
 {
     [XmlEnum("0")] SpecificTimes = 0,
     [XmlEnum("1")] Interval = 1,
 }
 
-/// <summary>
-/// スケジュールの日付指定方法
-/// </summary>
 public enum ScheduleDateType
 {
     [XmlEnum("0")] Weekday = 0,
     [XmlEnum("1")] DateInterval = 1,
 }
 
-// --- Value Types ---
-
-/// <summary>
-/// 時:分を表す値型
-/// </summary>
 public struct HourMinute : IComparable<HourMinute>, IEquatable<HourMinute>, ICloneable
 {
     public int Hour { get; set; }
@@ -51,9 +38,6 @@ public struct HourMinute : IComparable<HourMinute>, IEquatable<HourMinute>, IClo
     public object Clone() => this;
 }
 
-/// <summary>
-/// 月/日を表す値型
-/// </summary>
 public struct MonthDay : IComparable<MonthDay>, IEquatable<MonthDay>
 {
     public int Month { get; set; }
@@ -62,9 +46,6 @@ public struct MonthDay : IComparable<MonthDay>, IEquatable<MonthDay>
     public MonthDay() { }
     public MonthDay(int month, int day) { Month = month; Day = day; }
 
-    /// <summary>
-    /// 比較用の数値。月×32+日で一意にソートできる。
-    /// </summary>
     public int ToDayNumber() => Month * 32 + Day;
 
     public int CompareTo(MonthDay other) => ToDayNumber().CompareTo(other.ToDayNumber());
@@ -80,36 +61,23 @@ public struct MonthDay : IComparable<MonthDay>, IEquatable<MonthDay>
     public static bool operator >=(MonthDay left, MonthDay right) => left.CompareTo(right) >= 0;
 }
 
-// --- Domain Models ---
-
-/// <summary>
-/// スケジューラータスクの種類
-/// </summary>
 public enum SchedulerTaskType
 {
-    /// <summary>ファイル実行</summary>
     [XmlEnum("0")] Execute = 0,
-    /// <summary>バルーン通知 (自動消去)</summary>
     [XmlEnum("1")] BalloonTip = 1,
-    /// <summary>メッセージボックス (手動消去)</summary>
     [XmlEnum("2")] MessageBox = 2,
 }
 
-/// <summary>
-/// スケジューラーのタスク
-/// </summary>
 public sealed class SchedulerTask : ICloneable
 {
     public bool Enable { get; set; } = true;
     public SchedulerTaskType Type { get; set; } = SchedulerTaskType.Execute;
 
-    // --- ファイル実行用 ---
     public string FileName { get; set; } = string.Empty;
     public string Param { get; set; } = string.Empty;
     public WindowStyle Show { get; set; } = WindowStyle.Normal;
     public ProcessPriorityLevel Priority { get; set; } = ProcessPriorityLevel.Normal;
 
-    // --- メッセージ表示用 (BalloonTip / MessageBox) ---
     public string Message { get; set; } = string.Empty;
 
     public SchedulerTask Clone() => (SchedulerTask)MemberwiseClone();
@@ -127,37 +95,22 @@ public sealed class SchedulerTask : ICloneable
     }
 }
 
-/// <summary>
-/// スケジュール条件 (いつ実行するかの定義)
-/// </summary>
 public sealed class Schedule : ICloneable
 {
     public bool Enable { get; set; } = true;
 
-    // --- 時刻設定 ---
     public ScheduleTimeType TimeType { get; set; } = ScheduleTimeType.SpecificTimes;
-    /// <summary>指定時刻リスト (TimeType == SpecificTimes)</summary>
     public List<HourMinute> Times { get; set; } = [];
-    /// <summary>間隔の開始時刻 (TimeType == Interval)</summary>
     public HourMinute TimeIntervalStart { get; set; }
-    /// <summary>間隔の終了時刻 (TimeType == Interval)</summary>
     public HourMinute TimeIntervalEnd { get; set; }
-    /// <summary>間隔 (分) (TimeType == Interval)</summary>
     public int TimeIntervalMinutes { get; set; } = 60;
 
-    // --- 日付設定 ---
     public ScheduleDateType DateType { get; set; } = ScheduleDateType.Weekday;
-    /// <summary>曜日フィルタの開始月日 (DateType == Weekday)</summary>
     public MonthDay WeeksStart { get; set; } = new(1, 1);
-    /// <summary>曜日フィルタの終了月日 (DateType == Weekday)</summary>
     public MonthDay WeeksEnd { get; set; } = new(12, 31);
-    /// <summary>曜日フラグ [0]=月 ... [6]=日 (DateType == Weekday)</summary>
     public bool[] Weekdays { get; set; } = [true, true, true, true, true, true, true];
-    /// <summary>日数間隔の開始月日 (DateType == DateInterval)</summary>
     public MonthDay DateIntervalStart { get; set; } = new(1, 1);
-    /// <summary>日数間隔の終了月日 (DateType == DateInterval)</summary>
     public MonthDay DateIntervalEnd { get; set; } = new(12, 31);
-    /// <summary>日数間隔 (DateType == DateInterval)</summary>
     public int DateIntervalDays { get; set; } = 1;
 
     public Schedule Clone()
@@ -204,28 +157,17 @@ public sealed class Schedule : ICloneable
     }
 }
 
-/// <summary>
-/// スケジューラーのアイテム (スケジュール条件+タスクのセット)
-/// </summary>
 public sealed class SchedulerItem : ICloneable
 {
-    /// <summary>
-    /// 設定変更をまたいでアイテムを追跡する識別子。旧版の設定には無く、読込後に<see cref="SchedulerData.EnsureIds"/>で補う
-    /// </summary>
     public string Id { get; set; } = string.Empty;
     public bool Enable { get; set; } = true;
     public string Name { get; set; } = string.Empty;
-    /// <summary>タスク間の待機時間 (ミリ秒)</summary>
     public int SleepTimeMs { get; set; } = 2000;
     public List<Schedule> Schedules { get; set; } = [];
     public List<SchedulerTask> Tasks { get; set; } = [];
 
-    /// <summary>新しい識別子</summary>
     public static string NewId() => Guid.NewGuid().ToString("N");
 
-    /// <summary>
-    /// 複製する。編集用の複製であり、識別子は元と同じ
-    /// </summary>
     public SchedulerItem Clone()
     {
         var copy = (SchedulerItem)MemberwiseClone();
@@ -234,9 +176,6 @@ public sealed class SchedulerItem : ICloneable
         return copy;
     }
 
-    /// <summary>
-    /// 利用者の「複製」操作用に、新しい識別子を持つ別アイテムとして複製する
-    /// </summary>
     public SchedulerItem CloneAsNew()
     {
         var copy = Clone();
@@ -252,18 +191,10 @@ public sealed class SchedulerItem : ICloneable
     }
 }
 
-// --- Top-level ConfigStore ---
-
-/// <summary>
-/// スケジューラーの設定データ。らんちゃ.sch.cfg に永続化される。
-/// </summary>
 public sealed class SchedulerData : ConfigStore
 {
     public List<SchedulerItem> Items { get; set; } = [];
 
-    /// <summary>
-    /// 識別子の無いアイテムと、識別子が重複したアイテムへ新しい識別子を付ける。付けた場合は true
-    /// </summary>
     public bool EnsureIds()
     {
         var seen = new HashSet<string>();
@@ -284,8 +215,5 @@ public sealed class SchedulerData : ConfigStore
 
     public static ConfigLoadResult<SchedulerData> Load(string? baseName = null) => Store.Load(baseName);
 
-    /// <summary>
-    /// 保存データ (.sch.cfg) の読込・復元
-    /// </summary>
     public static ConfigFile<SchedulerData> Store { get; } = new(".sch.cfg");
 }

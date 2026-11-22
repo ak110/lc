@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// ErrorReporterクラスのテスト
-/// </summary>
 public sealed class ErrorReporterTests
 {
     [Fact]
@@ -37,23 +34,19 @@ public sealed class ErrorReporterTests
     [Fact]
     public void GetDetailMessage_BaseExceptionがInnerExceptionと異なる場合に両方出力する()
     {
-        // 3段ネストでBaseException != InnerExceptionを生成する
         var root = new ArgumentException("根本原因");
         var middle = new IOException("中間エラー", root);
         var outer = new InvalidOperationException("外部エラー", middle);
 
-        // InnerException = middle, BaseException = root
         outer.InnerException.Should().Be(middle);
         outer.GetBaseException().Should().Be(root);
 
         string result = ErrorReporter.GetDetailMessage(outer);
 
-        // InnerExceptionセクション
         result.Should().Contain("InnerException ->");
         result.Should().Contain("IOException");
         result.Should().Contain("中間エラー");
 
-        // BaseExceptionセクション (修正前はここがInnerExceptionの情報になっていた)
         result.Should().Contain("BaseException ->");
         result.Should().Contain("ArgumentException");
         result.Should().Contain("根本原因");
@@ -74,7 +67,6 @@ public sealed class ErrorReporterTests
     [Fact]
     public void GetDetailMessage_BaseExceptionが自分自身の場合はBaseExceptionセクションを出力しない()
     {
-        // InnerExceptionが1段のみ → BaseException == InnerException
         var inner = new ArgumentException("内部エラー");
         var ex = new InvalidOperationException("外部エラー", inner);
 
@@ -83,7 +75,6 @@ public sealed class ErrorReporterTests
 
         string result = ErrorReporter.GetDetailMessage(ex);
 
-        // InnerExceptionはあるがBaseExceptionは重複するので出ない
         result.Should().Contain("InnerException ->");
         result.Should().NotContain("BaseException");
     }

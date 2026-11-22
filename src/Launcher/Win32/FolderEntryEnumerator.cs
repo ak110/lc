@@ -3,19 +3,8 @@ using Launcher.Infrastructure;
 
 namespace Launcher.Win32;
 
-/// <summary>
-/// フォルダ配下のフォルダ・ファイルを列挙するユーティリティ。
-/// </summary>
 public static class FolderEntryEnumerator
 {
-    /// <summary>
-    /// フォルダ配下のフォルダ・ファイルを列挙する。
-    /// フォルダ→ファイルの順に並べ、各ブロックはナチュラルソートで揃える。
-    /// 隠しファイル・システムファイルは除外する。
-    /// folderPath が存在しない、アクセス権限がない、または I/O エラーが発生する場合は空の一覧を返す。
-    /// </summary>
-    /// <param name="folderPath">列挙対象のフォルダパス</param>
-    /// <returns>フォルダ→ファイルの順に並んだ一覧</returns>
     public static IReadOnlyList<FolderEntry> Enumerate(string folderPath)
     {
         if (!Directory.Exists(folderPath))

@@ -10,7 +10,6 @@ public sealed class ProductMemberUsageTests
     [Fact]
     public void 製品アセンブリは本体から使われない非privateのメンバーを持たない()
     {
-        // テストからの参照は使用に数えない。走査するのは、テストの出力先へ複製された2つの製品アセンブリのメソッド本体だけである。
         var unused = ProductMemberUsage.FindUnusedMembers(
             new[] { typeof(ApplicationHostForm), typeof(Command) }
                 .Select(type => Path.Combine(AppContext.BaseDirectory, type.Assembly.GetName().Name + ".dll")));

@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// GitHubUpdateClient.IsUpdateAvailable のテスト
-/// </summary>
 public sealed class GitHubUpdateClientTests
 {
     private static readonly string CurrentVersion = "v" + Infrastructure.AppVersion.VersionString;

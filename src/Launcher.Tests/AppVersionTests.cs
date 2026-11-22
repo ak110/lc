@@ -25,7 +25,6 @@ public sealed class AppVersionTests
     [Fact]
     public void VersionString_ShouldNotContainPlusSign()
     {
-        // +以降のcommithash部分が除去されていること
         AppVersion.VersionString.Should().NotContain("+");
     }
 

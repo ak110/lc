@@ -5,9 +5,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// FindReplaceDialogのレイアウトとタブオーダーを検証する。
-/// </summary>
 public sealed class FindReplaceDialogTests
 {
     [Theory]

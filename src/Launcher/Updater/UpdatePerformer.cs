@@ -5,32 +5,15 @@ using Launcher.Infrastructure;
 
 namespace Launcher.Updater;
 
-/// <summary>
-/// 更新用バッチの試験用の生成オプション。既定値では通常の更新バッチを生成する。
-/// </summary>
 public sealed record UpdateBatchOptions
 {
-    /// <summary>
-    /// 指定すると、アプリの起動と通知の代わりに結果 (success / restored / restore_failed) をこのファイルへ書く。
-    /// </summary>
     public string? ResultFilePath { get; init; }
 
-    /// <summary>
-    /// 失敗させる処理段階 (<c>backup:N</c>・<c>copy:N</c>・<c>restore:N</c>、Nはファイル一覧の位置)。
-    /// </summary>
     public IReadOnlyCollection<string> FailSteps { get; init; } = [];
 }
 
-/// <summary>
-/// ZIP のダウンロード・展開・バッチスクリプトによるファイル置換で自動更新を実行する。
-/// </summary>
 public static class UpdatePerformer
 {
-    /// <summary>
-    /// 更新を実行する。ZIP のダウンロード、展開、バッチスクリプトの生成・起動の順に処理する。
-    /// この処理の完了はバッチの開始であり、更新の完了ではない。置換の成否の通知と失敗時の復旧はバッチが担う。
-    /// 例外を送出した場合、インストール済みのアプリのファイルには触れていない。
-    /// </summary>
     public static async Task PerformUpdateAsync(GitHubRelease release, IProgress<string>? progress = null)
     {
         if (string.IsNullOrEmpty(release.DownloadUrl))
@@ -47,7 +30,6 @@ public static class UpdatePerformer
 
         try
         {
-            // ZIP をダウンロードする。
             progress?.Report("ダウンロード中...");
             using var request = SharedHttpClient.CreateUpdateRequest(release.DownloadUrl);
             using (var response = await SharedHttpClient.Instance.SendAsync(request).ConfigureAwait(false))
@@ -57,11 +39,9 @@ public static class UpdatePerformer
                 await response.Content.CopyToAsync(fs).ConfigureAwait(false);
             }
 
-            // ZIP を展開する。
             progress?.Report("展開中...");
             ZipFile.ExtractToDirectory(zipPath, tempDir);
 
-            // ZIP 内のファイル一覧を取得する (サブディレクトリを含む相対パス)。
             var extractedFiles = GetRelativeFiles(tempDir);
 
             progress?.Report("更新を適用しています...");
@@ -76,7 +56,6 @@ public static class UpdatePerformer
             WriteMessageFiles(batchPath, appDir, GetBackupDir(appDir, batchPath));
             WriteBatchFile(batchPath, batchContent);
 
-            // バッチを起動する。
             var psi = new ProcessStartInfo
             {
                 FileName = batchPath,
@@ -87,7 +66,6 @@ public static class UpdatePerformer
         }
         catch
         {
-            // 失敗時はクリーンアップする。
             try { if (File.Exists(zipPath)) File.Delete(zipPath); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             foreach (var path in new[] { batchPath, RestoredMessagePath(batchPath), RestoreFailedMessagePath(batchPath) })
@@ -98,16 +76,12 @@ public static class UpdatePerformer
         }
     }
 
-    /// <summary>
-    /// ディレクトリ内のファイルを相対パスで取得する (バッチスクリプト自身は除外)。
-    /// </summary>
     private static List<string> GetRelativeFiles(string baseDir)
     {
         List<string> files = [];
         foreach (var fullPath in Directory.GetFiles(baseDir, "*", SearchOption.AllDirectories))
         {
             string relativePath = Path.GetRelativePath(baseDir, fullPath);
-            // バッチスクリプト自身は除外する。
             if (relativePath.Equals("_update.bat", StringComparison.OrdinalIgnoreCase)) continue;
             files.Add(relativePath);
         }
@@ -123,31 +97,20 @@ public static class UpdatePerformer
         File.WriteAllText(batchPath, batchContent, Encoding.GetEncoding(932));
     }
 
-    /// <summary>
-    /// この更新の退避フォルダ。更新ごとに一意で、この更新のバッチだけが作成・削除する。
-    /// </summary>
     public static string GetBackupDir(string appDir, string batchPath)
     {
         string id = Path.GetFileNameWithoutExtension(batchPath).TrimStart('_');
         return Path.Combine(appDir, "_update_backup_" + id);
     }
 
-    /// <summary>旧版へ戻せたときの通知文のファイル</summary>
     public static string RestoredMessagePath(string batchPath) => batchPath + ".restored.txt";
 
-    /// <summary>旧版へ戻せなかったときの通知文のファイル</summary>
     public static string RestoreFailedMessagePath(string batchPath) => batchPath + ".failed.txt";
 
-    /// <summary>
-    /// 旧版へ戻せたときの通知文。
-    /// </summary>
     public static string BuildRestoredMessage() =>
         "らんちゃの更新に失敗したため、更新前のバージョンに戻して起動しました。\r\n\r\n" +
         "時間をおいて、もう一度更新してください。";
 
-    /// <summary>
-    /// 旧版へ戻せなかったときの通知文。退避フォルダの場所と手動復旧の手順を含める。
-    /// </summary>
     public static string BuildRestoreFailedMessage(string appDir, string backupDir) =>
         "らんちゃの更新に失敗し、更新前のバージョンへ戻すこともできませんでした。\r\n\r\n" +
         "更新前のファイルは次のフォルダーに残っています。\r\n" +
@@ -157,9 +120,6 @@ public static class UpdatePerformer
         appDir + "\r\n\r\n" +
         "設定・コマンド・メモなどのファイルは更新の対象外のため、変更していません。";
 
-    /// <summary>
-    /// バッチが表示する通知文を UTF-8 で書き込む。CP932 のバッチの行へ文章を埋め込まずに済ませる。
-    /// </summary>
     public static void WriteMessageFiles(string batchPath, string appDir, string backupDir)
     {
         File.WriteAllText(RestoredMessagePath(batchPath), BuildRestoredMessage(), Encoding.UTF8);
@@ -192,7 +152,6 @@ public static class UpdatePerformer
         sb.AppendLine("title Update");
         sb.AppendLine();
 
-        // 親プロセスの終了を待機する。
         sb.AppendLine(":WAIT_LOOP");
         sb.AppendLine($"tasklist /FI \"PID eq {pid}\" 2>NUL | find \"{pid}\" >NUL");
         sb.AppendLine("if errorlevel 1 goto WAIT_DONE");
@@ -201,7 +160,6 @@ public static class UpdatePerformer
         sb.AppendLine(":WAIT_DONE");
         sb.AppendLine();
 
-        // 退避: ZIP 内に存在するファイルだけを退避フォルダへ移動する (ユーザーデータには触れない)。
         sb.AppendLine($"if not exist \"{backupDir}\\\" mkdir \"{backupDir}\"");
         sb.AppendLine($"if not exist \"{backupDir}\\\" goto RESTORE");
         for (int i = 0; i < files.Count; i++)
@@ -219,7 +177,6 @@ public static class UpdatePerformer
         }
         sb.AppendLine();
 
-        // コピー: 1件ずつコピーし、失敗したら復旧へ進む。
         sb.AppendLine("set \"COPY_STARTED=1\"");
         for (int i = 0; i < files.Count; i++)
         {
@@ -234,7 +191,6 @@ public static class UpdatePerformer
         }
         sb.AppendLine();
 
-        // 成功: 新版を起動し、この更新の退避物を削除する。
         AppendResult(sb, options, "success");
         if (options.ResultFilePath is null)
         {
@@ -244,7 +200,6 @@ public static class UpdatePerformer
         sb.AppendLine("goto CLEANUP");
         sb.AppendLine();
 
-        // 復旧: 逆順に、退避物があれば元へ戻し、更新前に無かったファイルは削除する。
         sb.AppendLine(":RESTORE");
         sb.AppendLine("set \"RESTORE_FAILED=0\"");
         for (int i = files.Count - 1; i >= 0; i--)
@@ -271,7 +226,6 @@ public static class UpdatePerformer
         sb.AppendLine("goto CLEANUP");
         sb.AppendLine();
 
-        // 復旧失敗: 退避フォルダを残し、場所と手動復旧の手順を通知する。新旧が混在したアプリは起動しない。
         sb.AppendLine(":RESTORE_FAILED");
         AppendResult(sb, options, "restore_failed");
         if (options.ResultFilePath is null)
@@ -280,7 +234,6 @@ public static class UpdatePerformer
         }
         sb.AppendLine();
 
-        // 一時ファイルをクリーンアップする。
         sb.AppendLine(":CLEANUP");
         string zipPath = tempDir + ".zip";
         sb.AppendLine($"if exist \"{zipPath}\" del /F /Q \"{zipPath}\"");
@@ -289,7 +242,6 @@ public static class UpdatePerformer
         sb.AppendLine($"if exist \"{RestoreFailedMessagePath(batchPath)}\" del /F /Q \"{RestoreFailedMessagePath(batchPath)}\"");
         sb.AppendLine();
 
-        // バッチ自身を削除して終了する。
         sb.AppendLine($"del /F /Q \"{batchPath}\"");
         sb.AppendLine("exit");
 
@@ -304,9 +256,6 @@ public static class UpdatePerformer
         }
     }
 
-    /// <summary>
-    /// 通知文のファイルをメッセージボックスで表示する行を追加する。閉じるまでバッチは待機する。
-    /// </summary>
     private static void AppendNotify(StringBuilder sb, string messagePath, string icon)
     {
         string literal = messagePath.Replace("'", "''");

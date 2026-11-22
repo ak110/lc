@@ -5,9 +5,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// enum化・property化後もXMLシリアライズ互換性が保たれることを検証
-/// </summary>
 public sealed class SerializationTests
 {
     [Theory]
@@ -31,12 +28,9 @@ public sealed class SerializationTests
             .CloseButton.Should().Be(expected);
     }
 
-    // --- 旧int値との互換性 ---
-
     [Fact]
     public void Command_旧int値のShowフィールドがenum値にデシリアライズされる()
     {
-        // 旧形式: <Show>2</Show> → WindowStyle.Maximized
         var xml = """
             <?xml version="1.0"?>
             <Command>
@@ -57,7 +51,6 @@ public sealed class SerializationTests
     [Fact]
     public void Config_旧int値のCloseButtonがenum値にデシリアライズされる()
     {
-        // 旧形式: <CloseButton>0</CloseButton> → CloseButtonBehavior.Disabled
         var xml = """
             <?xml version="1.0"?>
             <Config>
@@ -77,7 +70,6 @@ public sealed class SerializationTests
     [Fact]
     public void Config_旧UseTreeLauncher_trueがLeftThenRightにマッピングされる()
     {
-        // 旧形式: <UseTreeLauncher>true</UseTreeLauncher>
         var xml = """
             <?xml version="1.0"?>
             <Config>

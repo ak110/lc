@@ -3,14 +3,8 @@ using SystemKeys = System.Windows.Forms.Keys;
 
 namespace Launcher.Win32;
 
-/// <summary>
-/// 独自定義のキーコードと、仮想キーコードの相互変換などを行う。
-/// </summary>
 public static class KeyTable
 {
-    /// <summary>
-    /// 修飾キー
-    /// </summary>
     [Flags]
     public enum Modifiers
     {
@@ -20,36 +14,26 @@ public static class KeyTable
         Win = 0x08,
     }
 
-    /// <summary>
-    /// キー。
-    /// </summary>
     public enum Keys
     {
-        // 英字(26)
         A, B, C, D, E, F,
         G, H, I, J, K, L,
         M, N, O, P, Q, R,
         S, T, U, V, W, X, Y, Z,
-        // 数字(10)
         D1, D2, D3, D4, D5, D6, D7, D8, D9, D0,
-        // ファンクション(12)
         F1, F2, F3, F4, F5, F6,
         F7, F8, F9, F10, F11, F12,
-        // その他(20)
         Escape, Pause, Back,
         Minus, Plus, Tab, Enter,
         Insert, Delete, Home, End, PageUp, PageDown,
         Comma, Period, Space,
         Up, Left, Down, Right,
-        // テンキー(16)
         Num0, Num1, Num2, Num3, Num4, Num5, Num6, Num7, Num8, Num9,
         NumAdd, NumSub, NumMul, NumDiv,
-        // マウス(8)
         LClick, LDouble, RClick, RDouble,
         MClick, MDouble, MUp, MDown,
-        X1Click, X1Double, X2Click, X2Double,   // 4,5ボタン
-        RLClick, LRClick,   //右→左クリック, 左→右クリック
-                            // キーの数
+        X1Click, X1Double, X2Click, X2Double,
+        RLClick, LRClick,
         KeyCount,
     }
 
@@ -59,12 +43,8 @@ public static class KeyTable
 
     #region 初期化。
 
-    /// <summary>
-    /// 初期化。
-    /// </summary>
     static KeyTable()
     {
-        // 英字(26)
         _c(SystemKeys.A, Keys.A); _c(SystemKeys.B, Keys.B); _c(SystemKeys.C, Keys.C); _c(SystemKeys.D, Keys.D);
         _c(SystemKeys.E, Keys.E); _c(SystemKeys.F, Keys.F); _c(SystemKeys.G, Keys.G); _c(SystemKeys.H, Keys.H);
         _c(SystemKeys.I, Keys.I); _c(SystemKeys.J, Keys.J); _c(SystemKeys.K, Keys.K); _c(SystemKeys.L, Keys.L);
@@ -72,15 +52,12 @@ public static class KeyTable
         _c(SystemKeys.Q, Keys.Q); _c(SystemKeys.R, Keys.R); _c(SystemKeys.S, Keys.S); _c(SystemKeys.T, Keys.T);
         _c(SystemKeys.U, Keys.U); _c(SystemKeys.V, Keys.V); _c(SystemKeys.W, Keys.W); _c(SystemKeys.X, Keys.X);
         _c(SystemKeys.Y, Keys.Y); _c(SystemKeys.Z, Keys.Z);
-        // 数字(10)
         _c(SystemKeys.D0, Keys.D0); _c(SystemKeys.D1, Keys.D1); _c(SystemKeys.D2, Keys.D2); _c(SystemKeys.D3, Keys.D3);
         _c(SystemKeys.D4, Keys.D4); _c(SystemKeys.D5, Keys.D5); _c(SystemKeys.D6, Keys.D6); _c(SystemKeys.D7, Keys.D7);
         _c(SystemKeys.D8, Keys.D8); _c(SystemKeys.D9, Keys.D9);
-        // ファンクション(12)
         _c(SystemKeys.F1, Keys.F1); _c(SystemKeys.F2, Keys.F2); _c(SystemKeys.F3, Keys.F3); _c(SystemKeys.F4, Keys.F4);
         _c(SystemKeys.F5, Keys.F5); _c(SystemKeys.F6, Keys.F6); _c(SystemKeys.F7, Keys.F7); _c(SystemKeys.F8, Keys.F8);
         _c(SystemKeys.F9, Keys.F9); _c(SystemKeys.F10, Keys.F10); _c(SystemKeys.F11, Keys.F11); _c(SystemKeys.F12, Keys.F12);
-        // その他(20)
         _c(SystemKeys.Escape, Keys.Escape); _c(SystemKeys.Pause, Keys.Pause); _c(SystemKeys.Back, Keys.Back);
         _c(SystemKeys.Oemplus, Keys.Plus); _c(SystemKeys.OemMinus, Keys.Minus); _c(SystemKeys.Tab, Keys.Tab);
         _c(SystemKeys.Enter, Keys.Enter); _c(SystemKeys.Insert, Keys.Insert); _c(SystemKeys.Delete, Keys.Delete);
@@ -88,14 +65,12 @@ public static class KeyTable
         _c(SystemKeys.PageDown, Keys.PageDown); _c(SystemKeys.Oemcomma, Keys.Comma); _c(SystemKeys.OemPeriod, Keys.Period);
         _c(SystemKeys.Space, Keys.Space); _c(SystemKeys.Left, Keys.Left); _c(SystemKeys.Up, Keys.Up);
         _c(SystemKeys.Right, Keys.Right); _c(SystemKeys.Down, Keys.Down);
-        // テンキー(16)
         _c(SystemKeys.NumPad0, Keys.Num0); _c(SystemKeys.NumPad1, Keys.Num1); _c(SystemKeys.NumPad2, Keys.Num2);
         _c(SystemKeys.NumPad3, Keys.Num3); _c(SystemKeys.NumPad4, Keys.Num4); _c(SystemKeys.NumPad5, Keys.Num5);
         _c(SystemKeys.NumPad6, Keys.Num6); _c(SystemKeys.NumPad7, Keys.Num7); _c(SystemKeys.NumPad8, Keys.Num8);
         _c(SystemKeys.NumPad9, Keys.Num9); _c(SystemKeys.Multiply, Keys.NumMul); _c(SystemKeys.Add, Keys.NumAdd);
         _c(SystemKeys.Subtract, Keys.NumSub);
         _c(SystemKeys.Divide, Keys.NumDiv);
-        // 英字(26)
         _n(Keys.A, "A"); _n(Keys.B, "B"); _n(Keys.C, "C"); _n(Keys.D, "D");
         _n(Keys.E, "E"); _n(Keys.F, "F"); _n(Keys.G, "G"); _n(Keys.H, "H");
         _n(Keys.I, "I"); _n(Keys.J, "J"); _n(Keys.K, "K"); _n(Keys.L, "L");
@@ -103,29 +78,24 @@ public static class KeyTable
         _n(Keys.Q, "Q"); _n(Keys.R, "R"); _n(Keys.S, "S"); _n(Keys.T, "T");
         _n(Keys.U, "U"); _n(Keys.V, "V"); _n(Keys.W, "W"); _n(Keys.X, "X");
         _n(Keys.Y, "Y"); _n(Keys.Z, "Z");
-        // 数字(10)
         _n(Keys.D1, "1"); _n(Keys.D2, "2"); _n(Keys.D3, "3"); _n(Keys.D4, "4");
         _n(Keys.D5, "5"); _n(Keys.D6, "6"); _n(Keys.D7, "7"); _n(Keys.D8, "8");
         _n(Keys.D9, "9"); _n(Keys.D0, "0");
-        // ファンクション(12)
         _n(Keys.F1, "F1"); _n(Keys.F2, "F2"); _n(Keys.F3, "F3");
         _n(Keys.F4, "F4"); _n(Keys.F5, "F5"); _n(Keys.F6, "F6");
         _n(Keys.F7, "F7"); _n(Keys.F8, "F8"); _n(Keys.F9, "F9");
         _n(Keys.F10, "F10"); _n(Keys.F11, "F11"); _n(Keys.F12, "F12");
-        // その他(20)
         _n(Keys.Escape, "Esc"); _n(Keys.Pause, "Pause"); _n(Keys.Back, "BackSpace");
         _n(Keys.Minus, "-"); _n(Keys.Plus, "+"); _n(Keys.Tab, "Tab");
         _n(Keys.Enter, "Enter"); _n(Keys.Insert, "Insert"); _n(Keys.Delete, "Delete");
         _n(Keys.Home, "Home"); _n(Keys.End, "End"); _n(Keys.PageUp, "PageUp");
         _n(Keys.PageDown, "PageDown"); _n(Keys.Comma, ","); _n(Keys.Period, "."); _n(Keys.Space, "Space");
         _n(Keys.Up, "↑"); _n(Keys.Left, "←"); _n(Keys.Down, "↓"); _n(Keys.Right, "→");
-        // テンキー(16)
         _n(Keys.Num0, "Num0"); _n(Keys.Num1, "Num1"); _n(Keys.Num2, "Num2");
         _n(Keys.Num3, "Num3"); _n(Keys.Num4, "Num4"); _n(Keys.Num5, "Num5");
         _n(Keys.Num6, "Num6"); _n(Keys.Num7, "Num7"); _n(Keys.Num8, "Num8");
         _n(Keys.Num9, "Num9"); _n(Keys.NumAdd, "Num +"); _n(Keys.NumSub, "Num -");
         _n(Keys.NumMul, "Num *"); _n(Keys.NumDiv, "Num /");
-        // マウス(14)
         _n(Keys.LClick, "左クリック"); _n(Keys.LDouble, "左ダブルクリック");
         _n(Keys.RClick, "右クリック"); _n(Keys.RDouble, "右ダブルクリック");
         _n(Keys.MClick, "ホイールクリック"); _n(Keys.MDouble, "ホイールダブルクリック");
@@ -148,9 +118,6 @@ public static class KeyTable
 
     #endregion
 
-    /// <summary>
-    /// キー名を全取得
-    /// </summary>
     public static string[] GetKeyNames(bool mouse)
     {
         string[] result = new string[mouse ?
@@ -162,9 +129,6 @@ public static class KeyTable
         return result;
     }
 
-    /// <summary>
-    /// Keysからキーの名前を取得
-    /// </summary>
     public static string? GetKeyName(Keys key)
     {
         if (keysToKeyName.TryGetValue(key, out string? name))
@@ -178,9 +142,6 @@ public static class KeyTable
         }
     }
 
-    /// <summary>
-    /// Keysからキーの名前を取得
-    /// </summary>
     public static string GetKeyName(Keys key, Modifiers modifiers)
     {
         var str = new StringBuilder();
@@ -204,9 +165,6 @@ public static class KeyTable
         return str.ToString();
     }
 
-    /// <summary>
-    /// キーの名前からKeysの取得
-    /// </summary>
     public static (Keys? Key, Modifiers Modifiers) GetKeyWithModifiers(string str)
     {
         Modifiers modifiers = 0;
@@ -227,8 +185,6 @@ public static class KeyTable
         {
             modifiers |= Modifiers.Win;
         }
-        // 末尾キーが空の文字列 (未割り当て・修飾キーのみの場合を含む) は
-        // 未割り当てとして安全に扱い、GetKeyのアサーション失敗を避ける
         string lastKey = m[m.Count - 1];
         if (string.IsNullOrEmpty(lastKey))
         {
@@ -240,9 +196,6 @@ public static class KeyTable
             (null, (Modifiers)0);
     }
 
-    /// <summary>
-    /// キーの名前からKeysの取得
-    /// </summary>
     public static Keys? GetKey(string str)
     {
         Keys key;
@@ -257,10 +210,6 @@ public static class KeyTable
         }
     }
 
-    /// <summary>
-    /// KeysからOSの仮想キーコードへの変換。失敗時None。
-    /// 低速のため注意。
-    /// </summary>
     public static SystemKeys KeysToVKey(Keys key)
     {
         foreach (KeyValuePair<SystemKeys, Keys> p in vkeyToKeys)

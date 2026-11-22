@@ -35,9 +35,6 @@ public partial class EnvConfigForm : Form
         replaceEnv = FormsHelper.GetArray<string>(listBox2);
     }
 
-    /// <summary>
-    /// 追加
-    /// </summary>
     private void button1_Click(object? sender, EventArgs e)
     {
         string? item = listBox1.SelectedItem as string;
@@ -48,9 +45,6 @@ public partial class EnvConfigForm : Form
         }
     }
 
-    /// <summary>
-    /// 削除
-    /// </summary>
     private void button2_Click(object? sender, EventArgs e)
     {
         string? item = listBox2.SelectedItem as string;

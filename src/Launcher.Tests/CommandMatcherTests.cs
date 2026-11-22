@@ -10,8 +10,6 @@ public sealed class CommandMatcherTests
     private readonly Config _config = new Config { CommandIgnoreCase = true };
     private readonly Config _caseSensitiveConfig = new Config { CommandIgnoreCase = false };
 
-    // --- GetMatchScore: 先頭一致 ---
-
     [Fact]
     public void GetMatchScore_完全一致は最高スコア()
     {
@@ -41,12 +39,9 @@ public sealed class CommandMatcherTests
         score.Should().Be(0);
     }
 
-    // --- GetMatchScore: 部分一致 ---
-
     [Fact]
     public void GetMatchScore_部分一致はスコアが正()
     {
-        // "htdocs" に "docs" は部分一致
         int score = CommandMatcher.GetMatchScore("htdocs", "docs", _config);
         score.Should().BePositive();
     }
@@ -58,8 +53,6 @@ public sealed class CommandMatcherTests
         int mid = CommandMatcher.GetMatchScore("htdocs", "docs", _config);
         first.Should().BeGreaterThan(mid);
     }
-
-    // --- GetMatchScore: 大文字小文字 ---
 
     [Fact]
     public void GetMatchScore_大文字小文字無視で一致()
@@ -82,8 +75,6 @@ public sealed class CommandMatcherTests
         score.Should().BePositive();
     }
 
-    // --- GetMatchScore: 短いコマンド名が優先される ---
-
     [Fact]
     public void GetMatchScore_短い名前が長い名前より高スコア()
     {
@@ -92,12 +83,9 @@ public sealed class CommandMatcherTests
         shorter.Should().BeGreaterThan(longer);
     }
 
-    // --- GetMatchScore: コマンド名より長い入力 ---
-
     [Fact]
     public void GetMatchScore_コマンド名より長い入力に引数あり()
     {
-        // "notepad test.txt" → "notepad" と一致 + 引数 "test.txt"
         int score = CommandMatcher.GetMatchScore("notepad", "notepad test.txt", _config);
         score.Should().BePositive();
     }
@@ -105,12 +93,9 @@ public sealed class CommandMatcherTests
     [Fact]
     public void GetMatchScore_コマンド名より長い入力でスペースなしは不一致()
     {
-        // "notepad_x" → "notepad" に完全一致しない (余分文字がスペースでない)
         int score = CommandMatcher.GetMatchScore("notepad", "notepad_x", _config);
         score.Should().Be(0);
     }
-
-    // --- ParseInput ---
 
     [Fact]
     public void ParseInput_完全一致でコマンド名と引数を分離()
@@ -142,8 +127,6 @@ public sealed class CommandMatcherTests
         arguments.Should().BeEmpty();
     }
 
-    // --- GetMatchLength ---
-
     [Fact]
     public void GetMatchLength_完全一致は全長を返す()
     {
@@ -164,8 +147,6 @@ public sealed class CommandMatcherTests
         int len = CommandMatcher.GetMatchLength("abc", "xyz", _config);
         len.Should().Be(0);
     }
-
-    // --- 部分一致の回帰テスト (旧Command静的コンストラクタの検証を置換) ---
 
     [Fact]
     public void GetMatchScore_htdocsにdocsで部分一致する()

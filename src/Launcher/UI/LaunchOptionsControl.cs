@@ -3,7 +3,6 @@ using Launcher.Core;
 
 namespace Launcher.UI;
 
-/// <summary>コマンドと予定タスクで共通の表示形式・優先度を選択する。</summary>
 public sealed class LaunchOptionsControl : UserControl
 {
     readonly RadioButtonList windowStyles;

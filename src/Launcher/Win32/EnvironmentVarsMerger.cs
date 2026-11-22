@@ -17,10 +17,6 @@ public static class EnvironmentVarsMerger
     // Explorer 互換: システム + ユーザーを連結する変数名
     private static readonly string[] PathLikeVars = ["Path", "PATHEXT", "LIBPATH", "OS2LIBPATH"];
 
-    /// <summary>
-    /// システム変数とユーザー変数を Explorer 互換のマージ規則で結合し、
-    /// %VAR% 展開済みの辞書を返す。
-    /// </summary>
     public static Dictionary<string, string> Merge(
         IReadOnlyList<KeyValuePair<string, string>> systemRaw,
         IReadOnlyList<KeyValuePair<string, string>> userRaw)
@@ -46,7 +42,6 @@ public static class EnvironmentVarsMerger
             }
         }
 
-        // REG_EXPAND_SZ の %VAR% を現プロセス環境ベースで展開
         var expanded = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var (name, value) in merged)
         {

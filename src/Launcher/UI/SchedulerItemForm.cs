@@ -2,9 +2,6 @@ using Launcher.Core;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// 1つのSchedulerItemを編集するフォーム
-/// </summary>
 public partial class SchedulerItemForm : Form
 {
     SchedulerItem v;
@@ -36,8 +33,6 @@ public partial class SchedulerItemForm : Form
         v.Schedules = FormsHelper.GetArray<Schedule>(listBoxSchedules);
         v.Tasks = FormsHelper.GetArray<SchedulerTask>(listBoxTasks);
     }
-
-    // --- スケジュール操作 ---
 
     private void buttonScheduleAdd_Click(object? sender, EventArgs e)
     {
@@ -86,14 +81,11 @@ public partial class SchedulerItemForm : Form
             using var form = new ScheduleEditForm(selected);
             if (form.ShowDialogOver(this) == DialogResult.OK)
             {
-                // selectedは直接編集済み。表示を更新。
                 int index = listBoxSchedules.SelectedIndex;
                 listBoxSchedules.Items[index] = selected;
             }
         }
     }
-
-    // --- タスク操作 ---
 
     private void buttonTaskAdd_Click(object? sender, EventArgs e)
     {
@@ -142,7 +134,6 @@ public partial class SchedulerItemForm : Form
 
     private void buttonTaskTest_Click(object? sender, EventArgs e)
     {
-        // 現在のタスク一覧でテスト実行
         var item = new SchedulerItem
         {
             Enable = true,

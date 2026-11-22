@@ -96,7 +96,6 @@ public sealed class ApplicationStateTests
             MemoData.Load(baseName).Value.Tabs[0].Text.Should().Be("終了直前の本文");
             Config.Load(baseName).Value.WindowPos.Should().Be(new Point(80, 90));
             Data.Load(baseName).Value.WindowHandle.Should().Be(0);
-            // 更新終了と通常終了が続けて呼んでも二重に終了処理をしない。
             host.PrepareShutdown();
             Data.Load(baseName).Value.WindowHandle.Should().Be(0);
         });
@@ -132,7 +131,7 @@ public sealed class ApplicationStateTests
                     host.Close();
                 }
             }
-#pragma warning disable CA1031 // STAで発生したテスト失敗を呼び出し元へ再送出する
+#pragma warning disable CA1031
             catch (Exception error)
 #pragma warning restore CA1031
             {

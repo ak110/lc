@@ -6,16 +6,8 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// FolderPopupMenuBuilderのテスト。
-/// Shell拡張・Cursor.Positionに依存するInvokeShellExecuteDeferred/InvokeContextMenuDeferredは対象外。
-/// </summary>
 public sealed class FolderPopupMenuBuilderTests
 {
-    /// <summary>
-    /// ContextMenuStripを実際に表示せずClosedイベントを発火させる。
-    /// protected ToolStripDropDown.OnClosedをリフレクション経由で呼ぶ。
-    /// </summary>
     static void RaiseClosed(ContextMenuStrip menu)
     {
         var onClosed = typeof(ToolStripDropDown).GetMethod(
@@ -38,10 +30,6 @@ public sealed class FolderPopupMenuBuilderTests
         method.Invoke(item, [EventArgs.Empty]);
     }
 
-    /// <summary>
-    /// ContextMenuStripを実際に表示せずKeyDownイベントを発火させる。
-    /// protected Control.OnKeyDownをリフレクション経由で呼ぶ。
-    /// </summary>
     static void RaiseKeyDown(ContextMenuStrip menu, KeyEventArgs e)
     {
         var method = typeof(Control).GetMethod(
@@ -111,7 +99,7 @@ public sealed class FolderPopupMenuBuilderTests
             menu.IsDisposed.Should().BeFalse();
 
             RaiseClosed(menu);
-            Application.DoEvents(); // SafeBeginInvoke経由でポストされたDisposeを処理する
+            Application.DoEvents();
 
             menu.IsDisposed.Should().BeTrue();
         }
@@ -380,8 +368,6 @@ public sealed class FolderPopupMenuBuilderTests
             var e = new KeyEventArgs(Keys.Return);
             RaiseKeyDown(menu, e);
 
-            // 選択項目が無い状態でのEnter押下はハンドラ内foreachを最後まで抜けるため
-            // e.Handledは既定値のまま
             e.Handled.Should().BeFalse();
         }
         finally

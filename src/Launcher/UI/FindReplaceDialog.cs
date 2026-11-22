@@ -2,12 +2,6 @@ using System.Text.RegularExpressions;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// 検索・置換用のモードレスダイアログ。
-/// 呼び出し元(MemoForm)は現在のタブへ検索・置換を委譲するコールバックを渡す。
-/// 1つのインスタンスを検索モードと置換モードで共用し、閉じる操作では非表示にするだけとして
-/// 検索文字列・置換後文字列・オプションを次回表示時まで保持する。
-/// </summary>
 public sealed class FindReplaceDialog : Form
 {
     readonly Label findLabel;
@@ -43,7 +37,6 @@ public sealed class FindReplaceDialog : Form
         ShowInTaskbar = false;
         StartPosition = FormStartPosition.Manual;
 
-        // TabIndexはラベル→入力欄→オプション→ボタンの順とし、置換モードでは検索文字列の次を置換後にする
         findLabel = new Label { Text = "検索文字列(&N):", AutoSize = true, TabIndex = 0 };
         findTextBox = new TextBox { TabIndex = 1 };
         replaceLabel = new Label { Text = "置換後(&P):", AutoSize = true, TabIndex = 2 };
@@ -77,11 +70,6 @@ public sealed class FindReplaceDialog : Form
         ApplyMode(replaceMode: false);
     }
 
-    /// <summary>
-    /// 指定モードでダイアログを表示するか、既に表示中であればモードを切り替えてアクティブ化する。
-    /// 初期値が指定された場合は検索文字列を置き換え、未指定なら前回の検索文字列を保持する。
-    /// 新たに表示する場合はオーナーの中央へ配置する。
-    /// </summary>
     public void ShowOrActivate(Form owner, bool replaceMode, string? initialText)
     {
         ApplyMode(replaceMode);
@@ -109,15 +97,8 @@ public sealed class FindReplaceDialog : Form
         findTextBox.SelectAll();
     }
 
-    /// <summary>
-    /// 結果メッセージを表示する。
-    /// </summary>
     public void SetStatus(string message) => statusLabel.Text = message;
 
-    /// <summary>
-    /// 現在の入力から検索条件を生成する。検索文字列が空か正規表現が無効な場合はfalseを返し、
-    /// 状態欄へ理由を表示する。
-    /// </summary>
     public bool TryGetFindCondition(out FindEventArgs args)
     {
         args = new FindEventArgs(FindText, MatchCase, UseRegex);
@@ -144,7 +125,6 @@ public sealed class FindReplaceDialog : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        // 利用者の閉じる操作は非表示に留め、入力内容とオプションを保持する
         if (e.CloseReason == CloseReason.UserClosing)
         {
             e.Cancel = true;
@@ -160,9 +140,6 @@ public sealed class FindReplaceDialog : Form
         ApplyLayout();
     }
 
-    /// <summary>
-    /// モードに応じてタイトルと置換関連コントロールの表示を切り替え、再配置する。
-    /// </summary>
     void ApplyMode(bool replaceMode)
     {
         this.replaceMode = replaceMode;
@@ -174,11 +151,6 @@ public sealed class FindReplaceDialog : Form
         ApplyLayout();
     }
 
-    /// <summary>
-    /// フォントの実測寸法から各コントロールを配置する。
-    /// 左列に入力欄とオプション、右列にボタンを縦に並べ、最下段に状態欄を置く。
-    /// 固定ピクセルを使わないため、DPIとフォントの違いによる重なりと欠けが生じない。
-    /// </summary>
     void ApplyLayout()
     {
         int unit = Font.Height;
@@ -189,14 +161,12 @@ public sealed class FindReplaceDialog : Form
 
         int labelWidth = Math.Max(findLabel.PreferredSize.Width, replaceLabel.PreferredSize.Width);
         int inputLeft = margin + labelWidth + gap;
-        // 左列の幅はチェックボックスが収まる幅を下限とする
         int optionWidth = Math.Max(matchCaseCheckBox.PreferredSize.Width, regexCheckBox.PreferredSize.Width);
         int inputWidth = Math.Max(unit * 16, optionWidth - labelWidth - gap);
         int buttonLeft = inputLeft + inputWidth + margin;
         int buttonWidth = new[] { findNextButton, findPrevButton, replaceButton, replaceAllButton, closeButton }
             .Max(b => b.PreferredSize.Width);
 
-        // 左列
         int top = margin;
         PlaceRow(findLabel, findTextBox, top, margin, inputLeft, inputWidth);
         top += rowHeight;
@@ -223,7 +193,6 @@ public sealed class FindReplaceDialog : Form
         }
         int rightBottom = top;
 
-        // 状態欄
         int statusTop = Math.Max(leftBottom, rightBottom);
         int width = buttonLeft + buttonWidth + margin;
         statusLabel.SetBounds(margin, statusTop, width - margin * 2, unit + gap / 2);

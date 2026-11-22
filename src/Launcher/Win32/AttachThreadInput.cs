@@ -2,20 +2,11 @@ using System.Runtime.InteropServices;
 
 namespace Launcher.Win32;
 
-/// <summary>
-/// WinAPI AttachThreadInput()のラッパー
-/// </summary>
 public sealed class AttachThreadInput : IDisposable
 {
-    /// <summary>
-    /// スレッドID
-    /// </summary>
     uint foreground, current;
     bool attached;
 
-    /// <summary>
-    /// アタッチ。
-    /// </summary>
     public AttachThreadInput()
     {
         foreground = NativeMethods.GetWindowThreadProcessId(NativeMethods.GetForegroundWindow(), out _);
@@ -29,9 +20,6 @@ public sealed class AttachThreadInput : IDisposable
         }
     }
 
-    /// <summary>
-    /// デタッチ。
-    /// </summary>
     public void Dispose()
     {
         GC.SuppressFinalize(this);

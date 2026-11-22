@@ -4,9 +4,6 @@ using Launcher.Win32;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// ボタン型ランチャーフォーム
-/// </summary>
 public partial class ButtonLauncherForm : Form
 {
     readonly ApplicationHostForm owner;
@@ -15,15 +12,12 @@ public partial class ButtonLauncherForm : Form
     readonly ContextMenuStrip tabContextMenu;
     readonly ContextMenuStrip mainMenu;
 
-    // ボタンサイズ
     const int ButtonWidth = 64;
     const int ButtonHeight = 64;
 
-    // D&D用
-    Button? dragSource;              // UI固有のためForm側に残す
+    Button? dragSource;
     readonly DragDropState dragState = new();
 
-    // 長押し検知用 (フォルダ登録ボタンの長押しでポップアップメニューを表示する)
     readonly System.Windows.Forms.Timer longPressTimer;
     Button? longPressCandidate;
     ButtonEntry? longPressEntry;
@@ -44,7 +38,6 @@ public partial class ButtonLauncherForm : Form
 
         Text = Infrastructure.AppVersion.Title;
 
-        // ボタン右クリックメニュー
         buttonContextMenu = new ContextMenuStrip();
         buttonContextMenu.Items.Add("実行(&X)", null, ButtonMenu_Execute);
         buttonContextMenu.Items.Add("編集(&E)", null, ButtonMenu_Edit);
@@ -55,10 +48,8 @@ public partial class ButtonLauncherForm : Form
         buttonContextMenu.Items.Add("削除(&D)", null, ButtonMenu_Delete);
         buttonContextMenu.Opening += ButtonContextMenu_Opening;
 
-        // ツールバー右クリック時にメインメニューを表示
         toolStrip1.ContextMenuStrip = mainMenu;
 
-        // タブヘッダー右クリックメニュー
         tabContextMenu = new ContextMenuStrip();
         tabContextMenu.Items.Add("タブを追加(&A)", null, (s, ev) => AddTab());
         var renameItem = tabContextMenu.Items.Add("タブ名を変更(&R)", null, (s, ev) => RenameTab());
@@ -70,8 +61,6 @@ public partial class ButtonLauncherForm : Form
         var deleteItem = tabContextMenu.Items.Add("タブを削除(&X)", null, (s, ev) => DeleteTab());
         tabContextMenu.Opening += (s, ev) =>
         {
-            // カーソル直下のタブを検出し、見つかればSelectedIndexに反映する
-            // (タブヘッダー空白部での右クリックでは見つからず、対象タブ依存の項目を無効化する)
             var pos = tabControl1.PointToClient(Cursor.Position);
             int hitIndex = TabControlHelper.HitTest(tabControl1, pos);
             if (hitIndex >= 0)
@@ -87,22 +76,17 @@ public partial class ButtonLauncherForm : Form
             moveRightItem.Enabled = onTab && hitIndex < tabControl1.TabCount - 1;
         };
 
-        // タブヘッダーの右クリックに標準でメニューを割り当て
-        // (タブ余白部でも開くが、対象タブ依存項目はOpeningで無効化済み)
         tabControl1.ContextMenuStrip = tabContextMenu;
 
-        // タブ間D&D対応
         tabControl1.AllowDrop = true;
         tabControl1.DragOver += TabControl1_DragOver;
         tabControl1.DragDrop += TabControl1_DragDrop;
 
         iconLoader.IconLoaded += IconLoader_IconLoaded;
 
-        // 長押し検知タイマー
         longPressTimer = new System.Windows.Forms.Timer { Interval = LongPressMilliseconds };
         longPressTimer.Tick += LongPressTimer_Tick;
 
-        // ロック状態を復元
         lockButton.Checked = Data.IsLocked;
         ApplyLockState();
 
@@ -113,13 +97,11 @@ public partial class ButtonLauncherForm : Form
         _ = Handle;
         WindowHelper.DisableCloseButton(this);
 
-        // タブを構築 (アイコン非同期読み込みを開始するためHandle作成後に実行)
         BuildTabs();
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        // オーナー(ApplicationHostForm)からの閉じる操作以外は非表示にするだけ
         if (e.CloseReason != CloseReason.FormOwnerClosing)
         {
             e.Cancel = true;
@@ -131,15 +113,11 @@ public partial class ButtonLauncherForm : Form
 
     #region タブ・グリッド構築
 
-    /// <summary>
-    /// 全タブを構築
-    /// </summary>
     private void BuildTabs()
     {
         tabControl1.TabPages.Clear();
         iconLoader.Clear();
 
-        // タブがなければデフォルト1つ生成する
         if (Data.Tabs.Count == 0)
         {
             Data.Tabs.Add(new ButtonTab { Name = "Default" });
@@ -147,23 +125,19 @@ public partial class ButtonLauncherForm : Form
 
         foreach (var tab in Data.Tabs)
         {
-#pragma warning disable CA2000 // TabControlがTabPageのライフサイクルを管理
+#pragma warning disable CA2000
             var tabPage = new TabPage(tab.Name) { Tag = tab };
 #pragma warning restore CA2000
             BuildGrid(tabPage, tab);
             tabControl1.TabPages.Add(tabPage);
         }
 
-        // デフォルトタブ
         if (Data.DefaultTabIndex >= 0 && Data.DefaultTabIndex < tabControl1.TabPages.Count)
         {
             tabControl1.SelectedIndex = Data.DefaultTabIndex;
         }
     }
 
-    /// <summary>
-    /// タブ内にグリッドボタンを配置
-    /// </summary>
     private void BuildGrid(TabPage tabPage, ButtonTab tabData)
     {
         tabPage.Controls.Clear();
@@ -178,10 +152,8 @@ public partial class ButtonLauncherForm : Form
             AutoScroll = false,
         };
 
-        // レイアウト計算を一時停止して一括追加
         panel.SuspendLayout();
 
-        // 均等配分
         panel.ColumnStyles.Clear();
         for (int c = 0; c < Data.Columns; c++)
         {
@@ -207,9 +179,6 @@ public partial class ButtonLauncherForm : Form
         tabPage.Controls.Add(panel);
     }
 
-    /// <summary>
-    /// グリッド上のボタンを1つ作成
-    /// </summary>
     private Button CreateGridButton(ButtonEntry? entry, int row, int col)
     {
         var btn = new Button
@@ -228,7 +197,6 @@ public partial class ButtonLauncherForm : Form
         if (entry is not null && !entry.IsEmpty)
         {
             btn.Text = entry.Name ?? "";
-            // アイコンの非同期読み込み
             iconLoader.Load(entry.FileName, false, btn);
         }
         else
@@ -246,14 +214,10 @@ public partial class ButtonLauncherForm : Form
         return btn;
     }
 
-    /// <summary>
-    /// 指定位置のボタンの表示を更新 (D&amp;Dスワップ時の部分更新用)
-    /// </summary>
     private void UpdateButton(TabPage? tabPage, ButtonTab tabData, int row, int col)
     {
         if (tabPage is null) return;
 
-        // TableLayoutPanelからボタンを探す
         var panel = tabPage.Controls.Count > 0 ? tabPage.Controls[0] as TableLayoutPanel : null;
         if (panel is null) return;
 
@@ -274,10 +238,7 @@ public partial class ButtonLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// ボタン位置情報
-    /// </summary>
-#pragma warning disable CA1852 // recordは暗黙的にsealed
+#pragma warning disable CA1852
     private record ButtonPosition(int Row, int Col);
 #pragma warning restore CA1852
 
@@ -285,14 +246,10 @@ public partial class ButtonLauncherForm : Form
 
     #region 表示・非表示
 
-    /// <summary>
-    /// ランチャーを表示 (マウスカーソル中心に配置)
-    /// </summary>
     public void ShowLauncher()
     {
         try
         {
-            // Columns/Rowsからウィンドウサイズを計算
             ClientSize = ButtonLauncherPresenter.CalculateWindowSize(
                 Data.Columns, Data.Rows,
                 ButtonWidth, ButtonHeight,
@@ -300,17 +257,15 @@ public partial class ButtonLauncherForm : Form
 
             FormsHelper.CenterOnCursor(this);
 
-            // デフォルトタブに切り替え
             if (Data.DefaultTabIndex >= 0 && Data.DefaultTabIndex < tabControl1.TabPages.Count)
             {
                 tabControl1.SelectedIndex = Data.DefaultTabIndex;
             }
 
-            // マウスキャプチャの解放前に表示しないよう、表示もActivateForceへ任せる。
             Hide();
             WindowHelper.ActivateForce(this);
         }
-#pragma warning disable CA1031 // 表示操作の境界で想定外例外を共通の通知へ回送する
+#pragma warning disable CA1031
         catch (Exception ex)
 #pragma warning restore CA1031
         {
@@ -331,7 +286,6 @@ public partial class ButtonLauncherForm : Form
     protected override void OnDeactivate(EventArgs e)
     {
         base.OnDeactivate(e);
-        // ロック解除時は非表示
         if (!Data.IsLocked)
         {
             Hide();
@@ -387,15 +341,11 @@ public partial class ButtonLauncherForm : Form
             });
     }
 
-    /// <summary>
-    /// 長押し検知タイマーのTick: 発火条件を満たせばフォルダポップアップメニューを表示する
-    /// </summary>
     private void LongPressTimer_Tick(object? sender, EventArgs e)
     {
         longPressTimer.Stop();
         if (longPressCandidate is null || longPressEntry is null) return;
 
-        // 左ボタンが押され続けており、カーソルがボタン上にあるときのみ発火
         if ((MouseButtons & MouseButtons.Left) != MouseButtons.Left) return;
         if (!longPressCandidate.ClientRectangle.Contains(
                 longPressCandidate.PointToClient(Cursor.Position))) return;
@@ -418,7 +368,7 @@ public partial class ButtonLauncherForm : Form
                 if (!longPressState.TryFire(operationId)) return;
                 longPressClickSuppressionTarget = candidate;
 
-#pragma warning disable CA2000 // builder と menu は Closed イベントで内部 Dispose される (Builder 側実装)
+#pragma warning disable CA2000
                 var builder = new FolderPopupMenuBuilder(Handle, this);
                 var menu = builder.Build(folderPath);
 #pragma warning restore CA2000
@@ -435,9 +385,6 @@ public partial class ButtonLauncherForm : Form
 
     private Button? contextMenuTarget;
 
-    /// <summary>
-    /// ボタン右クリックメニューのOpening時にメニュー項目の有効/無効を設定
-    /// </summary>
     private void ButtonContextMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         var menu = (ContextMenuStrip)sender!;
@@ -453,10 +400,10 @@ public partial class ButtonLauncherForm : Form
         var entry = tabData?.GetButton(pos.Row, pos.Col);
 
         bool hasCommand = entry is not null && !entry.IsEmpty;
-        buttonContextMenu.Items[0].Enabled = hasCommand; // 実行
-        buttonContextMenu.Items[1].Enabled = true; // 編集 (未割当でも可)
-        buttonContextMenu.Items[2].Enabled = hasCommand; // フォルダを開く
-        buttonContextMenu.Items[6].Enabled = hasCommand; // 削除
+        buttonContextMenu.Items[0].Enabled = hasCommand;
+        buttonContextMenu.Items[1].Enabled = true;
+        buttonContextMenu.Items[2].Enabled = hasCommand;
+        buttonContextMenu.Items[6].Enabled = hasCommand;
     }
 
     private void GridButton_MouseDown(object? sender, MouseEventArgs e)
@@ -470,13 +417,11 @@ public partial class ButtonLauncherForm : Form
 
         if (Data.IsLocked)
         {
-            // ロック時のD&D開始準備 (実際のDoDragDropはMouseMoveで閾値超過時に呼ぶ)
             dragSource = btn;
             dragState.Start(entry, tabData!, e.Location);
         }
         else
         {
-            // フォルダー判定は長押し成立後にワーカースレッドで行う
             longPressCandidate = btn;
             longPressEntry = entry;
             longPressStartPoint = e.Location;
@@ -504,7 +449,6 @@ public partial class ButtonLauncherForm : Form
 
         if (isNew)
         {
-            // 未割当ボタン: 新規エントリを作成して編集
             entry = new ButtonEntry { Row = pos.Row, Col = pos.Col };
         }
 
@@ -513,7 +457,6 @@ public partial class ButtonLauncherForm : Form
         {
             if (isNew)
             {
-                // 新規: FileNameが設定されていれば保存
                 if (!entry!.IsEmpty)
                 {
                     tabData.SetButton(pos.Row, pos.Col, entry);
@@ -544,7 +487,6 @@ public partial class ButtonLauncherForm : Form
         var tabData = GetCurrentTabData();
         if (tabData is null) return;
 
-        // コマンド選択ダイアログ
         using var dlg = new CommandSelectDialog(owner.CommandList);
         if (dlg.ShowDialogOver(this) == DialogResult.OK && dlg.SelectedCommand is not null)
         {
@@ -577,7 +519,6 @@ public partial class ButtonLauncherForm : Form
 
     private void GridButton_MouseMove(object? sender, MouseEventArgs e)
     {
-        // 移動閾値超過なら長押しをキャンセル (D&Dへ譲る)
         if (longPressTimer.Enabled &&
             (Math.Abs(e.Location.X - longPressStartPoint.X) > SystemInformation.DragSize.Width / 2 ||
              Math.Abs(e.Location.Y - longPressStartPoint.Y) > SystemInformation.DragSize.Height / 2))
@@ -591,12 +532,10 @@ public partial class ButtonLauncherForm : Form
         if (dragSource is null || !dragState.IsActive) return;
         if (e.Button != MouseButtons.Left) return;
 
-        // ドラッグ閾値を超えたらDoDragDropを開始
         if (dragState.ShouldBeginDrag(e.Location, SystemInformation.DragSize))
         {
             var btn = (Button)sender!;
             btn.DoDragDrop(dragState.DragEntry!, DragDropEffects.Move);
-            // DoDragDropはブロッキング。戻り後にフィールドをクリア
             dragSource = null;
             dragState.Reset();
         }
@@ -612,7 +551,6 @@ public partial class ButtonLauncherForm : Form
             longPressEntry = null;
         }
 
-        // ドラッグ閾値未到達でリリースした場合のクリア (通常クリック動作を壊さない)
         if (e.Button == MouseButtons.Left)
         {
             dragSource = null;
@@ -645,7 +583,6 @@ public partial class ButtonLauncherForm : Form
 
         if (e.Data!.GetDataPresent(DataFormats.FileDrop))
         {
-            // ファイルD&D → コマンド登録
             string[] files = (string[])e.Data!.GetData(DataFormats.FileDrop)!;
             if (files.Length > 0)
             {
@@ -659,7 +596,6 @@ public partial class ButtonLauncherForm : Form
         }
         else if (dragSource is not null && dragState.IsActive && dragState.SourceTab is not null)
         {
-            // ボタン間D&D (クロスタブ対応)
             var srcPos = (ButtonPosition)dragSource.Tag!;
             var srcTabData = dragState.SourceTab;
 
@@ -670,10 +606,8 @@ public partial class ButtonLauncherForm : Form
 
             if (srcTabData != destTabData)
             {
-                // クロスタブ: ソースタブのボタンを部分更新
                 UpdateButton(FindTabPage(srcTabData), srcTabData, srcPos.Row, srcPos.Col);
             }
-            // デスティネーション側の2ボタンを部分更新
             UpdateButton(tabControl1.SelectedTab, destTabData, pos.Row, pos.Col);
             if (srcTabData == destTabData)
             {
@@ -683,9 +617,6 @@ public partial class ButtonLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// タブヘッダー上でのドラッグオーバー: マウス位置のタブに切り替え
-    /// </summary>
     private void TabControl1_DragOver(object? sender, DragEventArgs e)
     {
         if (dragSource is null) { e.Effect = DragDropEffects.None; return; }
@@ -696,12 +627,8 @@ public partial class ButtonLauncherForm : Form
         e.Effect = DragDropEffects.Move;
     }
 
-    /// <summary>
-    /// タブヘッダー上にドロップされた場合のフォールバック
-    /// </summary>
     private void TabControl1_DragDrop(object? sender, DragEventArgs e)
     {
-        // タブヘッダー上にドロップされた場合は何もしない (ボタン上へのドロップで処理される)
     }
 
     #endregion
@@ -769,7 +696,6 @@ public partial class ButtonLauncherForm : Form
         var result = ButtonLauncherPresenter.DeleteTab(Data, tabIndex);
         if (!result.Success) return;
 
-        // UI更新: TabPageを削除
         tabControl1.TabPages.Remove(tabPage);
 
         DiagnosticLog.Info("Tab.Delete", $"index={tabIndex}");
@@ -778,10 +704,8 @@ public partial class ButtonLauncherForm : Form
 
     private void MoveTab(int fromIndex, int toIndex)
     {
-        // データモデルの順序を入れ替え + DefaultTabIndex調整
         ButtonLauncherPresenter.MoveTab(Data, fromIndex, toIndex);
 
-        // TabControlの順序を入れ替え
         var tabPage = tabControl1.TabPages[fromIndex];
         tabControl1.TabPages.Remove(tabPage);
         tabControl1.TabPages.Insert(toIndex, tabPage);
@@ -809,7 +733,6 @@ public partial class ButtonLauncherForm : Form
             var previous = btn.Image;
             btn.Image = icon.ToBitmap();
             previous?.Dispose();
-            // 非選択タブも再描画するため親パネル全体を対象にする。
             btn.Parent?.Invalidate(true);
         });
     }
@@ -818,9 +741,6 @@ public partial class ButtonLauncherForm : Form
 
     #region ヘルパー
 
-    /// <summary>
-    /// グリッドサイズ変更を適用 (ウィンドウサイズ再計算 + タブ再構築)
-    /// </summary>
     public void ApplyGridSize()
     {
         ClientSize = ButtonLauncherPresenter.CalculateWindowSize(
@@ -835,9 +755,6 @@ public partial class ButtonLauncherForm : Form
         return tabControl1.SelectedTab?.Tag as ButtonTab;
     }
 
-    /// <summary>
-    /// ButtonTabに対応するTabPageを検索
-    /// </summary>
     private TabPage? FindTabPage(ButtonTab tabData)
     {
         foreach (TabPage page in tabControl1.TabPages)

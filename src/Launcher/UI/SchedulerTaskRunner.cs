@@ -3,14 +3,8 @@ using Launcher.Infrastructure;
 
 namespace Launcher.UI;
 
-/// <summary>専用STAで予定のタスクを順番に実行する。</summary>
 public static class SchedulerTaskRunner
 {
-    /// <summary>
-    /// アイテムのタスクを逐次実行する。STAスレッドで実行し、呼出元へはすぐに戻る。
-    /// タスク列 (タスク間の待機を含む) が終わると、そのスレッドで<paramref name="onCompleted"/>を1回呼ぶ。
-    /// 完了はらんちゃ内のタスク列の完了であり、起動した外部アプリの終了は待たない。
-    /// </summary>
     public static void ExecuteItemTasks(
         Control owner,
         SchedulerItem item,
@@ -53,7 +47,7 @@ public static class SchedulerTaskRunner
                 });
                 DiagnosticLog.Info("Scheduler.Task", "completed");
             }
-#pragma warning disable CA1031 // スケジューラータスクの例外は無視して次のタスクへ進む
+#pragma warning disable CA1031
             catch (Exception ex)
             {
                 DiagnosticLog.Error("Scheduler.Task", ex, "このタスクを中断し、次のタスクへ進んだ。繰り返す場合は、タスクトレイの「スケジューラー設定」で該当タスクの種類と設定値を確認する");

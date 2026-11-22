@@ -11,14 +11,12 @@ public partial class CommandLauncherForm : Form
     CommandLauncherPresenter presenter;
 
     InputState state;
-    int lastFocus;   // エディットボックスにフォーカスがある場合0、リストビューにある場合1
+    int lastFocus;
 
-    bool recurseGuard; //再帰防止
+    bool recurseGuard;
 
-    // ボタン型ランチャーのアイコン読み込みを優先するため低優先度で動作
     AsyncIconLoader iconLoader = new(threadPriority: ThreadPriority.BelowNormal);
 
-    // LocationChanged/SizeChangedの高頻度保存を抑制するデバウンスタイマー
     System.Windows.Forms.Timer saveConfigTimer;
 
     public CommandLauncherForm(ApplicationHostForm applicationHostForm, ContextMenuStrip mainMenu)
@@ -37,12 +35,10 @@ public partial class CommandLauncherForm : Form
 
         iconLoader.IconLoaded += iconLoader_IconLoaded;
 
-        // ListViewのちらつき・初回表示の遅延を軽減
         listView1.GetType().GetProperty("DoubleBuffered",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
             ?.SetValue(listView1, true);
 
-        // LocationChanged/SizeChangedのデバウンス保存タイマー
         saveConfigTimer = new System.Windows.Forms.Timer { Interval = 200 };
         saveConfigTimer.Tick += (s, e) =>
         {
@@ -52,19 +48,13 @@ public partial class CommandLauncherForm : Form
         components ??= new Container();
         components.Add(saveConfigTimer);
 
-        // ウィンドウの位置・サイズを設定
         Size = ownerForm.Config.WindowSize;
         this.SetLocationWithClip(ownerForm.Config.WindowPos);
     }
 
-    /// <summary>
-    /// リストビューとアイコンの事前初期化 (初回Show前に呼ぶ)
-    /// </summary>
     public void PreInitialize()
     {
-        // ハンドル作成 (アイコン非同期読み込みのInvokeに必要)
         _ = Handle;
-        // リストビューの構築とアイコン読み込みを事前実行
         textBox1_TextChanged(this, EventArgs.Empty);
         ApplyConfig();
         // 初回表示時にtextBox1へフォーカスを設定 (Alt+Spaceでシステムメニューが出る問題の対策)
@@ -77,7 +67,6 @@ public partial class CommandLauncherForm : Form
     private void CommandLauncherForm_Load(object sender, EventArgs e)
     {
         if (initialized) return;
-        // PreInitialize未実行時のフォールバック
         textBox1_TextChanged(this, EventArgs.Empty);
         ApplyConfig();
     }
@@ -98,16 +87,12 @@ public partial class CommandLauncherForm : Form
             }
         }
 
-        // 遅延保存が残っていたら即フラッシュ
         FlushPendingSave();
 
         iconLoader.IconLoaded -= iconLoader_IconLoaded;
         iconLoader.Dispose();
     }
 
-    /// <summary>
-    /// デバウンスタイマーによる遅延保存が残っていたら即座に保存する。
-    /// </summary>
     public void FlushPendingSave()
     {
         if (saveConfigTimer.Enabled)
@@ -117,9 +102,6 @@ public partial class CommandLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// コンフィグの反映
-    /// </summary>
     public void ApplyConfig()
     {
         Size s = ownerForm.Config.WindowSize;
@@ -136,16 +118,11 @@ public partial class CommandLauncherForm : Form
             WindowHelper.EnableCloseButton(this);
         }
 
-        // アイコンの再読込
         ReloadIcons();
 
-        // ReplaceEnv
         ownerForm.RequestEnvironmentReplacement();
     }
 
-    /// <summary>
-    /// コマンド一覧の表示だけを更新 (アイコン再読込なし)
-    /// </summary>
     public void RefreshCommandList()
     {
         textBox1_TextChanged(this, EventArgs.Empty);
@@ -185,9 +162,6 @@ public partial class CommandLauncherForm : Form
 
     #region CommandLauncherForm
 
-    /// <summary>
-    /// Locationが変わった
-    /// </summary>
     private void CommandLauncherForm_LocationChanged(object sender, EventArgs e)
     {
         if (Visible && WindowState == FormWindowState.Normal)
@@ -198,9 +172,6 @@ public partial class CommandLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// Sizeが変わった
-    /// </summary>
     private void CommandLauncherForm_SizeChanged(object sender, EventArgs e)
     {
         if (Visible && WindowState == FormWindowState.Normal)
@@ -211,9 +182,6 @@ public partial class CommandLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// アクティブになった
-    /// </summary>
     private void CommandLauncherForm_Activated(object sender, EventArgs e)
     {
         BringToFront();
@@ -221,15 +189,10 @@ public partial class CommandLauncherForm : Form
         textBox1.Focus();
     }
 
-    /// <summary>
-    /// 非アクティブになった
-    /// </summary>
     private void CommandLauncherForm_Deactivate(object sender, EventArgs e)
     {
         if (ownerForm.Config.WindowHideNoActive)
         {
-            // 子フォームも追跡中の非同期通知も無い場合のみ隠す。
-            // 通知表示中に隠すと、ShowHideで表示→通知をActivate→Deactivateで即再度隠れる問題を防ぐ。
             if (OwnedForms.Length <= 0 && !ownerForm.HasActiveNotifications)
             {
                 HideWindow();
@@ -237,9 +200,6 @@ public partial class CommandLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// 非アクティブになった
-    /// </summary>
     private void CommandLauncherForm_Leave(object sender, EventArgs e)
     {
         if (ownerForm.Config.WindowHideNoActive)
@@ -255,17 +215,11 @@ public partial class CommandLauncherForm : Form
 
     #region textBox1
 
-    /// <summary>
-    /// エディットボックスがフォーカスを受け取った
-    /// </summary>
     private void textBox1_Enter(object sender, EventArgs e)
     {
         lastFocus = 0;
     }
 
-    /// <summary>
-    /// テキストが入力された
-    /// </summary>
     private void textBox1_TextChanged(object sender, EventArgs e)
     {
         if (recurseGuard) return;
@@ -284,18 +238,14 @@ public partial class CommandLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// キー押された
-    /// </summary>
     private void textBox1_KeyPress(object sender, KeyPressEventArgs e)
     {
         if (e.KeyChar == '\b')
-        { // バックスペース押された
+        {
             int n1 = textBox1.SelectionStart;
             int n2 = n1 + textBox1.SelectionLength;
             if (textBox1.Text.Length == n2)
             {
-                // 選択部分（補完候補）を削除し、残りの処理はデフォルト動作に委ねる
                 System.Diagnostics.Debug.Assert(!recurseGuard);
                 recurseGuard = true;
                 try
@@ -310,27 +260,24 @@ public partial class CommandLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// キー押し下げられた
-    /// </summary>
     private void textBox1_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.KeyCode == Keys.Up)
-        { // ↑キー
+        {
             if (0 < listView1.Items.Count)
             {
                 SetListViewSelection(listView1.Items.Count - 1);
                 listView1.Select();
-                e.Handled = true; // 処理した
+                e.Handled = true;
             }
         }
         else if (e.KeyCode == Keys.Down)
-        { // ↓キー
+        {
             if (0 < listView1.Items.Count)
             {
                 SetListViewSelection(0);
                 listView1.Select();
-                e.Handled = true; // 処理した
+                e.Handled = true;
             }
         }
         else if (e.KeyCode == Keys.Enter && e.Modifiers == Keys.Control)
@@ -345,17 +292,11 @@ public partial class CommandLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// キー離された
-    /// </summary>
     private void textBox1_KeyUp(object sender, KeyEventArgs e)
     {
         UpdateButtonText();
     }
 
-    /// <summary>
-    /// 選択部分(補完部分)を除いたテキストの取得。
-    /// </summary>
     string GetInputText()
     {
         int n1 = textBox1.SelectionStart;
@@ -370,9 +311,6 @@ public partial class CommandLauncherForm : Form
 
     #endregion
 
-    /// <summary>
-    /// ListViewを一番上選択状態にしてテキストボックスにフォーカスを設定
-    /// </summary>
     private void ActivateTextBox()
     {
         SetListViewSelection(0);
@@ -382,17 +320,11 @@ public partial class CommandLauncherForm : Form
 
     #region listView1
 
-    /// <summary>
-    /// リストビューがフォーカスを受け取った
-    /// </summary>
     private void listView1_Enter(object sender, EventArgs e)
     {
         lastFocus = 1;
     }
 
-    /// <summary>
-    /// ダブルクリック
-    /// </summary>
     private void listView1_MouseDoubleClick(object sender, MouseEventArgs e)
     {
         switch (ownerForm.Config.ItemDoubleClick)
@@ -404,28 +336,23 @@ public partial class CommandLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// キー
-    /// </summary>
     private void listView1_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.KeyCode == Keys.Up)
-        { // ↑
+        {
             if (listView1.SelectedIndices.Count == 1 &&
                 listView1.SelectedIndices[0] == 0)
             {
-                // リストビュー一番上
                 ActivateTextBox();
                 e.Handled = true;
             }
             UpdateButtonText();
         }
         else if (e.KeyCode == Keys.Down)
-        { // ↓
+        {
             if (listView1.SelectedIndices.Count == 1 &&
                 listView1.SelectedIndices[0] == listView1.Items.Count - 1)
             {
-                // リストビュー一番下
                 listView1.EnsureVisible(0);
                 ActivateTextBox();
                 e.Handled = true;
@@ -433,13 +360,13 @@ public partial class CommandLauncherForm : Form
             UpdateButtonText();
         }
         else if (e.KeyCode == Keys.Home)
-        { // Home
+        {
             ActivateTextBox();
             e.Handled = true;
             UpdateButtonText();
         }
         else if (e.KeyCode == Keys.Apps)
-        { // メニュー
+        {
             listView1.ContextMenuStrip!.Show(listView1, new Point());
             e.Handled = true;
         }
@@ -455,17 +382,11 @@ public partial class CommandLauncherForm : Form
         }
     }
 
-    /// <summary>
-    /// キー離された
-    /// </summary>
     private void listView1_KeyUp(object sender, KeyEventArgs e)
     {
         UpdateButtonText();
     }
 
-    /// <summary>
-    /// リストビューの指定した項目を選択してスクロール位置を合わせる。
-    /// </summary>
     private void SetListViewSelection(int index)
     {
         if (0 <= index && index < listView1.Items.Count)
@@ -512,7 +433,7 @@ public partial class CommandLauncherForm : Form
             {
                 ownerForm.SaveEditedCommand(command);
                 ApplyConfig();
-                textBox1.Clear(); // 入力欄をクリアする。
+                textBox1.Clear();
             }
         }
     }
@@ -558,9 +479,6 @@ public partial class CommandLauncherForm : Form
 
     #region iconLoader
 
-    /// <summary>
-    /// アイコン読み込まれたイベント。
-    /// </summary>
     void iconLoader_IconLoaded(object? sender, IconLoadedEventArgs e)
     {
         IconReceiver.Receive(this, iconLoader, e, icon =>
@@ -583,22 +501,17 @@ public partial class CommandLauncherForm : Form
 
     #endregion
 
-    /// <summary>
-    /// textBox1_TextChanged
-    /// </summary>
     private void InnerTextChanged()
     {
         var result = presenter.ProcessTextChange(GetInputText());
         state = result.State;
 
-        // 補完処理 (テキストボックスへの反映はUI操作のためForm側で行う)
         if (result.CompletionText is not null)
         {
             textBox1.Text = result.CompletionText;
             textBox1.Select(result.SelectionStart, result.SelectionLength);
         }
 
-        // コマンドをリストビューへ (AddRangeでまとめて追加して描画コストを削減)
         listView1.Items.Clear();
         var items = new ListViewItem[result.MatchedCommands.Count];
         int idx = 0;
@@ -618,9 +531,6 @@ public partial class CommandLauncherForm : Form
         UpdateButtonText();
     }
 
-    /// <summary>
-    /// ボタンのテキストの更新
-    /// </summary>
     private void UpdateButtonText()
     {
         var texts = CommandLauncherPresenter.GetButtonTexts(state, lastFocus, GetInputModifiers());
@@ -628,12 +538,8 @@ public partial class CommandLauncherForm : Form
         button2.Text = texts.Button2Text;
     }
 
-    /// <summary>
-    /// 実行・設定ボタン
-    /// </summary>
     private void button1_Click(object sender, EventArgs e)
     {
-        // フォーカス位置に応じたコマンド取得
         Command? firstCommand = listView1.Items.Count > 0
             ? (Command)listView1.Items[0].Tag! : null;
         Command? selectedCommand = listView1.SelectedItems.Count > 0
@@ -710,7 +616,6 @@ public partial class CommandLauncherForm : Form
 
     private void ExecuteCommand(Command command, string input)
     {
-        // 表示名は実行したコマンドの識別に使う。診断ログは利用者本人が読むため記録する。
         DiagnosticLog.Info("Command.Execute", $"name={command.Name}");
         var snapshot = command.Clone();
         var config = ownerForm.Config.Clone();
@@ -718,9 +623,6 @@ public partial class CommandLauncherForm : Form
         ShellLaunchService.Start(this, () => snapshot.Execute(input, config, handle, NativeMethods.IsUserAnAdmin()));
     }
 
-    /// <summary>
-    /// キャンセルボタン
-    /// </summary>
     private void button2_Click(object sender, EventArgs e)
     {
         if (state == InputState.Empty)

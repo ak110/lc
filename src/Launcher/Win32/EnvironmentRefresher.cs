@@ -23,16 +23,10 @@ public sealed class EnvironmentRefresher
 
     public EnvironmentRefresher()
     {
-        // 起動時に一度スナップショットを取り、削除検出用の名前集合を初期化する
-        // (この時点ではプロセスの環境ブロックには手を加えない)
         var snapshot = ReadRegistryVars();
         trackedNames = new HashSet<string>(snapshot.Keys, StringComparer.OrdinalIgnoreCase);
     }
 
-    /// <summary>
-    /// レジストリを読み直し、差分をプロセスの環境ブロックに反映する。
-    /// </summary>
-    /// <returns>何らかの変更を適用した場合は true</returns>
     public bool Refresh()
     {
         var newVars = ReadRegistryVars();
@@ -47,10 +41,6 @@ public sealed class EnvironmentRefresher
         return diff.Updates.Count > 0;
     }
 
-    /// <summary>
-    /// レジストリ由来の値と現在値から、プロセスの環境ブロックへ適用する変更と次回の追跡対象を求める。
-    /// 削除（値が null の変更）は前回の追跡対象に含まれ今回のレジストリに無い変数だけとする。
-    /// </summary>
     public static EnvironmentRefreshDiff ComputeRefreshDiff(
         IReadOnlyDictionary<string, string> newRegistryVars,
         IReadOnlyDictionary<string, string?> currentProcessVars,
@@ -72,10 +62,6 @@ public sealed class EnvironmentRefresher
         return new EnvironmentRefreshDiff(updates, nextTracked);
     }
 
-    /// <summary>
-    /// レジストリから環境変数を読み込み、Explorer 互換のマージ規則を適用した
-    /// 期待値の辞書を構築する。
-    /// </summary>
     static Dictionary<string, string> ReadRegistryVars()
     {
         var systemRaw = ReadKey(Registry.LocalMachine, SystemEnvKeyPath);

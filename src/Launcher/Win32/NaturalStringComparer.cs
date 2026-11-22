@@ -2,10 +2,6 @@ using System.Runtime.InteropServices;
 
 namespace Launcher.Win32;
 
-/// <summary>
-/// エクスプローラ互換の数値順比較 ("9" &lt; "10") を提供するIComparer&lt;string&gt;。
-/// shlwapi.dllのStrCmpLogicalW()のラッパー。
-/// </summary>
 public sealed class NaturalStringComparer : IComparer<string>
 {
     public static NaturalStringComparer Instance { get; } = new();

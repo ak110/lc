@@ -2,7 +2,6 @@ using Launcher.Infrastructure;
 
 namespace Launcher.Core;
 
-/// <summary>コマンド、予定、フォルダーの起動条件を同じ規則で組み立てる。</summary>
 public static class LaunchRequestBuilder
 {
     public static ShellProcessStartInfo Create(

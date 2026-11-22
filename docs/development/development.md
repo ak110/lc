@@ -58,7 +58,7 @@ agent-toolkitは任意であり、lcの開発に必須ではない。
 | `mise run docs`        | ドキュメントのローカルプレビュー                            |
 
 Linux環境の`mise run test`は`dotnet-test`を除く全チェック（ビルド、整形、Analyzer、文書lintなど）を実行し、`mise run build`で配布用exeを作成できる。
-テスト実行（`dotnet-test`）はWindowsとWindows CIで行う。
+テストはwin-x64のself-containedで出力され、そのtesthostをLinuxで起動できないため、テスト実行（`dotnet-test`）はWindowsとWindows CIで行う。
 
 ## サプライチェーン攻撃対策
 
@@ -105,7 +105,6 @@ Dependabot security updatesによる自動修正PRの作成は無効にし、検
 
 ## 環境制限
 
-- Linuxでは`dotnet-test`だけを実行できない（テストはwin-x64のself-containedで出力され、そのtesthostをLinuxで起動できないため）
 - WinForms Designer.csのマルチバイト文字を含むテーブル等ではmarkdownlint MD060が発生する場合がある
 
 ## リリース手順

@@ -7,57 +7,28 @@ public class Command : ICloneable, IComparable<Command>, IComparable
 {
     public Command() { }
 
-    /// <summary>派生型へ変換するときも、コマンドの全プロパティを引き継ぐ。</summary>
     protected Command(Command source)
     {
         foreach (var property in CopyProperties)
             property.SetValue(this, property.GetValue(source));
     }
 
-    // 公開プロパティの追加を派生型への変換にも自動で反映する。
     private static readonly System.Reflection.PropertyInfo[] CopyProperties = typeof(Command)
         .GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
         .Where(property => property.CanRead && property.CanWrite && property.GetIndexParameters().Length == 0)
         .ToArray();
 
-    /// <summary>
-    /// コマンド名
-    /// </summary>
     public string Name { get; set; } = string.Empty;
-    /// <summary>
-    /// 実行ファイル等へのパス
-    /// </summary>
     public string FileName { get; set; } = string.Empty;
-    /// <summary>
-    /// 実行時の引数
-    /// </summary>
     public string Param { get; set; } = string.Empty;
-    /// <summary>
-    /// 作業ディレクトリ
-    /// </summary>
     public string? WorkDir { get; set; }
-    /// <summary>
-    /// 表示モード
-    /// </summary>
     public WindowStyle Show { get; set; } = WindowStyle.Normal;
-    /// <summary>
-    /// 優先度
-    /// </summary>
     public ProcessPriorityLevel Priority { get; set; } = ProcessPriorityLevel.Normal;
-    /// <summary>
-    /// 管理者権限で実行
-    /// </summary>
     public bool RunAsAdmin { get; set; }
 
-    /// <summary>
-    /// アイコンのインデックス
-    /// </summary>
     [XmlIgnore]
     public int IconIndex { get; set; } = -1;
 
-    /// <summary>
-    /// 複製の作成
-    /// </summary>
     public Command Clone()
     {
         Command copy = (Command)MemberwiseClone();
@@ -92,7 +63,6 @@ public class Command : ICloneable, IComparable<Command>, IComparable
 
     #endregion
 
-    /// <summary>親フォルダーを開く要求を作成する。パスの解決はWindows側が担う。</summary>
     public static ShellProcessStartInfo? OpenDirectory(Config config, string? resolvedPath, IntPtr owner = default)
     {
         string? path = resolvedPath;
@@ -112,7 +82,6 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         return null;
     }
 
-    /// <summary>コマンドの起動要求を作成する。実行と権限の照会は呼び出し側が担う。</summary>
     public ShellProcessStartInfo Execute(string input, Config config, IntPtr owner, bool isAdministrator)
     {
         string? args = "";
@@ -128,7 +97,6 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         return info;
     }
 
-    // 後方互換性のためのレガシーフォーマット読み込み用
     private static readonly string[] LineSeparators = ["\r\n", "\n"];
 
     public static Command LoadFrom(string? name, string data)
@@ -153,18 +121,11 @@ public class Command : ICloneable, IComparable<Command>, IComparable
         return cmd;
     }
 
-    /// <summary>
-    /// 入力文字列を、コマンド名と引数に分ける。
-    /// </summary>
-    /// <returns>コマンド名が一致した場合は true。false の場合の戻り値は信頼できない。</returns>
     public bool ParseInput(string input, Config config, out string commandName, out string? arguments)
     {
         return CommandMatcher.ParseInput(Name, input, config, out commandName, out arguments);
     }
 
-    /// <summary>
-    /// コマンド名と比較し、一致した長さに応じた点数を返す。
-    /// </summary>
     public int GetMatchScore(string input, Config config)
     {
         return CommandMatcher.GetMatchScore(Name, input, config);

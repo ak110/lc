@@ -2,7 +2,6 @@ using Launcher.Win32;
 
 namespace Launcher.UI;
 
-/// <summary>コマンドのPATH解決とファイル参照ダイアログへの反映をまとめる。</summary>
 public static class CommandFileBrowser
 {
     public static void Browse(IWin32Window owner, TextBox input, OpenFileDialog dialog)

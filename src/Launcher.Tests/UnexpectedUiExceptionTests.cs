@@ -29,7 +29,6 @@ public sealed class UnexpectedUiExceptionTests
                 failed = true;
                 throw new InvalidOperationException(marker);
             };
-            // 常駐プロセスが受け取る既存のSHOWHIDEメッセージを送る。
             ObserveReport(() => new WindowHelper(host.Handle).SendMessage(
                 0x8000, (nint)0x11747b79, (nint)0x14d94a96), launcher, marker, host.PrepareShutdown);
             failed.Should().BeTrue();
@@ -80,7 +79,7 @@ public sealed class UnexpectedUiExceptionTests
             host.FailNextHandleCreation(marker);
             ObserveReport(() =>
             {
-                keybd_event(0x7B, 0, 0, nint.Zero); // 設定で選択できるF12
+                keybd_event(0x7B, 0, 0, nint.Zero);
                 keybd_event(0x7B, 0, 2, nint.Zero);
             }, launcher, marker, host.PrepareShutdown);
             host.FailureRaised.Should().BeTrue();
@@ -139,7 +138,6 @@ public sealed class UnexpectedUiExceptionTests
         try
         {
             var launcher = host.OwnedForms.OfType<CommandLauncherForm>().Single();
-            // 他のテストのログ行と区別できる一意の表示名。起動は要求生成の例外で止め、実際のプロセスは起動しない。
             var command = new Command { Name = "lcsynthcommand" + Guid.NewGuid().ToString("N")[..8], FileName = "invalid\uD800command.exe" };
             host.CommandList.Add(command);
             host.RefreshCommandLauncherFormCommandList();
@@ -189,9 +187,8 @@ public sealed class UnexpectedUiExceptionTests
         {
             if (completed) return;
             completed = true;
-            // 終了処理もメッセージループ内で検査し、既定の例外ダイアログへ漏らさない。
             try { shutdown(); }
-#pragma warning disable CA1031 // 終了処理の失敗も試験結果へ返す
+#pragma warning disable CA1031
             catch (Exception ex) { escaped ??= ex; }
 #pragma warning restore CA1031
             context.ExitThread();
@@ -203,7 +200,7 @@ public sealed class UnexpectedUiExceptionTests
                 triggered = true;
                 triggering = true;
                 try { trigger(); }
-#pragma warning disable CA1031 // メッセージループ内の失敗をループ終了後のアサーションへ返す
+#pragma warning disable CA1031
                 catch (Exception ex) { escaped = ex; }
 #pragma warning restore CA1031
                 finally { triggering = false; }

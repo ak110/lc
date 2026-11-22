@@ -1,9 +1,7 @@
 namespace Launcher.Infrastructure;
 
-/// <summary>読込結果の案内。復元の確認だけが利用者の回答を必要とする。</summary>
 public sealed record ConfigLoadNotice(string Message, bool ConfirmRestore = false);
 
-/// <summary>読込結果に応じた案内と復元の選択を扱う。画面の表示は呼び出し元へ委ねる。</summary>
 public static class ConfigLoadInteraction
 {
     public static T Accept<T>(ConfigLoadResult<T> result, ConfigFile<T> store, T fallback,
@@ -45,7 +43,6 @@ public static class ConfigLoadInteraction
         }
         catch (Exception ex) when (ConfigFailure.IsRead(ex))
         {
-            // 復元失敗のログはRestoreFromBackupが固定の拡張子で記録済み。
             show(new ConfigLoadNotice("復元できませんでした。保存の停止は続きます。\r\n"
                 + "バックアップと本体の内容、フォルダーの読み書き権限を確認してから再起動してください。"));
             return fallback;

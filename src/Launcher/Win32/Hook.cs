@@ -60,12 +60,8 @@ public sealed class MouseHookEventArgs : EventArgs
     }
 }
 
-/// <summary>
-/// マウスフック・キーボードフック。
-/// </summary>
 public static class Hook
 {
-    /// <summary>フックコールバックの例外をログへ書くときの次の操作</summary>
     const string HookFailureNextAction =
         "この入力を通常の処理へ渡し、フックを継続した。ホットキーやマウス操作が動作しなくなった場合は、タスクトレイの「再起動」でらんちゃを再起動する";
 
@@ -126,13 +122,7 @@ public static class Hook
         public IntPtr dwExtraInfo; // ULONG_PTR
     }
 
-    /// <summary>
-    /// KeyHookなイベント
-    /// </summary>
     public static event EventHandler<KeyHookEventArgs>? KeyHook;
-    /// <summary>
-    /// MouseHookなイベント
-    /// </summary>
     public static event EventHandler<MouseHookEventArgs>? MouseHook;
 
     static LowLevelKeyboardProc? keyProc; // GC対策に持っておく必要がある
@@ -144,7 +134,7 @@ public static class Hook
     {
         UnsetKeyHook();
         // フックプロシージャ内では例外を外に漏らすとシステム全体に影響するため、全例外をキャッチする
-#pragma warning disable CA1031 // フックプロシージャは全例外をキャッチしてCallNextHookExを呼ぶ必要がある
+#pragma warning disable CA1031
         keyProc = new LowLevelKeyboardProc(delegate (int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam)
         {
             try
@@ -175,7 +165,6 @@ public static class Hook
             throw new Win32Exception();
         }
         System.Diagnostics.Trace.WriteLine($"Hook.Register keyboard handle={keyHook} thread={Environment.CurrentManagedThreadId}");
-        // 多重登録を防ぐため一度解除してから再登録
         AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
         AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
     }
@@ -184,7 +173,7 @@ public static class Hook
     {
         UnsetMouseHook();
         // フックプロシージャ内では例外を外に漏らすとシステム全体に影響するため、全例外をキャッチする
-#pragma warning disable CA1031 // フックプロシージャは全例外をキャッチしてCallNextHookExを呼ぶ必要がある
+#pragma warning disable CA1031
         mouseProc = new LowLevelMouseProc(delegate (int nCode, IntPtr wParam, ref MSLLHOOKSTRUCT lParam)
         {
             try
@@ -215,7 +204,6 @@ public static class Hook
             throw new Win32Exception();
         }
         System.Diagnostics.Trace.WriteLine($"Hook.Register mouse handle={mouseHook} thread={Environment.CurrentManagedThreadId}");
-        // 多重登録を防ぐため一度解除してから再登録
         AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
         AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
     }

@@ -1,6 +1,5 @@
 namespace Launcher.Core;
 
-/// <summary>UI入力の判断に使う修飾キー。OSのキーコードから独立する。</summary>
 [Flags]
 public enum InputModifiers
 {

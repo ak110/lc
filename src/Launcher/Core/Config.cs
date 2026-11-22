@@ -16,9 +16,6 @@ public sealed class Config : ConfigStore, ICloneable
 
     public string HotKey { get; set; } = "Win+Space";
 
-    /// <summary>
-    /// メモパッド表示用のホットキー。既定は未割り当て (空文字)。
-    /// </summary>
     public string MemoHotKey { get; set; } = "";
 
     public bool OpenDirByFiler { get; set; } = true;
@@ -47,9 +44,6 @@ public sealed class Config : ConfigStore, ICloneable
 
     public ButtonLauncherActivation ButtonLauncherActivation { get; set; } = ButtonLauncherActivation.Disabled;
 
-    /// <summary>
-    /// 後方互換: 旧UseTreeLauncher=true → LeftThenRight にマッピング
-    /// </summary>
     [XmlElement("UseTreeLauncher")]
     public bool UseTreeLauncherCompat
     {
@@ -63,13 +57,9 @@ public sealed class Config : ConfigStore, ICloneable
         }
     }
 
-    /// <summary>
-    /// 複製の作成
-    /// </summary>
     public Config Clone()
     {
         Config copy = (Config)MemberwiseClone();
-        // MemberwiseCloneはListの参照を共有するためディープコピーする
         copy.ReplaceEnv = [.. ReplaceEnv];
         return copy;
     }
@@ -85,19 +75,10 @@ public sealed class Config : ConfigStore, ICloneable
 
     #region Serialize/Deserialize
 
-    /// <summary>
-    /// 書き込み
-    /// </summary>
     public bool Save(Action<ConfigSaveFailure> notify, string? baseName = null) => Store.Save(this, notify, baseName);
 
-    /// <summary>
-    /// 読み込み
-    /// </summary>
     public static ConfigLoadResult<Config> Load(string? baseName = null) => Store.Load(baseName);
 
-    /// <summary>
-    /// 保存データ (.cfg) の読込・復元。XMLとして読めない旧形式の設定も読む
-    /// </summary>
     public static ConfigFile<Config> Store { get; } = new(".cfg", LoadLegacy);
 
     static Config LoadLegacy(byte[] content)
@@ -108,9 +89,6 @@ public sealed class Config : ConfigStore, ICloneable
 
     #endregion
 
-    /// <summary>
-    /// 後方互換性のための処理
-    /// </summary>
     public static Config LoadFrom(LegacyConfigReader reader)
     {
         var data = new Config();

@@ -1,6 +1,5 @@
 namespace Launcher.Infrastructure;
 
-/// <summary>永続診断ログの共通出力先。</summary>
 public static class DiagnosticLog
 {
     static readonly DiagnosticLogWriter writer = CreateWriter();
@@ -18,7 +17,6 @@ public static class DiagnosticLog
     public static void Error(string category, string message, string nextAction) => writer.Error(category, message, nextAction);
     public static void Error(string category, Exception ex, string nextAction) => writer.Error(category, ex, nextAction);
 
-    /// <summary>旧crash-logのログをlogsへ移し、移動先の既存ログを保護する。</summary>
     public static void MigrateLegacyDirectory(string exeDir)
     {
         try
@@ -42,7 +40,7 @@ public static class DiagnosticLog
                 Directory.Delete(legacy);
             }
         }
-#pragma warning disable CA1031 // 例外を捕捉し移行処理を中断する（診断機構が本体クラッシュ原因にならない方針）
+#pragma warning disable CA1031
         catch (Exception)
 #pragma warning restore CA1031
         {

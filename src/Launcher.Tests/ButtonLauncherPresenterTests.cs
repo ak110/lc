@@ -11,11 +11,10 @@ public sealed class ButtonLauncherPresenterTests
     [Fact]
     public void CalculateWindowSize_基本的な計算()
     {
-        // 7列7行、ボタン64x64、ツールバー25px、タブヘッダー21px
         var result = ButtonLauncherPresenter.CalculateWindowSize(7, 7, 64, 64, 25, 21);
 
-        result.Width.Should().Be(7 * 64);   // 448
-        result.Height.Should().Be(7 * 64 + 25 + 21); // 494
+        result.Width.Should().Be(7 * 64);
+        result.Height.Should().Be(7 * 64 + 25 + 21);
     }
 
     [Fact]
@@ -24,7 +23,7 @@ public sealed class ButtonLauncherPresenterTests
         var result = ButtonLauncherPresenter.CalculateWindowSize(1, 1, 64, 64, 25, 21);
 
         result.Width.Should().Be(64);
-        result.Height.Should().Be(64 + 25 + 21); // 110
+        result.Height.Should().Be(64 + 25 + 21);
     }
 
     #endregion
@@ -107,7 +106,6 @@ public sealed class ButtonLauncherPresenterTests
         var entry = new ButtonEntry { Name = "test", FileName = "test.exe", Row = 0, Col = 0 };
         state.Start(entry, new ButtonTab { Name = "Tab1" }, new Point(100, 100));
 
-        // ドラッグサイズ4x4の場合、2px以内の移動は閾値未満
         state.ShouldBeginDrag(new Point(101, 101), new Size(4, 4)).Should().BeFalse();
     }
 
@@ -118,7 +116,6 @@ public sealed class ButtonLauncherPresenterTests
         var entry = new ButtonEntry { Name = "test", FileName = "test.exe", Row = 0, Col = 0 };
         state.Start(entry, new ButtonTab { Name = "Tab1" }, new Point(100, 100));
 
-        // 10px移動はドラッグサイズ4x4の閾値を超える
         state.ShouldBeginDrag(new Point(110, 100), new Size(4, 4)).Should().BeTrue();
     }
 
@@ -136,14 +133,12 @@ public sealed class ButtonLauncherPresenterTests
 
         ButtonLauncherPresenter.SwapButtons(srcTab, 0, 0, destTab, 1, 2, entry);
 
-        // ドロップ先にエントリが配置される
         var dest = destTab.GetButton(1, 2);
         dest.Should().NotBeNull();
         dest!.Name.Should().Be("app");
         dest.Row.Should().Be(1);
         dest.Col.Should().Be(2);
 
-        // ドラッグ元は空になる
         srcTab.GetButton(0, 0).Should().BeNull();
     }
 
@@ -158,12 +153,10 @@ public sealed class ButtonLauncherPresenterTests
 
         ButtonLauncherPresenter.SwapButtons(tab, 0, 0, tab, 1, 1, entryA);
 
-        // Aがドロップ先に
         var dest = tab.GetButton(1, 1);
         dest.Should().NotBeNull();
         dest!.Name.Should().Be("A");
 
-        // Bがドラッグ元に
         var src = tab.GetButton(0, 0);
         src.Should().NotBeNull();
         src!.Name.Should().Be("B");
@@ -181,14 +174,12 @@ public sealed class ButtonLauncherPresenterTests
 
         ButtonLauncherPresenter.SwapButtons(tab1, 0, 0, tab2, 2, 3, entryA);
 
-        // Tab2(2,3)にAが配置される
         var dest = tab2.GetButton(2, 3);
         dest.Should().NotBeNull();
         dest!.Name.Should().Be("A");
         dest.Row.Should().Be(2);
         dest.Col.Should().Be(3);
 
-        // Tab1(0,0)にBが配置される
         var src = tab1.GetButton(0, 0);
         src.Should().NotBeNull();
         src!.Name.Should().Be("B");

@@ -1,8 +1,5 @@
 namespace Launcher.UI;
 
-/// <summary>
-/// System.Windows.Forms関係のヘルパー関数など。
-/// </summary>
 public static class FormsHelper
 {
     /// <summary>
@@ -20,9 +17,6 @@ public static class FormsHelper
         return dialog.ShowDialog(owner);
     }
 
-    /// <summary>
-    /// クリッピングしてフォームの位置をセット
-    /// </summary>
     public static void SetLocationWithClip(this Control form, Point pos)
     {
         double distance = double.MaxValue;
@@ -42,7 +36,6 @@ public static class FormsHelper
         form.Bounds = result;
     }
 
-    /// <summary>カーソルのある画面内で、カーソルを中心にフォームを配置する。</summary>
     public static void CenterOnCursor(Control form)
     {
         Point cursor = Cursor.Position;
@@ -61,9 +54,6 @@ public static class FormsHelper
 
     #region リストボックス・コンボボックスなど
 
-    /// <summary>
-    /// 配列をコントロールにセットする
-    /// </summary>
     public static void SetArray<T>(ListBox c, List<T> a) where T : ICloneable
     {
         InnerSetArray(c, a.ConvertAll(x => x.Clone()).ToArray());
@@ -77,9 +67,6 @@ public static class FormsHelper
         if (0 < a.Length) c.SelectedIndex = Math.Min(Math.Max(n, 0), a.Length - 1);
         c.EndUpdate();
     }
-    /// <summary>
-    /// コントロールから配列を取得する
-    /// </summary>
     public static List<T> GetArray<T>(ListBox c)
     {
         List<T> array = [];
@@ -90,9 +77,6 @@ public static class FormsHelper
         return array;
     }
 
-    /// <summary>
-    /// 選択中のアイテムの次の位置に追加する。
-    /// </summary>
     public static void Insert(ListBox listBox, object item)
     {
         System.Diagnostics.Debug.Assert(listBox.SelectionMode == SelectionMode.One);
@@ -109,9 +93,6 @@ public static class FormsHelper
         listBox.SelectedItem = item;
     }
 
-    /// <summary>
-    /// 選択中のアイテムを上に移動する。
-    /// </summary>
     public static void UpSelected(ListBox listBox)
     {
         System.Diagnostics.Debug.Assert(listBox.SelectionMode == SelectionMode.One);
@@ -125,9 +106,6 @@ public static class FormsHelper
         }
     }
 
-    /// <summary>
-    /// 選択中のアイテムを下に移動する。
-    /// </summary>
     public static void DownSelected(ListBox listBox)
     {
         System.Diagnostics.Debug.Assert(listBox.SelectionMode == SelectionMode.One);
@@ -141,9 +119,6 @@ public static class FormsHelper
         }
     }
 
-    /// <summary>
-    /// 選択中のアイテムを削除する。
-    /// </summary>
     public static void RemoveSelected(ListBox listBox)
     {
         System.Diagnostics.Debug.Assert(listBox.SelectionMode == SelectionMode.One);

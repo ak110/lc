@@ -4,18 +4,13 @@ using Launcher.Infrastructure;
 
 namespace Launcher.Core;
 
-/// <summary>
-/// メモパッドのデータ
-/// </summary>
 public sealed class MemoData : ConfigStore
 {
-    /// <summary>閉じたタブを保持するゴミ箱の既定上限</summary>
     public const int DefaultClosedTabsLimit = 10;
 
     public List<MemoTab> Tabs { get; set; } = new List<MemoTab>();
     public int CurrentTabIndex { get; set; }
 
-    /// <summary>閉じたタブのゴミ箱。先頭ほど新しい。</summary>
     public List<MemoTab> ClosedTabs { get; set; } = new List<MemoTab>();
     public int ClosedTabsLimit { get; set; } = DefaultClosedTabsLimit;
 
@@ -25,25 +20,13 @@ public sealed class MemoData : ConfigStore
     public string FontName { get; set; } = "Consolas";
     public float FontSize { get; set; } = 11f;
 
-    /// <summary>
-    /// 書き込み
-    /// </summary>
     public bool Save(Action<ConfigSaveFailure> notify, string? baseName = null) => Store.Save(this, notify, baseName);
 
-    /// <summary>
-    /// 読み込み
-    /// </summary>
     public static ConfigLoadResult<MemoData> Load(string? baseName = null) => Store.Load(baseName);
 
-    /// <summary>
-    /// 保存データ (.memo.cfg) の読込・復元
-    /// </summary>
     public static ConfigFile<MemoData> Store { get; } = new(".memo.cfg");
 }
 
-/// <summary>
-/// メモパッドのタブ。タブ名と本文のプレーンテキストを保持する。
-/// </summary>
 public sealed class MemoTab
 {
     private string name = "";

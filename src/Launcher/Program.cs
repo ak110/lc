@@ -7,20 +7,15 @@ namespace Launcher;
 
 static class Program
 {
-    /// <summary>常駐中のらんちゃへメッセージが届かなかったときにコンソールへ出す次の操作</summary>
     const string ResidentNotReachedNextAction =
         "らんちゃが起動しているか（タスクマネージャーのらんちゃ.exe）を確認し、起動していなければ起動してから同じコマンドを再実行してください。";
 
-    /// <summary>
-    /// アプリケーションのメインエントリポイント。
-    /// </summary>
     [STAThread]
     static void Main(string[] args)
     {
         DiagnosticLog.Info("App.Start",
             $"pid={Environment.ProcessId} version={Application.ProductVersion}");
 
-        // UIスレッド以外で発生した未処理例外を捕捉する。
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
             var message = e.ExceptionObject is Exception ex
@@ -47,7 +42,6 @@ static class Program
             NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
 
         bool exit = false;
-        // 引数の処理
         for (int i = 0; i < args.Length; i++)
         {
             if (args[i] == "/close")
@@ -102,7 +96,6 @@ static class Program
             }
             else
             {
-                // 認識できない引数は無視する。
             }
         }
 

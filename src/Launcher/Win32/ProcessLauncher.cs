@@ -31,8 +31,6 @@ public static class ProcessLauncher
             uint priorityValue = (uint)priority;
             if (!SetPriorityClass(hProcess, priorityValue))
             {
-                // プロセスは起動済みのため優先度設定失敗を例外扱いにしない。
-                // GetLastError を保存してからログ記録する。
                 var ex = new System.ComponentModel.Win32Exception();
                 DiagnosticLog.Warn(
                     "Process.SetPriority",
@@ -146,7 +144,7 @@ public static class ProcessLauncher
         [MarshalAs(UnmanagedType.LPTStr)] public string? lpClass;
         public IntPtr hkeyClass;
         public uint dwHotKey;
-        public IntPtr hIcon; // hMonitor
+        public IntPtr hIcon;
         public IntPtr hProcess;
     }
 

@@ -5,9 +5,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// ConfigStoreのシリアライズ/デシリアライズ ラウンドトリップテスト
-/// </summary>
 public sealed class ConfigStoreTests
 {
     [Theory]
@@ -47,8 +44,6 @@ public sealed class ConfigStoreTests
         xml.Should().Contain($"<CloseButton>{value}</CloseButton>");
         XmlTestSerializer.DeserializeFromString<Config>(xml).CloseButton.Should().Be(action);
     }
-
-    // --- CommandList を使ったラウンドトリップ ---
 
     [Fact]
     public void CommandList_空オブジェクトのラウンドトリップ()
@@ -95,8 +90,6 @@ public sealed class ConfigStoreTests
         restored.Commands[0].RunAsAdmin.Should().BeTrue();
         restored.Commands[1].Name.Should().Be("cmd");
     }
-
-    // --- シリアライズ/デシリアライズ ラウンドトリップ ---
 
     [Fact]
     public void ラウンドトリップ_全プロパティが保持される()
@@ -160,8 +153,6 @@ public sealed class ConfigStoreTests
         restored.ButtonLauncherActivation.Should().Be(original.ButtonLauncherActivation);
     }
 
-    // --- ファイル経由のラウンドトリップ ---
-
     [Fact]
     public void 保存窓口を通したファイルのラウンドトリップ()
     {
@@ -185,8 +176,6 @@ public sealed class ConfigStoreTests
             File.Delete(store.FileName(baseName) + ".bak");
         }
     }
-
-    // --- Command ラウンドトリップ ---
 
     [Fact]
     public void Command_ラウンドトリップで全フィールドが保持される()
@@ -212,8 +201,6 @@ public sealed class ConfigStoreTests
         deserialized.Priority.Should().Be(ProcessPriorityLevel.High);
         deserialized.RunAsAdmin.Should().BeTrue();
     }
-
-    // --- Config ButtonLauncherActivation ---
 
     [Theory]
     [InlineData(ButtonLauncherActivation.Disabled)]

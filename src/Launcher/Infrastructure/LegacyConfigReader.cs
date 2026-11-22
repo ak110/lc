@@ -2,26 +2,17 @@ using System.Text;
 
 namespace Launcher.Infrastructure;
 
-/// <summary>
-/// Themis::CConfig 形式の cfg ファイルを読み込む。
-/// </summary>
 public sealed class LegacyConfigReader
 {
     Dictionary<string, string> data = new Dictionary<string, string>();
 
-    /// <summary>
-    /// stream から読み込む。
-    /// </summary>
-#pragma warning disable CA2000 // StreamReader の所有権は this() に委譲される。
+#pragma warning disable CA2000
     public LegacyConfigReader(Stream stream, bool toBeClose)
         : this(new StreamReader(stream, Encoding.Default), true)
 #pragma warning restore CA2000
     {
         if (toBeClose) stream.Dispose();
     }
-    /// <summary>
-    /// TextReader から読み込む。
-    /// </summary>
     public LegacyConfigReader(TextReader reader, bool toBeClose)
     {
         while (true)
@@ -51,23 +42,14 @@ public sealed class LegacyConfigReader
 
     #endregion
 
-    /// <summary>
-    /// bool 値として取得する。
-    /// </summary>
     public bool Bool(string n)
     {
         return bool.Parse(data[n]);
     }
-    /// <summary>
-    /// 整数として取得する。
-    /// </summary>
     public int Num(string n)
     {
         return int.Parse(data[n]);
     }
-    /// <summary>
-    /// エスケープシーケンスを展開した文字列として取得する。
-    /// </summary>
     public string EscapedString(string n)
     {
         string str = data[n];
@@ -100,9 +82,6 @@ public sealed class LegacyConfigReader
         }
         return builder.ToString();
     }
-    /// <summary>
-    /// 改行を含まない文字列として取得する。
-    /// </summary>
     public string Indirect(string n)
     {
         return data[n];

@@ -5,9 +5,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// 保存データの読込失敗時の保存停止・バックアップ・復元を、隔離した保存先で検証する。
-/// </summary>
 public sealed class ConfigRecoveryTests : IDisposable
 {
     const string Broken = "<?xml version=\"1.0\"?><CommandList><Commands><Command>";
@@ -76,7 +73,6 @@ public sealed class ConfigRecoveryTests : IDisposable
         brokenFiles.Should().ContainSingle();
         File.ReadAllText(brokenFiles[0]).Should().Be(Broken);
 
-        // 復元後は編集・保存・再読込ができる
         restored.Add(new Command { Name = "c", FileName = "c.exe" });
         restored.Save(failures.Add, baseName);
         var reloaded = CommandList.Load(baseName);
@@ -123,7 +119,6 @@ public sealed class ConfigRecoveryTests : IDisposable
         Commands("a").Save(failures.Add, baseName);
         var loaded = CommandList.Load(baseName).Value;
         byte[] original = File.ReadAllBytes(CommandFile);
-        // バックアップの位置をフォルダーでふさぎ、作成を失敗させる
         File.Delete(ConfigFileState.BackupName(CommandFile));
         Directory.CreateDirectory(ConfigFileState.BackupName(CommandFile));
 
@@ -147,7 +142,6 @@ public sealed class ConfigRecoveryTests : IDisposable
         Names(result.Value).Should().Equal("a");
         result.BackupError.Should().NotBeNull();
 
-        // 正常に作成できる場合は失敗を含めない
         Directory.Delete(ConfigFileState.BackupName(CommandFile));
         CommandList.Load(baseName).BackupError.Should().BeNull();
     }
@@ -187,7 +181,6 @@ public sealed class ConfigRecoveryTests : IDisposable
         File.WriteAllText(CommandFile, Broken);
         CommandList.Load(baseName).Status.Should().Be(ConfigLoadStatus.Failed);
 
-        // 旧形式の行（キー = 値）と同じ形の部分を含む破損XMLも旧形式として受理しない
         File.WriteAllText(CommandFile, "<?xml version=\"1.0\"?>\r\n<CommandList>\r\n  <Commands>\r\n    <Command>x = a.exe\\n\\n\\n0\\n3\r\n");
         CommandList.Load(baseName).Status.Should().Be(ConfigLoadStatus.Failed);
 
@@ -283,7 +276,6 @@ public sealed class ConfigRecoveryTests : IDisposable
         result.Value.Tabs.Add(new MemoTab { Name = "t", Text = "入力" });
         var save = () => result.Value.Save(failures.Add, baseName);
 
-        // 自動保存は失敗を通知して続行し、原本を保持する。
         save().Should().BeFalse();
         failures.Should().ContainSingle().Which.Kind.Should().Be(ConfigSaveFailureKind.Blocked);
         File.ReadAllBytes(memoFile).Should().Equal(original);
@@ -292,22 +284,18 @@ public sealed class ConfigRecoveryTests : IDisposable
     [Fact]
     public void ドットを含むベース名の障害ログはベース名の一部を残さず設定の種類を記録する()
     {
-        // 拡張子をテストごとに一意にし、並行する他のテストのログ行と区別する。
         string ext = ".lc" + Guid.NewGuid().ToString("N")[..8] + ".cfg";
         var store = new ConfigFile<Config>(ext);
         string dotted = Path.Combine(dir, "launcher.synth-user.synth-host");
         string file = store.FileName(dotted);
         var log = DiagnosticLogDelta.Start();
 
-        // バックアップ更新失敗（バックアップの位置をフォルダーで塞ぐ）
         store.Save(new Config(), failures.Add, dotted).Should().BeTrue();
         File.Delete(file + ".bak");
         Directory.CreateDirectory(file + ".bak");
         store.Load(dotted).BackupError.Should().NotBeNull();
-        // 読込失敗
         File.WriteAllText(file, "<Config>");
         store.Load(dotted).Status.Should().Be(ConfigLoadStatus.Failed);
-        // 本体が無くバックアップだけがある
         Directory.Delete(file + ".bak");
         File.WriteAllText(file + ".bak", "<Config/>");
         File.Delete(file);

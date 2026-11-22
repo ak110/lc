@@ -1,6 +1,5 @@
 namespace Launcher.Core;
 
-/// <summary>D&amp;D操作の開始元と移動量を管理する。</summary>
 public sealed class DragDropState
 {
     sealed record ActiveDrag(ButtonEntry Entry, ButtonTab SourceTab, Point StartPoint);

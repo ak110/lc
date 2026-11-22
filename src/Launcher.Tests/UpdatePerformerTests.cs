@@ -30,9 +30,7 @@ public sealed class UpdatePerformerTests
         result.Should().Contain(@"move /Y ""C:\app\sub\lib.dll"" ""C:\app\_update_backup_update_ab12\sub\lib.dll""");
         result.Should().Contain(@"copy /Y ""C:\temp\update\app.exe"" ""C:\app\app.exe""");
         result.Should().Contain(@"copy /Y ""C:\temp\update\sub\lib.dll"" ""C:\app\sub\lib.dll""");
-        // ユーザーデータ(.cfgなど)は対象に含まれない
         result.Should().NotContain(".cfg");
-        // 旧方式の一括コピーと.oldの削除は使わない
         result.Should().NotContain("xcopy");
         result.Should().NotContain(".old");
     }
@@ -80,7 +78,6 @@ public sealed class UpdatePerformerTests
         var result = UpdatePerformer.GenerateBatchScript(
             1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", @"C:\temp\_update.bat", files);
 
-        // バッチ自身が最後に自分を削除
         result.Should().Contain(@"del /F /Q ""C:\temp\_update.bat""");
     }
 
@@ -128,7 +125,6 @@ public sealed class UpdatePerformerTests
         env.WriteNew("app.exe", "new-app");
         env.WriteNew(@"sub\lib.dll", "new-lib");
 
-        // 追加ファイルと app.exe のコピー後、lib.dll のコピーで失敗させる
         env.Run(["added.txt", "app.exe", @"sub\lib.dll"], ["copy:2"]).Should().Be("restored");
 
         env.ReadApp("app.exe").Should().Be("old-app");
@@ -148,7 +144,6 @@ public sealed class UpdatePerformerTests
         env.WriteNew(@"sub\lib.dll", "new-lib");
         env.WriteNew("added.txt", "new-added");
 
-        // app.exe の退避後、lib.dll の退避で失敗させる
         env.Run(["app.exe", @"sub\lib.dll", "added.txt"], ["backup:1"]).Should().Be("restored");
 
         env.ReadApp("app.exe").Should().Be("old-app");
@@ -166,7 +161,6 @@ public sealed class UpdatePerformerTests
         env.WriteNew("app.exe", "new-app");
         env.WriteNew(@"sub\lib.dll", "new-lib");
 
-        // lib.dll のコピーで失敗させ、app.exe の復旧も失敗させる
         env.Run(["app.exe", @"sub\lib.dll"], ["copy:1", "restore:0"]).Should().Be("restore_failed");
 
         File.ReadAllText(Path.Combine(env.BackupDir, "app.exe")).Should().Be("old-app");
@@ -217,9 +211,6 @@ public sealed class UpdatePerformerTests
 
         public string ReadApp(string relative) => File.ReadAllText(AppPath(relative));
 
-        /// <summary>
-        /// バッチを生成して実行し、結果ファイルの内容を返す。
-        /// </summary>
         public string Run(List<string> files, IReadOnlyCollection<string> failSteps)
         {
             string resultPath = Path.Combine(_root, "result.txt");
@@ -249,9 +240,6 @@ public sealed class UpdatePerformerTests
             File.WriteAllText(path, content);
         }
 
-        /// <summary>
-        /// 終了済みプロセスのID。バッチの親プロセス待機をすぐに抜けさせる。
-        /// </summary>
         private static int FinishedProcessId()
         {
             using var process = Process.Start(new ProcessStartInfo("cmd.exe", "/c exit")

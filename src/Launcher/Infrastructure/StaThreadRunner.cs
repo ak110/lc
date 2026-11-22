@@ -1,8 +1,5 @@
 namespace Launcher.Infrastructure;
 
-/// <summary>
-/// バックグラウンドSTAスレッドで処理を開始する。
-/// </summary>
 public static class StaThreadRunner
 {
     public static Thread Start(Action action)

@@ -4,21 +4,8 @@ using Microsoft.Win32;
 
 namespace Launcher.Win32;
 
-/// <summary>
-/// ファイル・ディレクトリ操作のユーティリティ。
-/// </summary>
 public static class FileHelper
 {
-    /// <summary>
-    /// コマンド登録パスを正規化し、bare name の場合は PATH 解決する。
-    /// <see cref="PathHelper.PathNormalize"/> と <see cref="ResolveExecutable"/> を順に適用する薄いラッパー。
-    /// </summary>
-    /// <remarks>
-    /// アイコン読み込み用の <see cref="ResolveExecutable"/> と同じ解決順を操作系 (「フォルダを開く」や
-    /// 参照ダイアログの起点設定など) にも適用し、パス解釈を揃えるために使う。
-    /// </remarks>
-    /// <param name="path">ファイル名またはパス</param>
-    /// <returns>正規化・解決されたパス。null または空文字入力時は空文字を返す</returns>
     public static string ResolveCommandPath(string? path)
     {
         if (string.IsNullOrEmpty(path))
@@ -56,7 +43,6 @@ public static class FileHelper
             return resolved;
         }
 
-        // SearchPath API による PATH 検索。
         resolved = SearchPathApi(path);
         if (resolved is not null)
         {
@@ -66,12 +52,8 @@ public static class FileHelper
         return path;
     }
 
-    /// <summary>
-    /// App Paths レジストリから bare name を検索する。HKCU → HKLM の順。
-    /// </summary>
     static string? SearchAppPaths(string name)
     {
-        // 名前そのものと、PATHEXT の各拡張子を付けた名前を試す。
         var namesToTry = new List<string> { name };
         if (!Path.HasExtension(name))
         {
@@ -90,7 +72,6 @@ public static class FileHelper
                 using var key = root.OpenSubKey(subKeyPath);
                 if (key?.GetValue(null) is string value && !string.IsNullOrEmpty(value))
                 {
-                    // 引用符を除去し、環境変数を展開する。
                     string expanded = Environment.ExpandEnvironmentVariables(
                         value.Trim('"'));
                     if (File.Exists(expanded))
@@ -104,9 +85,6 @@ public static class FileHelper
         return null;
     }
 
-    /// <summary>
-    /// SearchPath API で PATH 上のファイルを検索する。
-    /// </summary>
     static string? SearchPathApi(string name)
     {
         if (Path.HasExtension(name))
@@ -114,7 +92,6 @@ public static class FileHelper
             return SearchPathSingle(name, null);
         }
 
-        // 拡張子なしの場合は PATHEXT の各拡張子で試す。
         foreach (string ext in GetPathExtExtensions())
         {
             string? found = SearchPathSingle(name, ext);
@@ -127,9 +104,6 @@ public static class FileHelper
         return null;
     }
 
-    /// <summary>
-    /// SearchPath API を1回呼び出す。
-    /// </summary>
     static string? SearchPathSingle(string fileName, string? extension)
     {
         var buffer = new StringBuilder(260);
@@ -139,7 +113,6 @@ public static class FileHelper
         {
             return buffer.ToString();
         }
-        // バッファ不足の場合は再試行する。
         if (result > buffer.Capacity)
         {
             buffer.EnsureCapacity(result);
@@ -153,9 +126,6 @@ public static class FileHelper
         return null;
     }
 
-    /// <summary>
-    /// PATHEXT 環境変数から拡張子リストを取得する。
-    /// </summary>
     static string[] GetPathExtExtensions()
     {
         string? pathExt = Environment.GetEnvironmentVariable("PATHEXT");
@@ -166,16 +136,12 @@ public static class FileHelper
         return pathExt.Split(';', StringSplitOptions.RemoveEmptyEntries);
     }
 
-    /// <summary>
-    /// パスへの書き込み可否を判定する。ディレクトリは一時ファイル生成で、ファイルは実際に開いて確認する。
-    /// </summary>
     public static bool IsWritable(string path)
     {
         if (Directory.Exists(path))
         {
             return IoFailureHandler.IgnoreIoErrors(() =>
             {
-                // 一時ファイルを作成して書き込み可否を判定する。
                 string tmp = Path.Combine(path, "{6F5EC475-CA08-485c-B782-AEC4466FE3E1}.tmp");
                 if (File.Exists(tmp))
                 {
@@ -194,7 +160,6 @@ public static class FileHelper
         {
             return IoFailureHandler.IgnoreIoErrors(() =>
             {
-                // 実際に書き込み用に開いて確認する。
                 using FileStream s = File.OpenWrite(path);
                 return s.CanWrite;
             }, false);

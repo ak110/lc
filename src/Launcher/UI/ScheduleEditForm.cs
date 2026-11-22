@@ -13,7 +13,6 @@ public partial class ScheduleEditForm : Form
 
         checkBoxEnable.Checked = v.Enable;
 
-        // 時刻設定
         radioTimeSpecific.Checked = v.TimeType == ScheduleTimeType.SpecificTimes;
         radioTimeInterval.Checked = v.TimeType == ScheduleTimeType.Interval;
         FormsHelper.SetArray(listBoxTimes, v.Times);
@@ -23,7 +22,6 @@ public partial class ScheduleEditForm : Form
         numTimeIntervalEndM.Value = v.TimeIntervalEnd.Minute;
         numTimeInterval.Value = v.TimeIntervalMinutes;
 
-        // 日付設定
         radioDateWeekday.Checked = v.DateType == ScheduleDateType.Weekday;
         radioDateInterval.Checked = v.DateType == ScheduleDateType.DateInterval;
         numWeeksStartM.Value = v.WeeksStart.Month;

@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 
 namespace Launcher.Core;
 
-/// <summary>メモの検索位置と置換結果を計算する。</summary>
 public static class MemoSearch
 {
     public static (int start, int length) FindMatch(
@@ -106,7 +105,6 @@ public static class MemoSearch
                 localCount++;
                 if (pattern.Length == 0)
                 {
-                    // ゼロ幅一致の無限ループを回避 (通常は正規表現側の話だが安全策)
                     if (index < text.Length) sb.Append(text[index]);
                     index++;
                 }
@@ -116,12 +114,6 @@ public static class MemoSearch
         }
     }
 
-    /// <summary>
-    /// 正規表現の置換後文字列に含まれる文字エスケープを文字へ展開し、.NETの置換パターンを返す。
-    /// 解釈するのは正規表現パターンと同じ文字エスケープ (<c>\n</c>、<c>\r</c>、<c>\t</c>、<c>\a</c>、<c>\f</c>、
-    /// <c>\v</c>、<c>\e</c>、<c>\0</c>、<c>\xHH</c>、<c>\uHHHH</c>、<c>\\</c>) で、それ以外の<c>\</c>と続く文字はそのまま残す。
-    /// エスケープから生じた<c>$</c>は<c>$$</c>へ変え、<c>$1</c>などの置換パターンとして解釈させない。
-    /// </summary>
     static string ExpandReplacementEscapes(string replacement)
     {
         var sb = new StringBuilder(replacement.Length);
@@ -168,7 +160,6 @@ public static class MemoSearch
             }
             else
             {
-                // 解釈しないエスケープは2文字ともそのまま残す。
                 sb.Append(c).Append(next);
                 i += 2;
             }

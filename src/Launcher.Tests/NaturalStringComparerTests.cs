@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// NaturalStringComparerのテスト
-/// </summary>
 public sealed class NaturalStringComparerTests
 {
     [Fact]

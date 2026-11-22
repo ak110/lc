@@ -4,13 +4,8 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// Configの省略時の値と複製のテスト
-/// </summary>
 public sealed class ConfigTests
 {
-    // --- デフォルト値の検証 ---
-
     [Fact]
     public void デフォルト値_Debug()
     {
@@ -101,8 +96,6 @@ public sealed class ConfigTests
         config.ReplaceEnv.Should().BeEmpty();
     }
 
-    // --- Clone ---
-
     [Fact]
     public void Clone_全プロパティがコピーされる()
     {
@@ -141,7 +134,6 @@ public sealed class ConfigTests
 
         var clone = original.Clone();
 
-        // clone側を変更しても元に影響しないことを確認
         clone.ReplaceEnv.Add("TEMP");
         clone.ReplaceEnv.Remove("SystemRoot");
 

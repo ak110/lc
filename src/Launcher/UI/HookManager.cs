@@ -5,34 +5,24 @@ using Launcher.Win32;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// グローバルキーボード/マウスフックの管理。
-/// ホットキー判定とボタンランチャー起動トリガーの状態管理を担当。
-/// </summary>
 sealed class HookManager
 {
     readonly Func<Config> getConfig;
     readonly Func<IntPtr> getHandle;
     readonly Action<Action> beginInvoke;
 
-    /// <summary>
-    /// ホットキー1組の設定。一致時に表示指示 (<c>Message</c>) を送る。
-    /// </summary>
     readonly struct HotkeyBinding
     {
         public Keys VKey { get; init; }
         public KeyTable.Modifiers Modifiers { get; init; }
 
-        /// <summary>一致時に送る表示指示 (WM_APPMSG の lParam)</summary>
         public IntPtr Message { get; init; }
     }
 
-    // ホットキー設定 (ランチャー用・メモパッド用などの複数組)
     List<HotkeyBinding> hotkeys = [];
 
     readonly HookInputState inputState = new();
 
-    // 自注入だけを物理修飾キー状態の追跡から除外する。
     const nint HookManagerInjectionMarker = 0x4C43_0001;
 
     static PhysicalModifierKey PhysicalKeyFor(int keyCode) => keyCode switch
@@ -67,9 +57,6 @@ sealed class HookManager
                 (nint)e.HookStruct.dwExtraInfo == HookManagerInjectionMarker);
     }
 
-    /// <param name="getConfig">現在のConfig取得デリゲート</param>
-    /// <param name="getHandle">ウィンドウハンドル取得デリゲート</param>
-    /// <param name="beginInvoke">UIスレッドへの非同期ディスパッチ</param>
     public HookManager(Func<Config> getConfig, Func<IntPtr> getHandle, Action<Action> beginInvoke)
     {
         this.getConfig = getConfig;
@@ -77,11 +64,6 @@ sealed class HookManager
         this.beginInvoke = beginInvoke;
     }
 
-    /// <summary>
-    /// ホットキー設定を更新する。
-    /// 各組はホットキー文字列と一致時に送る表示指示の対で渡す。
-    /// 解析できない組 (未割り当て・不正文字列) は登録しない。
-    /// </summary>
     public void UpdateHotkeys(params (string HotKey, IntPtr Message)[] bindings)
     {
         var list = new List<HotkeyBinding>();
@@ -101,14 +83,10 @@ sealed class HookManager
         hotkeys = list;
     }
 
-    /// <summary>
-    /// フックを登録する
-    /// </summary>
     public void Register()
     {
         Hook.KeyHook += OnKeyHook;
         Hook.MouseHook += OnMouseHook;
-        // 登録時点で押下中の修飾キーをL/R個別に取り込み、続く物理イベントで追従する
         inputState.Reset();
         int[] modifierKeys = [VK_LSHIFT, VK_RSHIFT, VK_LCONTROL, VK_RCONTROL, VK_LMENU, VK_RMENU, VK_LWIN, VK_RWIN];
         foreach (int key in modifierKeys)
@@ -117,9 +95,6 @@ sealed class HookManager
         Hook.SetMouseHook();
     }
 
-    /// <summary>
-    /// フックを解除する
-    /// </summary>
     public void Unregister()
     {
         Hook.KeyHook -= OnKeyHook;
@@ -138,7 +113,6 @@ sealed class HookManager
         }
         finally
         {
-            // 一方の解除に失敗しても、残る解除と入力状態の回収を行う。
             inputState.Reset();
         }
     }
@@ -159,7 +133,6 @@ sealed class HookManager
                             continue;
                         }
                         e.Handled = true;
-                        // キーリピート時は初回押下のみ処理する (多重発火防止)
                         if (inputState.TryBeginHotkey(e.HookStruct.vkCode))
                         {
                             // Alt修飾時はダミーキー入力を注入してAlt単独リリースによる
@@ -176,7 +149,6 @@ sealed class HookManager
                             // フックコールバックが再入するため、マウスフックと同様にPostMessageを使う
                             ResidentMessages.Post(getHandle(), hk.Message);
                         }
-                        // 一致したら他の組は判定しない
                         break;
                     }
                 }
@@ -190,7 +162,7 @@ sealed class HookManager
             }
         }
         // フックコールバック内では例外を外に漏らすとフックチェーンが破綻するため、全例外をキャッチする
-#pragma warning disable CA1031 // フックコールバック内の最終防御ライン
+#pragma warning disable CA1031
         catch (Exception ex)
         {
             // ログと表示をともにUIへ配送し、フック内では同期I/Oを行わない。
@@ -217,7 +189,7 @@ sealed class HookManager
 
         }
         // フックコールバック内では例外を外に漏らすとフックチェーンが破綻するため、全例外をキャッチする
-#pragma warning disable CA1031 // フックコールバック内の最終防御ライン
+#pragma warning disable CA1031
         catch (Exception ex)
         {
             // ログと表示をともにUIへ配送し、フック内では同期I/Oを行わない。

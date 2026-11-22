@@ -5,12 +5,6 @@ using Launcher.Win32;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// フォルダ内容を階層メニュー (ContextMenuStrip) として組み立てるビルダー。
-/// AsyncIconLoader パターンで非同期にアイコンを取得する。
-/// サブフォルダは DropDownOpening で遅延展開する。
-/// 大量項目時の応答性確保のため 1 階層あたりの表示件数上限を設ける。
-/// </summary>
 public sealed class FolderPopupMenuBuilder : IDisposable
 {
     const string LoadingLabel = "(読み込み中)";
@@ -33,20 +27,12 @@ public sealed class FolderPopupMenuBuilder : IDisposable
         iconLoader.IconLoaded += IconLoader_IconLoaded;
     }
 
-    /// <summary>
-    /// AsyncIconLoader を破棄する。Build 経由の Closed イベントでも呼ばれ得るが、
-    /// AsyncIconLoader.Dispose は冪等のため二重呼び出しでも問題ない。
-    /// </summary>
     public void Dispose()
     {
         iconLoader.IconLoaded -= IconLoader_IconLoaded;
         iconLoader.Dispose();
     }
 
-    /// <summary>
-    /// folderPath 直下の内容を表すメニューを構築する。
-    /// 返した ContextMenuStrip は Closed イベントで自身と iconLoader を Dispose する。
-    /// </summary>
     public ContextMenuStrip Build(string folderPath)
     {
         var menu = new ContextMenuStrip();
@@ -68,7 +54,7 @@ public sealed class FolderPopupMenuBuilder : IDisposable
         return menu;
     }
 
-#pragma warning disable CA2000 // ContextMenuStrip が配下 ToolStripItem のライフサイクルを管理
+#pragma warning disable CA2000
     void PopulateItems(
         ToolStrip owner, ToolStripItemCollection items, string folderPath,
         ContextMenuStrip topMenu)
@@ -86,8 +72,6 @@ public sealed class FolderPopupMenuBuilder : IDisposable
         int visibleCount = Math.Min(totalCount, MaxItemsPerLevel);
         int omittedCount = totalCount - visibleCount;
 
-        // ToolStrip.Items.Add は項目ごとに Layout 計算が発生するため、
-        // SuspendLayout/ResumeLayout でまとめて計算する
         owner.SuspendLayout();
         try
         {
@@ -113,7 +97,6 @@ public sealed class FolderPopupMenuBuilder : IDisposable
                 AttachShellMouseHandler(item, entry.FullPath, topMenu);
                 items.Add(item);
 
-                // 非同期アイコン取得: arg に item を渡し IconLoaded で差し替える
                 iconLoader.Load(entry.FullPath, small: true, arg: item);
             }
             if (omittedCount > 0)
@@ -152,26 +135,15 @@ public sealed class FolderPopupMenuBuilder : IDisposable
                 topMenu.Close(ToolStripDropDownCloseReason.ItemClicked);
                 InvokeContextMenuDeferred(path);
             }
-            // 中ボタンなど左右以外のボタン押下時は何もしない
         };
     }
 
-    /// <summary>
-    /// <paramref name="menu"/>にキーボードEnter対応ハンドラを登録する。
-    /// `ToolStripDropDown.KeyDown`でEnterキーを検知し、
-    /// 選択中の項目に対して左クリック相当のShell実行を発火する。
-    /// 発火後は<paramref name="topMenu"/>を`ToolStripDropDownCloseReason.Keyboard`で閉じる。
-    /// 項目の`Tag`に`FolderEntry`を格納した項目のみ対象とする。
-    /// トップメニューとサブメニューの両方で共通に利用する。
-    /// </summary>
     void AttachKeyDownHandler(ToolStripDropDown menu, ContextMenuStrip topMenu)
     {
         menu.KeyDown += (sender, e) =>
         {
-            // Keys.Return と Keys.Enter は同一列挙値のため片方のみ比較で十分である。
             if (e.KeyCode != Keys.Enter) return;
             var strip = (ToolStrip)sender!;
-            // 選択中の項目は公開プロパティ`ToolStripItem.Selected`で判定する。
             foreach (ToolStripItem item in strip.Items)
             {
                 if (item is not ToolStripMenuItem menuItem) continue;
@@ -216,8 +188,6 @@ public sealed class FolderPopupMenuBuilder : IDisposable
             {
                 ShellContextMenuInvoker.Show(path, ownerHwnd, Cursor.Position);
             }
-            // Win32Exception も COMException も ExternalException のサブクラスであるため
-            // ExternalException で両方をカバーできる。
             catch (ExternalException ex)
             {
                 DiagnosticLog.Error("Popup.InvokeContextMenu", ex, "画面の案内に従う");

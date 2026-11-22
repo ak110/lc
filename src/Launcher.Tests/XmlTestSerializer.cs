@@ -2,10 +2,6 @@ using System.Xml.Serialization;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// 設定データのXML表現を検査するための直列化。製品は<c>ConfigFile</c>経由でファイルへ読み書きするため、
-/// 文字列やファイルを直接扱う処理はテストだけが持つ。
-/// </summary>
 internal static class XmlTestSerializer
 {
     public static string SerializeToString<T>(T value)

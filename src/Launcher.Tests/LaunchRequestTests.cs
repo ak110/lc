@@ -154,7 +154,6 @@ public sealed class LaunchRequestTests
         }
         finally
         {
-            // 一意な一時フォルダーを表示する、自分の起動結果だけを閉じる。
             folderWindow ??= FindFolderWindow(directory);
             if (folderWindow is not null)
             {
@@ -167,7 +166,6 @@ public sealed class LaunchRequestTests
 
     static object? FindFolderWindow(string directory)
     {
-        // Shellの公開COM APIで、今回作成したフォルダーのウィンドウだけを識別する。
         dynamic shell = Activator.CreateInstance(Type.GetTypeFromProgID("Shell.Application")!)!;
         try
         {

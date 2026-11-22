@@ -67,7 +67,6 @@ public sealed class ConfigLoadInteractionTests : IDisposable
     [Fact]
     public void ドットを含むベース名で復元に失敗したら種類と型名だけのWarnを1行残す()
     {
-        // 拡張子をテストごとに一意にし、並行する他のテストのログ行と区別する。
         string ext = ".lc" + Guid.NewGuid().ToString("N")[..8] + ".cfg";
         var store = new ConfigFile<Config>(ext);
         string baseName = Path.Combine(directory, "launcher.synth-user.synth-host");
@@ -79,7 +78,6 @@ public sealed class ConfigLoadInteractionTests : IDisposable
 
         ConfigLoadInteraction.Accept(result, store, new Config(), notice =>
         {
-            // 確認の回答時にバックアップを読めない内容へ変える。
             if (notice.ConfirmRestore) File.WriteAllText(store.FileName(baseName) + ".bak", "<Config>");
             return true;
         }, baseName);

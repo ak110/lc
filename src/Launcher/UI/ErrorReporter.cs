@@ -3,27 +3,19 @@ using Launcher.Infrastructure;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// エラー報告処理。
-/// </summary>
 public sealed class ErrorReporter
 {
     static readonly ErrorReporter instance = new();
 
-    /// <summary>想定外の例外の後に続行してよいかの案内。報告画面に常に表示する</summary>
     internal const string ContinueGuidance =
         "続行すると、保存していない編集や実行中の操作が失われることがあります。"
         + "続行した場合も、早めに「終了」または「再起動」を選んでください。";
 
-    /// <summary>不具合の報告先と添付する診断ログの場所・注意。報告画面と致命的なエラーの画面に表示する</summary>
     internal const string ReportGuidance =
         "繰り返し発生する場合は https://github.com/ak110/lc/issues へ報告し、"
         + "らんちゃのフォルダーのlogsにある診断ログを添付してください。"
         + "診断ログには実行したコマンドの表示名が記録されるため、公開してよい内容か確認してから添付してください。";
 
-    /// <summary>
-    /// シングルトンインスタンスを取得する。
-    /// </summary>
     public static ErrorReporter Instance => instance;
 
     Control? owner;
@@ -36,9 +28,6 @@ public sealed class ErrorReporter
     {
     }
 
-    /// <summary>
-    /// Ownerを設定し、破棄時の自動解除を登録する。
-    /// </summary>
     public void SetOwner(Control form, Func<IWin32Window?>? getVisibleOwner = null)
     {
         if (owner is not null) owner.Disposed -= form_Disposed;
@@ -47,20 +36,10 @@ public sealed class ErrorReporter
         form.Disposed += form_Disposed;
     }
 
-    /// <summary>
-    /// アプリケーションの再起動イベント。必ずハンドラを登録すること。
-    /// </summary>
     public event EventHandler? RestartApplication;
 
-    /// <summary>
-    /// アプリケーションの終了イベント。必ずハンドラを登録すること。
-    /// 通常はApplication.Exit()を呼び出す実装でよい。
-    /// </summary>
     public event EventHandler? ExitApplication;
 
-    /// <summary>
-    /// 例外ハンドラを登録する。
-    /// </summary>
     public void Register()
     {
         Application.ThreadException += Application_ThreadException;
@@ -73,18 +52,11 @@ public sealed class ErrorReporter
         getVisibleOwner = null;
     }
 
-    /// <summary>
-    /// トラップされなかった例外が発生すると呼び出されるイベント。
-    /// </summary>
     void Application_ThreadException(object? sender, ThreadExceptionEventArgs e)
     {
         OnException(e.Exception);
     }
 
-    /// <summary>
-    /// 例外を処理する。
-    /// </summary>
-    /// <param name="e">例外オブジェクト</param>
     public void OnException(Exception e)
     {
         if (owner is { IsDisposed: false, InvokeRequired: true } dispatcher)
@@ -105,23 +77,21 @@ public sealed class ErrorReporter
         {
             switch (ShowReporterForm(e))
             {
-                case DialogResult.Abort: // 終了
+                case DialogResult.Abort:
                     ExitApplication?.Invoke(this, EventArgs.Empty);
                     break;
-                case DialogResult.Retry: // 再起動
+                case DialogResult.Retry:
                     RestartApplication?.Invoke(this, EventArgs.Empty);
                     break;
                 case DialogResult.None:
-                case DialogResult.Ignore: // 続行
+                case DialogResult.Ignore:
                     break;
             }
         }
-        // エラーレポーター自体の例外ハンドリング (最終防御ライン)
-#pragma warning disable CA1031 // エラーレポーターは最終防御ラインのため全例外をキャッチする
+#pragma warning disable CA1031
         catch (Exception ex)
         {
             System.Diagnostics.Debug.Fail(ex.ToString());
-            // 再帰呼び出し防止のため例外を無視する。
         }
 #pragma warning restore CA1031
         finally
@@ -130,9 +100,6 @@ public sealed class ErrorReporter
         }
     }
 
-    /// <summary>
-    /// ErrorReporterForm を表示する。
-    /// </summary>
     private DialogResult ShowReporterForm(Exception ex)
     {
         using var form = new ErrorReporterForm(ex);
@@ -140,9 +107,6 @@ public sealed class ErrorReporter
         return form.ShowDialogOver(visibleOwner);
     }
 
-    /// <summary>
-    /// 例外の詳細メッセージを組み立てて返す。
-    /// </summary>
     public static string GetDetailMessage(Exception e)
     {
         var builder = new StringBuilder();

@@ -10,9 +10,6 @@ public static class GitHubUpdateClient
 {
     private const string VersionUrl = "https://ak110.github.io/lc/version.json";
 
-    /// <summary>
-    /// 最新リリース情報を取得
-    /// </summary>
     public static async Task<GitHubRelease?> GetLatestReleaseAsync()
     {
         using var request = SharedHttpClient.CreateUpdateRequest(VersionUrl);
@@ -23,16 +20,12 @@ public static class GitHubUpdateClient
         return JsonSerializer.Deserialize<GitHubRelease>(json);
     }
 
-    /// <summary>
-    /// 更新が利用可能か判定
-    /// </summary>
     public static bool IsUpdateAvailable(GitHubRelease? release) =>
         IsUpdateAvailable(release, Infrastructure.AppVersion.VersionString);
 
     public static bool IsUpdateAvailable(GitHubRelease? release, string currentVersionString)
     {
         if (release?.TagName is not { } tag || !tag.StartsWith('v')) return false;
-        // 配布タグはvX.Y.Z。公開情報が古い場合にもダウングレードを案内しない。
         return Version.TryParse(tag.AsSpan(1), out var available)
             && available.Build >= 0 && available.Revision < 0
             && Version.TryParse(currentVersionString, out var current)

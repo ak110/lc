@@ -4,18 +4,8 @@ using Launcher.Win32;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// 書式を持たないプレーンテキスト運用のRichTextBox派生。
-/// 右端で折り返し、行番号は持たない。
-/// 貼り付けは書式と画像を除去してテキストのみ挿入する。
-/// コピーは選択文字列をプレーンテキストとしてクリップボードへ格納する。
-/// 取り消し上限を大きく設定し、実用上は無制限に取り消せる。
-/// 複数行選択時のTab/Shift+Tabは行単位のインデント/アンインデントとして扱う。
-/// 約0.5emの余白を設ける。左右はフォーマット矩形、上下は親コンテナーのPaddingで設ける。
-/// </summary>
 public sealed class PlainRichTextBox : RichTextBox
 {
-    // 取り消し上限。十分大きい値を設定し、実用上は無制限とする。
     const int UndoLimit = 1000000;
 
     public PlainRichTextBox()
@@ -27,14 +17,9 @@ public sealed class PlainRichTextBox : RichTextBox
         ScrollBars = RichTextBoxScrollBars.Vertical;
         BorderStyle = BorderStyle.None;
         Dock = DockStyle.Fill;
-        // 検索ダイアログへフォーカスが移っても一致箇所の選択を表示し続ける
         HideSelection = false;
     }
 
-    /// <summary>
-    /// フォントを全体へ一括適用する。
-    /// RichTextBoxのFont設定は既存テキストを含む全体へ反映される。
-    /// </summary>
     public void ApplyFont(Font font)
     {
         Font = font;
@@ -155,9 +140,6 @@ public sealed class PlainRichTextBox : RichTextBox
         }
     }
 
-    /// <summary>
-    /// クリップボードのテキストのみを書式無しで挿入する。書式と画像は破棄する。
-    /// </summary>
     void PastePlainText()
     {
         try
@@ -169,13 +151,9 @@ public sealed class PlainRichTextBox : RichTextBox
         }
         catch (ExternalException)
         {
-            // クリップボードが他プロセスにロックされている場合は貼り付けを行わない
         }
     }
 
-    /// <summary>
-    /// 選択文字列のみをプレーンテキストとしてクリップボードへ格納する。
-    /// </summary>
     void CopyPlainText()
     {
         if (SelectionLength == 0) return;
@@ -186,14 +164,9 @@ public sealed class PlainRichTextBox : RichTextBox
         }
         catch (ExternalException)
         {
-            // クリップボードが他プロセスにロックされている場合はコピーを行わない
         }
     }
 
-    /// <summary>
-    /// 複数行にまたがる選択に対してTab/Shift+Tabで行単位のインデント調整を行う。
-    /// 単一行選択では基底処理へ委ねる (単純なTab挿入)。
-    /// </summary>
     bool TryHandleMultiLineIndent(bool dedent)
     {
         int selStart = SelectionStart;

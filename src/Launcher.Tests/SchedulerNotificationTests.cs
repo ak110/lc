@@ -61,7 +61,6 @@ public sealed class SchedulerNotificationTests
                 overlapping |= notifications.Length > 1;
                 foreach (var notification in notifications)
                 {
-                    // ShowHideのアクティブ化でtimerが再入しても、同じ画面の確定を重ねない。
                     if (!handled.Add(notification)) continue;
                     tracking &= host.HasActiveNotifications;
                     ownerMatches &= ReferenceEquals(notification.Owner, launcher);

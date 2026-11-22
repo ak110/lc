@@ -2,15 +2,10 @@ using System.Reflection;
 
 namespace Launcher.Infrastructure;
 
-/// <summary>
-/// アプリケーションのバージョン情報を一元管理する
-/// </summary>
 public static class AppVersion
 {
-    /// <summary>バージョン文字列 (例: "1.0.0")</summary>
     public static string VersionString { get; }
 
-    /// <summary>タイトルバー表示用 (例: "らんちゃ v1.0.0")</summary>
     public static string Title { get; }
 
     static AppVersion()

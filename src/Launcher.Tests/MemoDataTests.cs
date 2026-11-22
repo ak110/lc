@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// MemoDataのシリアライズ・ロジックテスト
-/// </summary>
 public sealed class MemoDataTests
 {
     [Fact]

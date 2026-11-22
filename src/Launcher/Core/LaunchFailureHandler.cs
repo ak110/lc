@@ -2,7 +2,6 @@ using System.ComponentModel;
 
 namespace Launcher.Core;
 
-/// <summary>起動境界のキャンセルと失敗を分類して通知先へ渡す。</summary>
 public static class LaunchFailureHandler
 {
     public static bool Execute(Action launch, Action<Exception> log, Action<Exception> notify)

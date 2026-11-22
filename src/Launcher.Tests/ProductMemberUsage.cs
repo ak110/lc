@@ -28,7 +28,6 @@ namespace Launcher.Tests;
 /// </remarks>
 internal static class ProductMemberUsage
 {
-    /// <summary>XmlSerializerが読み書きする型の起点。この基底型の派生型と、その公開プロパティの型を対象にする</summary>
     const string XmlSerializerRootType = "Launcher.Infrastructure.ConfigStore";
 
     static readonly (string, string)[] PairedOperators =
@@ -39,7 +38,6 @@ internal static class ProductMemberUsage
         ("op_True", "op_False"),
     ];
 
-    /// <summary>使われていない非privateのメンバーを「型名::メンバー名(シグネチャ)」の形で返す。</summary>
     public static IReadOnlyList<string> FindUnusedMembers(IEnumerable<string> assemblyPaths)
     {
         var modules = assemblyPaths.Select(path => new ModuleInfo(path)).ToList();
@@ -60,10 +58,6 @@ internal static class ProductMemberUsage
         }
     }
 
-    /// <summary>
-    /// XmlSerializerの起点型の派生型と、System.Text.Jsonの<c>JsonSerializer</c>へ型引数として渡す型から、
-    /// 公開プロパティの型をたどって到達する製品の型。
-    /// </summary>
     static HashSet<string> SerializedTypes(List<ModuleInfo> modules)
     {
         var types = TypeTable(modules);
@@ -80,7 +74,6 @@ internal static class ProductMemberUsage
         return result;
     }
 
-    /// <summary>型名から型の情報を引く表。両アセンブリに同名で生成される型（<c>&lt;Module&gt;</c>など）は最初の定義を使う。</summary>
     static Dictionary<string, TypeInfo> TypeTable(List<ModuleInfo> modules) =>
         modules.SelectMany(m => m.Types).DistinctBy(t => t.Name, StringComparer.Ordinal).ToDictionary(t => t.Name, StringComparer.Ordinal);
 
@@ -91,7 +84,6 @@ internal static class ProductMemberUsage
         return false;
     }
 
-    /// <summary>P/InvokeとCOMインターフェイスのメソッドの引数の型から、フィールドの型をたどって到達する製品の値型。</summary>
     static HashSet<string> PInvokeStructTypes(List<ModuleInfo> modules)
     {
         var types = TypeTable(modules);
@@ -124,7 +116,6 @@ internal static class ProductMemberUsage
 
         public IReadOnlyList<TypeInfo> Types { get; }
 
-        /// <summary>System.Text.Jsonの<c>JsonSerializer</c>のジェネリックメソッドへ渡した型引数。</summary>
         public HashSet<string> JsonSerializerTypeArguments { get; } = new(StringComparer.Ordinal);
 
         public IEnumerable<string> PInvokeParameterTypeNames =>
@@ -154,7 +145,6 @@ internal static class ProductMemberUsage
         bool IsPublic(MethodDefinitionHandle handle) =>
             !handle.IsNil && (md.GetMethodDefinition(handle).Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Public;
 
-        /// <summary>メソッド本体のILと属性が参照するメンバーを、定義と同じ形のキーで集める。</summary>
         public void CollectReferences(HashSet<string> used)
         {
             foreach (var handle in md.MethodDefinitions)
@@ -173,7 +163,6 @@ internal static class ProductMemberUsage
                             AddReference(MetadataTokens.EntityHandle(il.ReadInt32()), used);
                             break;
                         case OperandType.InlineSwitch:
-                            // 分岐先の個数を読み終えてから、その個数分の分岐先のデータ長だけ読み取り位置を進める。
                             int targets = il.ReadInt32();
                             il.Offset += targets * 4;
                             break;
@@ -285,7 +274,6 @@ internal static class ProductMemberUsage
             _ => false,
         };
 
-        /// <summary>プロパティとイベントのアクセサーを、種類（get・set・add・remove）と対応付ける。</summary>
         Dictionary<MethodDefinitionHandle, string> AccessorKinds(TypeDefinition type)
         {
             var kinds = new Dictionary<MethodDefinitionHandle, string>();
@@ -304,7 +292,6 @@ internal static class ProductMemberUsage
             return kinds;
         }
 
-        /// <summary>いずれかのアクセサーが使われるプロパティとイベントの、全てのアクセサー。</summary>
         HashSet<MethodDefinitionHandle> UsedAccessorDeclarations(TypeDefinition type, HashSet<string> used)
         {
             var result = new HashSet<MethodDefinitionHandle>();
@@ -325,7 +312,6 @@ internal static class ProductMemberUsage
             type.GetMethods().Select(md.GetMethodDefinition).Any(method =>
                 md.GetString(method.Name) == "op_Equality" && IsCompilerGenerated(method.GetCustomAttributes()));
 
-        /// <summary>recordでコンパイラーが生成するメンバー。位置指定のプロパティのinit setterも生成される。</summary>
         static bool IsRecordSynthesized(string name, string? accessorKind) =>
             name is "Deconstruct" or "op_Equality" or "op_Inequality" or "Equals" or "PrintMembers" or "<Clone>$"
             || accessorKind == "set";
@@ -399,7 +385,6 @@ internal static class ProductMemberUsage
         }
     }
 
-    /// <summary>シグネチャの型を、アセンブリをまたいで同じ型が同じ文字列になる名前へ変換する。</summary>
     sealed class NameProvider(MetadataReader md) : ISignatureTypeProvider<string, object?>
     {
         public string TypeName(EntityHandle handle) => handle.Kind switch
@@ -429,14 +414,12 @@ internal static class ProductMemberUsage
 
         static string Qualify(string ns, string name) => ns.Length == 0 ? name : ns + "." + name;
 
-        /// <summary>ジェネリック型のインスタンスを、型引数を除いた定義の名前へ戻す。</summary>
         static string GenericDefinitionName(string name)
         {
             int index = name.IndexOf('<', StringComparison.Ordinal);
             return index < 0 ? name : name[..index];
         }
 
-        /// <summary>配列・参照・ジェネリックの型引数を含む、シグネチャを構成する型の名前。</summary>
         public static string[] ComponentNames(string name) =>
             name.Split(['<', '>', ',', '[', ']', '&', '*'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 

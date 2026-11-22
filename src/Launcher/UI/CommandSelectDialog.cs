@@ -2,9 +2,6 @@ using Launcher.Core;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// コマンド選択ダイアログ
-/// </summary>
 internal sealed class CommandSelectDialog : Form
 {
     readonly ListView listView;

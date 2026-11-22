@@ -15,13 +15,12 @@ public sealed class HookManagerTests
         int activationRequests = 0;
         var errors = new List<Action>();
 
-        // OSにフックを登録せず、実際に登録されるコールバックへボタンイベントを渡す。
         var managerType = typeof(Launcher.UI.ConfigForm).Assembly.GetType("Launcher.UI.HookManager", throwOnError: true)!;
         var manager = Activator.CreateInstance(managerType, (Func<Config>)(() => config),
             (Func<IntPtr>)(() =>
             {
                 activationRequests++;
-                return new IntPtr(-3); // 実ウィンドウへは送信しない。
+                return new IntPtr(-3);
             }), (Action<Action>)errors.Add)!;
         var onMouseHook = managerType.GetMethod("OnMouseHook", BindingFlags.Instance | BindingFlags.NonPublic)!
             .CreateDelegate<EventHandler<MouseHookEventArgs>>(manager);

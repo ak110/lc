@@ -4,13 +4,8 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// PathHelperのテスト
-/// </summary>
 public sealed class PathHelperTests
 {
-    // --- PathNormalize ---
-
     [Fact]
     public void PathNormalize_スラッシュをバックスラッシュに変換()
     {
@@ -32,13 +27,10 @@ public sealed class PathHelperTests
     [Fact]
     public void PathNormalize_環境変数を展開()
     {
-        // %SystemRoot% は通常 C:\WINDOWS
         var result = PathHelper.PathNormalize(@"%SystemRoot%\System32");
         result.Should().NotContain("%");
         result.Should().EndWith(@"\System32");
     }
-
-    // --- EqualsPath ---
 
     [Fact]
     public void EqualsPath_同じパスはtrue()

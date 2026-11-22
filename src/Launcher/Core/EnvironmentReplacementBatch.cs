@@ -1,9 +1,5 @@
 namespace Launcher.Core;
 
-/// <summary>
-/// UI所有データのパスを取得し、背景計算の結果をUIスレッドで条件付き適用する。
-/// 背景スレッドへ渡すのは<see cref="Values"/>の文字列だけとする。
-/// </summary>
 public sealed class EnvironmentReplacementBatch
 {
     readonly List<PathValue> paths;
@@ -16,7 +12,6 @@ public sealed class EnvironmentReplacementBatch
 
     public IReadOnlyList<string?> Values { get; }
 
-    /// <summary>UIスレッドでコマンドと予定の現在値を取得する。</summary>
     public static EnvironmentReplacementBatch Capture(CommandList commands, SchedulerData scheduler)
     {
         List<PathValue> paths = [];
@@ -32,10 +27,6 @@ public sealed class EnvironmentReplacementBatch
         return new EnvironmentReplacementBatch(paths);
     }
 
-    /// <summary>
-    /// UIスレッドで結果を適用する。計算中に追加・変更された値があれば、次の計算が必要なことを返す。
-    /// 削除・差し替え済みの実体と、取得時から変わった値は書き換えない。
-    /// </summary>
     public bool Apply(CommandList commands, SchedulerData scheduler, IReadOnlyList<string?> replacements)
     {
         ArgumentNullException.ThrowIfNull(replacements);

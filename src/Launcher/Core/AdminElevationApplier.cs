@@ -2,23 +2,8 @@ using Launcher.Infrastructure;
 
 namespace Launcher.Core;
 
-/// <summary>
-/// 管理者権限への昇格方法に応じた <see cref="ShellProcessStartInfo"/> の加工ロジック。
-/// 起動要求の生成時に適用する。
-/// </summary>
 public static class AdminElevationApplier
 {
-    /// <summary>
-    /// 管理者権限での実行方法に応じて <see cref="ShellProcessStartInfo"/> を加工する。
-    /// </summary>
-    /// <remarks>
-    /// 「現在のユーザーが管理者ではないが管理者権限が必要」な状況であることの事前確認は呼び出し元が担う。
-    /// </remarks>
-    /// <param name="info">加工対象の起動情報。<see cref="ShellProcessStartInfo.FileName"/> および
-    /// <see cref="ShellProcessStartInfo.Arguments"/> は呼び出し前に設定済みであること。</param>
-    /// <param name="elevation">管理者権限への昇格方法。</param>
-    /// <param name="runAsCommandLine"><see cref="AdminElevation.RunAsCommand"/> 時に runas へ渡す引数雛形。</param>
-    /// <param name="vECmdPath"><see cref="AdminElevation.VistaElevator"/> 時に呼び出すエレベーター実行ファイルのパス。</param>
     public static void Apply(
         ShellProcessStartInfo info,
         AdminElevation elevation,
@@ -32,12 +17,12 @@ public static class AdminElevationApplier
                 info.Verb = "runas";
                 break;
 
-            case AdminElevation.RunAsCommand: // runasコマンド
+            case AdminElevation.RunAsCommand:
                 info.Arguments = $"{runAsCommandLine} \"\\\"{info.FileName}\\\" {info.Arguments!.Replace("\"", "\\\"")}\"";
                 info.FileName = "runas";
                 break;
 
-            case AdminElevation.VistaElevator: // Vistaのエレベーター
+            case AdminElevation.VistaElevator:
                 char delim = '/';
                 foreach (char c in ",;*?<>|")
                 {

@@ -4,13 +4,8 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// FormsHelperのテスト (Win32 API非依存の関数のみ)
-/// </summary>
 public sealed class FormsHelperTests
 {
-    // --- Insert (ListBox) ---
-
     [Fact]
     public void Insert_空のリストボックスに追加できる()
     {
@@ -37,8 +32,6 @@ public sealed class FormsHelperTests
         lb.Items[1].Should().Be("b");
         lb.SelectedItem.Should().Be("b");
     }
-
-    // --- UpSelected (ListBox) ---
 
     [Fact]
     public void UpSelected_選択アイテムを一つ上に移動する()
@@ -68,8 +61,6 @@ public sealed class FormsHelperTests
         lb.Items[1].Should().Be("b");
     }
 
-    // --- DownSelected (ListBox) ---
-
     [Fact]
     public void DownSelected_選択アイテムを一つ下に移動する()
     {
@@ -97,8 +88,6 @@ public sealed class FormsHelperTests
         lb.Items[0].Should().Be("a");
         lb.Items[1].Should().Be("b");
     }
-
-    // --- RemoveSelected (ListBox) ---
 
     [Fact]
     public void RemoveSelected_選択アイテムを削除する()

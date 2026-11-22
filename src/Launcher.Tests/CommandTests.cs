@@ -4,13 +4,8 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// Commandクラスのテスト
-/// </summary>
 public sealed class CommandTests
 {
-    // --- Clone ---
-
     [Fact]
     public void Clone_全プロパティがコピーされる()
     {
@@ -45,8 +40,6 @@ public sealed class CommandTests
         clone.Name = "modified";
         original.Name.Should().Be("original");
     }
-
-    // --- CompareTo ---
 
     [Fact]
     public void CompareTo_名前順にソートされる()
@@ -94,8 +87,6 @@ public sealed class CommandTests
         withName.CompareTo(withNull).Should().BePositive();
     }
 
-    // --- IComparable (object) ---
-
     [Fact]
     public void CompareTo_objectインターフェース()
     {
@@ -111,8 +102,6 @@ public sealed class CommandTests
         var a = new Command { Name = "test" };
         a.CompareTo("not a command").Should().BePositive();
     }
-
-    // --- LoadFrom ---
 
     [Fact]
     public void LoadFrom_名前指定で基本フィールドを読み込む()
@@ -141,7 +130,7 @@ public sealed class CommandTests
     [Fact]
     public void LoadFrom_WindowStyleの各値()
     {
-        var data = "test.exe\n\n\n2\n3"; // Show=2 → Maximized
+        var data = "test.exe\n\n\n2\n3";
         var cmd = Command.LoadFrom("test", data);
 
         cmd.Show.Should().Be(WindowStyle.Maximized);
@@ -150,13 +139,11 @@ public sealed class CommandTests
     [Fact]
     public void LoadFrom_Priority上限は5()
     {
-        var data = "test.exe\n\n\n0\n99"; // Priority >= 5 → 5 (Idle)
+        var data = "test.exe\n\n\n0\n99";
         var cmd = Command.LoadFrom("test", data);
 
         cmd.Priority.Should().Be(ProcessPriorityLevel.Idle);
     }
-
-    // --- GetMatchScore / ParseInput ---
 
     [Fact]
     public void GetMatchScore_先頭一致でスコアが正()
@@ -184,8 +171,6 @@ public sealed class CommandTests
 
         cmd.ParseInput("note", config, out _, out _).Should().BeFalse();
     }
-
-    // --- デフォルト値 ---
 
     [Fact]
     public void デフォルト値が正しい()

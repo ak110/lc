@@ -2,42 +2,23 @@ using System.Text;
 
 namespace Launcher.Infrastructure;
 
-/// <summary>
-/// 保存データの読込結果の状態。
-/// </summary>
 public enum ConfigLoadStatus
 {
-    /// <summary>読み込めた</summary>
     Loaded,
 
-    /// <summary>本体もバックアップも無い初回。初期値で始めて保存してよい</summary>
     NotFound,
 
-    /// <summary>読み込めなかった。そのファイルへの保存は停止する</summary>
     Failed,
 }
 
-/// <summary>
-/// 保存データの読込結果。
-/// </summary>
-/// <param name="Value">読み込んだデータ。失敗時と初回は初期値</param>
-/// <param name="Status">読込の状態</param>
-/// <param name="FileName">対象ファイルの完全パス</param>
-/// <param name="BackupAvailable">失敗時に復元できるバックアップがあるか</param>
-/// <param name="Error">失敗の原因</param>
 public sealed record ConfigLoadResult<T>(
     T Value, ConfigLoadStatus Status, string FileName, bool BackupAvailable, Exception? Error)
 {
-    /// <summary>画面の通知で使う拡張子部分 (例: <c>.cmd.cfg</c>)。ベース名にドットがあるとその一部を含むため、ログへは渡さない</summary>
     public string Kind => ConfigFileState.KindOf(FileName);
 
-    /// <summary>読込には成功したが、その内容でバックアップを更新できなかった場合の原因</summary>
     public Exception? BackupError { get; init; }
 }
 
-/// <summary>
-/// 読込に失敗したファイルへの保存を止めたことを表す例外。原本の上書きを防ぐ。
-/// </summary>
 public sealed class ConfigSaveBlockedException : IOException
 {
     public ConfigSaveBlockedException(string message)
@@ -46,26 +27,18 @@ public sealed class ConfigSaveBlockedException : IOException
     }
 }
 
-/// <summary>
-/// 1種類の保存データの読込・保存・復元と、失敗通知の重複抑止を担う。
-/// </summary>
 public sealed class ConfigFile<T> where T : ConfigStore, new()
 {
     readonly string ext;
     readonly Func<byte[], T?>? legacyParser;
     readonly Dictionary<string, ConfigFileState> states = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>原本の保護とバックアップを行うか。ランタイムデータでは無効にする。</summary>
     public bool ProtectOriginal { get; }
 
-    /// <summary>読込失敗のログへ書く次の操作。原本を保護する設定は保存を止め、ランタイムデータは初期値で続行する</summary>
     string ReadFailureNextAction => ProtectOriginal
         ? "保存は停止中。画面の読込失敗の案内に従い、バックアップから復元するかファイルを直してから再起動する"
         : "対応不要（初期値で処理を継続し、次の保存で再作成する）。繰り返す場合はらんちゃのフォルダーの読み書き権限を確認する";
 
-    /// <param name="ext">拡張子。1文字目は <c>.</c></param>
-    /// <param name="legacyParser">旧形式の読込。旧形式と判定できない内容では呼ばれない</param>
-    /// <param name="protectOriginal">原本の保護とバックアップを行うか。ランタイムデータでは無効にする</param>
     public ConfigFile(string ext, Func<byte[], T?>? legacyParser = null, bool protectOriginal = true)
     {
         this.ext = ext;
@@ -73,7 +46,6 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         ProtectOriginal = protectOriginal;
     }
 
-    /// <summary>対象ファイルの完全パス</summary>
     public string FileName(string? baseName = null) => (baseName ?? ConfigStore.DefaultBaseName) + ext;
 
     ConfigFileState State(string fileName)
@@ -89,7 +61,6 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         }
     }
 
-    /// <summary>保存の成否を返す。同じファイルの同じ失敗は、保存が成功するまで1回だけ通知する。</summary>
     public bool Save(T value, Action<ConfigSaveFailure> notify, string? baseName = null)
     {
         string fileName = FileName(baseName);
@@ -100,7 +71,6 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
             var state = State(fileName);
             if (ProtectOriginal)
             {
-                // 未読込の保存も既存原本の検査を通す。
                 if (!state.LoadAttempted)
                 {
                     Load(baseName);
@@ -125,7 +95,6 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         return false;
     }
 
-    /// <summary>別プロセスの更新を失わないよう、読込・変更・保存を同じ排他の下で行う。</summary>
     public bool ModifyAndSave(Action<T> modify, Action<ConfigSaveFailure> notify,
         Action<ConfigLoadResult<T>> loadFailed, string? baseName = null)
     {
@@ -168,9 +137,6 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         }
     }
 
-    /// <summary>
-    /// 読み込む。成功したらその内容でバックアップを更新する。失敗したファイルへの保存は以後止まる。
-    /// </summary>
     public ConfigLoadResult<T> Load(string? baseName = null)
     {
         string fileName = FileName(baseName);
@@ -197,7 +163,6 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         {
             if (ProtectOriginal && File.Exists(backupName))
             {
-                // 本体だけが消えた状態は初回と区別し、バックアップを上書きさせない
                 State(fileName).MarkFailed();
                 DiagnosticLog.Warn("Config.Load", $"本体が無くバックアップだけがある: {ext}", "保存は停止中。画面の読込失敗の案内に従い、バックアップから復元する");
                 return new(new T(), ConfigLoadStatus.Failed, fileName, true, new FileNotFoundException("本体が見つからない"));
@@ -230,7 +195,6 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         }
         catch (Exception ex) when (ConfigFailure.IsSave(ex))
         {
-            // バックアップを作成できなくても読めたデータは使える。利用者へは結果の BackupError で通知させる
             DiagnosticLog.Warn("Config.Backup", $"バックアップ更新失敗: {ext} {ex.GetType().Name}",
                 "読み込んだ内容で処理を継続した。画面の案内に従い、らんちゃのフォルダーとバックアップファイル（.bak）へ書き込めるか確認する");
             return new(value, ConfigLoadStatus.Loaded, fileName, false, null) { BackupError = ex };
@@ -238,10 +202,6 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         return new(value, ConfigLoadStatus.Loaded, fileName, false, null);
     }
 
-    /// <summary>
-    /// バックアップから復元する。読めない本体は <c>.broken-&lt;日時&gt;</c> へ保全してから置換し、保存を再開する。
-    /// バックアップを読めない場合と保全できない場合は例外を送出し、本体を変えない。
-    /// </summary>
     public T RestoreFromBackup(string? baseName = null)
     {
         string fileName = FileName(baseName);
@@ -260,7 +220,6 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         }
         catch (Exception ex) when (ConfigFailure.IsRead(ex))
         {
-            // ログの種類にはファイル名から抽出した値ではなく、固定の拡張子を使う。
             DiagnosticLog.Warn("Config.Restore", $"復元失敗: {ext} {ex.GetType().Name}",
                 "保存の停止は続いている。画面の案内に従い、バックアップ（.bak）と本体の内容、フォルダーの読み書き権限を確認してから再起動する");
             throw;
@@ -286,9 +245,6 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
         }
     }
 
-    /// <summary>
-    /// 旧形式 (<c>キー = 値</c>の行) の内容か。XMLの開始で始まる内容 (破損したXML) は旧形式とみなさない。
-    /// </summary>
     internal static bool IsLegacyText(byte[] bytes)
     {
         string text = Encoding.UTF8.GetString(bytes).TrimStart('﻿', ' ', '\t', '\r', '\n');
@@ -300,9 +256,6 @@ public sealed class ConfigFile<T> where T : ConfigStore, new()
     }
 }
 
-/// <summary>
-/// 保存データのファイルごとの読込状態。保存の可否と、保存前にバックアップへ写してよい内容かの判定に使う。
-/// </summary>
 public sealed class ConfigFileState
 {
     internal bool LoadAttempted { get; private set; }
@@ -310,14 +263,11 @@ public sealed class ConfigFileState
     internal byte[]? LastGood { get; set; }
     internal HashSet<ConfigSaveFailureKind> NotifiedFailures { get; } = [];
 
-    /// <summary>バックアップのファイル名</summary>
     public static string BackupName(string fileName) => fileName + ".bak";
 
-    /// <summary>読めない本体の保全先。同じ時刻の保全が重ならないようミリ秒まで付ける</summary>
     public static string BrokenName(string fileName) =>
         fileName + ".broken-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture);
 
-    /// <summary>画面の通知で使う、ファイル名のうち最初の<c>.</c>以降 (例: <c>.cmd.cfg</c>)。ベース名にドットがあるとその一部を含むため、ログへは渡さない</summary>
     public static string KindOf(string fileName)
     {
         string name = Path.GetFileName(fileName);
@@ -339,14 +289,6 @@ public sealed class ConfigFileState
         LastGood = null;
     }
 
-    /// <summary>
-    /// 保存で本体を置換する前の処理。保存停止中なら例外を送出する。直前の本体が正常なら
-    /// バックアップへ写し、外部で壊れていれば別名へ保全する。どちらかに失敗したら例外を送出し、本体を置換させない。
-    /// ランタイムデータの保存では呼ばない。
-    /// </summary>
-    /// <param name="fileName">対象ファイルの完全パス</param>
-    /// <param name="ext">ログへ記録する設定の種類 (固定の拡張子)</param>
-    /// <param name="validate">本体を読めるか検査する処理</param>
     internal void BeforeReplace(string fileName, string ext, Func<byte[], object> validate)
     {
         if (blocked)
@@ -365,7 +307,6 @@ public sealed class ConfigFileState
             ConfigStore.WriteAtomic(BackupName(fileName), current);
             return;
         }
-        // 最後の正常な読込・保存から外部で変わった本体は、読めるときだけバックアップへ写す
         bool valid;
         try
         {

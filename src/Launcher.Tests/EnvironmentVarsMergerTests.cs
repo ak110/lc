@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// Explorer 互換マージ規則を実装する <see cref="EnvironmentVarsMerger"/> のテスト。
-/// </summary>
 public sealed class EnvironmentVarsMergerTests
 {
     static KeyValuePair<string, string> Kv(string k, string v) => new(k, v);
@@ -74,19 +71,16 @@ public sealed class EnvironmentVarsMergerTests
     [Fact]
     public void PATH連結は大文字小文字を無視する()
     {
-        // システム側は "path"、ユーザー側は "PATH" という想定。
         var result = EnvironmentVarsMerger.Merge(
             [Kv("path", @"C:\sys")],
             [Kv("PATH", @"C:\user")]);
 
-        // 結合が成立する。
         result["Path"].Should().Be(@"C:\sys;C:\user");
     }
 
     [Fact]
     public void REG_EXPAND_SZの埋め込み変数が展開される()
     {
-        // %SystemRoot% は通常 C:\Windows を指す。
         string systemRoot = Environment.GetEnvironmentVariable("SystemRoot")!;
         var result = EnvironmentVarsMerger.Merge(
             [],

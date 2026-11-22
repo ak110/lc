@@ -3,22 +3,13 @@ using System.Text;
 
 namespace Launcher.Win32;
 
-/// <summary>
-/// 環境変数・特殊フォルダなどのシェル環境操作。
-/// </summary>
 public static class ShellEnvironment
 {
-    /// <summary>
-    /// GetFolderPath()用enum。System.Environmentにない特殊フォルダを定義する。
-    /// </summary>
     public enum SpecialFolder
     {
         CommonStartup,
     }
 
-    /// <summary>
-    /// システムの固定フォルダへのパスを取得
-    /// </summary>
     public static string GetFolderPath(SpecialFolder folder)
     {
         int hr = SHGetMalloc(out IMalloc? malloc);

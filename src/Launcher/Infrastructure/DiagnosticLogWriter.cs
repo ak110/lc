@@ -3,7 +3,6 @@ using System.Text;
 
 namespace Launcher.Infrastructure;
 
-/// <summary>保存先ごとに日付切り替え、保持期間、書き込み上限を管理する診断ログ。</summary>
 public sealed class DiagnosticLogWriter(string? logDirectory, TimeProvider? timeProvider = null)
 {
     readonly Lock writeLock = new();
@@ -18,30 +17,16 @@ public sealed class DiagnosticLogWriter(string? logDirectory, TimeProvider? time
 
     static bool IsExpired(DateTime lastWriteTime, DateTime now) => lastWriteTime < now.AddDays(-RetentionDays);
 
-    /// <summary>詳細トレース。通常運用では出力しない、原因調査用の細粒度ログ。</summary>
     public void Debug(string category, string message) => Write("DEBUG", category, message);
 
-    /// <summary>ユーザー操作・重要な状態遷移。運用時に残す通常ログ。</summary>
     public void Info(string category, string message) => Write("INFO", category, message);
 
-    /// <summary>想定外だが継続可能な事象。原因確認候補として残す。</summary>
-    /// <param name="category">カテゴリー</param>
-    /// <param name="message">観測した事実</param>
-    /// <param name="nextAction">ログの読み手が次に行う操作。対処が不要なら、その旨と処理を継続したことを書く</param>
     public void Warn(string category, string message, string nextAction) =>
         Write("WARN", category, WithNextAction(message, nextAction));
 
-    /// <summary>例外・失敗の記録（メッセージ版）。</summary>
-    /// <param name="category">カテゴリー</param>
-    /// <param name="message">観測した事実</param>
-    /// <param name="nextAction">ログの読み手が次に行う操作。対処が不要なら、その旨と処理を継続したことを書く</param>
     public void Error(string category, string message, string nextAction) =>
         Write("ERROR", category, WithNextAction(message, nextAction));
 
-    /// <summary>例外・失敗の記録（例外版）。型・メッセージ・次の操作の行に続けてスタックトレースを書き込む。</summary>
-    /// <param name="category">カテゴリー</param>
-    /// <param name="ex">記録する例外</param>
-    /// <param name="nextAction">ログの読み手が次に行う操作。対処が不要なら、その旨と処理を継続したことを書く</param>
     public void Error(string category, Exception ex, string nextAction)
     {
         var message = $"{WithNextAction($"{ex.GetType().FullName}: {ex.Message}", nextAction)}{Environment.NewLine}{ex.StackTrace}";
@@ -89,7 +74,7 @@ public sealed class DiagnosticLogWriter(string? logDirectory, TimeProvider? time
                 stream.Flush(flushToDisk: true);
             }
         }
-#pragma warning disable CA1031 // 診断機構の失敗によってアプリを終了させない
+#pragma warning disable CA1031
         catch (Exception)
 #pragma warning restore CA1031
         {

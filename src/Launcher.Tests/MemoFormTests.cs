@@ -88,7 +88,6 @@ public sealed class MemoFormTests(ITestOutputHelper output)
         finally
         {
             if (File.Exists(path)) File.SetAttributes(path, FileAttributes.Normal);
-            // アサーション失敗時にも所有する画面とタイマーを先に回収する。
             foreach (var form in host.OwnedForms.OfType<MemoForm>()) form.Dispose();
             host.PrepareShutdown();
             host.Close();
@@ -104,7 +103,6 @@ public sealed class MemoFormTests(ITestOutputHelper output)
         ApplicationHostForm? host = null;
         try
         {
-            // 起動時の読込通知も通常のホスト構築から発生させる。
             ObserveNotice(() => host = new ApplicationHostForm(data.BaseName), "破損XMLの起動通知", data.BaseName);
             host.Should().NotBeNull();
             host!.ShowHideMemo();
@@ -149,12 +147,10 @@ public sealed class MemoFormTests(ITestOutputHelper output)
             editMenu.DropDownItems.OfType<ToolStripMenuItem>().Single(item => item.Name == "sortLinesMenuItem")
                 .ShortcutKeys.Should().Be(Keys.F9);
 
-            // 選択の無いF9は何もしない。
             editor.Select(0, 0);
             UiAcceptance.PreProcessShortcut(editor, Keys.F9);
             editor.Text.Should().Be("head\nc\nB\na\ntail");
 
-            // 「c」の途中から「a」の途中までを選択し、行単位で並べ替える。
             editor.Select(6, 4);
             UiAcceptance.PreProcessShortcut(editor, Keys.F9);
             editor.Text.Should().Be("head\nB\na\nc\ntail");
@@ -320,7 +316,6 @@ public sealed class MemoFormTests(ITestOutputHelper output)
 
     void ObserveNotice(Action trigger, string scenario, string baseName, Form? expectedOwner = null)
     {
-        // 通知を作成したSTAで観測・アクティブ化し、実際のOKボタンをクリックする。
         uint threadId = GetCurrentThreadId();
         uint processId = (uint)Environment.ProcessId;
         nint ownerHandle = expectedOwner?.Handle ?? nint.Zero;
@@ -334,7 +329,6 @@ public sealed class MemoFormTests(ITestOutputHelper output)
         void Log(string message)
         {
             string line = $"{DateTimeOffset.UtcNow:O} [{scenario}] {message}";
-            // 中止されたケースの出力も残すため、各行を閉じてからxUnitへ渡す。
             if (logPath is not null) File.AppendAllText(logPath, line + Environment.NewLine, Encoding.UTF8);
             output.WriteLine(line);
         }
@@ -418,7 +412,6 @@ public sealed class MemoFormTests(ITestOutputHelper output)
 
     static nint FindNoticeButton(nint dialog, uint threadId, uint processId, out string description)
     {
-        // 親0での全window列挙を避け、所有通知の子孫だけを読み取る。
         description = "";
         if (dialog == nint.Zero) return nint.Zero;
         var children = new List<string>();

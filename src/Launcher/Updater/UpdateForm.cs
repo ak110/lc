@@ -2,10 +2,6 @@ using Launcher.Infrastructure;
 
 namespace Launcher.Updater;
 
-/// <summary>
-/// 更新通知ダイアログ。
-/// 「更新する」ボタン押下後はフォームを閉じずに進捗を表示し、バッチ起動後にプロセスを終了する。
-/// </summary>
 public sealed class UpdateForm : Form
 {
     private Label labelMessage = null!;
@@ -45,7 +41,7 @@ public sealed class UpdateForm : Form
             // Application.Exit()はモーダルダイアログ内から呼ぶとハングする場合がある。
             Environment.Exit(0);
         }
-#pragma warning disable CA1031 // 更新処理は様々な例外が発生しうる
+#pragma warning disable CA1031
         catch (Exception ex)
         {
             DiagnosticLog.Error("Update", ex, "画面の案内に従う");
@@ -56,7 +52,6 @@ public sealed class UpdateForm : Form
 #pragma warning restore CA1031
     }
 
-    /// <summary>更新の確認や適用に失敗したときの再試行と代替手段の案内</summary>
     internal const string RetryGuidance = "時間をおいてタスクトレイの「ネットワーク更新」をやり直すか、https://github.com/ak110/lc/releases から最新版のZIPをダウンロードして、らんちゃのフォルダーへ上書きで展開してください。";
 
     private void InitializeComponents()

@@ -7,17 +7,11 @@ namespace Launcher.Win32;
 
 #region "COM Interop"
 
-/// <summary>
-/// ShellLink コクラス
-/// </summary>
 [ComImport]
 [Guid("00021401-0000-0000-C000-000000000046")]
 [ClassInterface(ClassInterfaceType.None)]
 internal class ShellLinkObject { }
 
-/// <summary>
-/// IShellLinkWインターフェイス
-/// </summary>
 [ComImport]
 [Guid("000214F9-0000-0000-C000-000000000046")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -78,9 +72,6 @@ internal interface IShellLinkW
     void SetPath([MarshalAs(UnmanagedType.LPWStr)] string pszFile);
 }
 
-/// <summary>
-/// WIN32_FIND_DATAW 構造体
-/// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 4, CharSet = CharSet.Unicode)]
 struct WIN32_FIND_DATAW
 {
@@ -104,18 +95,12 @@ struct WIN32_FIND_DATAW
 
 #endregion
 
-/// <summary>
-/// ショートカットに関する処理を行うクラス。
-/// </summary>
 public sealed class ShellLink : IDisposable
 {
-    // IShellLink インターフェイス
     private IShellLinkW? shellLinkW;
 
-    // 二重 dispose を防止するフラグ
     private bool disposed;
 
-    // 各種定数
     internal const int MAX_PATH = 260;
 
     internal const uint SLGP_SHORTPATH = 0x0001;
@@ -124,18 +109,12 @@ public sealed class ShellLink : IDisposable
 
     #region "[型] ShellLinkDisplayMode列挙型"
 
-    /// <summary>
-    /// 実行時のウィンドウの表示方法を表す列挙型。
-    /// </summary>
     public enum ShellLinkDisplayMode : int
     {
-        /// <summary>通常サイズのウィンドウで起動する。</summary>
         Normal = 1,
 
-        /// <summary>最大化された状態で起動する。</summary>
         Maximized = 3,
 
-        /// <summary>最小化された状態で起動する。</summary>
         Minimized = 7,
     }
 
@@ -143,35 +122,25 @@ public sealed class ShellLink : IDisposable
 
     #region "[型] ShellLinkResolveFlags列挙型"
 
-    /// <summary></summary>
     [Flags]
     public enum ShellLinkResolveFlags : int
     {
-        /// <summary></summary>
         SLR_ANY_MATCH = 0x2,
 
-        /// <summary></summary>
         SLR_INVOKE_MSI = 0x80,
 
-        /// <summary></summary>
         SLR_NOLINKINFO = 0x40,
 
-        /// <summary></summary>
         SLR_NO_UI = 0x1,
 
-        /// <summary></summary>
         SLR_NO_UI_WITH_MSG_PUMP = 0x101,
 
-        /// <summary></summary>
         SLR_NOUPDATE = 0x8,
 
-        /// <summary></summary>
         SLR_NOSEARCH = 0x10,
 
-        /// <summary></summary>
         SLR_NOTRACK = 0x20,
 
-        /// <summary></summary>
         SLR_UPDATE = 0x4
     }
 
@@ -179,10 +148,6 @@ public sealed class ShellLink : IDisposable
 
     #region "コンストラクション・デストラクション"
 
-    /// <summary>
-    /// コンストラクタ。
-    /// </summary>
-    /// <exception cref="COMException">IShellLink インターフェイスを取得できなかった場合の例外。</exception>
     public ShellLink()
     {
         try
@@ -195,36 +160,23 @@ public sealed class ShellLink : IDisposable
         }
     }
 
-    /// <summary>
-    /// コンストラクタ
-    /// </summary>
-    /// <param name="linkFile">ショートカットファイル</param>
     public ShellLink(string linkFile)
         : this()
     {
         Load(linkFile);
     }
 
-    /// <summary>
-    /// デストラクタ
-    /// </summary>
     ~ShellLink()
     {
         Dispose(false);
     }
 
-    /// <summary>
-    /// このインスタンスが使用しているリソースを解放する。
-    /// </summary>
     public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>
-    /// リソース解放の実体。double-dispose を防止する。
-    /// </summary>
     private void Dispose(bool disposing)
     {
         if (disposed)
@@ -244,9 +196,6 @@ public sealed class ShellLink : IDisposable
 
     #region "プロパティ"
 
-    /// <summary>
-    /// ショートカットのリンク先。
-    /// </summary>
     public string TargetPath
     {
         get
@@ -262,9 +211,6 @@ public sealed class ShellLink : IDisposable
         }
     }
 
-    /// <summary>
-    /// 作業ディレクトリ。
-    /// </summary>
     public string WorkingDirectory
     {
         get
@@ -279,9 +225,6 @@ public sealed class ShellLink : IDisposable
         }
     }
 
-    /// <summary>
-    /// コマンドライン引数。
-    /// </summary>
     public string Arguments
     {
         get
@@ -296,9 +239,6 @@ public sealed class ShellLink : IDisposable
         }
     }
 
-    /// <summary>
-    /// ショートカットの説明。
-    /// </summary>
     public string Description
     {
         get
@@ -313,9 +253,6 @@ public sealed class ShellLink : IDisposable
         }
     }
 
-    /// <summary>
-    /// 実行時のウィンドウの大きさ。
-    /// </summary>
     public ShellLinkDisplayMode DisplayMode
     {
         get
@@ -333,23 +270,13 @@ public sealed class ShellLink : IDisposable
 
     #region "保存と読み込み"
 
-    /// <summary>
-    /// IShellLink インターフェイスからキャストされた IPersistFile インターフェイスを取得する。
-    /// </summary>
-    /// <returns>IPersistFile インターフェイス。取得できなかった場合は null。</returns>
     private UCOMIPersistFile? GetIPersistFile()
     {
         return shellLinkW as UCOMIPersistFile;
     }
 
-    /// <summary>
-    /// 指定したファイルにショートカットを保存する。
-    /// </summary>
-    /// <param name="linkFile">ショートカットを保存するファイル</param>
-    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
     public void Save(string linkFile)
     {
-        // IPersistFile インターフェイスを取得して保存する。
         UCOMIPersistFile? persistFile = GetIPersistFile();
 
         if (persistFile is null) throw new COMException("IPersistFile インターフェイスを取得できなかった");
@@ -357,39 +284,21 @@ public sealed class ShellLink : IDisposable
         persistFile.Save(linkFile, true);
     }
 
-    /// <summary>
-    /// 指定したファイルからショートカットを読み込む。
-    /// </summary>
-    /// <param name="linkFile">ショートカットを読み込むファイル</param>
-    /// <exception cref="FileNotFoundException">ファイルが見つからなかった場合の例外。</exception>
-    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
     public void Load(string linkFile)
     {
         Load(linkFile, IntPtr.Zero, ShellLinkResolveFlags.SLR_ANY_MATCH | ShellLinkResolveFlags.SLR_NO_UI, 1);
     }
 
-    /// <summary>
-    /// 指定したファイルからショートカットを読み込む。
-    /// </summary>
-    /// <param name="linkFile">ショートカットを読み込むファイル</param>
-    /// <param name="hWnd">このコードを呼び出したオーナーのウィンドウハンドル</param>
-    /// <param name="resolveFlags">ショートカット情報の解決に関する動作を表すフラグ</param>
-    /// <param name="timeOutMilliseconds">SLR_NO_UI を指定したときのタイムアウト値 (ミリ秒)</param>
-    /// <exception cref="FileNotFoundException">ファイルが見つからなかった場合の例外。</exception>
-    /// <exception cref="COMException">IPersistFile インターフェイスを取得できなかった場合の例外。</exception>
     public void Load(string linkFile, IntPtr hWnd, ShellLinkResolveFlags resolveFlags, int timeOutMilliseconds)
     {
         if (!File.Exists(linkFile)) throw new FileNotFoundException("ファイルが見つからなかった", linkFile);
 
-        // IPersistFile インターフェイスを取得する。
         UCOMIPersistFile? persistFile = GetIPersistFile();
 
         if (persistFile is null) throw new COMException("IPersistFile インターフェイスを取得できなかった");
 
-        // 読み込みを実行する。
         persistFile.Load(linkFile, 0x00000000);
 
-        // フラグを設定する。
         uint flags = (uint)resolveFlags;
 
         if ((resolveFlags & ShellLinkResolveFlags.SLR_NO_UI) == ShellLinkResolveFlags.SLR_NO_UI)
@@ -397,7 +306,6 @@ public sealed class ShellLink : IDisposable
             flags |= (uint)(timeOutMilliseconds << 16);
         }
 
-        // ショートカットに関する情報を読み込む。
         shellLinkW!.Resolve(hWnd, flags);
     }
 

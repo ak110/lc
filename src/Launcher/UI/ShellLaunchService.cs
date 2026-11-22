@@ -4,7 +4,6 @@ using Launcher.Win32;
 
 namespace Launcher.UI;
 
-/// <summary>起動要求の生成とShell実行を専用STAで完了させ、失敗をUIへ配送する。</summary>
 public static class ShellLaunchService
 {
     public static Task<bool> Start(Control owner, Func<ShellProcessStartInfo?> createRequest, Action? onStarted = null)
@@ -20,7 +19,6 @@ public static class ShellLaunchService
         return completion.Task;
     }
 
-    /// <summary>ランチャーが保持するコマンドの親フォルダーを専用STAで開く。</summary>
     public static Task<bool> OpenDirectory(Control owner, Command command, Config config)
     {
         var snapshot = command.Clone();
@@ -30,7 +28,6 @@ public static class ShellLaunchService
             FileHelper.ResolveCommandPath(snapshot.FileName), handle));
     }
 
-    /// <summary>タスク列を実行中の専用STAから、起動が終わるまで同期実行する。</summary>
     public static bool ExecuteOnSta(Control owner, Func<ShellProcessStartInfo?> createRequest)
     {
         try
@@ -47,7 +44,7 @@ public static class ShellLaunchService
                 MessageBox.Show(owner, $"起動できませんでした。対象と起動設定を確認してください。\n{ex.Message}",
                     AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Error)));
         }
-#pragma warning disable CA1031 // 専用STA境界の想定外例外を共通レポーターへ配送する
+#pragma warning disable CA1031
         catch (Exception ex)
         {
             DiagnosticLog.Error("Shell.Execute", ex, "画面の案内に従う");

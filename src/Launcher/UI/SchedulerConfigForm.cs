@@ -2,18 +2,12 @@ using Launcher.Core;
 
 namespace Launcher.UI;
 
-/// <summary>
-/// スケジューラー設定のトップレベルフォーム。SchedulerItemのリストを編集する。
-/// </summary>
 public partial class SchedulerConfigForm : Form
 {
     SchedulerData data;
     readonly Action<string, string>? showBalloonTip;
     readonly Action<string, string>? showMessageBox;
 
-    /// <summary>
-    /// 編集結果
-    /// </summary>
     public SchedulerData Value => data;
 
     public SchedulerConfigForm(
@@ -24,7 +18,6 @@ public partial class SchedulerConfigForm : Form
         InitializeComponent();
         this.showBalloonTip = showBalloonTip;
         this.showMessageBox = showMessageBox;
-        // ディープコピーしてキャンセル対応
         data = new SchedulerData
         {
             Items = original.Items.Select(i => i.Clone()).ToList(),

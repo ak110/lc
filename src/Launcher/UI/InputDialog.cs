@@ -1,6 +1,5 @@
 namespace Launcher.UI;
 
-/// <summary>タブ名など短い文字列を入力する共通ダイアログ。</summary>
 public sealed class InputDialog : Form
 {
     readonly TextBox input;
@@ -26,7 +25,6 @@ public sealed class InputDialog : Form
         ActiveControl = input;
     }
 
-    /// <summary>OKで確定した文字列を返す。キャンセルはnullを返す。</summary>
     public static string? Prompt(IWin32Window owner, string prompt, string title, string value)
     {
         using var dialog = new InputDialog(prompt, title, value);

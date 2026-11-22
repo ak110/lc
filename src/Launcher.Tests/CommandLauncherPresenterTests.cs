@@ -94,7 +94,7 @@ public sealed class CommandLauncherPresenterTests
         var result = presenter.ProcessTextChange("note");
 
         result.State.Should().Be(InputState.PrefixMatch);
-        result.CompletionText.Should().Be("notepad"); // 入力+残り
+        result.CompletionText.Should().Be("notepad");
     }
 
     #endregion
@@ -146,11 +146,9 @@ public sealed class CommandLauncherPresenterTests
     [Fact]
     public void GetButtonTexts_リストビューフォーカス時は常に実行系()
     {
-        // lastFocus=1のとき、stateがEmptyでも実行系ボタンになる
         var texts = CommandLauncherPresenter.GetButtonTexts(InputState.Empty, lastFocus: 1, InputModifiers.None);
 
         texts.Button1Text.Should().Be("実行");
-        // button2はstateに依存 (Emptyなので「隠す」)
         texts.Button2Text.Should().Be("隠す");
     }
 

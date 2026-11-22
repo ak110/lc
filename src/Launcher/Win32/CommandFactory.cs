@@ -3,19 +3,14 @@ using Launcher.Infrastructure;
 
 namespace Launcher.Win32;
 
-/// <summary>Windowsのファイルとショートカットから登録コマンドを作成する。</summary>
 public static class CommandFactory
 {
-    /// <summary>
-    /// 指定されたファイルからコマンドの初期値を生成する。
-    /// </summary>
     public static Command FromFile(string file)
     {
         file = PathHelper.PathNormalize(file);
         var command = new Command();
         if (string.Equals(Path.GetExtension(file), ".lnk", StringComparison.OrdinalIgnoreCase))
         {
-            // lnk
             try
             {
                 using var link = new ShellLink(file);
@@ -30,14 +25,11 @@ public static class CommandFactory
             }
             catch (IOException)
             {
-                // エラー時はそのまま↓へ。
             }
             catch (System.Runtime.InteropServices.COMException)
             {
-                // ShellLinkのCOM操作失敗時もそのまま↓へ。
             }
         }
-        // lnk以外
         command.Name = Path.GetFileNameWithoutExtension(file);
         command.FileName = file;
         return command;

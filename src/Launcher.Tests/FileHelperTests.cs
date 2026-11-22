@@ -4,9 +4,6 @@ using Xunit;
 
 namespace Launcher.Tests;
 
-/// <summary>
-/// FileHelper.ResolveExecutableのテスト
-/// </summary>
 public sealed class FileHelperTests
 {
     [Fact]
@@ -33,7 +30,6 @@ public sealed class FileHelperTests
     [Fact]
     public void ResolveExecutable_拡張子ありのbare_nameを解決する()
     {
-        // notepad.exeはWindowsに必ず存在する
         string result = FileHelper.ResolveExecutable("notepad.exe");
         result.Should().NotBe("notepad.exe");
         Path.IsPathRooted(result).Should().BeTrue();
@@ -88,7 +84,6 @@ public sealed class FileHelperTests
     public void ResolveCommandPath_環境変数を展開してPATH解決と矛盾しない結果を返す()
     {
         string result = FileHelper.ResolveCommandPath(@"%WINDIR%\System32\notepad.exe");
-        // 環境変数が展開されてルート化されていること。
         Path.IsPathRooted(result).Should().BeTrue();
         result.Should().NotContain("%");
         File.Exists(result).Should().BeTrue();
@@ -97,7 +92,6 @@ public sealed class FileHelperTests
     [Fact]
     public void ResolveCommandPath_スラッシュ区切りは区切り文字を正規化する()
     {
-        // PathNormalize が / を \ に置換する挙動を経由していることを確認する。
         string result = FileHelper.ResolveCommandPath(@"C:\Windows/System32/notepad.exe");
         result.Should().Be(@"C:\Windows\System32\notepad.exe");
     }
