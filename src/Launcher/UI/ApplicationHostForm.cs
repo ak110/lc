@@ -634,11 +634,15 @@ public partial class ApplicationHostForm : Form
     /// </summary>
     private void EnsureSchedulerIds()
     {
-        schedulerRunCoordinator.EnsureIds(schedulerData, () => schedulerData.Save(failure =>
+        if (!schedulerRunCoordinator.EnsureIds(schedulerData, () => schedulerData.Save(failure =>
             MessageBox.Show(GetVisibleOwner(), failure.Message
                 + "\r\n識別子を保存できないため、スケジューラーの予定実行を停止しています。"
                 + "\r\n書き込める状態にした後、タスクトレイの「スケジューラー設定」でOKを押すか、らんちゃを再起動すると再開します。",
-                AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning), ConfigurationBaseName));
+                AppVersion.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning), ConfigurationBaseName)))
+        {
+            DiagnosticLog.Warn("Scheduler.EnsureIds", "識別子を保存できないため予定実行を停止",
+                "画面の保存失敗の案内に従って書き込める状態にし、タスクトレイの「スケジューラー設定」でOKを押すか、らんちゃを再起動すると予定実行を再開する");
+        }
     }
 
     /// <summary>

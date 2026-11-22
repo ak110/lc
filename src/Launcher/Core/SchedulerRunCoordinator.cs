@@ -1,5 +1,3 @@
-using Launcher.Infrastructure;
-
 namespace Launcher.Core;
 
 /// <summary>
@@ -23,27 +21,6 @@ public sealed class SchedulerRunCoordinator
     IdPersistence idPersistence;
 
     bool CanStart => execution == ExecutionPhase.Active && idPersistence == IdPersistence.Saved;
-
-    /// <summary>実行中の件数と、実行中かどうかにかかわらず保留されている件数。</summary>
-    public (int Running, int Pending) GetRunCounts()
-    {
-        lock (lockObject)
-        {
-            return (items.Values.Count(phase => phase != ItemPhase.Pending),
-                items.Values.Count(phase => phase != ItemPhase.Running));
-        }
-    }
-
-    /// <summary>指定したアイテムが実行中か、再実行が保留されているかを返す。</summary>
-    public (bool Running, bool Pending) GetRunStatus(string id)
-    {
-        lock (lockObject)
-        {
-            return items.TryGetValue(id, out var phase)
-                ? (phase != ItemPhase.Pending, phase != ItemPhase.Running)
-                : (false, false);
-        }
-    }
 
     /// <param name="getItems">最新の確定設定のアイテム一覧</param>
     /// <param name="start">アイテムの複製のタスク列を開始する。完了時に第2引数の完了通知をUIスレッドで呼ばせる</param>
@@ -71,8 +48,6 @@ public sealed class SchedulerRunCoordinator
         }
         if (!save())
         {
-            DiagnosticLog.Warn("Scheduler.EnsureIds", "識別子を保存できないため予定実行を停止",
-                "画面の保存失敗の案内に従って書き込める状態にし、タスクトレイの「スケジューラー設定」でOKを押すか、らんちゃを再起動すると予定実行を再開する");
             return false;
         }
         lock (lockObject)
