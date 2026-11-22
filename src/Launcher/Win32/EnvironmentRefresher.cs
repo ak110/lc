@@ -36,31 +36,40 @@ public sealed class EnvironmentRefresher
     public bool Refresh()
     {
         var newVars = ReadRegistryVars();
-        bool changed = false;
+        var current = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        foreach (string name in newVars.Keys.Concat(trackedNames))
+            current[name] = Environment.GetEnvironmentVariable(name);
 
-        // 追加・変更の適用
-        foreach (var (name, value) in newVars)
+        var diff = ComputeRefreshDiff(newVars, current, trackedNames);
+        foreach (var (name, value) in diff.Updates)
+            Environment.SetEnvironmentVariable(name, value);
+        trackedNames = diff.TrackedNames;
+        return diff.Updates.Count > 0;
+    }
+
+    /// <summary>
+    /// レジストリ由来の値と現在値から、プロセスの環境ブロックへ適用する変更と次回の追跡対象を求める。
+    /// 削除（値が null の変更）は前回の追跡対象に含まれ今回のレジストリに無い変数だけとする。
+    /// </summary>
+    public static EnvironmentRefreshDiff ComputeRefreshDiff(
+        IReadOnlyDictionary<string, string> newRegistryVars,
+        IReadOnlyDictionary<string, string?> currentProcessVars,
+        IReadOnlySet<string> trackedNames)
+    {
+        var updates = new List<KeyValuePair<string, string?>>();
+        foreach (var (name, value) in newRegistryVars)
         {
-            string? current = Environment.GetEnvironmentVariable(name);
-            if (!string.Equals(current, value, StringComparison.Ordinal))
-            {
-                Environment.SetEnvironmentVariable(name, value);
-                changed = true;
-            }
+            if (!string.Equals(currentProcessVars.GetValueOrDefault(name), value, StringComparison.Ordinal))
+                updates.Add(new(name, value));
         }
 
-        // 削除の適用: 前回あったが今回無い変数のみクリアする
+        var nextTracked = new HashSet<string>(newRegistryVars.Keys, StringComparer.OrdinalIgnoreCase);
         foreach (string name in trackedNames)
         {
-            if (!newVars.ContainsKey(name))
-            {
-                Environment.SetEnvironmentVariable(name, null);
-                changed = true;
-            }
+            if (!nextTracked.Contains(name))
+                updates.Add(new(name, null));
         }
-
-        trackedNames = new HashSet<string>(newVars.Keys, StringComparer.OrdinalIgnoreCase);
-        return changed;
+        return new EnvironmentRefreshDiff(updates, nextTracked);
     }
 
     /// <summary>
@@ -92,3 +101,7 @@ public sealed class EnvironmentRefresher
         return list;
     }
 }
+
+public sealed record EnvironmentRefreshDiff(
+    IReadOnlyList<KeyValuePair<string, string?>> Updates,
+    HashSet<string> TrackedNames);

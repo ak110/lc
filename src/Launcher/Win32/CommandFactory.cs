@@ -21,22 +21,12 @@ public static class CommandFactory
                 using var link = new ShellLink(file);
                 string targetPath = PathHelper.PathNormalize(link.TargetPath);
                 string workingDirectory = PathHelper.PathNormalize(link.WorkingDirectory);
-                command.Name = Path.GetFileNameWithoutExtension(targetPath);
-                command.FileName = targetPath;
-                command.Param = link.Arguments ?? string.Empty;
-                command.WorkDir =
-                    PathHelper.EqualsPath(
-                    Path.GetDirectoryName(targetPath) ?? string.Empty,
-                    workingDirectory) &&
-                    2 <= workingDirectory.Length &&
-                    workingDirectory[1] == ':' ? null : workingDirectory;
-                command.Show = link.DisplayMode switch
-                {
-                    ShellLink.ShellLinkDisplayMode.Maximized => WindowStyle.Maximized,
-                    ShellLink.ShellLinkDisplayMode.Minimized => WindowStyle.Minimized,
-                    _ => WindowStyle.Normal,
-                };
-                return command;
+                return CreateFromShortcutProperties(
+                    targetPath,
+                    link.Arguments,
+                    workingDirectory,
+                    PathHelper.EqualsPath(Path.GetDirectoryName(targetPath) ?? string.Empty, workingDirectory),
+                    link.DisplayMode);
             }
             catch (IOException)
             {
@@ -52,4 +42,25 @@ public static class CommandFactory
         command.FileName = file;
         return command;
     }
+
+    public static Command CreateFromShortcutProperties(
+        string normalizedTargetPath,
+        string? arguments,
+        string normalizedWorkingDirectory,
+        bool workDirMatchesTargetDir,
+        ShellLink.ShellLinkDisplayMode displayMode) => new()
+        {
+            Name = Path.GetFileNameWithoutExtension(normalizedTargetPath),
+            FileName = normalizedTargetPath,
+            Param = arguments ?? string.Empty,
+            WorkDir = workDirMatchesTargetDir && 2 <= normalizedWorkingDirectory.Length && normalizedWorkingDirectory[1] == ':'
+            ? null
+            : normalizedWorkingDirectory,
+            Show = displayMode switch
+            {
+                ShellLink.ShellLinkDisplayMode.Maximized => WindowStyle.Maximized,
+                ShellLink.ShellLinkDisplayMode.Minimized => WindowStyle.Minimized,
+                _ => WindowStyle.Normal,
+            },
+        };
 }

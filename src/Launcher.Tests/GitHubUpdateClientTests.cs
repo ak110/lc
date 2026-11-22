@@ -74,4 +74,15 @@ public sealed class GitHubUpdateClientTests
             }).Should().BeFalse();
         }
     }
+
+    [Theory]
+    [InlineData("v1.2.4", "1.2.3", true)]
+    [InlineData("v1.2.3", "1.2.3", false)]
+    [InlineData("v1.2.2", "1.2.3", false)]
+    [InlineData("v1.2.4.1", "1.2.3", false)]
+    [InlineData("1.2.4", "1.2.3", false)]
+    public void IsUpdateAvailable_現在の版と比べて新しい配布版だけを案内する(string tag, string currentVersion, bool expected)
+    {
+        GitHubUpdateClient.IsUpdateAvailable(new GitHubRelease { TagName = tag }, currentVersion).Should().Be(expected);
+    }
 }

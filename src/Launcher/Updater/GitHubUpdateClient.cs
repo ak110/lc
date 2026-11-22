@@ -26,13 +26,16 @@ public static class GitHubUpdateClient
     /// <summary>
     /// 更新が利用可能か判定
     /// </summary>
-    public static bool IsUpdateAvailable(GitHubRelease? release)
+    public static bool IsUpdateAvailable(GitHubRelease? release) =>
+        IsUpdateAvailable(release, Infrastructure.AppVersion.VersionString);
+
+    public static bool IsUpdateAvailable(GitHubRelease? release, string currentVersionString)
     {
         if (release?.TagName is not { } tag || !tag.StartsWith('v')) return false;
         // 配布タグはvX.Y.Z。公開情報が古い場合にもダウングレードを案内しない。
         return Version.TryParse(tag.AsSpan(1), out var available)
             && available.Build >= 0 && available.Revision < 0
-            && Version.TryParse(Infrastructure.AppVersion.VersionString, out var current)
+            && Version.TryParse(currentVersionString, out var current)
             && available > current;
     }
 }
