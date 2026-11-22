@@ -75,7 +75,7 @@ model: sonnet
 - cmd.cfg再読込で一覧実体を保持し、古い編集参照による保存を防いでいるか
 - 通常終了と更新終了が共通の停止・最終保存を呼び、datのWindowHandleを消去するか
 
-### E. Presenter パターン（`docs/development/architecture.md`）
+### E. Presenter パターン
 
 - WinFormsフォームの検索・置換・入力状態・予定の判定を、Coreの公開型へ委譲しているか。
   `MemoSearch`・`TextIndentation`・`HookInputState`・`SchedulerScheduleEvaluator`と各Presenterを使う
