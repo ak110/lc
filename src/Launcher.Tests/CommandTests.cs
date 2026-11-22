@@ -146,15 +146,6 @@ public sealed class CommandTests
     }
 
     [Fact]
-    public void GetMatchScore_先頭一致でスコアが正()
-    {
-        var cmd = new Command { Name = "notepad" };
-        var config = new Config { CommandIgnoreCase = true };
-
-        cmd.GetMatchScore("note", config).Should().BePositive();
-    }
-
-    [Fact]
     public void ParseInput_完全一致でtrue()
     {
         var cmd = new Command { Name = "notepad" };

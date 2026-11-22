@@ -74,8 +74,8 @@ public sealed class SchedulerDataTests
                             TimeType = ScheduleTimeType.SpecificTimes,
                             Times = [new HourMinute(9, 0), new HourMinute(18, 0)],
                             DateType = ScheduleDateType.Weekday,
-                            WeeksStart = new MonthDay(1, 1),
-                            WeeksEnd = new MonthDay(12, 31),
+                            WeeksStart = new MonthDay(3, 15),
+                            WeeksEnd = new MonthDay(11, 20),
                             Weekdays = [true, true, true, true, true, false, false],
                         },
                         new Schedule
@@ -129,6 +129,8 @@ public sealed class SchedulerDataTests
         sch1.TimeType.Should().Be(ScheduleTimeType.SpecificTimes);
         sch1.Times.Should().Equal(new HourMinute(9, 0), new HourMinute(18, 0));
         sch1.DateType.Should().Be(ScheduleDateType.Weekday);
+        sch1.WeeksStart.Should().Be(new MonthDay(3, 15));
+        sch1.WeeksEnd.Should().Be(new MonthDay(11, 20));
         sch1.Weekdays.Should().Equal(true, true, true, true, true, false, false);
 
         var sch2 = item.Schedules[1];

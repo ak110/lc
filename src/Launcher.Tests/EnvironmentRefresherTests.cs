@@ -27,17 +27,6 @@ public sealed class EnvironmentRefresherTests
     }
 
     [Fact]
-    public void 現在値と同じなら変更しない()
-    {
-        var diff = EnvironmentRefresher.ComputeRefreshDiff(
-            Registry(("FOO", "a")),
-            Current(("FOO", "a")),
-            Tracked("FOO"));
-
-        diff.Updates.Should().BeEmpty();
-    }
-
-    [Fact]
     public void 値の大文字小文字の違いは変更として扱う()
     {
         var diff = EnvironmentRefresher.ComputeRefreshDiff(

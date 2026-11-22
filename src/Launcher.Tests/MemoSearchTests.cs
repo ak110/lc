@@ -45,13 +45,6 @@ public sealed class MemoSearchTests
         MemoSearch.IsMatch("123", "[", true, true).Should().BeFalse();
     }
 
-    [Fact]
-    public void 正規表現置換はキャプチャを展開し文字列置換はそのまま使う()
-    {
-        MemoSearch.ComputeReplacement("a12", @"a(\d+)", "$1!", true, true).Should().Be("12!");
-        MemoSearch.ComputeReplacement("a12", "a12", "$1!", true, false).Should().Be("$1!");
-    }
-
     [Theory]
     [InlineData(false, "abc ABC", "abc", "x", "x x", 2)]
     [InlineData(true, "a12 a34", @"a(\d+)", "$1", "12 34", 2)]
@@ -80,6 +73,7 @@ public sealed class MemoSearchTests
     {
         MemoSearch.ComputeReplacement("a1", @"a(\d)", @"[$1]\t\\", true, true).Should().Be("[1]\t\\");
         MemoSearch.ComputeReplacement("a1", "a1", @"\t", true, false).Should().Be(@"\t");
+        MemoSearch.ComputeReplacement("a12", "a12", "$1!", true, false).Should().Be("$1!");
         MemoSearch.ReplaceAllInText("a1", "a1", @"\n", true, false, out _).Should().Be(@"\n");
     }
 }

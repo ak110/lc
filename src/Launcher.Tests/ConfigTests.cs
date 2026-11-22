@@ -133,6 +133,7 @@ public sealed class ConfigTests
         };
 
         var clone = original.Clone();
+        clone.ReplaceEnv.Should().Equal("SystemRoot", "ProgramFiles");
 
         clone.ReplaceEnv.Add("TEMP");
         clone.ReplaceEnv.Remove("SystemRoot");

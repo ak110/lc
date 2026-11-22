@@ -77,10 +77,11 @@ public partial class ApplicationHostForm : Form
 
     public string? ConfigurationBaseName { get; }
 
-    public ApplicationHostForm(string? baseName = null)
+    public ApplicationHostForm(string? baseName = null, int schedulerCheckIntervalMilliseconds = 30000)
     {
         ConfigurationBaseName = baseName;
         InitializeComponent();
+        schedulerTimer.Interval = schedulerCheckIntervalMilliseconds;
         Visible = false;
 
         var screenRect = new Rectangle();

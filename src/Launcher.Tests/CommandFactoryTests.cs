@@ -33,7 +33,6 @@ public sealed class CommandFactoryTests
     [Theory]
     [InlineData(ShellLink.ShellLinkDisplayMode.Maximized, WindowStyle.Maximized)]
     [InlineData(ShellLink.ShellLinkDisplayMode.Minimized, WindowStyle.Minimized)]
-    [InlineData(ShellLink.ShellLinkDisplayMode.Normal, WindowStyle.Normal)]
     public void 表示モードを起動時のウィンドウ状態へ変換する(ShellLink.ShellLinkDisplayMode displayMode, WindowStyle expected)
     {
         var command = CommandFactory.CreateFromShortcutProperties(

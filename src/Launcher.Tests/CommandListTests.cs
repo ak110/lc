@@ -18,24 +18,16 @@ public sealed class CommandListTests
         return list;
     }
 
-    [Fact]
-    public void FindMatch_空入力で全コマンドが返る()
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public void FindMatch_空入力とnull入力で全コマンドが返る(string? input)
     {
         var list = CreateSampleList();
 
-        var result = list.FindMatch("", _config).ToList();
+        var result = list.FindMatch(input!, _config).ToList();
 
-        result.Should().HaveCount(4);
-    }
-
-    [Fact]
-    public void FindMatch_null入力で全コマンドが返る()
-    {
-        var list = CreateSampleList();
-
-        var result = list.FindMatch(null!, _config).ToList();
-
-        result.Should().HaveCount(4);
+        result.Should().BeEquivalentTo(list.Commands);
     }
 
     [Fact]
@@ -58,8 +50,7 @@ public sealed class CommandListTests
 
         var result = list.FindMatch("note", _config).ToList();
 
-        result.Should().HaveCount(2);
-        result[0].Name.Should().Be("notepad");
+        result.Select(c => c.Name).Should().Equal("notepad", "notepadpp");
     }
 
     [Fact]

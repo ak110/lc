@@ -7,39 +7,11 @@ namespace Launcher.Tests;
 public sealed class ErrorReporterTests
 {
     [Fact]
-    public void GetDetailMessage_単一例外の情報を含む()
-    {
-        var ex = new InvalidOperationException("テストエラー");
-
-        string result = ErrorReporter.GetDetailMessage(ex);
-
-        result.Should().Contain("InvalidOperationException");
-        result.Should().Contain("テストエラー");
-    }
-
-    [Fact]
-    public void GetDetailMessage_InnerExceptionの情報を含む()
-    {
-        var inner = new ArgumentException("内部エラー");
-        var ex = new InvalidOperationException("外部エラー", inner);
-
-        string result = ErrorReporter.GetDetailMessage(ex);
-
-        result.Should().Contain("InnerException ->");
-        result.Should().Contain("ArgumentException");
-        result.Should().Contain("内部エラー");
-        result.Should().Contain("<- InnerException");
-    }
-
-    [Fact]
     public void GetDetailMessage_BaseExceptionがInnerExceptionと異なる場合に両方出力する()
     {
         var root = new ArgumentException("根本原因");
         var middle = new IOException("中間エラー", root);
         var outer = new InvalidOperationException("外部エラー", middle);
-
-        outer.InnerException.Should().Be(middle);
-        outer.GetBaseException().Should().Be(root);
 
         string result = ErrorReporter.GetDetailMessage(outer);
 
@@ -54,28 +26,30 @@ public sealed class ErrorReporterTests
     }
 
     [Fact]
-    public void GetDetailMessage_InnerExceptionがない場合はBaseExceptionセクションも出ない()
+    public void GetDetailMessage_InnerExceptionがない場合は例外の情報だけを出しBaseExceptionセクションも出ない()
     {
         var ex = new InvalidOperationException("単独エラー");
 
         string result = ErrorReporter.GetDetailMessage(ex);
 
+        result.Should().Contain("InvalidOperationException");
+        result.Should().Contain("単独エラー");
         result.Should().NotContain("InnerException");
         result.Should().NotContain("BaseException");
     }
 
     [Fact]
-    public void GetDetailMessage_BaseExceptionが自分自身の場合はBaseExceptionセクションを出力しない()
+    public void GetDetailMessage_直接の内部例外が根本原因なら内部例外だけを出しBaseExceptionセクションを出力しない()
     {
         var inner = new ArgumentException("内部エラー");
         var ex = new InvalidOperationException("外部エラー", inner);
 
-        ex.GetBaseException().Should().Be(inner);
-        ex.InnerException.Should().Be(inner);
-
         string result = ErrorReporter.GetDetailMessage(ex);
 
         result.Should().Contain("InnerException ->");
+        result.Should().Contain("ArgumentException");
+        result.Should().Contain("内部エラー");
+        result.Should().Contain("<- InnerException");
         result.Should().NotContain("BaseException");
     }
 

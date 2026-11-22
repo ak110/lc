@@ -23,9 +23,10 @@ internal static class UiAcceptance
             {
             }
         });
+        thread.IsBackground = true;
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
-        thread.Join();
+        thread.Join(TimeSpan.FromSeconds(60)).Should().BeTrue("UI受入の操作が終わらずSTAスレッドが残っている");
         failure?.Throw();
     }
 

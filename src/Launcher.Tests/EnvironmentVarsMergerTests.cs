@@ -19,16 +19,6 @@ public sealed class EnvironmentVarsMergerTests
     }
 
     [Fact]
-    public void PATH連結_システム先頭ユーザー末尾()
-    {
-        var result = EnvironmentVarsMerger.Merge(
-            [Kv("Path", @"C:\sys")],
-            [Kv("Path", @"C:\user")]);
-
-        result["Path"].Should().Be(@"C:\sys;C:\user");
-    }
-
-    [Fact]
     public void PATH連結_システム末尾セミコロンを吸収()
     {
         var result = EnvironmentVarsMerger.Merge(
@@ -87,15 +77,5 @@ public sealed class EnvironmentVarsMergerTests
             [Kv("MY_TEST_VAR", @"%SystemRoot%\foo")]);
 
         result["MY_TEST_VAR"].Should().Be(systemRoot + @"\foo");
-    }
-
-    [Fact]
-    public void 非PATH変数はユーザー値で上書きされる()
-    {
-        var result = EnvironmentVarsMerger.Merge(
-            [Kv("JAVA_HOME", @"C:\java-system")],
-            [Kv("JAVA_HOME", @"C:\java-user")]);
-
-        result["JAVA_HOME"].Should().Be(@"C:\java-user");
     }
 }

@@ -19,7 +19,9 @@ public sealed class SchedulerNotificationTests
             WindowTopMost = true,
             WindowHideNoActive = true,
         });
-        data.Write(".dat", new Data { SchedulerLastCheckTime = DateTime.Now.AddMinutes(-2) });
+        var start = DateTime.Now;
+        var scheduledTime = start.AddMinutes(-1);
+        data.Write(".dat", new Data { SchedulerLastCheckTime = start.AddMinutes(-2) });
         data.Write(".sch.cfg", new SchedulerData
         {
             Items = [new SchedulerItem
@@ -28,10 +30,8 @@ public sealed class SchedulerNotificationTests
                 SleepTimeMs = 0,
                 Schedules = [new Schedule
                 {
-                    TimeType = ScheduleTimeType.Interval,
-                    TimeIntervalStart = new HourMinute(0, 0),
-                    TimeIntervalEnd = new HourMinute(23, 59),
-                    TimeIntervalMinutes = 1,
+                    TimeType = ScheduleTimeType.SpecificTimes,
+                    Times = [new HourMinute(scheduledTime.Hour, scheduledTime.Minute)],
                 }],
                 Tasks = [
                     new SchedulerTask { Type = SchedulerTaskType.MessageBox, Message = "先の通知" },
@@ -39,7 +39,7 @@ public sealed class SchedulerNotificationTests
                 ],
             }],
         });
-        using var host = new ApplicationHostForm(data.BaseName);
+        using var host = new ApplicationHostForm(data.BaseName, schedulerCheckIntervalMilliseconds: 50);
         using var context = new ApplicationContext();
         using var timer = new System.Windows.Forms.Timer { Interval = 10 };
         var elapsed = Stopwatch.StartNew();
@@ -72,7 +72,7 @@ public sealed class SchedulerNotificationTests
                 }
                 if (observed.Count >= 2 && !host.HasActiveNotifications)
                     context.ExitThread();
-                if (elapsed.Elapsed > TimeSpan.FromSeconds(120))
+                if (elapsed.Elapsed > TimeSpan.FromSeconds(30))
                     context.ExitThread();
             };
             timer.Start();

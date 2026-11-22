@@ -1,4 +1,3 @@
-using System.Runtime.ExceptionServices;
 using FluentAssertions;
 using Launcher.UI;
 using Xunit;
@@ -11,7 +10,7 @@ public sealed class FindReplaceDialogTests
     [InlineData(false)]
     [InlineData(true)]
     public void ShowOrActivate_表示中のコントロールが重ならず画面内に収まる(bool replaceMode) =>
-        RunInSta(() =>
+        UiAcceptance.Run(() =>
         {
             using var owner = new Form();
             using var dialog = new FindReplaceDialog { Opacity = 0 };
@@ -35,7 +34,7 @@ public sealed class FindReplaceDialogTests
 
     [Fact]
     public void ShowOrActivate_置換モードでは検索文字列の次に置換後へタブ移動する() =>
-        RunInSta(() =>
+        UiAcceptance.Run(() =>
         {
             using var owner = new Form();
             using var dialog = new FindReplaceDialog { Opacity = 0 };
@@ -52,7 +51,7 @@ public sealed class FindReplaceDialogTests
 
     [Fact]
     public void ShowOrActivate_検索モードでは置換関連コントロールを表示しない() =>
-        RunInSta(() =>
+        UiAcceptance.Run(() =>
         {
             using var owner = new Form();
             using var dialog = new FindReplaceDialog { Opacity = 0 };
@@ -63,24 +62,4 @@ public sealed class FindReplaceDialogTests
             dialog.Controls.Cast<Control>().Count(c => c.Visible && c is TextBox).Should().Be(1);
             dialog.Controls.Cast<Control>().Count(c => c.Visible && c is Button).Should().Be(3);
         });
-
-    static void RunInSta(Action action)
-    {
-        ExceptionDispatchInfo? exception = null;
-        var thread = new Thread(() =>
-        {
-            try
-            {
-                action();
-            }
-            catch (Exception ex) when ((exception = ExceptionDispatchInfo.Capture(ex)) is not null)
-            {
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-
-        exception?.Throw();
-    }
 }

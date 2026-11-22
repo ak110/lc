@@ -9,7 +9,15 @@ public sealed class FolderEntryEnumeratorTests
     [Fact]
     public void Enumerate_存在しないパスは空を返す()
     {
-        FolderEntryEnumerator.Enumerate(@"Z:\definitely\not\existing").Should().BeEmpty();
+        var tempDir = Directory.CreateTempSubdirectory();
+        try
+        {
+            FolderEntryEnumerator.Enumerate(Path.Combine(tempDir.FullName, "missing")).Should().BeEmpty();
+        }
+        finally
+        {
+            tempDir.Delete(true);
+        }
     }
 
     [Fact]

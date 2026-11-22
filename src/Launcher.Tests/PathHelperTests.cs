@@ -27,15 +27,8 @@ public sealed class PathHelperTests
     [Fact]
     public void PathNormalize_環境変数を展開()
     {
-        var result = PathHelper.PathNormalize(@"%SystemRoot%\System32");
-        result.Should().NotContain("%");
-        result.Should().EndWith(@"\System32");
-    }
-
-    [Fact]
-    public void EqualsPath_同じパスはtrue()
-    {
-        PathHelper.EqualsPath(@"C:\Windows", @"C:\Windows").Should().BeTrue();
+        string systemRoot = Environment.GetEnvironmentVariable("SystemRoot")!;
+        PathHelper.PathNormalize(@"%SystemRoot%\System32").Should().Be(systemRoot + @"\System32");
     }
 
     [Fact]

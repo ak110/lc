@@ -108,7 +108,6 @@ namespace Launcher.UI {
 			//
 			// schedulerTimer
 			//
-			this.schedulerTimer.Interval = 30000;
 			this.schedulerTimer.Tick += new System.EventHandler(this.schedulerTimer_Tick);
 			//
 			// envChangeDebounceTimer

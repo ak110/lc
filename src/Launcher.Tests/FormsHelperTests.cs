@@ -57,8 +57,8 @@ public sealed class FormsHelperTests
 
         FormsHelper.UpSelected(lb);
 
-        lb.Items[0].Should().Be("a");
-        lb.Items[1].Should().Be("b");
+        lb.Items.Cast<string>().Should().Equal("a", "b");
+        lb.SelectedItem.Should().Be("a");
     }
 
     [Fact]
@@ -85,8 +85,8 @@ public sealed class FormsHelperTests
 
         FormsHelper.DownSelected(lb);
 
-        lb.Items[0].Should().Be("a");
-        lb.Items[1].Should().Be("b");
+        lb.Items.Cast<string>().Should().Equal("a", "b");
+        lb.SelectedItem.Should().Be("b");
     }
 
     [Fact]
@@ -112,8 +112,8 @@ public sealed class FormsHelperTests
 
         FormsHelper.RemoveSelected(lb);
 
-        lb.Items.Count.Should().Be(1);
-        lb.SelectedIndex.Should().Be(0);
+        lb.Items.Cast<string>().Should().Equal("a");
+        lb.SelectedItem.Should().Be("a");
     }
 
 }

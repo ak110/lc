@@ -61,27 +61,6 @@ public sealed class UpdatePerformerTests
     }
 
     [Fact]
-    public void GenerateBatchScript_一時ディレクトリ削除が含まれる()
-    {
-        List<string> files = ["app.exe"];
-        var result = UpdatePerformer.GenerateBatchScript(
-            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", @"C:\temp\_update.bat", files);
-
-        result.Should().Contain(@"rd /S /Q ""C:\temp\update""");
-        result.Should().Contain(@"del /F /Q ""C:\temp\update.zip""");
-    }
-
-    [Fact]
-    public void GenerateBatchScript_バッチ自身の削除が含まれる()
-    {
-        List<string> files = ["app.exe"];
-        var result = UpdatePerformer.GenerateBatchScript(
-            1000, @"C:\app", @"C:\temp\update", @"C:\app\app.exe", @"C:\temp\_update.bat", files);
-
-        result.Should().Contain(@"del /F /Q ""C:\temp\_update.bat""");
-    }
-
-    [Fact]
     public void GenerateBatchScript_echoオフとexit()
     {
         List<string> files = ["app.exe"];
@@ -102,6 +81,7 @@ public sealed class UpdatePerformerTests
         env.WriteNew("app.exe", "new-app");
         env.WriteNew(@"sub\lib.dll", "new-lib");
         env.WriteNew("added.txt", "new-added");
+        File.WriteAllText(env.TempDir + ".zip", "downloaded");
 
         env.Run(["app.exe", @"sub\lib.dll", "added.txt"], []).Should().Be("success");
 
@@ -111,6 +91,7 @@ public sealed class UpdatePerformerTests
         env.ReadApp("user.cfg").Should().Be("user-data");
         Directory.Exists(env.BackupDir).Should().BeFalse();
         Directory.Exists(env.TempDir).Should().BeFalse();
+        File.Exists(env.TempDir + ".zip").Should().BeFalse();
         File.Exists(env.BatchPath).Should().BeFalse();
     }
 

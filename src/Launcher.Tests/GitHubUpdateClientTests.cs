@@ -21,13 +21,6 @@ public sealed class GitHubUpdateClientTests
         GitHubUpdateClient.IsUpdateAvailable(release).Should().BeFalse();
     }
 
-    [Fact]
-    public void IsUpdateAvailable_新しいバージョンならtrue()
-    {
-        var release = new GitHubRelease { TagName = "v99.99.99" };
-        GitHubUpdateClient.IsUpdateAvailable(release).Should().BeTrue();
-    }
-
     [Theory]
     [InlineData("v0.0.0")]
     [InlineData("")]

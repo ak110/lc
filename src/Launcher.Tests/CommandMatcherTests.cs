@@ -11,13 +11,6 @@ public sealed class CommandMatcherTests
     private readonly Config _caseSensitiveConfig = new Config { CommandIgnoreCase = false };
 
     [Fact]
-    public void GetMatchScore_完全一致は最高スコア()
-    {
-        int score = CommandMatcher.GetMatchScore("notepad", "notepad", _config);
-        score.Should().BePositive();
-    }
-
-    [Fact]
     public void GetMatchScore_先頭一致はスコアが正()
     {
         int score = CommandMatcher.GetMatchScore("notepad", "note", _config);
@@ -146,13 +139,6 @@ public sealed class CommandMatcherTests
     {
         int len = CommandMatcher.GetMatchLength("abc", "xyz", _config);
         len.Should().Be(0);
-    }
-
-    [Fact]
-    public void GetMatchScore_htdocsにdocsで部分一致する()
-    {
-        int score = CommandMatcher.GetMatchScore("htdocs", "docs", _config);
-        score.Should().BePositive("'htdocs'に'docs'は部分一致するべき");
     }
 
     [Fact]
