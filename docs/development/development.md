@@ -103,6 +103,9 @@ Dependabot security updatesによる自動修正PRの作成は無効にし、検
 `TreatWarningsAsErrors=true`環境では`suggestion`もビルドに表れないため、
 `dotnet format --diagnostics`で対象箇所を列挙する。
 
+`pyfltr`の`dotnet-format`は空白とusingの順序だけを自動修正する。
+styleとAnalyzerの違反は`dotnet-build`のエラーとして表れるため、診断に従って手で直す。
+
 ## 環境制限
 
 - WinForms Designer.csのマルチバイト文字を含むテーブル等ではmarkdownlint MD060が発生する場合がある
