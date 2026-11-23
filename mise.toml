@@ -3,6 +3,7 @@ min_version = "2026.9.16"
 
 [tools]
 uv = "latest"
+prek = "0.5.10"
 dotnet = "10"
 node = "lts"
 # pnpm の初回導入は mise の npm バックエンドで行う。Node.js 25 以降は Corepack を同梱しない。
@@ -38,13 +39,13 @@ description = "開発環境のセットアップ"
 run = [
   "pnpm install",
   "git config --unset core.hooksPath || true",
-  "uvx prek install -c .pre-commit-config.yaml",
+  "prek install -c .pre-commit-config.yaml",
   "git config --local commit.template .gitmessage",
 ]
 run_windows = [
   "pnpm install",
   "git config --unset core.hooksPath & exit /b 0",
-  "uvx prek install -c .pre-commit-config.yaml",
+  "prek install -c .pre-commit-config.yaml",
   "git config --local commit.template .gitmessage",
 ]
 
