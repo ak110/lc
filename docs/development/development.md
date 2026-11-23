@@ -104,7 +104,7 @@ Dependabot security updatesによる自動修正PRの作成は無効にし、検
 `dotnet format --diagnostics`で対象箇所を列挙する。
 
 `pyfltr`の`dotnet-format`は空白とusingの順序だけを自動修正する。
-`.editorconfig`で`warning`以上にしたstyleとAnalyzerの診断は`dotnet-build`のエラーとして表れるため、診断に従って手で直す。
+styleとAnalyzerのルールのうち、ビルドで実行され`.editorconfig`で`warning`以上にした診断は`dotnet-build`のエラーとして表れるため、診断に従って手で直す（Visual Studio IDEだけで実行されるルールはビルドに表れない）。
 `suggestion`以下の診断は`dotnet-build`にも`dotnet-format`にも表れない。
 
 ## 環境制限

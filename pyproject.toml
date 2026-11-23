@@ -5,7 +5,7 @@ exclude-newer = "1 day"
 preset = "latest"
 dotnet = true
 # 既定の`dotnet format`はstyle・analyzersの検査でソリューション全体を解析し、CIと手元の律速になる。
-# .editorconfigでwarning以上にしたstyle・analyzersの診断はEnforceCodeStyleInBuildとTreatWarningsAsErrorsによりdotnet-buildが検出するため、
+# ビルドで実行され.editorconfigでwarning以上にしたstyle・analyzersの診断はEnforceCodeStyleInBuildとTreatWarningsAsErrorsによりdotnet-buildが検出するため、
 # formatの対象は空白とimportの順序（buildが検出しない規則）に限定する。style違反の自動修正は行わない。
 dotnet-format-args = ["format", "--diagnostics", "IMPORTS"]
 # Windowsで古いmise shimを拾わず、
