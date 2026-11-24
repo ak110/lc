@@ -22,7 +22,8 @@ verifies:
 
 ## 再実行
 
-Windowsの一時checkoutで、アプリを起動せずに実行する。PowerShellで次を実行する。
+対象コード・テスト・このスキルの変更時は、Windows CIの `Updater boundaries` が実行する。
+手元で確かめる場合はWindowsの一時checkoutを使い、アプリを起動せずにPowerShellで次を実行する。
 
 ```powershell
 $env:LC_CHECK_UPDATE_BOUNDARIES = '1'

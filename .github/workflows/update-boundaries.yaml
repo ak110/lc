@@ -1,0 +1,37 @@
+name: Updater boundaries
+
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - .github/workflows/update-boundaries.yaml
+      - .claude/skills/update-batch-boundaries/SKILL.md
+      - src/Launcher/Updater/UpdatePerformer.cs
+      - src/Launcher.Tests/UpdatePerformerTests.cs
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/update-boundaries.yaml
+      - .claude/skills/update-batch-boundaries/SKILL.md
+      - src/Launcher/Updater/UpdatePerformer.cs
+      - src/Launcher.Tests/UpdatePerformerTests.cs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-boundaries-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  enumerate:
+    runs-on: windows-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      LC_CHECK_UPDATE_BOUNDARIES: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
+      - run: uvx --exclude-newer-package pyfltr=false pyfltr ci --commands=dotnet-test '--dotnet-test-args=--filter FullyQualifiedName~UpdatePerformerTests' --output-format=github-annotations
