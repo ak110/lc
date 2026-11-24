@@ -2,7 +2,29 @@
 
 ## インストール
 
-[Releases](https://github.com/ak110/lc/releases)からZIPをダウンロードし、任意のフォルダに展開する。
+[Releases](https://github.com/ak110/lc/releases)からZIPをダウンロードする。ビルド来歴を確認する場合は、展開する前に次の手順で検証する。
+
+### 配布ZIPのビルド来歴を検証する
+
+Release本文に検証手順がある版では、ZIPがこのリポジトリのリリースワークフローでビルドされたことを確認できる。
+GitHub CLIで `gh auth login` を実行するか、`GH_TOKEN` を設定してから、ダウンロードしたZIPのファイル名で実行する。
+
+```sh
+gh attestation verify lc-v1.2.3.zip --repo ak110/lc --signer-workflow ak110/lc/.github/workflows/release.yaml
+```
+
+ソースコミットも確かめるには、`v1.2.3` をダウンロードした版のタグに置き換えて、次のコマンドを実行する。1行目がタグのコミット、2行目がその親（版数更新前のコミット）のSHA。
+
+```sh
+gh api repos/ak110/lc/commits/tags/v1.2.3 --jq ".sha, .parents[0].sha"
+```
+
+前の検証コマンドに `--source-digest SHA` を加えて実行する。どちらか一方のSHAで成功すればよい。ソースコミットが一致しない場合はもう一方のSHAを試す。
+[来歴証明の一覧](https://github.com/ak110/lc/attestations)も参照できる。
+
+### ZIPを展開して起動する
+
+来歴を検証した場合は、成功を確認してからZIPを展開する。展開先のフォルダは任意。
 `らんちゃ.exe` を起動するとタスクトレイに常駐し、設定したホットキーでランチャーを開ける。
 
 ## 初回セットアップ

@@ -13,10 +13,6 @@ on:
           - MAJOR
         default: PATCH
 
-permissions:
-  contents: write
-  actions: write
-
 concurrency:
   group: release
   cancel-in-progress: false
@@ -24,6 +20,12 @@ concurrency:
 jobs:
   release:
     runs-on: windows-latest
+    permissions:
+      contents: write
+      actions: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     env:
       # mise等がGitHub APIを呼び出す際のレート制限（403）回避。
       GITHUB_TOKEN: ${{ github.token }}
@@ -43,6 +45,9 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $sourceCommit = git rev-parse HEAD
           if ($LASTEXITCODE -ne 0) { throw '起動コミットを取得できません。Checkoutステップのログでリポジトリを取得できたか確認し、このワークフローを再実行してください。' }
+          if ($sourceCommit -ne $env:GITHUB_SHA) {
+            throw 'ビルド元が来歴証明に記録される起動コミットと一致しません。Checkoutステップを確認してください。'
+          }
           $propsPath = 'Directory.Build.props'
           $content = [IO.File]::ReadAllText($propsPath)
           if ($content -notmatch '<Version>(\d+\.\d+\.\d+)</Version>') {
@@ -81,17 +86,18 @@ jobs:
             }
           }
           if ($tag) {
-            git checkout --detach $tag
-            if ($LASTEXITCODE -ne 0) { throw "公開済みの版を取得できません。タグ $tag がリモートに存在するか（git ls-remote --tags origin $tag）確認し、このワークフローを再実行してください。" }
             $newVersion = $tag.Substring(1)
-            $ciCommit = git rev-parse --verify 'HEAD^'
+            $ciCommit = git rev-parse --verify "refs/tags/$tag^{commit}^"
             if ($LASTEXITCODE -ne 0) { throw "版数更新前のコミットを取得できません。タグ $tag の親コミットを取得できたか（Checkoutのfetch-depth: 0）確認し、このワークフローを再実行してください。" }
             'rerun=true' >> $env:GITHUB_OUTPUT
           } else {
             $ciCommit = $sourceCommit
+            'rerun=false' >> $env:GITHUB_OUTPUT
+          }
+          if ($newVersion -ne $currentVersion) {
+            # 親コミットからの再実行でも、タグへ移動せず初回と同じ版数更新を再現する。
             $regex = [regex]'<Version>[^<]+</Version>'
             [IO.File]::WriteAllText($propsPath, $regex.Replace($content, "<Version>$newVersion</Version>", 1))
-            'rerun=false' >> $env:GITHUB_OUTPUT
           }
           "version=$newVersion" >> $env:GITHUB_OUTPUT
           "ci_commit=$ciCommit" >> $env:GITHUB_OUTPUT
@@ -149,6 +155,11 @@ jobs:
           $zipName = "lc-v${{ steps.version.outputs.version }}.zip"
           Compress-Archive -Path publish/* -DestinationPath $zipName
 
+      - name: Attest ZIP build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: lc-v${{ steps.version.outputs.version }}.zip
+
       - name: Update version.json for GitHub Pages
         if: steps.version.outputs.rerun != 'true'
         shell: pwsh
@@ -182,16 +193,57 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          PRE_RELEASE_COMMIT: ${{ steps.version.outputs.ci_commit }}
         shell: pwsh
         run: |
-          $version = "${{ steps.version.outputs.version }}"
-          $tag = "v$version"
-          $asset = "lc-v$version.zip"
-          $releaseJson = gh release view $tag --json=assets,isDraft
+          Set-StrictMode -Version Latest
+          $repo = $env:GITHUB_REPOSITORY
+          $tag = "v$env:RELEASE_VERSION"
+          $asset = "lc-$tag.zip"
+          $signerWorkflow = "$repo/.github/workflows/release.yaml"
+          $provenanceNotes = @'
+          ## 配布ZIPのビルド来歴を検証する
+
+          GitHub CLIで `gh auth login` を実行するか、`GH_TOKEN` を設定してから、ダウンロードしたZIPを検証する。
+
+          ```sh
+          gh attestation verify {0} --repo {1} --signer-workflow {2}
+          ```
+
+          証明のソースcommitは、公開タグのcommitか、その親（版数更新前のcommit）。
+          [来歴証明の一覧](https://github.com/{1}/attestations)も参照できる。
+          '@ -f $asset, $repo, $signerWorkflow
+          $releaseJson = gh release view $tag --json=assets,body,isDraft
           if ($LASTEXITCODE -eq 0) {
             $release = $releaseJson | ConvertFrom-Json
-            if (-not ($release.assets | Where-Object { $_.name -eq $asset })) {
+            if ($release.assets | Where-Object { $_.name -eq $asset }) {
+              # 再ビルドしたZIPではなく、公開時に維持するZIPそのものを検証する。
+              $existingZip = Join-Path $env:RUNNER_TEMP $asset
+              gh release download $tag --pattern $asset --output $existingZip
+              if ($LASTEXITCODE -ne 0) {
+                throw "既存の $asset を取得できません。直前の gh release download の診断と、Release $tag の添付ファイルを確認してください。"
+              }
+              $tagCommit = git rev-parse --verify "refs/tags/$tag^{commit}"
+              if ($LASTEXITCODE -ne 0) {
+                throw "タグ $tag のコミットを取得できません。Checkoutステップのログでタグを取得できたか確認してください。"
+              }
+              gh attestation verify $existingZip --repo $repo --signer-workflow $signerWorkflow --source-digest $env:PRE_RELEASE_COMMIT
+              if ($LASTEXITCODE -ne 0) {
+                gh attestation verify $existingZip --repo $repo --signer-workflow $signerWorkflow --source-digest $tagCommit
+                if ($LASTEXITCODE -ne 0) {
+                  throw "既存の $asset の来歴証明を確認できません。ZIPは削除・置き換えせず、直前の gh attestation verify の診断と証明一覧（https://github.com/$repo/attestations）を確認してください。"
+                }
+              }
+            } else {
               gh release upload $tag $asset
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+            $body = [string]$release.body
+            if (-not $body.Replace("`r`n", "`n").Contains($provenanceNotes.Replace("`r`n", "`n"))) {
+              $notesPath = Join-Path $env:RUNNER_TEMP "lc-$tag-notes.md"
+              Set-Content -LiteralPath $notesPath -Value ($body + "`n`n" + $provenanceNotes)
+              gh release edit $tag --notes-file $notesPath
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
             if ($release.isDraft) {
@@ -199,7 +251,8 @@ jobs:
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
           } else {
-            gh release create $tag $asset --title="$tag" --notes-file=CHANGES.md
+            Add-Content CHANGES.md "`n$provenanceNotes"
+            gh release create $tag $asset --verify-tag --title="$tag" --notes-file=CHANGES.md
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
           $releaseJson = gh release view $tag --json=assets,isDraft
