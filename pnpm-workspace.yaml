@@ -21,7 +21,8 @@ overrides:
   vite: ^6.4.2
   esbuild: ^0.25.0
   prh: ^6.0.6
-  js-yaml: ^4.2.0
+  # rc-config-loaderはjs-yaml 5系のAPIを使うため、修正版へ届く要求範囲は上書きしない。
+  "js-yaml@<4.2.0": ^4.2.0
   "micromark-extension-math@3.1.0>katex": 0.18.2
   "markdownlint@0.42.0>re2js": ~2.8.7
   "textlint@15.8.0>glob": ^14.0.2

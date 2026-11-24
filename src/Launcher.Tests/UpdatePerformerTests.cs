@@ -153,6 +153,115 @@ public sealed class UpdatePerformerTests
         message.Should().Contain("上書きコピー");
     }
 
+    [UpdateEnumerationFact]
+    public void 更新バッチ_処理境界で完全な新版か復旧可能な状態を保つ()
+    {
+        string[] paths = ["app.exe", @"sub\lib.dll"];
+        foreach (bool reverse in new[] { false, true })
+        {
+            List<string> order = reverse ? [paths[1], paths[0]] : [.. paths];
+            for (int oldMask = 0; oldMask < 4; oldMask++)
+            {
+                bool HadOld(int index) => (oldMask & (1 << index)) != 0;
+
+                Check([], [], "success");
+                for (int failed = 0; failed < order.Count; failed++)
+                {
+                    if (HadOld(failed))
+                    {
+                        CheckRestoreMasks($"backup:{failed}", oldMask & ((1 << failed) - 1), 0);
+                    }
+                    CheckRestoreMasks($"copy:{failed}", oldMask, ~oldMask & ((1 << failed) - 1));
+                }
+
+                void CheckRestoreMasks(string initialFailure, int backupMask, int addedMask)
+                {
+                    for (int restoreMask = 0; restoreMask < 4; restoreMask++)
+                    {
+                        if ((restoreMask & ~(backupMask | addedMask)) != 0) continue;
+                        List<string> failures = [initialFailure];
+                        List<string> blockedDeletions = [];
+                        for (int index = 0; index < order.Count; index++)
+                        {
+                            if ((restoreMask & (1 << index)) == 0) continue;
+                            if (HadOld(index)) failures.Add($"restore:{index}");
+                            else blockedDeletions.Add(order[index]);
+                        }
+                        Check(failures, blockedDeletions, restoreMask == 0 ? "restored" : "restore_failed");
+                    }
+                }
+
+                void Check(List<string> failures, List<string> blockedDeletions, string expected)
+                {
+                    const string settings = "launcher.cfg";
+                    const string memo = "launcher.memo.cfg";
+                    var scenario = $"order={string.Join(',', order)}, old={oldMask}, failures={string.Join(',', failures)}, delete={string.Join(',', blockedDeletions)}";
+                    int? checkpoint = null;
+                    int checkpointCount;
+                    int stopsReached = 0;
+                    do
+                    {
+                        using var env = new BatchEnvironment();
+                        env.WriteApp(settings, "settings");
+                        env.WriteApp(memo, "memo");
+                        for (int index = 0; index < order.Count; index++)
+                        {
+                            if (HadOld(index)) env.WriteApp(order[index], $"old-{index}");
+                            env.WriteNew(order[index], $"new-{index}");
+                        }
+
+                        var (result, count) = env.RunWithCheckpoint(order, failures, checkpoint, blockedDeletions);
+                        checkpointCount = count;
+                        if (checkpoint is null || result != "interrupted") result.Should().Be(expected, scenario);
+                        else stopsReached++;
+                        checkpoint = (checkpoint ?? -1) + 1;
+
+                        var reason = $"{scenario}, boundary={checkpoint - 1}, result={result}";
+                        env.ReadApp(settings).Should().Be("settings", reason);
+                        env.ReadApp(memo).Should().Be("memo", reason);
+                        string?[] installed = order.Select(path => ReadIfPresent(env.AppPath(path))).ToArray();
+                        bool completeNew = installed.Select((content, i) => content == $"new-{i}").All(match => match);
+                        bool completeOld = installed.Select((content, i) => content == (HadOld(i) ? $"old-{i}" : null)).All(match => match);
+
+                        if (result == "success")
+                        {
+                            completeNew.Should().BeTrue(reason);
+                        }
+                        else if (result == "restored")
+                        {
+                            completeOld.Should().BeTrue(reason);
+                        }
+                        else if (!completeNew || result == "restore_failed")
+                        {
+                            for (int index = 0; index < order.Count; index++)
+                            {
+                                if (!HadOld(index)) continue;
+                                var backup = ReadIfPresent(Path.Combine(env.BackupDir, order[index]));
+                                (installed[index] == $"old-{index}" || backup == $"old-{index}").Should().BeTrue(reason);
+                            }
+                        }
+
+                    }
+                    while (checkpoint < checkpointCount);
+                    stopsReached.Should().BePositive(scenario);
+                }
+            }
+        }
+    }
+
+    private sealed class UpdateEnumerationFactAttribute : FactAttribute
+    {
+        public UpdateEnumerationFactAttribute()
+        {
+            if (Environment.GetEnvironmentVariable("LC_CHECK_UPDATE_BOUNDARIES") != "1")
+            {
+                Skip = "LC_CHECK_UPDATE_BOUNDARIES=1";
+            }
+        }
+    }
+
+    private static string? ReadIfPresent(string path) => File.Exists(path) ? File.ReadAllText(path) : null;
+
     /// <summary>
     /// 生成した更新バッチを隔離フォルダで実行する環境。
     /// 更新バッチはCP932で書くため、コードページが932の環境 (日本語版Windows) ではフォルダ名に日本語を含め、
@@ -192,22 +301,59 @@ public sealed class UpdatePerformerTests
 
         public string ReadApp(string relative) => File.ReadAllText(AppPath(relative));
 
-        public string Run(List<string> files, IReadOnlyCollection<string> failSteps)
+        public string Run(List<string> files, IReadOnlyCollection<string> failSteps) =>
+            RunWithCheckpoint(files, failSteps, null).Result;
+
+        public (string Result, int CheckpointCount) RunWithCheckpoint(
+            List<string> files, IReadOnlyCollection<string> failSteps, int? checkpoint,
+            IReadOnlyCollection<string>? blockedDeletions = null)
         {
             string resultPath = Path.Combine(_root, "result.txt");
             var options = new UpdateBatchOptions { ResultFilePath = resultPath, FailSteps = failSteps };
             string script = UpdatePerformer.GenerateBatchScript(
-                FinishedProcessId(), AppDir, TempDir, AppPath("app.exe"), BatchPath, files, options);
+                blockedDeletions is null ? FinishedProcessId() : 0, AppDir, TempDir, AppPath("app.exe"), BatchPath, files, options);
+            string[] lines = script.Split("\r\n", StringSplitOptions.None);
+            if (blockedDeletions is not null)
+            {
+                int wait = Array.IndexOf(lines, ":WAIT_LOOP");
+                wait.Should().BeGreaterThanOrEqualTo(0);
+                lines[wait] = "goto WAIT_DONE\r\n" + lines[wait];
+            }
+            int[] boundaries = Enumerable.Range(0, lines.Length).Where(index =>
+                lines[index].StartsWith("ver >NUL", StringComparison.Ordinal)
+                || lines[index].Contains(" mkdir ", StringComparison.Ordinal)
+                || lines[index].Contains(" del /F /Q ", StringComparison.Ordinal)
+                || lines[index].StartsWith("del /F /Q ", StringComparison.Ordinal)
+                || lines[index].StartsWith("rd /S /Q ", StringComparison.Ordinal)).ToArray();
+            foreach (string path in blockedDeletions ?? [])
+            {
+                string target = AppPath(path);
+                string prefix = $"if exist \"{target}\" del /F /Q \"{target}\"";
+                int index = Array.FindIndex(lines, line => line.StartsWith(prefix, StringComparison.Ordinal));
+                index.Should().BeGreaterThanOrEqualTo(0);
+                lines[index] = "rem leave the file in place";
+            }
+            if (checkpoint is int stop)
+            {
+                lines[boundaries[stop]] = $">\"{resultPath}\" echo interrupted\r\nexit /b 99\r\n" + lines[boundaries[stop]];
+            }
+            script = string.Join("\r\n", lines);
             UpdatePerformer.WriteBatchFile(BatchPath, script);
 
-            var psi = new ProcessStartInfo("cmd.exe", $"/c \"\"{BatchPath}\"\"")
+            var psi = new ProcessStartInfo("cmd.exe", $"/d /c \"\"{BatchPath}\"\"")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
             };
+            psi.Environment.Remove("COPY_STARTED");
             using var process = Process.Start(psi)!;
-            process.WaitForExit(60_000).Should().BeTrue("更新バッチが時間内に終わる");
-            return File.ReadAllText(resultPath).Trim();
+            if (!process.WaitForExit(60_000))
+            {
+                process.Kill(entireProcessTree: true);
+                process.WaitForExit();
+                throw new TimeoutException("更新バッチが時間内に終わらなかった");
+            }
+            return (File.ReadAllText(resultPath).Trim(), boundaries.Length);
         }
 
         public void Dispose()
