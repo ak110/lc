@@ -70,6 +70,9 @@ Linux環境の`mise run test`は`dotnet-test`を除く全チェック（ビル�
 - 脆弱性検知: Dependabot alertsと定期監査を併用する
 
 lcは実行可能なアプリとして配布され、依存の問題がエンドユーザーの実行環境へ波及するため、脆弱性を検知する仕組みを設ける。
+`master` 宛てのPRでは、追加・更新される依存の既知の脆弱性をGitHub ActionsのDependency Reviewで確認する。
+マージ可否のルールは変更しない。`Directory.Packages.props` で中央管理するNuGet依存は依存グラフで一部しか認識できないため、直接・推移依存の監査は既存の定期監査で行う。
+
 Dependabot alertsはGitHubの依存関係情報に基づく通知を担う。
 依存を更新しない期間にもアドバイザリが追加・変更されるため、`Audit`ワークフローを定期実行する。
 手動実行にも対応し、結果は[ActionsのAudit](https://github.com/ak110/lc/actions/workflows/audit.yaml)とSecurityのDependabot alertsで確認する。
