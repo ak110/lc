@@ -148,3 +148,5 @@ uv run --project "..\dotfiles" --frozen --no-dev releaser major
 dotfilesのコマンドが既にPATH上にあれば、同じ処理を`releaser patch`などで実行できる。
 `releaser`はCI完了を待ち、リリースworkflowを起動・監視してローカルを同期する。
 結果の確認: <https://github.com/ak110/lc/actions>
+
+この行は依存差分がない場合の検証専用であり、マージしない。
