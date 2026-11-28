@@ -20,3 +20,6 @@ Windows用アプリケーションランチャー（コマンド型＆ボタン�
 ## ドキュメント
 
 - [ドキュメントサイト](https://ak110.github.io/lc/): 利用者向けガイドおよび開発者向け情報
+- [アクセシビリティ](ACCESSIBILITY.md): 確認結果と障壁の報告先
+- [貢献するには](https://github.com/ak110/.github/blob/master/CONTRIBUTING.md)
+- [脆弱性の報告](https://github.com/ak110/.github/blob/master/SECURITY.md)

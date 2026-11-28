@@ -44,6 +44,7 @@ namespace Launcher.UI {
             //
             // textBox1
             //
+            this.textBox1.AccessibleName = "コマンド入力";
             this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox1.ImeMode = System.Windows.Forms.ImeMode.Off;
@@ -82,6 +83,7 @@ namespace Launcher.UI {
             //
             // listView1
             //
+            this.listView1.AccessibleName = "コマンド一覧";
             this.listView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
             | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
